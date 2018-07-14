@@ -1,11 +1,13 @@
 const tulind = require('tulind');
 const technicalindicators = require('technicalindicators');
+let percent = require('percent');
 
 module.exports = {
     getIndicatorsForCandleLookbackPeriod: function (lookbacks, cb) {
         let marketData = { open: [], close: [], high: [], low: [], volume: [] }
 
         lookbacks.slice(0, 1000).reverse().forEach(function (lookback) {
+            marketData.open.push(lookback.open)
             marketData.high.push(lookback.high)
             marketData.low.push(lookback.low)
             marketData.close.push(lookback.close)
@@ -50,9 +52,11 @@ module.exports = {
             }),
             new Promise((resolve) => {
                 tulind.indicators.macd.indicator([marketData.close], [12, 26, 9], (err, results) => {
-                    resolve({
-                        'macd': results[0][results[0].length-1],
-                    })
+                    resolve({'macd': {
+                        'macd': results[0][results[0].length - 1],
+                        'signal': results[1][results[2].length - 1],
+                        'histogram': results[2][results[2].length - 1],
+                    }})
                 })
             }),
             new Promise((resolve) => {
@@ -87,6 +91,15 @@ module.exports = {
                 })
             }),
             new Promise((resolve) => {
+                tulind.indicators.bbands.indicator([marketData.close], [20, 2], (err, results) => {
+                    resolve({'bollinger_bands': {
+                        'lower': results[0][results[0].length - 1],
+                        'middle': results[1][results[1].length - 1],
+                        'upper': results[2][results[2].length - 1],
+                    }})
+                })
+            }),
+            new Promise((resolve) => {
                 if(marketData.close.length < 6) {
                     resolve()
                     return
@@ -103,6 +116,13 @@ module.exports = {
                     'bullish': technicalindicators.bullish(data),
                     'bearish': technicalindicators.bearish(data),
                 })
+            }),
+            new Promise((resolve) => {
+                resolve({'wicked': {
+                    'top': Math.abs(percent.calc(lookbacks[0].high - Math.max(lookbacks[0].close, lookbacks[0].open), lookbacks[0].high, 2)),
+                    'bottom': Math.abs(percent.calc(lookbacks[0].low - Math.min(lookbacks[0].close, lookbacks[0].open), lookbacks[0].high, 2)) * -1,
+                }})
+
             }),
         ]
 
