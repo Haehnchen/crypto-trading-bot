@@ -1,0 +1,12 @@
+{
+    "exchanges": {
+        "bitfinex": {
+            "key": "xxx",
+            "secret": "xxx"
+        },
+        "bitmex": {
+            "key": "xxx",
+            "secret": "xxx"
+        }
+    }
+}

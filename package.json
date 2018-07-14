@@ -1,0 +1,23 @@
+{
+  "dependencies": {
+    "async": "^2.6.1",
+    "bitfinex-api-node": "^1.2.1",
+    "bitmex-realtime-api": "^0.3.0",
+    "colors": "^1.3.0",
+    "commander": "^2.16.0",
+    "express": "^4.16.3",
+    "http": "0.0.0",
+    "moment": "^2.22.2",
+    "numbro": "^2.1.0",
+    "percent": "^2.0.0",
+    "request": "^2.87.0",
+    "sqlite3": "^4.0.1",
+    "sqlite3-transactions": "0.0.5",
+    "technicalindicators": "^1.1.11",
+    "tulind": "^0.8.10",
+    "zero-fill": "^2.2.3"
+  },
+  "engines": {
+    "node": "^8.3.0 || ^9.0.0"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "symbols": [
+    {
+      "symbol": "EOSUSD",
+      "periods": ["15m"],
+      "exchange": "bitfinex",
+      "state": "watch"
+    },
+    {
+      "symbol": "ETPUSD",
+      "periods": ["15m"],
+      "exchange": "bitfinex",
+      "state": "watch"
+    },
+    {
+      "symbol": "ADAU18",
+      "periods": ["1h", "5m"],
+      "exchange": "bitmex",
+      "state": "watch"
+    }
+  ]
+}
