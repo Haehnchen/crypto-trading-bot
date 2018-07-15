@@ -118,11 +118,14 @@ module.exports = {
                 })
             }),
             new Promise((resolve) => {
-                resolve({'wicked': {
-                    'top': Math.abs(percent.calc(lookbacks[0].high - Math.max(lookbacks[0].close, lookbacks[0].open), lookbacks[0].high, 2)),
-                    'bottom': Math.abs(percent.calc(lookbacks[0].low - Math.min(lookbacks[0].close, lookbacks[0].open), lookbacks[0].high, 2)) * -1,
-                }})
+                let top = lookbacks[0].high - Math.max(lookbacks[0].close, lookbacks[0].open)
+                let bottom = lookbacks[0].low - Math.min(lookbacks[0].close, lookbacks[0].open)
 
+                resolve({'wicked': {
+                    'top': Math.abs(percent.calc(top, lookbacks[0].high - lookbacks[0].low, 2)),
+                    'body': Math.abs(percent.calc(lookbacks[0].close - lookbacks[0].open, lookbacks[0].high - lookbacks[0].low, 2)),
+                    'bottom': Math.abs(percent.calc(bottom, lookbacks[0].high - lookbacks[0].low, 2)),
+                }})
             }),
         ]
 
@@ -131,7 +134,7 @@ module.exports = {
 
             values.forEach((value) => {
                 for (let key in value) {
-                    results[key] = value[key]
+                   results[key] = value[key]
                 }
             })
 
