@@ -2,6 +2,8 @@
 
 let BackTestCommand = require('./command/backtest.js');
 let TradeCommand = require('./command/trade.js');
+let ServerCommand = require('./command/server.js');
+
 let program = require('commander');
 
 program
@@ -10,6 +12,14 @@ program
     .option('-i, --instance <file>', 'Instance to start', 'instance.json')
     .action(function(options) {
         let cmd = new TradeCommand(options.instance);
+        cmd.execute();
+    });
+
+program
+    .command('server')
+    .option('-i, --instance <file>', 'Instance to start', 'instance.json')
+    .action(function(options) {
+        let cmd = new ServerCommand(options.instance);
         cmd.execute();
     });
 

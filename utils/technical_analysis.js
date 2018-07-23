@@ -92,11 +92,15 @@ module.exports = {
             }),
             new Promise((resolve) => {
                 tulind.indicators.bbands.indicator([marketData.close], [20, 2], (err, results) => {
-                    resolve({'bollinger_bands': {
+                    let bb = {
                         'lower': results[0][results[0].length - 1],
                         'middle': results[1][results[1].length - 1],
                         'upper': results[2][results[2].length - 1],
-                    }})
+                    };
+
+                    bb['pct'] = (bb['upper'] - bb['lower'] - 1) / bb['upper'] * 100;
+
+                    resolve({'bollinger_bands': bb})
                 })
             }),
             new Promise((resolve) => {

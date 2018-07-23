@@ -53,7 +53,7 @@ module.exports = class BackTestCommand {
 
                         let rows = [
                             moment(candle.time * 1000).format(),
-                            candle.volume.grey,
+                            ((candle.volume) + '')['cyan'],
                             z(8, colors.yellow(candle.close), ' '),
                             z(8, diff[diff > 0 ? 'green' : 'red'], ' '),
                         ]
