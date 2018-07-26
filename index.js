@@ -7,7 +7,7 @@ let ServerCommand = require('./command/server.js');
 let program = require('commander');
 
 program
-    .command('upload')
+    .command('trade')
     .description('upload a file')
     .option('-i, --instance <file>', 'Instance to start', 'instance.json')
     .action(function(options) {

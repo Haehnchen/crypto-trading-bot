@@ -20,7 +20,7 @@ module.exports = class TradeCommand {
         let config = JSON.parse(fs.readFileSync('./conf.json', 'utf8'));
 
         let db = new TransactionDatabase(new sqlite3.Database('bot.db'));
-
+        db.configure("busyTimeout", 4000)
 
         let filter = obj.symbols.filter(function (symbol) {
             return symbol['exchange'] === 'bitmex' && symbol['state'] === 'watch';

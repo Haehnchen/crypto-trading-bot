@@ -11,13 +11,52 @@
 <body>
 
 <div class="container-fluid">
-  <h1>Hello World!</h1>
-  <p>Resize the browser window to see the effect.</p>
-  <p>The columns will automatically stack on top of each other when the screen is less than 768px wide.</p>
-  <div class="row">
-    <div class="col-sm-4" style="background-color:lavender;">.col-sm-4</div>
-    <div class="col-sm-8" style="background-color:lavenderblush;">.col-sm-8</div>
-  </div>
+
+  <table class="table">
+    <thead>
+    <tr>
+      <th scope="col">Symbol</th>
+          {% for period in ['1h', '1d'] %}
+            <th scope="col">&nbsp;</th>
+            <th scope="col">{{ period }} ema(55)</th>
+            <th scope="col">{{ period }} ema(200)</th>
+            <th scope="col">{{ period }} rsi</th>
+            <th scope="col">{{ period }} cci</th>
+            <th scope="col">{{ period }} awesome oscillator</th>
+            <th scope="col">{{ period }} macd</th>
+            <th scope="col">{{ period }} mfi</th>
+            <th scope="col">{{ period }} bollinger_bands</th>
+            <th scope="col">{{ period }} wicked</th>
+          {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+
+    {% for row in rows %}
+      <tr>
+        <td>{{ row.symbol }}</td>
+
+          {% for period in ['1h', '1d'] %}
+              {% set ta = row.ta[period] %}
+              <td>&nbsp;</td>
+              <td>{{ ta.ema_55 }}</td>
+              <td>{{ ta.ema_200 }}</td>
+              <td>{{ ta.rsi|round(2) }}</td>
+              <td>{{ ta.cci|round(2) }}</td>
+              <td>{{ ta.ao|round(4) }}</td>
+              <td>{{ ta.macd.macd|round(5) }}</td>
+              <td>{{ ta.mfi|round(2) }}</td>
+              <td>{{ ta.bollinger_bands.pct|round(2) }}</td>
+              <td>{{ ta.wicked.top|round(2) }} / {{ ta.wicked.body|round(2) }} / {{ ta.wicked.bottom|round(2) }}</td>
+          {% endfor %}
+
+
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+
 </div>
 
 </body>
