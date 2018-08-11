@@ -11,11 +11,11 @@ describe('#resample of candles', function() {
 
         assert.equal(12, firstFullCandle['_candle_count'])
 
-        assert.equal(firstFullCandle['open'], 7600)
+        assert.equal(firstFullCandle['open'], 7598.5)
         assert.equal(firstFullCandle['high'], 7609.5)
         assert.equal(firstFullCandle['low'], 7530)
-        assert.equal(firstFullCandle['close'], 7561.5)
-        assert.equal(firstFullCandle['volume'], 174464214)
+        assert.equal(firstFullCandle['close'], 7557)
+        assert.equal(firstFullCandle['volume'], 170512826)
     });
 
     it('should resample 15m candles', function() {
@@ -25,11 +25,11 @@ describe('#resample of candles', function() {
 
         assert.equal(3, firstFullCandle['_candle_count'])
 
-        assert.equal(firstFullCandle['open'], 7547.5)
-        assert.equal(firstFullCandle['high'], 7562)
+        assert.equal(firstFullCandle['open'], 7545.5)
+        assert.equal(firstFullCandle['high'], 7557)
         assert.equal(firstFullCandle['low'], 7530)
-        assert.equal(firstFullCandle['close'], 7561.5)
-        assert.equal(firstFullCandle['volume'], 45596804)
+        assert.equal(firstFullCandle['close'], 7557)
+        assert.equal(firstFullCandle['volume'], 57004287)
     });
 
     var createCandleFixtures = function() {

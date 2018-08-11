@@ -12,7 +12,7 @@ module.exports = {
         let grouped = []
 
         candlesticks.forEach((candle) => {
-            const start = moment(candle['time']).subtract({'minutes': 1});
+            const start = moment(candle['time']).subtract();
             const remainder = minutes - (start.minute() % minutes);
 
             const group = moment(start).add(remainder, "minutes").format('YYYY-MM-DD:HH:mm:00.000Z');
