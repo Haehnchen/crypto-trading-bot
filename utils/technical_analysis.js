@@ -145,6 +145,125 @@ module.exports = {
             cb(results)
         })
     },
+
+    /**
+     * @param lookbacks newest first
+     * @returns {Promise<any>}
+     */
+    getIndicatorsLookbacks: function (lookbacks) {
+        return new Promise((resolve) => {
+
+            let marketData = { open: [], close: [], high: [], low: [], volume: [] }
+
+            lookbacks.slice(0, 1000).reverse().forEach(function (lookback) {
+                marketData.open.push(lookback.open)
+                marketData.high.push(lookback.high)
+                marketData.low.push(lookback.low)
+                marketData.close.push(lookback.close)
+                marketData.volume.push(lookback.volume)
+            })
+
+            let calculations = [
+                new Promise((resolve) => {
+                    tulind.indicators.ema.indicator([marketData.close], [55], (err, results) => {
+                        resolve({
+                            'ema_55': results[0],
+                        })
+                    })
+                }),
+                new Promise((resolve) => {
+                    tulind.indicators.ema.indicator([marketData.close], [200], (err, results) => {
+                        resolve({
+                            'ema_200': results[0],
+                        })
+                    })
+                }),
+                new Promise((resolve) => {
+                    tulind.indicators.rsi.indicator([marketData.close], [14], (err, results) => {
+                        resolve({
+                            'rsi': results[0],
+                        })
+                    })
+                }),
+                new Promise((resolve) => {
+                    tulind.indicators.cci.indicator([marketData.high, marketData.low, marketData.close], [20], (err, results) => {
+                        resolve({
+                            'cci': results[0],
+                        })
+                    })
+                }),
+                new Promise((resolve) => {
+                    tulind.indicators.ao.indicator([marketData.high, marketData.low], [], (err, results) => {
+                        resolve({
+                            'ao': results[0],
+                        })
+                    })
+                }),
+                new Promise((resolve) => {
+                    tulind.indicators.macd.indicator([marketData.close], [12, 26, 9], (err, results) => {
+                        let result = [];
+
+                        for (let i = 0; i < results[0].length; i++) {
+                            result.push({
+                                'macd': results[0][i],
+                                'signal': results[1][i],
+                                'histogram': results[2][i],
+                            })
+                        }
+
+                        resolve({'bollinger_bands': result})
+                    })
+                }),
+                new Promise((resolve) => {
+                    tulind.indicators.mfi.indicator([marketData.high, marketData.low, marketData.close, marketData.volume], [14], (err, results) => {
+                        resolve({
+                            'mfi': results[0],
+                        })
+                    })
+                }),
+                new Promise((resolve) => {
+                    tulind.indicators.bbands.indicator([marketData.close], [20, 2], (err, results) => {
+                        let result = [];
+
+                        for (let i = 0; i < results[0].length; i++) {
+                            result.push({
+                                'lower': results[0][i],
+                                'middle': results[1][i],
+                                'upper': results[2][i],
+                            })
+                        }
+
+                        resolve({'bollinger_bands': result})
+                    })
+                }),
+                new Promise((resolve) => {
+                    let result = [];
+
+                    for (let i = 0; i < lookbacks[0].length; i++) {
+                        result.push({
+                            'top': Math.abs(percent.calc(top, lookbacks[i].high - lookbacks[i].low, 2)),
+                            'body': Math.abs(percent.calc(lookbacks[i].close - lookbacks[i].open, lookbacks[i].high - lookbacks[i].low, 2)),
+                            'bottom': Math.abs(percent.calc(bottom, lookbacks[i].high - lookbacks[i].low, 2)),
+                        })
+                    }
+
+                    resolve({'wicked': result})
+                }),
+            ]
+
+            Promise.all(calculations).then((values) => {
+                let results = {}
+
+                values.forEach((value) => {
+                    for (let key in value) {
+                        results[key] = value[key]
+                    }
+                })
+
+                resolve(results)
+            })
+        })
+    },
 }
 
 

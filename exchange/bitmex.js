@@ -23,6 +23,7 @@ module.exports = class Exchange {
 
         symbols.forEach(function (symbol) {
             symbol['periods'].forEach(function (time) {
+                console.log('https://www.bitmex.com/api/v1/trade/bucketed?binSize=' + time + '&partial=false&symbol=' + symbol['symbol'] + '&count=500&reverse=true')
                 request('https://www.bitmex.com/api/v1/trade/bucketed?binSize=' + time + '&partial=false&symbol=' + symbol['symbol'] + '&count=500&reverse=true', { json: true }, (err, res, body) => {
                     if (err) {
                         console.log(err);
@@ -68,7 +69,7 @@ module.exports = class Exchange {
                     eventEmitter.emit('ticker', new TickerEvent(
                         'bitmex',
                         symbol['symbol'],
-                        new Ticker(moment().format('X'), instrument['bidPrice'], instrument['askPrice'])
+                        new Ticker('bitmex', symbol['symbol'], moment().format('X'), instrument['bidPrice'], instrument['askPrice'])
                     ));
                 })
             });
