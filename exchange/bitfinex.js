@@ -22,8 +22,8 @@ module.exports = class Bitfinex {
         var bfx = new BFX(config['key'], config['secret'], {version: 2, transform: true, autoOpen: true});
         var ws = this.client = bfx.ws
 
-        this.pendingOrders = {};
-        this.orders = {};
+        this.orders = {}
+        this.positions = []
 
         ws.on('error', function(err) {
             console.log('error')
@@ -149,16 +149,20 @@ module.exports = class Bitfinex {
             me.orders[order.id] = order
         })
 
-        ws.on('ps', function() {
-            //console.log(arguments)
+        ws.on('ps', (positions) => {
+            logger.debug('Bitfinex: positions:' + JSON.stringify(positions))
+
+            me.positions = Bitfinex.createPositions(positions)
+            console.log(me.positions)
         })
 
-        ws.on('pu', function() {
-            //console.log(arguments)
+        ws.on('pu', (positions) => {
+            console.log('!!!!!!!!PU!!!!!!')
+            logger.debug('Bitfinex: positions update:' + JSON.stringify(positions))
         })
 
         ws.on('cs', function() {
-            console.log(me.orders)
+            console.log()
         })
 
         ws.on('os', function(postions) {
@@ -311,6 +315,22 @@ module.exports = class Bitfinex {
         return orders
     }
 
+    getPositions() {
+        return this.positions
+    }
+
+    getPositionForSymbol(symbol) {
+        for (let key in this.positions) {
+            let position = this.positions[key];
+
+            if(position.symbol === symbol) {
+                return position
+            }
+        }
+
+        return undefined
+    }
+
     static createExchangeOrder(order) {
         let status = undefined
         let retry = false
@@ -360,6 +380,23 @@ module.exports = class Bitfinex {
         })
 
         return myOrders
+    }
+
+    static createPositions(positions) {
+        return positions.filter((position) => {
+            return position[1].toLowerCase() === 'active'
+        }).map((position) => {
+            let pair = position[0]
+            if (pair.substring(0, 1) === 't') {
+                pair = pair.substring(1)
+            }
+
+            return new Position(
+                pair,
+                position[2] < 0 ? 'short' : 'long',
+                position[2]
+            )
+        })
     }
 }
 
