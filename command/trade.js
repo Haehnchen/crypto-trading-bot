@@ -12,6 +12,11 @@ let Candlestick = require('./../dict/candlestick.js');
 let ta = require('../utils/technical_analysis');
 let Order = require('../dict/order');
 let OrderEvent = require('../event/order_event');
+let Slack = require('../notify/slack');
+var moment = require('moment');
+const crypto = require('crypto');
+const os = require('os');
+const Notify = require('../notify/notify');
 
 const { createLogger, format, transports } = require('winston');
 
@@ -57,6 +62,30 @@ module.exports = class TradeCommand {
         }
 
         logger.debug('Started')
+
+        let notifiers = []
+
+        if (config.notify.slack) {
+            notifiers.push(new Slack(config.notify.slack))
+        }
+
+        let notify = new Notify(notifiers)
+
+        const instanceId = crypto.randomBytes(4).toString('hex');
+
+
+        let notifyActivePairs = obj.symbols.filter((symbol) => {
+            return symbol['state'] === 'watch';
+        }).map((symbol) => {
+            return symbol.exchange + '.' + symbol.symbol
+        })
+
+        notify.send('Start: ' + instanceId + ' - ' + os.hostname() + ' - ' + os.platform() + ' - ' + moment().format() + ' - ' + notifyActivePairs.join(','))
+
+        setInterval(() => {
+            notify.send('Heartbeat: ' + instanceId + ' - ' + os.hostname() + ' - ' + os.platform() + ' - ' + moment().format() + ' - ' + notifyActivePairs.join(','))
+        }, 60 * 60 * 30);
+
 
         eventEmitter.on('candlestick', function(candleStickEvent) {
             db.beginTransaction(function(err, transaction) {
@@ -187,11 +216,22 @@ module.exports = class TradeCommand {
                             side = 'sell'
                         }
 
+                        let e = new OrderEvent(
+                            symbol.exchange,
+                            symbol.symbol,
+                            new Order(side, reverse[0], 10)
+                        )
+
+                        notify.send('Create order: ' + JSON.stringify(e))
+
+                        /*
                         eventEmitter.emit('order', new OrderEvent(
                             symbol.exchange,
                             symbol.symbol,
                             new Order(side, reverse[0], 10)
                         ))
+                        */
+
                     })()
                 });
             })

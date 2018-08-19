@@ -8,5 +8,12 @@
             "key": "xxx",
             "secret": "xxx"
         }
+    },
+    "notify": {
+        "slack": {
+            "webhook": "https://hooks.slack.com/services/....",
+            "name": "crypto-bot",
+            "icon_emoji": ":ghost:"
+        }
     }
 }
