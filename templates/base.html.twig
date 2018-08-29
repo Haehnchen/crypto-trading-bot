@@ -16,7 +16,7 @@
     <thead>
     <tr>
       <th scope="col">Symbol</th>
-          {% for period in ['1h', '1d'] %}
+          {% for period in periods %}
             <th scope="col">&nbsp;</th>
             <th scope="col">{{ period }} ema(55)</th>
             <th scope="col">{{ period }} ema(200)</th>
@@ -36,21 +36,24 @@
       <tr>
         <td>{{ row.symbol }}</td>
 
-          {% for period in ['1h', '1d'] %}
+          {% for period in periods %}
               {% set ta = row.ta[period] %}
               <td>&nbsp;</td>
               <td>{{ ta.ema_55 }}</td>
               <td>{{ ta.ema_200 }}</td>
-              <td>{{ ta.rsi|round(2) }}</td>
+              <td class="
+                {% if ta.rsi <= 30 %}text-success{% endif %}
+                {% if ta.rsi >= 70 %}text-danger{% endif %}
+                {% if ta.rsi > 30 and ta.rsi < 50 %}text-warning{% endif %}
+                {% if ta.rsi > 50 and ta.rsi < 70 %}text-info{% endif %}
+            ">{{ ta.rsi|round(2) }}</td>
               <td>{{ ta.cci|round(2) }}</td>
               <td>{{ ta.ao|round(4) }}</td>
-              <td>{{ ta.macd.macd|round(5) }}</td>
+              <td class="{% if ta.macd.macd < 0 %}text-danger{% endif %}{% if ta.macd.macd > 0 %}text-success{% endif %}">{{ ta.macd.macd|round(5) }}</td>
               <td>{{ ta.mfi|round(2) }}</td>
               <td>{{ ta.bollinger_bands.pct|round(2) }}</td>
               <td>{{ ta.wicked.top|round(2) }} / {{ ta.wicked.body|round(2) }} / {{ ta.wicked.bottom|round(2) }}</td>
           {% endfor %}
-
-
       </tr>
     {% endfor %}
     </tbody>

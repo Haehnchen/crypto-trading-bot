@@ -5,7 +5,7 @@ let fs = require('fs');
 
 describe('#technical_analysis for candles', () => {
     it('technical_analysis for candles are returned', async () => {
-        const result = await ta.getIndicatorsLookbacks(createCandleFixtures());
+        const result = await ta.getIndicatorsLookbacks(createCandleFixtures().reverse());
 
         assert.equal(490, result['ema_55'].length)
     });

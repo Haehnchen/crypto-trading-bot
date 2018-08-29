@@ -147,7 +147,7 @@ module.exports = {
     },
 
     /**
-     * @param lookbacks newest first
+     * @param lookbacks oldest first
      * @returns {Promise<any>}
      */
     getIndicatorsLookbacks: function (lookbacks) {
@@ -155,7 +155,13 @@ module.exports = {
 
             let marketData = { open: [], close: [], high: [], low: [], volume: [] }
 
-            lookbacks.slice(0, 1000).reverse().forEach(function (lookback) {
+            // get last items
+            let number = lookbacks.length - 1000;
+            if(number < 0) {
+                number = 0;
+            }
+
+            lookbacks.slice(number, 1000).forEach(function (lookback) {
                 marketData.open.push(lookback.open)
                 marketData.high.push(lookback.high)
                 marketData.low.push(lookback.low)
@@ -211,7 +217,7 @@ module.exports = {
                             })
                         }
 
-                        resolve({'bollinger_bands': result})
+                        resolve({'macd': result})
                     })
                 }),
                 new Promise((resolve) => {
@@ -252,6 +258,7 @@ module.exports = {
             ]
 
             Promise.all(calculations).then((values) => {
+
                 let results = {}
 
                 values.forEach((value) => {

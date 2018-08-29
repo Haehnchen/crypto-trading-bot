@@ -197,7 +197,7 @@ module.exports = class TradeCommand {
                     });
 
                     (async () => {
-                        const result = await ta.getIndicatorsLookbacks(candles);
+                        const result = await ta.getIndicatorsLookbacks(candles.reverse());
 
                         console.log('----')
                         let reverse = result['ema_55'].reverse();

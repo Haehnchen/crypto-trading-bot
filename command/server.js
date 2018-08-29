@@ -34,11 +34,13 @@ module.exports = class ServerCommand {
 
 
         app.get('/', function(req, res) {
-        let rows = []
+
         let promises = [];
 
+        let periods = ['15m', '1h'];
+
         instances['symbols'].forEach((symbol) => {
-            ['1h', '1d'].forEach((period) => {
+            periods.forEach((period) => {
                 promises.push(new Promise((resolve) => {
                     let sql = 'SELECT * from candlesticks where exchange = ? AND symbol = ? and period = ? order by time DESC LIMIT 500';
 
@@ -58,7 +60,7 @@ module.exports = class ServerCommand {
                             return;
                         }
 
-                        ta.getIndicatorsForCandleLookbackPeriod(candles, (result) => {
+                        ta.getIndicatorsLookbacks(candles.reverse()).then((result) => {
                             resolve({
                                 'symbol': symbol.symbol,
                                 'period': period,
@@ -76,7 +78,7 @@ module.exports = class ServerCommand {
                     return value !== undefined
                 });
 
-                let x = {};
+                let x = {}
 
                 v.forEach((v) => {
                     if(!x[v.symbol]) {
@@ -86,13 +88,17 @@ module.exports = class ServerCommand {
                         }
                     }
 
-                    x[v.symbol]['ta'][v.period] = v.ta
-                })
+                    let values = {}
+                    for (let key in v.ta) {
+                        values[key] = v.ta[key].slice(-1)[0]
+                    }
 
-                console.log(x)
+                    x[v.symbol]['ta'][v.period] = values
+                })
 
                 res.render('../templates/base.html.twig', {
                     rows: x,
+                    periods: periods,
                 });
             });
         });
