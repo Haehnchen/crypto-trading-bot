@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Bootstrap Example</title>
+  <title>Crypto-Bot</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 </head>
@@ -16,16 +17,18 @@
     <thead>
     <tr>
       <th scope="col">Symbol</th>
+            <th scope="col">&nbsp;</th>
+
           {% for period in periods %}
             <th scope="col">&nbsp;</th>
             <th scope="col">{{ period }} ema(55)</th>
             <th scope="col">{{ period }} ema(200)</th>
             <th scope="col">{{ period }} rsi</th>
             <th scope="col">{{ period }} cci</th>
-            <th scope="col">{{ period }} awesome oscillator</th>
+            <th scope="col">{{ period }} ao</th>
             <th scope="col">{{ period }} macd</th>
             <th scope="col">{{ period }} mfi</th>
-            <th scope="col">{{ period }} bollinger_bands</th>
+            <th scope="col">{{ period }} bb</th>
             <th scope="col">{{ period }} wicked</th>
           {% endfor %}
     </tr>
@@ -35,24 +38,41 @@
     {% for row in rows %}
       <tr>
         <td>{{ row.symbol }}</td>
+        <td>{{ row.ticker.bid }}</td>
 
           {% for period in periods %}
               {% set ta = row.ta[period] %}
-              <td>&nbsp;</td>
-              <td>{{ ta.ema_55 }}</td>
-              <td>{{ ta.ema_200 }}</td>
+              <td class="{{ ta.ema_55 > ta.ema_200 ? 'text-success' : 'text-danger' }}"><i class="fas fa-arrow-up"></i></td>
+              <td class="{{ row.ticker.bid > ta.ema_55 ? 'text-success' : 'text-danger' }}">{{ ta.ema_55|round(2) }}</td>
+              <td class="{{ row.ticker.bid > ta.ema_200 ? 'text-success' : 'text-danger' }}">{{ ta.ema_200|round(2) }}</td>
               <td class="
                 {% if ta.rsi <= 30 %}text-success{% endif %}
                 {% if ta.rsi >= 70 %}text-danger{% endif %}
                 {% if ta.rsi > 30 and ta.rsi < 50 %}text-warning{% endif %}
                 {% if ta.rsi > 50 and ta.rsi < 70 %}text-info{% endif %}
             ">{{ ta.rsi|round(2) }}</td>
-              <td>{{ ta.cci|round(2) }}</td>
-              <td>{{ ta.ao|round(4) }}</td>
-              <td class="{% if ta.macd.macd < 0 %}text-danger{% endif %}{% if ta.macd.macd > 0 %}text-success{% endif %}">{{ ta.macd.macd|round(5) }}</td>
-              <td>{{ ta.mfi|round(2) }}</td>
-              <td>{{ ta.bollinger_bands.pct|round(2) }}</td>
-              <td>{{ ta.wicked.top|round(2) }} / {{ ta.wicked.body|round(2) }} / {{ ta.wicked.bottom|round(2) }}</td>
+              <td class="
+                {% if ta.cci <= -100 %}text-success{% endif %}
+                {% if ta.cci >= 100 %}text-danger{% endif %}
+                {% if ta.cci > -100 and ta.rsi < 100 %}text-warning{% endif %}
+            ">{{ ta.cci|round(2) }}</td>
+              <td class="{{ ta.ao > 0 ? 'text-success' : 'text-danger' }}">{{ ta.ao|round(4) }}</td>
+              <td class="{{ ta.macd.histogram > 0 ? 'text-success' : 'text-danger' }}">
+                  {% if ta.macd.histogram > 0 %}
+                      <i class="far fa-arrow-alt-circle-up"></i>
+                  {% else %}
+                      <i class="far fa-arrow-alt-circle-down"></i>
+                  {% endif %}
+              </td>
+              <td class="
+                {% if ta.mfi <= 20 %}text-success{% endif %}
+                {% if ta.mfi >= 80 %}text-danger{% endif %}
+                {% if ta.mfi > 20 and ta.rsi < 80 %}text-warning{% endif %}
+            ">{{ ta.mfi|round(2) }}</td>
+              <td class="{{ row.ticker.bid > ta.bollinger_bands.middle ? 'text-success' : 'text-danger' }}">{{ ta.bollinger_bands.lower|round(2) }} // {{ ta.bollinger_bands.upper|round(2) }}</td>
+              <td>
+                  {{ ta.wicked.top|round(1) }} / {{ ta.wicked.body|round(1) }} / {{ ta.wicked.bottom|round(1) }}
+              </td>
           {% endfor %}
       </tr>
     {% endfor %}

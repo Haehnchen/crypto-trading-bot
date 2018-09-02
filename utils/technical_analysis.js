@@ -243,17 +243,20 @@ module.exports = {
                     })
                 }),
                 new Promise((resolve) => {
-                    let result = [];
+                    let results = [];
 
-                    for (let i = 0; i < lookbacks[0].length; i++) {
-                        result.push({
-                            'top': Math.abs(percent.calc(top, lookbacks[i].high - lookbacks[i].low, 2)),
-                            'body': Math.abs(percent.calc(lookbacks[i].close - lookbacks[i].open, lookbacks[i].high - lookbacks[i].low, 2)),
-                            'bottom': Math.abs(percent.calc(bottom, lookbacks[i].high - lookbacks[i].low, 2)),
+                    for (let i = 0; i < marketData.close.length; i++) {
+                        let top = marketData.high[i] - Math.max(marketData.close[i], marketData.open[i])
+                        let bottom = marketData.low[i] - Math.min(marketData.close[i], marketData.open[i])
+
+                        results.push({
+                            'top': Math.abs(percent.calc(top, marketData.high[i] - marketData.low[i], 2)),
+                            'body': Math.abs(percent.calc(marketData.close[i] - marketData.open[i], marketData.high[i] - marketData.low[i], 2)),
+                            'bottom': Math.abs(percent.calc(bottom, marketData.high[i] - marketData.low[i], 2)),
                         })
                     }
 
-                    resolve({'wicked': result})
+                    resolve({'wicked': results.reverse()})
                 }),
             ]
 

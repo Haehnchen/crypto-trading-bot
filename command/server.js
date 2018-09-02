@@ -9,6 +9,7 @@ let Bitmex = require('../exchange/bitmex.js');
 const express = require('express')
 let Candlestick = require('./../dict/candlestick.js');
 const ta = require('../utils/technical_analysis');
+let Ticker = require('../dict/ticker');
 
 module.exports = class ServerCommand {
     constructor(instance, config) {
@@ -60,11 +61,12 @@ module.exports = class ServerCommand {
                             return;
                         }
 
-                        ta.getIndicatorsLookbacks(candles.reverse()).then((result) => {
+                        ta.getIndicatorsLookbacks(candles.slice().reverse()).then((result) => {
                             resolve({
                                 'symbol': symbol.symbol,
                                 'period': period,
                                 'ta': result,
+                                'ticker': new Ticker(symbol.exchange, symbol.symbol, undefined, candles[0].close),
                             })
                         })
                     });
@@ -84,14 +86,18 @@ module.exports = class ServerCommand {
                     if(!x[v.symbol]) {
                         x[v.symbol] = {
                             'symbol': v.symbol,
+                            'ticker': v.ticker,
                             'ta': {},
                         }
                     }
 
+                    // flat indicator list
                     let values = {}
                     for (let key in v.ta) {
                         values[key] = v.ta[key].slice(-1)[0]
                     }
+
+                    console.log(x[v.symbol]['ta'])
 
                     x[v.symbol]['ta'][v.period] = values
                 })
