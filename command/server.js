@@ -34,6 +34,7 @@ module.exports = class ServerCommand {
         });
 
 
+        app.use(express.static(__dirname + '/../web/static'))
         app.get('/', function(req, res) {
 
         let promises = [];
