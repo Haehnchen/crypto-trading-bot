@@ -1,9 +1,9 @@
 CREATE TABLE candlesticks (
-  id         INT PRIMARY KEY AUTOINCREMENT,
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
   exchange   VARCHAR(255) NULL,
   symbol     VARCHAR(255) NULL,
   period     VARCHAR(255) NULL,
-  time       INT          NULL,
+  time       INTEGER          NULL,
   open       REAL         NULL,
   high       REAL         NULL,
   low        REAL         NULL,

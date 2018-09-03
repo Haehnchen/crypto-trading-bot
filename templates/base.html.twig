@@ -6,14 +6,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="/favicon.ico"/>
 
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 </head>
 <body>
 
+<style>
+    body {
+        font-size: 0.8em;
+    }
+    
+    .text-orange {
+        color: #b35900
+    }
+</style>
+
 <div class="container-fluid">
+
+
 
   <table class="table">
     <thead>
@@ -48,12 +60,14 @@
               <td class="{{ row.ticker.bid > ta.ema_55 ? 'text-success' : 'text-danger' }}">{{ ta.ema_55|round(2) }}</td>
               <td class="{{ row.ticker.bid > ta.ema_200 ? 'text-success' : 'text-danger' }}">{{ ta.ema_200|round(2) }}</td>
               <td class="
+                {% if ta.rsi >= 80 or ta.rsi <= -20 %}font-weight-bold {% endif %}
                 {% if ta.rsi <= 30 %}text-success{% endif %}
                 {% if ta.rsi >= 70 %}text-danger{% endif %}
                 {% if ta.rsi > 30 and ta.rsi < 50 %}text-warning{% endif %}
-                {% if ta.rsi > 50 and ta.rsi < 70 %}text-info{% endif %}
+                {% if ta.rsi > 50 and ta.rsi < 70 %}text-orange{% endif %}
             ">{{ ta.rsi|round(2) }}</td>
               <td class="
+                {% if ta.cci >= 250 or ta.cci <= -250 %}font-weight-bold {% endif %}
                 {% if ta.cci <= -100 %}text-success{% endif %}
                 {% if ta.cci >= 100 %}text-danger{% endif %}
                 {% if ta.cci > -100 and ta.rsi < 100 %}text-warning{% endif %}
