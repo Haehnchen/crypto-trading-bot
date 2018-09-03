@@ -98,8 +98,6 @@ module.exports = class ServerCommand {
                         values[key] = v.ta[key].slice(-1)[0]
                     }
 
-                    console.log(x[v.symbol]['ta'])
-
                     x[v.symbol]['ta'][v.period] = values
                 })
 
@@ -110,6 +108,9 @@ module.exports = class ServerCommand {
             });
         });
 
-        app.listen(8080);
+        let port = config.webserver.port || 8080;
+        console.log('Webserver listening on: ' + port)
+
+        app.listen(port);
     }
 };

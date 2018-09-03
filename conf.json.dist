@@ -15,5 +15,8 @@
             "name": "crypto-bot",
             "icon_emoji": ":ghost:"
         }
+    },
+    "webserver": {
+        "port": 8080
     }
 }
