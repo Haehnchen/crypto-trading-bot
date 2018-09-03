@@ -4,7 +4,7 @@
   <title>Crypto-Bot</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="../web/static/favicon.ico"/>
+  <link rel="icon" href="/favicon.ico"/>
 
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
@@ -44,7 +44,7 @@
 
           {% for period in periods %}
               {% set ta = row.ta[period] %}
-              <td class="{{ ta.ema_55 > ta.ema_200 ? 'text-success' : 'text-danger' }}"><i class="fas fa-arrow-up"></i></td>
+              <td class="{{ ta.ema_55 > ta.ema_200 ? 'text-success' : 'text-danger' }}"><i class="fas {{ ta.ema_55 > ta.ema_200 ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i></td>
               <td class="{{ row.ticker.bid > ta.ema_55 ? 'text-success' : 'text-danger' }}">{{ ta.ema_55|round(2) }}</td>
               <td class="{{ row.ticker.bid > ta.ema_200 ? 'text-success' : 'text-danger' }}">{{ ta.ema_200|round(2) }}</td>
               <td class="

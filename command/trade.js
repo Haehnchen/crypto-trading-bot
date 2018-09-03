@@ -80,39 +80,46 @@ module.exports = class TradeCommand {
             return symbol.exchange + '.' + symbol.symbol
         })
 
-        notify.send('Start: ' + instanceId + ' - ' + os.hostname() + ' - ' + os.platform() + ' - ' + moment().format() + ' - ' + notifyActivePairs.join(','))
+        notify.send('Start: ' + instanceId + ' - ' + os.hostname() + ' - ' + os.platform() + ' - ' + moment().format() + ' - ' + notifyActivePairs.join(', '))
 
         setInterval(() => {
-            notify.send('Heartbeat: ' + instanceId + ' - ' + os.hostname() + ' - ' + os.platform() + ' - ' + moment().format() + ' - ' + notifyActivePairs.join(','))
+            notify.send('Heartbeat: ' + instanceId + ' - ' + os.hostname() + ' - ' + os.platform() + ' - ' + moment().format() + ' - ' + notifyActivePairs.join(', '))
         }, 60 * 60 * 30);
 
 
-        eventEmitter.on('candlestick', function(candleStickEvent) {
+        eventEmitter.on('candlestick', (candleStickEvent) => {
             db.beginTransaction(function(err, transaction) {
                 candleStickEvent.candles.forEach(function (candle) {
-                    let s = "" +
-                        "REPLACE INTO candlesticks(exchange, symbol, period, time, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ";
+                    // Try to update any existing row
+                    let update = '' +
+                        'UPDATE candlesticks SET exchange=$exchange, symbol=$symbol, period=$period, time=$time, open=$open, high=$high, low=$low, close=$close, volume=$volume\n' +
+                        'WHERE exchange=$exchange AND symbol=$symbol AND period=$period AND time=$time'
 
-                    db.run(s, [
-                        candleStickEvent.exchange,
-                        candleStickEvent.symbol,
-                        candleStickEvent.period,
-                        candle.time,
-                        candle.open,
-                        candle.high,
-                        candle.low,
-                        candle.close,
-                        candle.volume,
-                    ]);
+                    let insert = '' +
+                        'INSERT OR IGNORE INTO candlesticks(exchange, symbol, period, time, open, high, low, close, volume) VALUES ($exchange, $symbol, $period, $time, $open, $high, $low, $close, $volume)'
+
+                    let parameters = {
+                        '$exchange': candleStickEvent.exchange,
+                        '$symbol': candleStickEvent.symbol,
+                        '$period': candleStickEvent.period,
+                        '$time': candle.time,
+                        '$open': candle.open,
+                        '$high': candle.high,
+                        '$low': candle.low,
+                        '$close': candle.close,
+                        '$volume': candle.volume
+                    };
+
+                    transaction.run(update, parameters);
+                    transaction.run(insert, parameters);
                 })
 
-                transaction.commit(function(err) {
+                transaction.commit((err) => {
                     if (err) {
                         return console.log("Sad panda :-( commit() failed.", err);
                     }
                 });
             });
-
         });
 
         let tickers = new Tickers();
@@ -216,6 +223,7 @@ module.exports = class TradeCommand {
                             side = 'sell'
                         }
 
+                        /*
                         let e = new OrderEvent(
                             symbol.exchange,
                             symbol.symbol,
@@ -224,7 +232,7 @@ module.exports = class TradeCommand {
 
                         notify.send('Create order: ' + JSON.stringify(e))
 
-                        /*
+
                         eventEmitter.emit('order', new OrderEvent(
                             symbol.exchange,
                             symbol.symbol,
