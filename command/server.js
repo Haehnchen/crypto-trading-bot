@@ -18,6 +18,42 @@ module.exports = class ServerCommand {
     }
 
     execute() {
+
+        var getTrendingDirection = function(lookbacks) {
+            let currentValue = lookbacks.slice(-1)[0]
+
+            return ((lookbacks[lookbacks.length - 2] + lookbacks[lookbacks.length - 3] + lookbacks[lookbacks.length - 4]) / 3 > currentValue) ? 'down' : 'up';
+        }
+
+        var getTrendingDirectionLastItem = function(lookbacks) {
+            return lookbacks[lookbacks.length - 2] > lookbacks[lookbacks.length - 1] ? 'down' : 'up'
+        }
+
+
+        var crossedSince = function(lookbacks) {
+            let values = lookbacks.slice().reverse(lookbacks)
+
+            let currentValue = values[0]
+
+            if(currentValue < 0) {
+                for (let i = 1; i < values.length - 1; i++) {
+                    if(values[i] > 0) {
+                        return i
+                    }
+                }
+
+                return
+            }
+
+            for (let i = 1; i < values.length - 1; i++) {
+                if(values[i] < 0) {
+                    return i
+                }
+            }
+
+            return undefined
+        }
+
         let db = new TransactionDatabase(new sqlite3.Database('bot.db'));
         db.configure("busyTimeout", 4000)
 
@@ -39,7 +75,7 @@ module.exports = class ServerCommand {
 
         let promises = [];
 
-        let periods = ['15m', '1h'];
+        let periods = ['1h'];
 
         instances['symbols'].forEach((symbol) => {
             periods.forEach((period) => {
@@ -94,8 +130,34 @@ module.exports = class ServerCommand {
 
                     // flat indicator list
                     let values = {}
+
                     for (let key in v.ta) {
-                        values[key] = v.ta[key].slice(-1)[0]
+                        let taResult = v.ta[key];
+
+                        values[key] = {
+                            'value': taResult[taResult.length - 1],
+                        }
+
+                        if(key == 'macd') {
+                            let r = taResult.slice()
+
+                            values[key]['trend'] = getTrendingDirectionLastItem(r.slice(-2).map((v) => v.histogram))
+
+                            let number = crossedSince(r.map((v) => v.histogram))
+
+                            if (number) {
+                                let multiplicator = 1
+                                if (v.period == '1h') {
+                                    multiplicator = 60
+                                } else if(v.period == '15m') {
+                                    multiplicator = 15
+                                }
+
+                                values[key]['crossed'] = number * multiplicator
+                            }
+                        } else if(key == 'ema_200' || key == 'ema_55' || key == 'cci' || key == 'rsi' || key == 'ao' || key == 'mfi') {
+                            values[key]['trend'] = getTrendingDirection(taResult.slice().reverse().slice(-5))
+                        }
                     }
 
                     x[v.symbol]['ta'][v.period] = values
