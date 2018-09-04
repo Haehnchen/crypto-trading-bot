@@ -30,6 +30,17 @@
     .trend-down {
         transform: rotate(135deg);
     }
+
+    @keyframes blink {
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .blink {
+        animation: blink 1s step-start 0s infinite;
+        animation-timing-function: ease-in-out;
+    }
 </style>
 
 <script>
@@ -89,7 +100,7 @@
             ">{{ ta.cci.value|round(2) }}</td>
               <td class="{{ ta.ao.value > 0 ? 'text-success' : 'text-danger' }}">{{ ta.ao.value|round(4) }}</td>
               <td class="{{ ta.macd.value.histogram > 0 ? 'text-success' : 'text-danger' }}">
-                  <i data-toggle="tooltip" title="crossed {{ ta.macd.crossed }}m ago" class="far fa-arrow-alt-circle-up {{ ta.macd.trend == 'up' ? 'trend-up' : 'trend-down' }} {% if (ta.macd.value.histogram > 0 and ta.macd.trend == 'down') or (ta.macd.value.histogram < 0 and ta.macd.trend == 'up') %}font-weight-bold{% endif %}"></i>
+                  <i data-toggle="tooltip" title="{{ ta.macd.crossed }}m ago" class="far fa-arrow-alt-circle-up {{ ta.macd.trend == 'up' ? 'trend-up' : 'trend-down' }} {% if (ta.macd.value.histogram > 0 and ta.macd.trend == 'down') or (ta.macd.value.histogram < 0 and ta.macd.trend == 'up') %}font-weight-bold{% endif %} {% if ta.macd.crossed_index < 5 %}blink{% endif %}"></i>
               </td>
               <td class="
                 {% if ta.mfi.value <= 20 %}text-success{% endif %}

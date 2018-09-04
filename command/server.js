@@ -154,6 +154,7 @@ module.exports = class ServerCommand {
                                 }
 
                                 values[key]['crossed'] = number * multiplicator
+                                values[key]['crossed_index'] = number
                             }
                         } else if(key == 'ema_200' || key == 'ema_55' || key == 'cci' || key == 'rsi' || key == 'ao' || key == 'mfi') {
                             values[key]['trend'] = getTrendingDirection(taResult.slice().reverse().slice(-5))
