@@ -75,7 +75,7 @@ module.exports = class ServerCommand {
 
         let promises = [];
 
-        let periods = ['1h'];
+        let periods = ['15m', '1h'];
 
         instances['symbols'].forEach((symbol) => {
             periods.forEach((period) => {
