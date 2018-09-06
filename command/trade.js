@@ -206,6 +206,7 @@ module.exports = class TradeCommand {
                     (async () => {
                         const result = await ta.getIndicatorsLookbacks(candles.reverse());
 
+                        /*
                         console.log('----')
                         let reverse = result['ema_55'].reverse();
                         console.log('ema_55: ' + reverse[0])
@@ -216,12 +217,14 @@ module.exports = class TradeCommand {
                         console.log('bid: ' + ticker.bid)
                         console.log('ask: ' + ticker.ask)
 
+
                         let wantPrice = reverse[0]
 
                         let side = 'buy'
                         if(ticker.ask < wantPrice) {
                             side = 'sell'
                         }
+                        */
 
                         /*
                         let e = new OrderEvent(

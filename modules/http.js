@@ -9,13 +9,12 @@ let Bitmex = require('../exchange/bitmex.js');
 const express = require('express')
 
 module.exports = class Http {
-    constructor(instance, config) {
+    constructor(twig, instance, config) {
         this.instance = instance
         this.config = config
     }
 
     execute() {
-
         let Twig = require("twig"),
             express = require('express'),
             app = express();
@@ -25,12 +24,16 @@ module.exports = class Http {
             strict_variables: false
         });
 
+        app.use(express.static(__dirname + '/../web/static'))
+
         app.get('/', function(req, res){
             res.render('../templates/base.html.twig', {
                 message : "Hello World"
             });
         });
 
-        app.listen(8080);
+        let port = this.config.webserver.port || 8080;
+
+        app.listen(port);
     }
 };

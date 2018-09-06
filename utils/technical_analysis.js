@@ -274,6 +274,40 @@ module.exports = {
             })
         })
     },
+
+    getTrendingDirection: function(lookbacks) {
+        let currentValue = lookbacks.slice(-1)[0]
+
+        return ((lookbacks[lookbacks.length - 2] + lookbacks[lookbacks.length - 3] + lookbacks[lookbacks.length - 4]) / 3 > currentValue) ? 'down' : 'up';
+    },
+
+    getTrendingDirectionLastItem: function(lookbacks) {
+        return lookbacks[lookbacks.length - 2] > lookbacks[lookbacks.length - 1] ? 'down' : 'up'
+    },
+
+    getCrossedSince: function(lookbacks) {
+        let values = lookbacks.slice().reverse(lookbacks)
+
+        let currentValue = values[0]
+
+        if(currentValue < 0) {
+            for (let i = 1; i < values.length - 1; i++) {
+                if(values[i] > 0) {
+                    return i
+                }
+            }
+
+            return
+        }
+
+        for (let i = 1; i < values.length - 1; i++) {
+            if(values[i] < 0) {
+                return i
+            }
+        }
+
+        return undefined
+    }
 }
 
 
