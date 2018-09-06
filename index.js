@@ -6,6 +6,10 @@ let ServerCommand = require('./command/server.js');
 
 let program = require('commander');
 
+// init
+let services = require('./modules/services')
+services.boot()
+
 program
     .command('trade')
     .description('upload a file')

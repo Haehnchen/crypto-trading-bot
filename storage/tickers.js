@@ -12,4 +12,8 @@ module.exports = class Tickers {
     get(exchange, symbol) {
         return this.tickers[exchange + '.' + symbol] || null
     }
+
+    all() {
+        return this.tickers
+    }
 }

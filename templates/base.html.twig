@@ -51,8 +51,6 @@
 
 <div class="container-fluid">
 
-
-
   <table class="table">
     <thead>
     <tr>
@@ -77,7 +75,7 @@
 
     {% for row in rows %}
       <tr>
-        <td>{{ row.symbol }}</td>
+        <td><i class="fa-fw {% if 'USD' in row.symbol %}fas fa-dollar-sign{% else %}fab fa-bitcoin{% endif %}"></i> {{ row.symbol }}</td>
         <td>{{ row.ticker.bid }}</td>
 
           {% for period in periods %}

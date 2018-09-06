@@ -1,22 +1,51 @@
 let sqlite3 = require('sqlite3').verbose();
 let TransactionDatabase = require("sqlite3-transactions").TransactionDatabase;
 let fs = require('fs');
+let events = require('events')
+
+const { createLogger, transports } = require('winston');
+
+const Notify = require('../notify/notify');
+let Slack = require('../notify/slack');
+
+let Tickers = require('../storage/tickers');
+
+let CandleStickListener = require('../modules/listener/candle_stick_listener')
+let TickListener = require('../modules/listener/tick_listener')
+let CreateOrderListener = require('../modules/listener/create_order_listener')
+
+let Bitfinex = require('../exchange/bitfinex')
+let Bitmex = require('../exchange/bitmex')
+
+let Trade = require('../modules/trade')
+let Http = require('../modules/http')
 
 let db = undefined
 let instances = undefined
 let config = undefined
 let ta = undefined
+let eventEmitter = undefined
+let logger = undefined
+let notify = undefined
+let tickers = undefined
+
+let candleStickListener = undefined
+let tickListener = undefined
+let createOrderListener = undefined
+
+let exchanges = undefined
 
 module.exports = {
     boot: function() {
-        this.getDatabase()
-
         instances = JSON.parse(fs.readFileSync('./instance.json', 'utf8'))
         config = JSON.parse(fs.readFileSync('./conf.json', 'utf8'))
+
+        this.getDatabase()
+        this.getExchangeInstances()
     },
 
     getDatabase: () => {
-        if(db) {
+        if (db) {
             return db;
         }
 
@@ -27,7 +56,7 @@ module.exports = {
     },
 
     getTa: function() {
-        if(ta) {
+        if (ta) {
             return ta;
         }
 
@@ -35,27 +64,116 @@ module.exports = {
         return ta = new Ta(this.getDatabase(), this.getInstances())
     },
 
-    createWebserver: function() {
-        let express = require('express')
-        let app = express();
+    getCandleStickListener: function() {
+        if (candleStickListener) {
+            return candleStickListener;
+        }
 
-        app.set('twig options', {
-            allow_async: true,
-            strict_variables: false
+        return candleStickListener = new CandleStickListener(this.getDatabase())
+    },
+
+    getCreateOrderListener: function() {
+        if (createOrderListener) {
+            return createOrderListener;
+        }
+
+        return createOrderListener = new CreateOrderListener(this.getExchangeInstances(), this.getLogger())
+    },
+
+    getTickListener: function() {
+        if (tickListener) {
+            return tickListener;
+        }
+
+        return tickListener = new TickListener(this.getDatabase(), this.getTickers(), this.getInstances())
+    },
+
+    getEventEmitter: function() {
+        if (eventEmitter) {
+            return eventEmitter;
+        }
+
+        return eventEmitter = new events.EventEmitter()
+    },
+
+    getLogger: function() {
+        if (logger) {
+            return logger;
+        }
+
+        return logger = createLogger({
+            level: 'debug',
+            transports: [
+                new transports.File({filename: './var/log/log.log', timestamp: true}),
+                //new transports.Console()
+            ]
+        });
+    },
+
+    getNotifier: function() {
+        let notifiers = []
+
+        if (this.getConfig().notify.slack) {
+            notifiers.push(new Slack(this.getConfig().notify.slack))
+        }
+
+        return notify = new Notify(notifiers)
+    },
+
+    getTickers: function() {
+        if (tickers) {
+            return tickers;
+        }
+
+        return tickers = new Tickers()
+    },
+
+    createWebserverInstance: function() {
+        return new Http(this.getConfig(), this.getTa())
+    },
+
+    getExchangeInstances: function() {
+        if (exchanges) {
+            return exchanges;
+        }
+
+        let eventEmitter = this.getEventEmitter()
+
+        let myExchanges = {}
+
+        let instances = this.getInstances();
+        let config = this.getConfig();
+
+        let filter = instances.symbols.filter(function (symbol) {
+            return symbol['exchange'] === 'bitmex' && symbol['state'] === 'watch';
         });
 
-        app.use(express.static(__dirname + '/../web/static'))
+        if(filter.length > 0) {
+            myExchanges['bitmex'] = new Bitmex(eventEmitter, filter);
+        }
 
-        app.get('/', (req, res) => {
-            this.getTa().getTaForPeriods(['15m', '1h']).then((result) => {
-                res.render('../templates/base.html.twig', result);
-            })
+        let filter2 = instances.symbols.filter(function (symbol) {
+            return symbol['exchange'] === 'bitfinex' && symbol['state'] === 'watch';
         });
 
-        let port = this.getConfig().webserver.port || 8080;
-        console.log('Webserver listening on: ' + port)
+        if(filter2.length > 0) {
+            myExchanges['bitfinex'] = new Bitfinex(eventEmitter, config.exchanges.bitfinex, filter2, logger);
+        }
 
-        app.listen(port);
+        return exchanges = myExchanges
+    },
+
+    createTradeInstance: function() {
+        return new Trade(
+            this.getEventEmitter(),
+            this.getInstances(),
+            this.getNotifier(),
+            this.getLogger(),
+            this.getCreateOrderListener(),
+            this.getTickListener(),
+            this.getCandleStickListener(),
+            this.getTickers()
+        )
     },
 
     getInstances: () => {

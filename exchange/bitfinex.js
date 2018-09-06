@@ -35,8 +35,6 @@ module.exports = class Bitfinex {
 
                 // candles
                 instance.periods.forEach(function (period) {
-                    console.log('Bitfinex: symbol: ' + instance['symbol'] + ' p: ' + period);
-
                     if(period === '1d') {
                         period = period.toUpperCase();
                     }
@@ -44,7 +42,7 @@ module.exports = class Bitfinex {
                     ws.subscribeCandles('t' + instance['symbol'], period);
                 })
 
-                // ticket
+                // ticker
 
                 ws.subscribeTicker('t' + instance['symbol']);
                 //ws.subscribeTrades('t' + instance['symbol'])
