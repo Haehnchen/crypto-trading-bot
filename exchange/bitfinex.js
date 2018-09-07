@@ -4,35 +4,37 @@ const BFX = require('bitfinex-api-node')
 
 let Candlestick = require('./../dict/candlestick.js');
 let Ticker = require('./../dict/ticker.js');
-let Orderbook = require('./../dict/orderbook.js');
 let Position = require('../dict/position.js');
 
 let CandlestickEvent = require('./../event/candlestick_event.js');
 let TickerEvent = require('./../event/ticker_event.js');
-let OrderbookEvent = require('./../event/orderbook_event.js');
 let ExchangeOrder = require('../dict/exchange_order');
-let ExchangeOrdersEvents = require('../event/exchange_orders_event');
-let ExchangeOrderEvents = require('../event/exchange_order_event');
 
 let moment = require('moment')
-const request = require('request');
 
 module.exports = class Bitfinex {
     constructor(eventEmitter, config, instances, logger) {
         var bfx = new BFX(config['key'], config['secret'], {version: 2, transform: true, autoOpen: true});
         var ws = this.client = bfx.ws
+        let myLogger = logger
 
         this.orders = {}
         this.positions = []
 
         ws.on('error', function(err) {
-            console.log('error')
-            console.log(err)
+            myLogger.error('Bitfinex: error' + JSON.stringify(err))
+        })
+
+        ws.on('close', () => {
+            myLogger.error('Bitfinex: Connection closed')
+
+            ws.open()
         })
 
         ws.on('open', function() {
-            instances.forEach(function (instance) {
+            myLogger.debug('Bitfinex: Connection open')
 
+            instances.forEach(function (instance) {
                 // candles
                 instance.periods.forEach(function (period) {
                     if(period === '1d') {
@@ -43,10 +45,8 @@ module.exports = class Bitfinex {
                 })
 
                 // ticker
-
                 ws.subscribeTicker('t' + instance['symbol']);
                 //ws.subscribeTrades('t' + instance['symbol'])
-
                 //ws.subscribeOrderBook('t' + instance['symbol']);
             })
 
@@ -127,14 +127,14 @@ module.exports = class Bitfinex {
             let message = order[7]
             let ourId = order[4][2]
 
-            logger.info('on-req:' + JSON.stringify(order))
+            myLogger.info('on-req:' + JSON.stringify(order))
             console.log(id, status, message)
         })
 
         ws.on('ou', function(orderUpdate) {
             let order = Bitfinex.createExchangeOrder(orderUpdate)
 
-            logger.info('Bitfinex: order update:' + JSON.stringify(order) + JSON.stringify(orderUpdate))
+            myLogger.info('Bitfinex: order update:' + JSON.stringify(order) + JSON.stringify(orderUpdate))
 
             me.orders[order.id] = order
         })
@@ -142,13 +142,13 @@ module.exports = class Bitfinex {
         ws.on('oc', function(orderCancel) {
             let order = Bitfinex.createExchangeOrder(orderCancel)
 
-            logger.info('Bitfinex: order cancel:' + JSON.stringify(order) + JSON.stringify(orderCancel))
+            myLogger.info('Bitfinex: order cancel:' + JSON.stringify(order) + JSON.stringify(orderCancel))
 
             me.orders[order.id] = order
         })
 
         ws.on('ps', (positions) => {
-            logger.debug('Bitfinex: positions:' + JSON.stringify(positions))
+            myLogger.debug('Bitfinex: positions:' + JSON.stringify(positions))
 
             me.positions = Bitfinex.createPositions(positions)
             console.log(me.positions)
@@ -156,7 +156,7 @@ module.exports = class Bitfinex {
 
         ws.on('pu', (positions) => {
             console.log('!!!!!!!!PU!!!!!!')
-            logger.debug('Bitfinex: positions update:' + JSON.stringify(positions))
+            myLogger.debug('Bitfinex: positions update:' + JSON.stringify(positions))
         })
 
         ws.on('cs', function() {

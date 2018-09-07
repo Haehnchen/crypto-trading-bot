@@ -92,6 +92,24 @@ module.exports = class Ta {
                                 values[key]['crossed'] = number * multiplicator
                                 values[key]['crossed_index'] = number
                             }
+                        } else if (key == 'ao') {
+                            let r = taResult.slice()
+
+                            values[key]['trend'] = ta.getTrendingDirectionLastItem(r.slice(-2))
+
+                            let number = ta.getCrossedSince(r)
+
+                            if (number) {
+                                let multiplicator = 1
+                                if (v.period == '1h') {
+                                    multiplicator = 60
+                                } else if (v.period == '15m') {
+                                    multiplicator = 15
+                                }
+
+                                values[key]['crossed'] = number * multiplicator
+                                values[key]['crossed_index'] = number
+                            }
                         } else if (key == 'ema_200' || key == 'ema_55' || key == 'cci' || key == 'rsi' || key == 'ao' || key == 'mfi') {
                             values[key]['trend'] = ta.getTrendingDirection(taResult.slice().reverse().slice(-5))
                         }

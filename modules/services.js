@@ -149,7 +149,7 @@ module.exports = {
         });
 
         if(filter.length > 0) {
-            myExchanges['bitmex'] = new Bitmex(eventEmitter, filter);
+            myExchanges['bitmex'] = new Bitmex(eventEmitter, filter, this.getLogger());
         }
 
         let filter2 = instances.symbols.filter(function (symbol) {
@@ -157,7 +157,7 @@ module.exports = {
         });
 
         if(filter2.length > 0) {
-            myExchanges['bitfinex'] = new Bitfinex(eventEmitter, config.exchanges.bitfinex, filter2, logger);
+            myExchanges['bitfinex'] = new Bitfinex(eventEmitter, config.exchanges.bitfinex, filter2, this.getLogger());
         }
 
         return exchanges = myExchanges

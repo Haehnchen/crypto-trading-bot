@@ -76,13 +76,13 @@
     {% for row in rows %}
       <tr>
         <td><i class="fa-fw {% if 'USD' in row.symbol %}fas fa-dollar-sign{% else %}fab fa-bitcoin{% endif %}"></i> {{ row.symbol }}</td>
-        <td>{{ row.ticker.bid }}</td>
+        <td>{{ row.ticker.bid|price_format }}</td>
 
           {% for period in periods %}
               {% set ta = row.ta[period] %}
               <td class="{{ ta.ema_55.value > ta.ema_200.value ? 'text-success' : 'text-danger' }}"><i class="fas {{ ta.ema_55.value > ta.ema_200.value ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i></td>
-              <td class="{{ row.ticker.bid > ta.ema_55.value ? 'text-success' : 'text-danger' }}">{{ ta.ema_55.value|round(2) }}</td>
-              <td class="{{ row.ticker.bid > ta.ema_200.value ? 'text-success' : 'text-danger' }}">{{ ta.ema_200.value|round(2) }}</td>
+              <td class="{{ row.ticker.bid > ta.ema_55.value ? 'text-success' : 'text-danger' }}">{{ ta.ema_55.value|price_format }}</td>
+              <td class="{{ row.ticker.bid > ta.ema_200.value ? 'text-success' : 'text-danger' }}">{{ ta.ema_200.value|price_format }}</td>
               <td class="
                 {% if ta.rsi.value >= 80 or ta.rsi.value <= -20 %}font-weight-bold {% endif %}
                 {% if ta.rsi.value <= 30 %}text-success{% endif %}
@@ -96,7 +96,9 @@
                 {% if ta.cci.value >= 100 %}text-danger{% endif %}
                 {% if ta.cci.value > -100 and ta.rsi.value < 100 %}text-warning{% endif %}
             ">{{ ta.cci.value|round(2) }}</td>
-              <td class="{{ ta.ao.value > 0 ? 'text-success' : 'text-danger' }}">{{ ta.ao.value|round(4) }}</td>
+              <td class="{{ ta.ao.value > 0 ? 'text-success' : 'text-danger' }}">
+                  <i data-toggle="tooltip" title="{{ ta.ao.crossed }}m ago" class="fas fa-arrow-up {{ ta.ao.trend == 'up' ? 'trend-up' : 'trend-down' }} {% if (ta.ao.value > 0 and ta.ao.trend == 'down') or (ta.ao.value < 0 and ta.ao.trend == 'up') %}font-weight-bold{% endif %} {% if ta.ao.crossed_index < 5 %}blink{% endif %}"></i>
+              </td>
               <td class="{{ ta.macd.value.histogram > 0 ? 'text-success' : 'text-danger' }}">
                   <i data-toggle="tooltip" title="{{ ta.macd.crossed }}m ago" class="far fa-arrow-alt-circle-up {{ ta.macd.trend == 'up' ? 'trend-up' : 'trend-down' }} {% if (ta.macd.value.histogram > 0 and ta.macd.trend == 'down') or (ta.macd.value.histogram < 0 and ta.macd.trend == 'up') %}font-weight-bold{% endif %} {% if ta.macd.crossed_index < 5 %}blink{% endif %}"></i>
               </td>
