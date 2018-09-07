@@ -41,6 +41,15 @@
         animation: blink 1s step-start 0s infinite;
         animation-timing-function: ease-in-out;
     }
+
+    .period-start {
+        border-left: 1px solid #dee2e6
+    }
+
+    .table td,
+    .table th {
+        padding: .5rem;
+    }
 </style>
 
 <script>
@@ -54,22 +63,32 @@
   <table class="table">
     <thead>
     <tr>
-      <th scope="col">Symbol</th>
-            <th scope="col">&nbsp;</th>
+        <th scope="col">&nbsp;</th>
+        <th scope="col">&nbsp;</th>
 
-          {% for period in periods %}
-            <th scope="col">&nbsp;</th>
-            <th scope="col">{{ period }} ema(55)</th>
-            <th scope="col">{{ period }} ema(200)</th>
-            <th scope="col">{{ period }} rsi</th>
-            <th scope="col">{{ period }} cci</th>
-            <th scope="col">{{ period }} ao</th>
-            <th scope="col">{{ period }} macd</th>
-            <th scope="col">{{ period }} mfi</th>
-            <th scope="col">{{ period }} bb</th>
-            <th scope="col">{{ period }} wicked</th>
-          {% endfor %}
+        {% for period in periods %}
+            <th class="text-center period-start" scope="col" colspan="10">{{ period }}</th>
+        {% endfor %}
     </tr>
+
+    <tr>
+        <th scope="col">Symbol</th>
+        <th scope="col">Price</th>
+
+        {% for period in periods %}
+            <th class="period-start" scope="col">&nbsp;</th>
+            <th scope="col">ema(55)</th>
+            <th scope="col">ema(200)</th>
+            <th scope="col">rsi</th>
+            <th scope="col">cci</th>
+            <th scope="col">ao</th>
+            <th scope="col">macd</th>
+            <th scope="col">mfi</th>
+            <th scope="col">bb</th>
+            <th scope="col">wicked</th>
+        {% endfor %}
+    </tr>
+
     </thead>
     <tbody>
 
@@ -80,7 +99,7 @@
 
           {% for period in periods %}
               {% set ta = row.ta[period] %}
-              <td class="{{ ta.ema_55.value > ta.ema_200.value ? 'text-success' : 'text-danger' }}"><i class="fas {{ ta.ema_55.value > ta.ema_200.value ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i></td>
+              <td class="period-start {{ ta.ema_55.value > ta.ema_200.value ? 'text-success' : 'text-danger' }}"><i class="fas {{ ta.ema_55.value > ta.ema_200.value ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i></td>
               <td class="{{ row.ticker.bid > ta.ema_55.value ? 'text-success' : 'text-danger' }}">{{ ta.ema_55.value|price_format }}</td>
               <td class="{{ row.ticker.bid > ta.ema_200.value ? 'text-success' : 'text-danger' }}">{{ ta.ema_200.value|price_format }}</td>
               <td class="
