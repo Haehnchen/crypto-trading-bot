@@ -31,11 +31,19 @@ module.exports = class Http {
         app.use(express.static(__dirname + '/../web/static'))
 
         let ta = this.ta
+
         app.get('/', (req, res) => {
             ta.getTaForPeriods(periods).then((result) => {
                 res.render('../templates/base.html.twig', result);
             })
         });
+
+        app.get('/tradingview/:symbol', (req, res) => {
+            res.render('../templates/tradingview.html.twig', {
+                symbol: req.params.symbol,
+            });
+        });
+
 
         let port = this.config.webserver.port || 8080;
 
