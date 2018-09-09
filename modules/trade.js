@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const os = require('os');
 
 module.exports = class Trade {
-    constructor(eventEmitter, instances, notify, logger, createOrderListener, tickListener, candleStickListener, tickers) {
+    constructor(eventEmitter, instances, notify, logger, createOrderListener, tickListener, candleStickListener, tickers, candleStickLogListener, tickerDatabaseListener, tickerLogListener) {
         this.eventEmitter = eventEmitter
         this.instances = instances
         this.notify = notify
@@ -14,6 +14,9 @@ module.exports = class Trade {
         this.tickListener = tickListener
         this.candleStickListener = candleStickListener
         this.tickers = tickers
+        this.candleStickLogListener = candleStickLogListener
+        this.tickerDatabaseListener = tickerDatabaseListener
+        this.tickerLogListener = tickerLogListener
     }
 
     start() {
@@ -30,6 +33,7 @@ module.exports = class Trade {
         let message = 'Start: ' + instanceId + ' - ' + os.hostname() + ' - ' + os.platform() + ' - ' + moment().format() + ' - ' + notifyActivePairs.join(', ');
 
         this.notify.send(message)
+
         console.log(message)
 
         /*
@@ -44,9 +48,13 @@ module.exports = class Trade {
             eventEmitter.emit('tick', {})
         }, 5000);
 
+        let me = this
         let tickers = this.tickers
-        eventEmitter.on('ticker', function(tickerEvent) {
+
+        eventEmitter.on('ticker', async function(tickerEvent) {
             tickers.set(tickerEvent.ticker)
+            me.tickerDatabaseListener.onTicker(tickerEvent)
+            me.tickerLogListener.onTicker(tickerEvent)
         });
 
         eventEmitter.on('orderbook', function(orderbookEvent) {
@@ -61,10 +69,12 @@ module.exports = class Trade {
             console.log(exchangeOrderEvent)
         });
 
-        let me = this
+        eventEmitter.on('candlestick', async (event) => {
+            me.candleStickListener.onCandleStick(event)
+            me.candleStickLogListener.onCandleStick(event)
+        })
 
-        eventEmitter.on('candlestick', (event) => me.candleStickListener.onCandleStick(event))
-        eventEmitter.on('order', (event) => me.createOrderListener.onCandleStick(event))
-        eventEmitter.on('tick', () => me.tickListener.onTick())
+        eventEmitter.on('order', async (event) => me.createOrderListener.onCandleStick(event))
+        eventEmitter.on('tick', async () => me.tickListener.onTick())
     }
 };
