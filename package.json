@@ -20,7 +20,7 @@
     "sendmail": "^1.4.1",
     "sqlite3": "^4.0.1",
     "sqlite3-transactions": "0.0.5",
-    "technicalindicators": "^1.1.11",
+    "technicalindicators": "^1.1.13",
     "tulind": "^0.8.10",
     "twig": "^1.12.0",
     "winston": "^3.0.0",

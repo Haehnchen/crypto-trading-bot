@@ -258,6 +258,19 @@ module.exports = {
 
                     resolve({'wicked': results.reverse()})
                 }),
+                new Promise((resolve) => {
+                    const StochasticRSI = require('technicalindicators').StochasticRSI;
+
+                    let f = new StochasticRSI({
+                        values: marketData.close,
+                        rsiPeriod: 14,
+                        stochasticPeriod: 14,
+                        kPeriod: 3,
+                        dPeriod: 3,
+                    })
+
+                    resolve({'stoch_rsi': f.getResult()})
+                }),
             ]
 
             Promise.all(calculations).then((values) => {

@@ -81,11 +81,11 @@
             <th scope="col">ema(200)</th>
             <th scope="col">rsi</th>
             <th scope="col">cci</th>
+            <th scope="col">srsi</th>
             <th scope="col">ao</th>
             <th scope="col">macd</th>
             <th scope="col">mfi</th>
             <th scope="col">bb</th>
-            <th scope="col">wicked</th>
         {% endfor %}
     </tr>
 
@@ -103,7 +103,7 @@
               <td class="{{ row.ticker.bid > ta.ema_55.value ? 'text-success' : 'text-danger' }}">{{ ta.ema_55.value|price_format }}</td>
               <td class="{{ row.ticker.bid > ta.ema_200.value ? 'text-success' : 'text-danger' }}">{{ ta.ema_200.value|price_format }}</td>
               <td class="
-                {% if ta.rsi.value >= 80 or ta.rsi.value <= -20 %}font-weight-bold {% endif %}
+                {% if ta.rsi.value >= 80 or ta.rsi.value <= 20 %}font-weight-bold {% endif %}
                 {% if ta.rsi.value <= 30 %}text-success{% endif %}
                 {% if ta.rsi.value >= 70 %}text-danger{% endif %}
                 {% if ta.rsi.value > 30 and ta.rsi.value < 50 %}text-warning{% endif %}
@@ -115,6 +115,15 @@
                 {% if ta.cci.value >= 100 %}text-danger{% endif %}
                 {% if ta.cci.value > -100 and ta.rsi.value < 100 %}text-warning{% endif %}
             ">{{ ta.cci.value|round(2) }}</td>
+              <td>
+                  {% if ta.stoch_rsi.value.k >= 80 and ta.stoch_rsi.value.d >= 80 %}
+                        <i data-toggle="tooltip" title="{{ ta.stoch_rsi.value.k|round(2) }}" class="far fa-circle text-danger"></i>
+                      {% elseif ta.stoch_rsi.value.k <= 20 and ta.stoch_rsi.value.d <= 20 %}
+                        <i data-toggle="tooltip" title="{{ ta.stoch_rsi.value.k|round(2) }}" class="far fa-circle text-success"></i>
+                      {% else %}
+                        <i data-toggle="tooltip" title="{{ ta.stoch_rsi.value.k|round(2) }}" class="far fa-arrow-alt-circle-up {{ ta.stoch_rsi.value.k >= ta.stoch_rsi.value.d ? 'trend-up text-success' : 'trend-down text-danger' }}"></i>
+                  {% endif %}
+              </td>
               <td class="{{ ta.ao.value > 0 ? 'text-success' : 'text-danger' }}">
                   <i data-toggle="tooltip" title="{{ ta.ao.crossed }}m ago" class="fas fa-arrow-up {{ ta.ao.trend == 'up' ? 'trend-up' : 'trend-down' }} {% if (ta.ao.value > 0 and ta.ao.trend == 'down') or (ta.ao.value < 0 and ta.ao.trend == 'up') %}font-weight-bold{% endif %} {% if ta.ao.crossed_index < 5 %}blink{% endif %}"></i>
               </td>
@@ -127,9 +136,6 @@
                 {% if ta.mfi.value > 20 and ta.rsi.value < 80 %}text-warning{% endif %}
             ">{{ ta.mfi.value|round(2) }}</td>
               <td class="{{ row.ticker.bid > ta.bollinger_bands.value.middle ? 'text-success' : 'text-danger' }}">{{ ta.bollinger_bands.value.lower|round(2) }} // {{ ta.bollinger_bands.value.upper|round(2) }}</td>
-              <td>
-                  {{ ta.wicked.value.top|round(1) }} / {{ ta.wicked.value.body|round(1) }} / {{ ta.wicked.value.bottom|round(1) }}
-              </td>
           {% endfor %}
       </tr>
     {% endfor %}

@@ -155,7 +155,6 @@ module.exports = class Bitfinex {
         })
 
         ws.on('pu', (positions) => {
-            console.log('!!!!!!!!PU!!!!!!')
             myLogger.debug('Bitfinex: positions update:' + JSON.stringify(positions))
         })
 

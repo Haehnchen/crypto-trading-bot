@@ -1,5 +1,5 @@
 let Candlestick = require('./../dict/candlestick.js');
-const ta = require('../utils/technical_analysis');
+let ta = require('../utils/technical_analysis');
 let Ticker = require('../dict/ticker');
 
 module.exports = class Ta {
