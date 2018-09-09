@@ -13,3 +13,5 @@ CREATE TABLE candlesticks (
 
 CREATE UNIQUE INDEX unique_candle
   ON candlesticks (exchange, symbol, period, time);
+
+CREATE INDEX time_idx ON candlesticks  (time);

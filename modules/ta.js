@@ -17,7 +17,7 @@ module.exports = class Ta {
             this.instances['symbols'].forEach((symbol) => {
                 periods.forEach((period) => {
                     promises.push(new Promise((resolve) => {
-                        let sql = 'SELECT * from candlesticks where exchange = ? AND symbol = ? and period = ? order by time DESC LIMIT 500';
+                        let sql = 'SELECT * from candlesticks where exchange = ? AND symbol = ? and period = ? order by time DESC LIMIT 200';
 
                         db.all(sql, [symbol.exchange, symbol.symbol, period], (err, rows) => {
                             if (err) {

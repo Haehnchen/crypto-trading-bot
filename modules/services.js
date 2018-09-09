@@ -7,6 +7,7 @@ const { createLogger, transports } = require('winston');
 
 const Notify = require('../notify/notify');
 let Slack = require('../notify/slack');
+let Mail = require('../notify/mail');
 
 let Tickers = require('../storage/tickers');
 
@@ -19,6 +20,8 @@ let Bitmex = require('../exchange/bitmex')
 
 let Trade = require('../modules/trade')
 let Http = require('../modules/http')
+
+var _ = require('lodash');
 
 let db = undefined
 let instances = undefined
@@ -113,8 +116,14 @@ module.exports = {
     getNotifier: function() {
         let notifiers = []
 
-        if (this.getConfig().notify.slack) {
-            notifiers.push(new Slack(this.getConfig().notify.slack))
+        let config = this.getConfig();
+
+        if (_.has(config, 'notify.slack')) {
+            notifiers.push(new Slack(config.notify.slack))
+        }
+
+        if (_.has(config, 'notify.mail.username')) {
+            notifiers.push(new Mail(this.createMailer(), this.getLogger()))
         }
 
         return notify = new Notify(notifiers)
@@ -174,6 +183,17 @@ module.exports = {
             this.getCandleStickListener(),
             this.getTickers()
         )
+    },
+
+    createMailer: function() {
+        var mail = require("nodemailer")
+
+        let config = this.getConfig()
+
+        return mail.createTransport(
+            'smtps://' + config.notify.mail.username +':' + config.notify.mail.password + '@' + config.notify.mail.server + ':' + (config.notify.mail.password || 465), {
+                from: config.notify.mail.username
+            });
     },
 
     getInstances: () => {

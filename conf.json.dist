@@ -14,6 +14,12 @@
             "webhook": "https://hooks.slack.com/services/....",
             "name": "crypto-bot",
             "icon_emoji": ":ghost:"
+        },
+        "mail": {
+            "username": "foo@foo.de",
+            "password": "bar",
+            "server": "mail.foo.de",
+            "port": 465
         }
     },
     "webserver": {

@@ -32,10 +32,11 @@ module.exports = class Trade {
         this.notify.send(message)
         console.log(message)
 
+        /*
         setInterval(() => {
             this.notify.send('Heartbeat: ' + instanceId + ' - ' + os.hostname() + ' - ' + os.platform() + ' - ' + moment().format() + ' - ' + notifyActivePairs.join(', '))
         }, 60 * 60 * 30);
-
+        */
 
         let eventEmitter = this.eventEmitter
 
