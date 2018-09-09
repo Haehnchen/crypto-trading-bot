@@ -147,6 +147,18 @@ module.exports = {
     },
 
     /**
+     * https://www.tradingview.com/wiki/Bollinger_Bands_%25B_(%25B)
+     *
+     * @param currentPrice
+     * @param upper
+     * @param lower
+     * @returns {number} percent value in integer
+     */
+    getBollingerBandPrice: function (currentPrice, upper, lower) {
+        return ((currentPrice - lower) / (upper - lower)) * 100
+    },
+
+    /**
      * @param lookbacks oldest first
      * @returns {Promise<any>}
      */

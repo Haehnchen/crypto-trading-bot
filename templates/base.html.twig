@@ -135,7 +135,13 @@
                 {% if ta.mfi.value >= 80 %}text-danger{% endif %}
                 {% if ta.mfi.value > 20 and ta.rsi.value < 80 %}text-warning{% endif %}
             ">{{ ta.mfi.value|round(2) }}</td>
-              <td class="{{ row.ticker.bid > ta.bollinger_bands.value.middle ? 'text-success' : 'text-danger' }}">{{ ta.bollinger_bands.value.lower|round(2) }} // {{ ta.bollinger_bands.value.upper|round(2) }}</td>
+              <td class="
+                {% if ta.bollinger_bands.percent >= 95 or ta.bollinger_bands.percent <= 5 %}font-weight-bold {% endif %}
+                {% if ta.bollinger_bands.percent <= 5 %}text-success{% endif %}
+                {% if ta.bollinger_bands.percent >= 95 %}text-danger{% endif %}
+                {% if ta.bollinger_bands.percent > 5 and ta.bollinger_bands.percent < 50 %}text-warning{% endif %}
+                {% if ta.bollinger_bands.percent > 50 and ta.bollinger_bands.percent < 95 %}text-orange{% endif %}
+                ">{{ ta.bollinger_bands.percent|round }} % </td>
           {% endfor %}
       </tr>
     {% endfor %}

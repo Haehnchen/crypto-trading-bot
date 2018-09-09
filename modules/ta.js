@@ -40,7 +40,7 @@ module.exports = class Ta {
                                     'symbol': symbol.symbol,
                                     'period': period,
                                     'ta': result,
-                                    'ticker': new Ticker(symbol.exchange, symbol.symbol, undefined, candles[0].close),
+                                    'ticker': new Ticker(symbol.exchange, symbol.symbol, undefined, candles[0].close, candles[0].close),
                                 })
                             })
                         });
@@ -110,6 +110,8 @@ module.exports = class Ta {
                                 values[key]['crossed'] = number * multiplicator
                                 values[key]['crossed_index'] = number
                             }
+                        } else if (key == 'bollinger_bands') {
+                            values[key]['percent'] = ta.getBollingerBandPrice((v.ticker.ask + v.ticker.bid) / 2, values[key].value.upper, values[key].value.lower)
                         } else if (key == 'ema_200' || key == 'ema_55' || key == 'cci' || key == 'rsi' || key == 'ao' || key == 'mfi') {
                             values[key]['trend'] = ta.getTrendingDirection(taResult.slice().reverse().slice(-5))
                         }
