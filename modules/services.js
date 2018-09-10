@@ -94,7 +94,7 @@ module.exports = {
             return tickListener
         }
 
-        return tickListener = new TickListener(this.getDatabase(), this.getTickers(), this.getInstances())
+        return tickListener = new TickListener(this.getDatabase(), this.getTickers(), this.getInstances(), this.getNotifier())
     },
 
     getCandleStickLogListener: function() {
