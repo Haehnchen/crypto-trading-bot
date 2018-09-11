@@ -3,9 +3,10 @@
 let express = require('express')
 
 module.exports = class Http {
-    constructor(config, ta) {
+    constructor(config, ta, signalHttp) {
         this.config = config
         this.ta = ta
+        this.signalHttp = signalHttp
     }
 
     start() {
@@ -41,6 +42,12 @@ module.exports = class Http {
         app.get('/tradingview/:symbol', (req, res) => {
             res.render('../templates/tradingview.html.twig', {
                 symbol: req.params.symbol,
+            });
+        });
+
+        app.get('/signals', async (req, res) => {
+            res.render('../templates/signals.html.twig', {
+                signals: await this.signalHttp.getSignals(Math.floor(Date.now() / 1000) - (60 * 60 * 48)),
             });
         });
 

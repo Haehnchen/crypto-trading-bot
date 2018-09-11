@@ -54,3 +54,17 @@ CREATE TABLE ticker_log (
   income_at  BIGINT       NULL
 );
 CREATE INDEX ticker_log_idx ON ticker_log (exchange, symbol);
+
+CREATE TABLE signals (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  exchange   VARCHAR(255) NULL,
+  symbol     VARCHAR(255) NULL,
+  ask        REAL         NULL,
+  bid        REAL         NULL,
+  options    TEXT         NULL,
+  side       VARCHAR(50)  NULL,
+  strategy   VARCHAR(50)  NULL,
+  income_at  BIGINT       NULL,
+  state      VARCHAR(50)  NULL
+);
+CREATE INDEX symbol_idx ON signals (exchange, symbol);

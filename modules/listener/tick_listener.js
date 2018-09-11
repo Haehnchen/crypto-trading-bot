@@ -6,11 +6,12 @@ const moment = require('moment');
 let strategy = require('../../strategy/collection');
 
 module.exports = class TickListener {
-    constructor(db, tickers, instances, notifier) {
+    constructor(db, tickers, instances, notifier, signalLogger) {
         this.db = db
         this.tickers = tickers
         this.instances = instances
         this.notifier = notifier
+        this.signalLogger = signalLogger
 
         this.notified = {}
     }
@@ -41,7 +42,10 @@ module.exports = class TickListener {
                 (async () => {
                     const taResult = await ta.getIndicatorsLookbacks(candles.slice().reverse());
 
-                    const signal = await strategy.cci(taResult.ema_55.slice(), taResult.ema_200.slice(), taResult.cci.slice())
+                    //const signal = await strategy.cci(taResult.ema_55.slice(), taResult.ema_200.slice(), taResult.cci.slice())
+
+                    let signal = {'signal': 'short'}
+
 
                     if (signal && signal.signal) {
                         let signalWindow = moment().subtract(30, 'minutes').toDate();
@@ -51,6 +55,9 @@ module.exports = class TickListener {
                         } else {
                             this.notified[symbol.exchange + symbol.symbol] = new Date()
                             notifier.send('[' + signal.signal + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
+
+                            // log signal
+                            this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask}, signal.signal, 'cci')
                         }
                     }
 

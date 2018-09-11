@@ -1,0 +1,32 @@
+{% extends './layout.html.twig' %}
+
+{% block content %}
+    <div class="container-fluid">
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Exchange</th>
+                <th scope="col">Symbol</th>
+                <th scope="col">Strategy</th>
+                <th scope="col">Income</th>
+                <th scope="col">Price</th>
+                <th scope="col">Options</th>
+                <th scope="col">State</th>
+            </tr>
+
+            </thead>
+            <tbody>
+            {% for signal in signals %}
+                <tr>
+                    <td>{{ signal.exchange }}</td>
+                    <td>{{ signal.symbol }}</td>
+                    <td>{{ signal.strategy }}</td>
+                    <td>{{ signal.income_at|date('d.m.y H:i') }}</td>
+                    <td>{{ signal.options }}</td>
+                    <td>{{ signal.state }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
