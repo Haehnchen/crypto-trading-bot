@@ -42,10 +42,7 @@ module.exports = class TickListener {
                 (async () => {
                     const taResult = await ta.getIndicatorsLookbacks(candles.slice().reverse());
 
-                    //const signal = await strategy.cci(taResult.ema_55.slice(), taResult.ema_200.slice(), taResult.cci.slice())
-
-                    let signal = {'signal': 'short'}
-
+                    const signal = await strategy.cci(taResult.ema_55.slice(), taResult.ema_200.slice(), taResult.cci.slice())
 
                     if (signal && signal.signal) {
                         let signalWindow = moment().subtract(30, 'minutes').toDate();
