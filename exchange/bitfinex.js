@@ -14,8 +14,17 @@ let moment = require('moment')
 
 module.exports = class Bitfinex {
     constructor(eventEmitter, config, instances, logger) {
-        var bfx = new BFX(config['key'], config['secret'], {version: 2, transform: true, autoOpen: true});
-        var ws = this.client = bfx.ws
+        this.eventEmitter = eventEmitter
+
+        const ws = new BFX({
+            apiKey: config['key'],
+            apiSecret: config['secret'],
+            version: 2,
+            transform: true,
+            autoOpen: true,
+        }).ws()
+
+        //var ws = this.client = bfx.ws
         let myLogger = logger
 
         this.orders = {}
@@ -41,7 +50,7 @@ module.exports = class Bitfinex {
                         period = period.toUpperCase();
                     }
 
-                    ws.subscribeCandles('t' + instance['symbol'], period);
+                    ws.subscribeCandles('trade:' + period + ':t' + instance['symbol'])
                 })
 
                 // ticker
@@ -54,6 +63,7 @@ module.exports = class Bitfinex {
             ws.auth()
         })
 
+
         ws.on('ticker', (pair, ticker) => {
             let myPair = pair;
 
@@ -64,11 +74,11 @@ module.exports = class Bitfinex {
             eventEmitter.emit('ticker', new TickerEvent(
                 'bitfinex',
                 myPair,
-                new Ticker('bitfinex', myPair, moment().format('X'), ticker['BID'], ticker['ASK'])
+                new Ticker('bitfinex', myPair, moment().format('X'), ticker['bid'], ticker['ask'])
             ));
         })
 
-        ws.on('candles', (pair, candles) => {
+        ws.on('candle', (candles, pair) => {
             let options = pair.split(':');
 
             let period = options[1].toLowerCase();
@@ -89,15 +99,15 @@ module.exports = class Bitfinex {
             }
 
             let sticks = myCandles.filter(function (candle) {
-                return typeof candle['MTS'] !== 'undefined';
+                return typeof candle['mts'] !== 'undefined';
             }).map(function(candle) {
                 return new Candlestick(
-                    Math.round(candle['MTS'] / 1000),
-                    candle['OPEN'],
-                    candle['HIGH'],
-                    candle['LOW'],
-                    candle['CLOSE'],
-                    candle['VOLUME'],
+                    Math.round(candle['mts'] / 1000),
+                    candle['open'],
+                    candle['high'],
+                    candle['low'],
+                    candle['close'],
+                    candle['volume'],
                 );
             });
 
@@ -173,6 +183,8 @@ module.exports = class Bitfinex {
         ws.on('message', () => {
             //console.log(arguments)
         })
+
+        ws.open()
     }
 
     order(symbol, order) {
@@ -328,6 +340,48 @@ module.exports = class Bitfinex {
         return undefined
     }
 
+    candlestickListener(candles, pair) {
+
+        let options = pair.split(':');
+
+        let period = options[1].toLowerCase();
+        let mySymbol = options[2];
+
+        if (mySymbol.substring(0, 1) === 't') {
+            mySymbol = mySymbol.substring(1)
+        }
+
+        let myCandles = [];
+
+        if(Array.isArray(candles)) {
+            candles.forEach(function(candle) {
+                myCandles.push(candle)
+            })
+        } else {
+            myCandles.push(candles)
+        }
+
+        let sticks = myCandles.filter(function (candle) {
+            return typeof candle['mts'] !== 'undefined';
+        }).map(function(candle) {
+            return new Candlestick(
+                Math.round(candle['mts'] / 1000),
+                candle['open'],
+                candle['high'],
+                candle['low'],
+                candle['close'],
+                candle['volume'],
+            );
+        });
+
+        if(sticks.length === 0) {
+            console.error('Candle issue: ' + pair)
+            return;
+        }
+
+        this.eventEmitter.emit('candlestick', new CandlestickEvent('bitfinex', mySymbol, period.toLowerCase(), sticks));
+    }
+
     static createExchangeOrder(order) {
         let status = undefined
         let retry = false
@@ -396,4 +450,5 @@ module.exports = class Bitfinex {
         })
     }
 }
+
 
