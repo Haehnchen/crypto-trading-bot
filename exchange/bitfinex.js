@@ -31,7 +31,7 @@ module.exports = class Bitfinex {
             ws.open()
         })
 
-        ws.on('open', function() {
+        ws.on('open', () => {
             myLogger.debug('Bitfinex: Connection open')
 
             instances.forEach(function (instance) {
@@ -54,7 +54,7 @@ module.exports = class Bitfinex {
             ws.auth()
         })
 
-        ws.on('ticker', function(pair, ticker) {
+        ws.on('ticker', (pair, ticker) => {
             let myPair = pair;
 
             if (myPair.substring(0, 1) === 't') {
@@ -68,7 +68,7 @@ module.exports = class Bitfinex {
             ));
         })
 
-        ws.on('candles', function(pair, candles) {
+        ws.on('candles', (pair, candles) => {
             let options = pair.split(':');
 
             let period = options[1].toLowerCase();
@@ -110,7 +110,7 @@ module.exports = class Bitfinex {
         })
 
         var me = this
-        ws.on('on', function(orderNew) {
+        ws.on('on', (orderNew) => {
             let order = Bitfinex.createExchangeOrder(orderNew)
 
             logger.info('order new:' + JSON.stringify(order))
@@ -120,7 +120,7 @@ module.exports = class Bitfinex {
             console.log(me.orders[order.id])
         })
 
-        ws.on('on-req', function(order) {
+        ws.on('on-req', (order) => {
             let id = order[0]
 
             let status = order[6]
@@ -131,7 +131,7 @@ module.exports = class Bitfinex {
             console.log(id, status, message)
         })
 
-        ws.on('ou', function(orderUpdate) {
+        ws.on('ou', orderUpdate => {
             let order = Bitfinex.createExchangeOrder(orderUpdate)
 
             myLogger.info('Bitfinex: order update:' + JSON.stringify(order) + JSON.stringify(orderUpdate))
@@ -139,7 +139,7 @@ module.exports = class Bitfinex {
             me.orders[order.id] = order
         })
 
-        ws.on('oc', function(orderCancel) {
+        ws.on('oc', (orderCancel) => {
             let order = Bitfinex.createExchangeOrder(orderCancel)
 
             myLogger.info('Bitfinex: order cancel:' + JSON.stringify(order) + JSON.stringify(orderCancel))
@@ -158,11 +158,11 @@ module.exports = class Bitfinex {
             myLogger.debug('Bitfinex: positions update:' + JSON.stringify(positions))
         })
 
-        ws.on('cs', function() {
+        ws.on('cs', () => {
             console.log()
         })
 
-        ws.on('os', function(postions) {
+        ws.on('os', (postions) => {
             Bitfinex.createExchangeOrders(postions).forEach((order) => {
                 me.orders[order.id] = order
             })
@@ -170,7 +170,7 @@ module.exports = class Bitfinex {
             console.log(me.orders)
         })
 
-        ws.on('message', function() {
+        ws.on('message', () => {
             //console.log(arguments)
         })
     }
