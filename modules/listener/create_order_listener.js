@@ -19,7 +19,10 @@ module.exports = class CreateOrderListener {
 
         let exchange = this.exchanges[orderEvent.exchange]
 
-        let ordersForSymbol = exchange.getOrdersForSymbol(orderEvent.symbol);
+        // filter same direction
+        let ordersForSymbol = exchange.getOrdersForSymbol(orderEvent.order.symbol).filter((order) => {
+            return order.side === orderEvent.order.side
+        })
 
         if (ordersForSymbol.length === 0) {
             this.triggerOrder(exchange, orderEvent.order)

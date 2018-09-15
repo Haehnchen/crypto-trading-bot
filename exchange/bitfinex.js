@@ -146,31 +146,20 @@ module.exports = class Bitfinex {
             me.orders[order.id] = order
         })
 
+        ws.onOrderSnapshot({}, (orders) => {
+            Bitfinex.createExchangeOrders(orders).forEach((order) => {
+                me.orders[order.id] = order
+            })
+        })
+
         ws.on('ps', (positions) => {
             myLogger.debug('Bitfinex: positions:' + JSON.stringify(positions))
 
             me.positions = Bitfinex.createPositions(positions)
-            console.log(me.positions)
         })
 
         ws.on('pu', (positions) => {
             myLogger.debug('Bitfinex: positions update:' + JSON.stringify(positions))
-        })
-
-        ws.on('cs', () => {
-            console.log()
-        })
-
-        ws.on('os', (postions) => {
-            Bitfinex.createExchangeOrders(postions).forEach((order) => {
-                me.orders[order.id] = order
-            })
-
-            console.log(me.orders)
-        })
-
-        ws.on('message', () => {
-            //console.log(arguments)
         })
 
         ws.open()
@@ -230,19 +219,11 @@ module.exports = class Bitfinex {
     updateOrder(id, order) {
         var amount = order.side === 'buy' ? order.amount : order.amount * -1
 
-        var myOrder = [
-            0,
-            'ou',
-            null,
-            {
-                id: id,
-                type: 'LIMIT',
-                amount: String(amount),
-                price: String(order.price),
-            }
-        ]
-
-        this.client.submitOrder(myOrder);
+        this.client.updateOrder({
+            'id': id,
+            'amount': String(amount),
+            'price': String(order.price),
+        })
 
         var me = this
 
@@ -356,7 +337,7 @@ module.exports = class Bitfinex {
             price,
             order['amount'],
             retry,
-            'cid',
+            order['cid'],
             order['amount'] < 0 ? 'sell' : 'buy'
         )
     }
