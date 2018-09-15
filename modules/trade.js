@@ -5,7 +5,20 @@ const crypto = require('crypto');
 const os = require('os');
 
 module.exports = class Trade {
-    constructor(eventEmitter, instances, notify, logger, createOrderListener, tickListener, candleStickListener, tickers, candleStickLogListener, tickerDatabaseListener, tickerLogListener) {
+    constructor(
+        eventEmitter,
+        instances,
+        notify,
+        logger,
+        createOrderListener,
+        tickListener,
+        candleStickListener,
+        tickers,
+        candleStickLogListener,
+        tickerDatabaseListener,
+        tickerLogListener,
+        signalListener,
+    ) {
         this.eventEmitter = eventEmitter
         this.instances = instances
         this.notify = notify
@@ -17,6 +30,7 @@ module.exports = class Trade {
         this.candleStickLogListener = candleStickLogListener
         this.tickerDatabaseListener = tickerDatabaseListener
         this.tickerLogListener = tickerLogListener
+        this.signalListener = signalListener
     }
 
     start() {
@@ -48,6 +62,10 @@ module.exports = class Trade {
             eventEmitter.emit('tick', {})
         }, 5000);
 
+        setInterval(() => {
+            eventEmitter.emit('signal_tick', {})
+        }, 1000);
+
         let me = this
         let tickers = this.tickers
 
@@ -76,5 +94,6 @@ module.exports = class Trade {
 
         eventEmitter.on('order', async (event) => me.createOrderListener.onCreateOrder(event))
         eventEmitter.on('tick', async () => me.tickListener.onTick())
+        eventEmitter.on('signal_tick', async () => me.signalListener.onSignalTick())
     }
 };

@@ -20,6 +20,9 @@ let TickerLogListener = require('../modules/listener/ticker_log_listener')
 
 let SignalLogger = require('../modules/signal/signal_logger')
 let SignalHttp = require('../modules/signal/signal_http')
+let SignalListener = require('../modules/signal/signal_listener')
+
+let SignalRepository = require('../modules/repository/signal_repository')
 
 let Bitfinex = require('../exchange/bitfinex')
 let Bitmex = require('../exchange/bitmex')
@@ -47,6 +50,9 @@ let createOrderListener = undefined
 
 let signalLogger = undefined
 let signalHttp = undefined
+let signalListener = undefined
+
+let signalRepository = undefined
 
 let exchanges = undefined
 
@@ -150,6 +156,29 @@ module.exports = {
         return signalHttp = new SignalHttp(this.getDatabase())
     },
 
+    getSignalListener: function() {
+        if (signalListener) {
+            return signalListener
+        }
+
+        return signalListener = new SignalListener(
+            this.getSignalRepository(),
+            this.getInstances(),
+            this.getTickers(),
+            this.getEventEmitter(),
+        )
+    },
+
+    getSignalRepository: function() {
+        if (signalRepository) {
+            return signalRepository
+        }
+
+        return signalListener = new SignalRepository(
+            this.getDatabase(),
+        )
+    },
+
     getEventEmitter: function() {
         if (eventEmitter) {
             return eventEmitter;
@@ -244,6 +273,7 @@ module.exports = {
             this.getCandleStickLogListener(),
             this.getTickerDatabaseListener(),
             this.getTickerLogListener(),
+            this.getSignalListener()
         )
     },
 
