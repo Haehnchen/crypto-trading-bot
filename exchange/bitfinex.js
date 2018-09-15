@@ -15,8 +15,9 @@ let moment = require('moment')
 module.exports = class Bitfinex {
     constructor(eventEmitter, config, instances, logger) {
         this.eventEmitter = eventEmitter
+        this.logger = logger
 
-        const ws = new BFX({
+        const ws = this.client = new BFX({
             apiKey: config['key'],
             apiSecret: config['secret'],
             version: 2,
@@ -120,39 +121,27 @@ module.exports = class Bitfinex {
         })
 
         var me = this
-        ws.on('on', (orderNew) => {
-            let order = Bitfinex.createExchangeOrder(orderNew)
 
-            logger.info('order new:' + JSON.stringify(order))
-
-            me.orders[order.id] = order
-
-            console.log(me.orders[order.id])
-        })
-
-        ws.on('on-req', (order) => {
-            let id = order[0]
-
-            let status = order[6]
-            let message = order[7]
-            let ourId = order[4][2]
-
-            myLogger.info('on-req:' + JSON.stringify(order))
-            console.log(id, status, message)
-        })
-
-        ws.on('ou', orderUpdate => {
+        ws.onOrderUpdate({}, (orderUpdate) => {
             let order = Bitfinex.createExchangeOrder(orderUpdate)
 
-            myLogger.info('Bitfinex: order update:' + JSON.stringify(order) + JSON.stringify(orderUpdate))
+            me.logger.info('Bitfinex: order cancel: ' + JSON.stringify(order))
 
             me.orders[order.id] = order
         })
 
-        ws.on('oc', (orderCancel) => {
+        ws.onOrderNew({}, (orderUpdate) => {
+            let order = Bitfinex.createExchangeOrder(orderUpdate)
+
+            me.logger.info('Bitfinex: order cancel: ' + JSON.stringify(order))
+
+            me.orders[order.id] = order
+        })
+
+        ws.onOrderClose({}, (orderCancel) => {
             let order = Bitfinex.createExchangeOrder(orderCancel)
 
-            myLogger.info('Bitfinex: order cancel:' + JSON.stringify(order) + JSON.stringify(orderCancel))
+            me.logger.info('Bitfinex: order cancel: ' + JSON.stringify(order))
 
             me.orders[order.id] = order
         })
@@ -187,33 +176,29 @@ module.exports = class Bitfinex {
         ws.open()
     }
 
-    order(symbol, order) {
+    order(order) {
         var me = this
-
-        var cid = Math.round(((new Date()).getTime()).toString() * Math.random())
 
         var amount = order.side === 'buy' ? order.amount : order.amount * -1
 
-        var myOrder = [
-            0,
-            'on',
-            null,
-            {
-                cid: cid,
-                type: 'LIMIT',
-                symbol: 't' + symbol,
-                amount: String(amount),
-                price: String(order.price),
-                hidden: 0,
-                postonly: 1
-            }
-        ]
-
-        this.client.submitOrder(myOrder);
+        const o = new BFX.Models.Order({
+            cid: order.id,
+            symbol: 't' + order.symbol,
+            price: order.price,
+            amount: amount,
+            type: 'LIMIT',
+            postonly: true
+        }, this.client)
 
         // find current order
         return new Promise((resolve, reject) => {
             var x = 0;
+
+            o.submit().then(() => {
+                console.log('order deployed')
+            }).catch((e) => {
+                console.log(e)
+            })
 
             var intervalID = setInterval(() => {
                 let myOrders = []
@@ -221,15 +206,13 @@ module.exports = class Bitfinex {
                 for(let key in me.orders){
                     let order1 = me.orders[key];
 
-                    if(order1.ourId = cid) {
+                    if(order1.ourId = order.id) {
                         myOrders.push(order1)
                     }
                 }
 
                 if(myOrders.length > 0) {
-                    resolve({
-                        'order': myOrders[0],
-                    })
+                    resolve(myOrders[0])
 
                     clearInterval(intervalID)
                     return
@@ -279,9 +262,7 @@ module.exports = class Bitfinex {
                 }
 
                 if(myOrders.length > 0) {
-                    resolve({
-                        'order': myOrders[0],
-                    })
+                    resolve(myOrders[0])
 
                     clearInterval(intervalID)
                     return
@@ -340,72 +321,30 @@ module.exports = class Bitfinex {
         return undefined
     }
 
-    candlestickListener(candles, pair) {
-
-        let options = pair.split(':');
-
-        let period = options[1].toLowerCase();
-        let mySymbol = options[2];
-
-        if (mySymbol.substring(0, 1) === 't') {
-            mySymbol = mySymbol.substring(1)
-        }
-
-        let myCandles = [];
-
-        if(Array.isArray(candles)) {
-            candles.forEach(function(candle) {
-                myCandles.push(candle)
-            })
-        } else {
-            myCandles.push(candles)
-        }
-
-        let sticks = myCandles.filter(function (candle) {
-            return typeof candle['mts'] !== 'undefined';
-        }).map(function(candle) {
-            return new Candlestick(
-                Math.round(candle['mts'] / 1000),
-                candle['open'],
-                candle['high'],
-                candle['low'],
-                candle['close'],
-                candle['volume'],
-            );
-        });
-
-        if(sticks.length === 0) {
-            console.error('Candle issue: ' + pair)
-            return;
-        }
-
-        this.eventEmitter.emit('candlestick', new CandlestickEvent('bitfinex', mySymbol, period.toLowerCase(), sticks));
-    }
-
     static createExchangeOrder(order) {
         let status = undefined
         let retry = false
 
-        if (order[13] === 'ACTIVE' || order[13].match(/^PARTIALLY FILLED/)) {
+        if (order['status'] === 'ACTIVE' || order['status'].match(/^PARTIALLY FILLED/)) {
             status = 'open'
-        } else if (order[13].match(/^EXECUTED/)) {
+        } else if (order['status'].match(/^EXECUTED/)) {
             status = 'done'
-        } else if (order[13] === 'CANCELED') {
+        } else if (order['status'] === 'CANCELED') {
             status = 'rejected'
-        } else if (order[13] === 'POSTONLY CANCELED') {
+        } else if (order['status'] === 'POSTONLY CANCELED') {
             status = 'rejected'
             retry = true
             //order.reject_reason = 'post only'
         }
 
-        let bitfinex_id = order[0]
-        let created_at = order[4]
+        let bitfinex_id = order['id']
+        let created_at = order['status']
         //let filled_size = n(position[7]).subtract(ws_order[6]).format('0.00000000')
-        let bitfinex_status = order[13]
-        let price = order[16]
-        let price_avg = order[17]
+        let bitfinex_status = order['status']
+        let price = order['price']
+        let price_avg = order['price_avg']
 
-        let symbol = order[3]
+        let symbol = order['symbol']
         if (symbol.substring(0, 1) === 't') {
             symbol = symbol.substring(1)
         }
@@ -415,10 +354,10 @@ module.exports = class Bitfinex {
             symbol,
             status,
             price,
-            order[6],
+            order['amount'],
             retry,
-            order[2],
-            order[6] < 0 ? 'sell' : 'buy'
+            'cid',
+            order['amount'] < 0 ? 'sell' : 'buy'
         )
     }
 

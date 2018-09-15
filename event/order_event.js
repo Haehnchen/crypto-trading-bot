@@ -1,9 +1,8 @@
 'use strict';
 
 module.exports = class OrderEvent {
-    constructor(exchange, symbol, order) {
+    constructor(exchange, order) {
         this.exchange = exchange;
-        this.symbol = symbol;
         this.order = order;
     }
 };

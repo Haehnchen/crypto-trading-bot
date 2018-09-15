@@ -1,17 +1,20 @@
 'use strict';
 
 let Candlestick = require('../../dict/candlestick.js');
+let OrderEvent = require('../../event/order_event');
+let Order = require('../../dict/order');
 let ta = require('../../utils/technical_analysis');
 const moment = require('moment');
 let strategy = require('../../strategy/collection');
 
 module.exports = class TickListener {
-    constructor(db, tickers, instances, notifier, signalLogger) {
+    constructor(db, tickers, instances, notifier, signalLogger, eventEmitter) {
         this.db = db
         this.tickers = tickers
         this.instances = instances
         this.notifier = notifier
         this.signalLogger = signalLogger
+        this.eventEmitter = eventEmitter
 
         this.notified = {}
     }
@@ -61,17 +64,15 @@ module.exports = class TickListener {
 
                     //console.log(Math.floor(new Date() / 1000) - candles[0].time)
 
-                    /*
                     console.log('----')
-                    let reverse = result['ema_55'].reverse();
+                    let reverse = taResult['ema_200'].reverse();
                     console.log('ema_55: ' + reverse[0])
-                    console.log('ema_200: ' + result['ema_200'].reverse()[0])
-                    console.log('rsi: ' + result['rsi'].reverse()[0])
-                    console.log('cci: ' + result['cci'].reverse()[0])
-                    console.log('ao: ' + result['ao'].reverse()[0])
+                    console.log('ema_200: ' + taResult['ema_200'].reverse()[0])
+                    console.log('rsi: ' + taResult['rsi'].reverse()[0])
+                    console.log('cci: ' + taResult['cci'].reverse()[0])
+                    console.log('ao: ' + taResult['ao'].reverse()[0])
                     console.log('bid: ' + ticker.bid)
                     console.log('ask: ' + ticker.ask)
-
 
                     let wantPrice = reverse[0]
 
@@ -79,25 +80,20 @@ module.exports = class TickListener {
                     if(ticker.ask < wantPrice) {
                         side = 'sell'
                     }
-                    */
 
-                    /*
-                    let e = new OrderEvent(
-                        symbol.exchange,
+                    let order = new Order(
+                        Math.round(((new Date()).getTime()).toString() * Math.random()),
                         symbol.symbol,
-                        new Order(side, reverse[0], 10)
-                    )
+                        side,
+                        reverse[0],
+                        0.002
+                    );
 
-                    notify.send('Create order: ' + JSON.stringify(e))
+                    let e = new OrderEvent(symbol.exchange, order)
 
+                    this.notifier.send('Create order: ' + JSON.stringify(e))
 
-                    eventEmitter.emit('order', new OrderEvent(
-                        symbol.exchange,
-                        symbol.symbol,
-                        new Order(side, reverse[0], 10)
-                    ))
-                    */
-
+                    this.eventEmitter.emit('order', e)
                 })()
             });
         })

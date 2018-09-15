@@ -74,7 +74,7 @@ module.exports = class Trade {
             me.candleStickLogListener.onCandleStick(event)
         })
 
-        eventEmitter.on('order', async (event) => me.createOrderListener.onCandleStick(event))
+        eventEmitter.on('order', async (event) => me.createOrderListener.onCreateOrder(event))
         eventEmitter.on('tick', async () => me.tickListener.onTick())
     }
 };
