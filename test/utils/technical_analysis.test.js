@@ -7,7 +7,8 @@ describe('#technical_analysis for candles', () => {
     it('technical_analysis for candles are returned', async () => {
         const result = await ta.getIndicatorsLookbacks(createCandleFixtures().reverse());
 
-        assert.equal(490, result['ema_55'].length)
+        assert.equal(result['ema_55'].length, 490)
+        assert.equal(result['sma_200'].length, 291)
     });
 
     it('technical_analysis for bollinger percent', () => {

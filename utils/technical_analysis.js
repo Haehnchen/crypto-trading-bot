@@ -183,6 +183,20 @@ module.exports = {
 
             let calculations = [
                 new Promise((resolve) => {
+                    tulind.indicators.sma.indicator([marketData.close], [200], (err, results) => {
+                        resolve({
+                            'sma_200': results[0],
+                        })
+                    })
+                }),
+                new Promise((resolve) => {
+                    tulind.indicators.sma.indicator([marketData.close], [50], (err, results) => {
+                        resolve({
+                            'sma_50': results[0],
+                        })
+                    })
+                }),
+                new Promise((resolve) => {
                     tulind.indicators.ema.indicator([marketData.close], [55], (err, results) => {
                         resolve({
                             'ema_55': results[0],
