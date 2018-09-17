@@ -61,7 +61,7 @@ module.exports = class TickListener {
             if (signal && signal.signal) {
                 let signalWindow = moment().subtract(30, 'minutes').toDate();
 
-                if (this.notified[symbol.exchange + symbol.symbol + strategyName + period] && signalWindow <= this.notified[symbol.exchange + symbol.symbol]) {
+                if (this.notified[symbol.exchange + symbol.symbol + strategyName + period] && signalWindow <= this.notified[symbol.exchange + symbol.symbol + strategyName + period]) {
                     // console.log('blocked')
                 } else {
                     this.notified[symbol.exchange + symbol.symbol + strategyName + period] = new Date()
