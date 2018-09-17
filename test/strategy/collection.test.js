@@ -4,16 +4,16 @@ let strategy = require('../../strategy/collection');
 describe('#strategy collection', () => {
     it('strategy cci short', async () => {
         const result = await strategy.cci(
-            [64, 66],
-            [78, 80],
+            394,
+            [500, 400],
             [280, 220, 200, 180]
         )
 
         assert.equal('short', result['signal'])
 
         const result2 = await strategy.cci(
-            [64, 66],
-            [78, 80],
+            394,
+            [500, 400],
             [180, 320, 100, 180]
         )
 
@@ -22,16 +22,16 @@ describe('#strategy collection', () => {
 
     it('strategy cci long', async () => {
         const result = await strategy.cci(
-            [78, 80],
-            [64, 66],
+            404,
+            [500, 400],
             [-220, -180]
         )
 
         assert.equal('long', result['signal'])
 
         const result2 = await strategy.cci(
-            [78, 80],
-            [64, 66],
+            404,
+            [500, 400],
             [-160, -180]
         )
 

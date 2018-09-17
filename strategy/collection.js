@@ -1,10 +1,11 @@
 const ta = require('../utils/technical_analysis');
 
 module.exports = {
-    cci: (fastEma, slowEma, cci) => {
+    cci: (price, sma200, cci) => {
         return new Promise((resolve) => {
             (async () => {
-                let long = fastEma.slice(-1)[0] > slowEma.slice(-1)[0]
+                let long = price >= sma200.slice(-1)[0]
+
                 if (long) {
                     // long
 

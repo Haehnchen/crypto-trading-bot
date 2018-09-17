@@ -53,7 +53,7 @@ module.exports = class TickListener {
             let signal;
 
             if (strategyName === 'cci') {
-                signal = await strategies.cci(taResult.ema_55.slice(), taResult.ema_200.slice(), taResult.cci.slice())
+                signal = await strategies.cci(ticker.ask, taResult.sma_200.slice(), taResult.cci.slice())
             } else if(strategyName === 'macd') {
                 signal = await strategies.macd(ticker.ask, taResult.sma_200.slice(), taResult.macd.slice())
             }
