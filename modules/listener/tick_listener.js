@@ -32,12 +32,12 @@ module.exports = class TickListener {
 
             let sql = 'SELECT * from candlesticks where exchange = ? AND symbol = ? and period = ? order by time DESC LIMIT 500'
 
-            this.db.all(sql, [symbol.exchange, symbol.symbol, '15m'], (err, rows) => me.taTick(symbol, ticker, '15m', err, rows))
-            this.db.all(sql, [symbol.exchange, symbol.symbol, '1h'], (err, rows) => me.taTick(symbol, ticker, '1h', err, rows))
+            this.db.all(sql, [symbol.exchange, symbol.symbol, '15m'], (err, rows) => me.taTick(symbol, ticker, '15m', ['cci'], err, rows))
+            this.db.all(sql, [symbol.exchange, symbol.symbol, '1h'], (err, rows) => me.taTick(symbol, ticker, '1h', ['cci', 'macd'], err, rows))
         })
     }
 
-    async taTick(symbol, ticker, period, err, rows) {
+    async taTick(symbol, ticker, period, namedStrategies, err, rows) {
         if (err) {
             console.log(err);
             return;
@@ -49,7 +49,7 @@ module.exports = class TickListener {
 
         const taResult = await ta.getIndicatorsLookbacks(candles.slice().reverse());
 
-        ['cci', 'macd'].forEach(async (strategyName) => {
+        namedStrategies.forEach(async (strategyName) => {
             let signal;
 
             if (strategyName === 'cci') {
@@ -68,7 +68,7 @@ module.exports = class TickListener {
                     this.notifier.send('[' + signal.signal + ' (' + strategyName + ' ' + period + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
 
                     // log signal
-                    this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'period': period, 'strategy': strategyName}, signal.signal, 'cci')
+                    this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'period': period, 'strategy': strategyName}, signal.signal, strategyName)
                 }
             }
         })
