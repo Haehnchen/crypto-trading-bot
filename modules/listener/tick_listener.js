@@ -1,8 +1,6 @@
 'use strict';
 
 let Candlestick = require('../../dict/candlestick');
-let OrderEvent = require('../../event/order_event');
-let Order = require('../../dict/order');
 let ta = require('../../utils/technical_analysis');
 const moment = require('moment');
 let strategies = require('../../strategy/collection');
@@ -53,7 +51,7 @@ module.exports = class TickListener {
             let signal;
 
             if (strategyName === 'cci') {
-                signal = await strategies.cci(ticker.ask, taResult.sma_200.slice(), taResult.cci.slice())
+                signal = await strategies.cci(ticker.ask, taResult.sma_200.slice(), taResult.ema_200.slice(), taResult.cci.slice())
             } else if(strategyName === 'macd') {
                 signal = await strategies.macd(ticker.ask, taResult.sma_200.slice(), taResult.macd.slice())
             }

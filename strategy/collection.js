@@ -1,8 +1,15 @@
 module.exports = {
-    cci: (price, sma200, cci) => {
+    cci: (price, sma200, ema200, cci) => {
         return new Promise((resolve) => {
             (async () => {
+                // sma long
+
                 let long = price >= sma200.slice(-1)[0]
+
+                // ema long
+                if (!long) {
+                    long = price >= ema200.slice(-1)[0]
+                }
 
                 let before = cci.slice(-2)[0]
                 let last = cci.slice(-1)[0]
@@ -49,40 +56,6 @@ module.exports = {
                                 '_trigger': max,
                             })
                         }
-                    }
-                }
-
-                resolve()
-            })()
-        })
-    },
-
-    cci2: (price, sma200, cci) => {
-        return new Promise((resolve) => {
-            (async () => {
-                let long = price >= sma200.slice(-1)[0]
-
-                if (long) {
-                    // long
-
-                    let before = cci.slice(-2)[0]
-                    let last = cci.slice(-1)[0]
-
-                    if(before <= -200 && last >= -200) {
-                        resolve({
-                            'signal': 'long'
-                        })
-                    }
-                } else {
-                    // short
-
-                    let before = cci.slice(-2)[0]
-                    let last = cci.slice(-1)[0]
-
-                    if(before >= 200 && last <= 200) {
-                        resolve({
-                            'signal': 'short'
-                        })
                     }
                 }
 

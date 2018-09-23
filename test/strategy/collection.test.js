@@ -6,6 +6,7 @@ describe('#strategy collection', () => {
         const result = await strategy.cci(
             394,
             [500, 400],
+            [500, 400],
             [80, 90, 100, 110, 130, 150, 180, 200, 220, 280, 220, 200, 180, 150, 130, 90]
         )
 
@@ -14,6 +15,7 @@ describe('#strategy collection', () => {
 
         const result2 = await strategy.cci(
             394,
+            [500, 400],
             [500, 400],
             [80, 90, 100, 110, 130, 150, 180, 190, 199, 180, 150, 130, 90]
         )
@@ -25,6 +27,7 @@ describe('#strategy collection', () => {
         const result = await strategy.cci(
             404,
             [500, 400],
+            [500, 400],
             [-80, -90, -100, -110, -130, -150, -180, -200, -220, -280, -220, -200, -180, -150, -130, -90]
         )
 
@@ -34,10 +37,21 @@ describe('#strategy collection', () => {
         const result2 = await strategy.cci(
             404,
             [500, 400],
+            [500, 400],
             [-80, -90, -100, -110, -130, -150, -180, -190, -199, -180, -150, -130, -90]
         )
 
         assert.equal(undefined, result2)
+
+        const result3 = await strategy.cci(
+            404,
+            [900, 900],
+            [500, 400],
+            [-80, -90, -100, -110, -130, -150, -180, -200, -220, -280, -220, -200, -180, -150, -130, -90]
+        )
+
+        assert.equal('long', result3['signal'])
+        assert.equal(-280, result3['_trigger'])
     });
 
     it('strategy macd long', async () => {
