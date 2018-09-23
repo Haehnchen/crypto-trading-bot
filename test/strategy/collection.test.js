@@ -6,15 +6,16 @@ describe('#strategy collection', () => {
         const result = await strategy.cci(
             394,
             [500, 400],
-            [280, 220, 200, 180]
+            [80, 90, 100, 110, 130, 150, 180, 200, 220, 280, 220, 200, 180, 150, 130, 90]
         )
 
         assert.equal('short', result['signal'])
+        assert.equal(280, result['_trigger'])
 
         const result2 = await strategy.cci(
             394,
             [500, 400],
-            [180, 320, 100, 180]
+            [80, 90, 100, 110, 130, 150, 180, 190, 199, 180, 150, 130, 90]
         )
 
         assert.equal(undefined, result2)
@@ -24,15 +25,16 @@ describe('#strategy collection', () => {
         const result = await strategy.cci(
             404,
             [500, 400],
-            [-220, -180]
+            [-80, -90, -100, -110, -130, -150, -180, -200, -220, -280, -220, -200, -180, -150, -130, -90]
         )
 
         assert.equal('long', result['signal'])
+        assert.equal(-280, result['_trigger'])
 
         const result2 = await strategy.cci(
             404,
             [500, 400],
-            [-160, -180]
+            [-80, -90, -100, -110, -130, -150, -180, -190, -199, -180, -150, -130, -90]
         )
 
         assert.equal(undefined, result2)

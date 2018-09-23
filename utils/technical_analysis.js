@@ -159,6 +159,33 @@ module.exports = {
     },
 
     /**
+     * https://www.tradingview.com/wiki/Bollinger_Bands_%25B_(%25B)
+     *
+     * @param currentPrice
+     * @param upper
+     * @param lower
+     * @returns {number} percent value in integer
+     */
+    getPercentTrendStrength: function (lookbackPrices) {
+        if (lookbackPrices.length < 9) {
+            return undefined
+        }
+
+        let slice = lookbackPrices.slice(-4);
+        console.log(slice)
+
+        let b = slice[slice.length - 1] - slice[0]
+
+        console.log(b)
+
+        console.log(Math.atan2(3, b) * 180 / Math.PI)
+
+
+
+        return ((currentPrice - lower) / (upper - lower)) * 100
+    },
+
+    /**
      * @param lookbacks oldest first
      * @returns {Promise<any>}
      */
