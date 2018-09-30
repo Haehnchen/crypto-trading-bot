@@ -341,6 +341,86 @@ module.exports = {
         })
     },
 
+
+    /**
+     * @param indicators
+     * @param lookbacks oldest first
+     * @returns {Promise<any>}
+     */
+    createIndicatorsLookback: function (lookbacks, indicators) {
+        return new Promise((resolve) => {
+            let marketData = { open: [], close: [], high: [], low: [], volume: [] }
+
+            // get last items
+            let number = lookbacks.length - 1000;
+            if(number < 0) {
+                number = 0;
+            }
+
+            lookbacks.slice(number, 1000).forEach(function (lookback) {
+                marketData.open.push(lookback.open)
+                marketData.high.push(lookback.high)
+                marketData.low.push(lookback.low)
+                marketData.close.push(lookback.close)
+                marketData.volume.push(lookback.volume)
+            })
+
+            let calculations = []
+
+            indicators.forEach((indicator) => {
+                let indicatorKey = indicator.key
+                let options = indicator.options
+
+                let indicatorName = indicator.indicator;
+
+                if (indicatorName === 'sma' || indicatorName === 'ema') {
+                    let length = options['length']
+
+                    if (!length) {
+                        throw 'Invalid length for indicator: ' + JSON.stringify(indicator)
+                    }
+
+                    calculations.push(new Promise((resolve) => {
+                         tulind.indicators[indicatorName].indicator([marketData.close], [length], (err, results) => {
+                            let values = {}
+                            values[indicatorKey] = results[0]
+
+                            resolve(values)
+                        })
+                    }))
+                } else if (indicatorName === 'cci') {
+                    let length = options['length']
+
+                    // default value
+                    if (!length) {
+                        length = 20
+                    }
+
+                    calculations.push(new Promise((resolve) => {
+                        tulind.indicators.cci.indicator([marketData.high, marketData.low, marketData.close], [length], (err, results) => {
+                            let values = {}
+                            values[indicatorKey] = results[0]
+
+                            resolve(values)
+                        })
+                    }))
+                }
+            })
+
+            Promise.all(calculations).then((values) => {
+                let results = {}
+
+                values.forEach((value) => {
+                    for (let key in value) {
+                        results[key] = value[key]
+                    }
+                })
+
+                resolve(results)
+            })
+        })
+    },
+
     getTrendingDirection: function(lookbacks) {
         let currentValue = lookbacks.slice(-1)[0]
 
