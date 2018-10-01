@@ -58,6 +58,7 @@ describe('#strategy collection', () => {
         const result = await strategy.macd(
             404,
             [500, 400],
+            [500, 400],
             [{'histogram': -1}, {'histogram': 0.1}]
         )
 
@@ -66,17 +67,20 @@ describe('#strategy collection', () => {
         assert.equal(undefined, await strategy.macd(
             360,
             [500, 400],
+            [500, 400],
             [{'histogram': -1}, {'histogram': 0.1}]
         ))
 
         assert.equal(undefined, await strategy.macd(
             404,
             [500, 400],
+            [500, 400],
             [{'histogram': -2}, {'histogram': -1}]
         ))
 
         assert.equal(undefined, await strategy.macd(
             404,
+            [500, 400],
             [500, 400],
             [{'histogram': 2}, {'histogram': -1}]
         ))
@@ -86,6 +90,7 @@ describe('#strategy collection', () => {
         const result = await strategy.macd(
             394,
             [500, 400],
+            [500, 400],
             [{'histogram': 1}, {'histogram': -0.1}]
         )
 
@@ -93,6 +98,7 @@ describe('#strategy collection', () => {
 
         assert.equal(undefined, await strategy.macd(
             403,
+            [500, 400],
             [500, 400],
             [{'histogram': 1}, {'histogram': -0.1}]
         ))

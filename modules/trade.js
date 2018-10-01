@@ -48,8 +48,6 @@ module.exports = class Trade {
 
         this.notify.send(message)
 
-        console.log(message)
-
         /*
         setInterval(() => {
             this.notify.send('Heartbeat: ' + instanceId + ' - ' + os.hostname() + ' - ' + os.platform() + ' - ' + moment().format() + ' - ' + notifyActivePairs.join(', '))

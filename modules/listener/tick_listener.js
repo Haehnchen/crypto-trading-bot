@@ -1,18 +1,16 @@
 'use strict';
 
 let Candlestick = require('../../dict/candlestick');
-let ta = require('../../utils/technical_analysis');
 const moment = require('moment');
-let strategies = require('../../strategy/collection');
 
 module.exports = class TickListener {
-    constructor(db, tickers, instances, notifier, signalLogger, eventEmitter) {
+    constructor(db, tickers, instances, notifier, signalLogger, strategyManager) {
         this.db = db
         this.tickers = tickers
         this.instances = instances
         this.notifier = notifier
         this.signalLogger = signalLogger
-        this.eventEmitter = eventEmitter
+        this.strategyManager = strategyManager
 
         this.notified = {}
     }
@@ -21,7 +19,7 @@ module.exports = class TickListener {
         let me = this
 
         this.instances.symbols.forEach((symbol) => {
-            let ticker = this.tickers.get(symbol.exchange, symbol.symbol);
+            let ticker = this.tickers.get(symbol.exchange, symbol.symbol)
 
             if (!ticker) {
                 console.error('Ticker no found for + ' + symbol.exchange + symbol.symbol)
@@ -45,16 +43,8 @@ module.exports = class TickListener {
             return new Candlestick(row.time, row.open, row.high, row.low, row.close, row.volume)
         });
 
-        const taResult = await ta.getIndicatorsLookbacks(candles.slice().reverse());
-
         namedStrategies.forEach(async (strategyName) => {
-            let signal;
-
-            if (strategyName === 'cci') {
-                signal = await strategies.cci(ticker.ask, taResult.sma_200.slice(), taResult.ema_200.slice(), taResult.cci.slice())
-            } else if(strategyName === 'macd') {
-                signal = await strategies.macd(ticker.ask, taResult.sma_200.slice(), taResult.macd.slice())
-            }
+            let signal = await this.strategyManager.executeStrategy(strategyName, ticker.ask, candles.slice().reverse())
 
             if (signal && signal.signal) {
                 let signalWindow = moment().subtract(30, 'minutes').toDate();

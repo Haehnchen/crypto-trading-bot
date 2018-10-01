@@ -23,6 +23,7 @@ let SignalHttp = require('../modules/signal/signal_http')
 let SignalListener = require('../modules/signal/signal_listener')
 
 let SignalRepository = require('../modules/repository/signal_repository')
+let StrategyManager = require('../strategy/strategy_manager')
 
 let Bitfinex = require('../exchange/bitfinex')
 let Bitmex = require('../exchange/bitmex')
@@ -55,6 +56,8 @@ let signalListener = undefined
 let signalRepository = undefined
 
 let exchanges = undefined
+
+var strategyManager = undefined
 
 module.exports = {
     boot: function() {
@@ -112,7 +115,7 @@ module.exports = {
             this.getInstances(),
             this.getNotifier(),
             this.getSignalLogger(),
-            this.getEventEmitter()
+            this.getStrategyManager()
         )
     },
 
@@ -223,6 +226,14 @@ module.exports = {
         }
 
         return tickers = new Tickers()
+    },
+
+    getStrategyManager: function() {
+        if (strategyManager) {
+            return strategyManager
+        }
+
+        return strategyManager = new StrategyManager()
     },
 
     createWebserverInstance: function() {

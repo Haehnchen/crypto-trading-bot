@@ -404,6 +404,25 @@ module.exports = {
                             resolve(values)
                         })
                     }))
+                } else if (indicatorName === 'macd') {
+                    calculations.push(new Promise((resolve) => {
+                        tulind.indicators.macd.indicator([marketData.close], [12, 26, 9], (err, results) => {
+                            let result = [];
+
+                            for (let i = 0; i < results[0].length; i++) {
+                                result.push({
+                                    'macd': results[0][i],
+                                    'signal': results[1][i],
+                                    'histogram': results[2][i],
+                                })
+                            }
+
+                            let values = {}
+                            values[indicatorKey] = result
+
+                            resolve(values)
+                        })
+                    }))
                 }
             })
 

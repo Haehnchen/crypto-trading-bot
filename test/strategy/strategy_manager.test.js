@@ -2,12 +2,18 @@ let assert = require('assert');
 let StrategyManager = require('../../strategy/strategy_manager');
 let fs = require('fs');
 
-describe('#strategy collection', () => {
-    it('strategy cci short', async () => {
+describe('#strategy manager', () => {
+    it('strategy cci', async () => {
         let strategyManager = new StrategyManager()
 
         let result = await strategyManager.executeStrategy('cci', 6000, createCandleFixtures())
+        assert.equal(undefined, result)
+    });
 
+    it('strategy macd', async () => {
+        let strategyManager = new StrategyManager()
+
+        let result = await strategyManager.executeStrategy('macd', 6000, createCandleFixtures())
         assert.equal(undefined, result)
     });
 

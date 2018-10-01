@@ -64,34 +64,38 @@ module.exports = {
         })
     },
 
-    macd: (price, sma200, macd) => {
+    macd: (price, sma200, ema200, macd) => {
+        return new Promise(async (resolve) => {
+            let before = macd.slice(-2)[0].histogram
+            let last = macd.slice(-1)[0].histogram
 
-        return new Promise((resolve) => {
-            (async () => {
-                let before = macd.slice(-2)[0].histogram
-                let last = macd.slice(-1)[0].histogram
+            // sma long
 
-                let long = price >= sma200.slice(-1)[0]
+            let long = price >= sma200.slice(-1)[0]
 
-                if (long) {
-                    // long
-                    if(before < 0 && last > 0) {
-                        resolve({
-                            'signal': 'long',
-                        })
-                    }
-                } else {
-                    // short
+            // ema long
+            if (!long) {
+                long = price >= ema200.slice(-1)[0]
+            }
 
-                    if(before > 0 && last < 0) {
-                        resolve({
-                            'signal': 'short',
-                        })
-                    }
+            if (long) {
+                // long
+                if(before < 0 && last > 0) {
+                    resolve({
+                        'signal': 'long',
+                    })
                 }
+            } else {
+                // short
 
-                resolve()
-            })()
+                if(before > 0 && last < 0) {
+                    resolve({
+                        'signal': 'short',
+                    })
+                }
+            }
+
+            resolve()
         })
     },
 }

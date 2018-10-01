@@ -1,16 +1,16 @@
 'use strict';
 
 let CCI = require('./cci');
+let MACD = require('./macd');
 let IndicatorBuilder = require('./dict/indicator_builder');
 let IndicatorPeriod = require('./dict/indicator_period');
 let ta = require('../utils/technical_analysis');
 
 module.exports = class StrategyManager {
-    constructor(db) {
-        this.db = db
-
+    constructor() {
         this.strategies = [
             new CCI(),
+            new MACD(),
         ];
     }
 
