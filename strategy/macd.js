@@ -1,7 +1,5 @@
 'use strict';
 
-let strategy = require('./collection');
-
 module.exports = class MACD {
     constructor() {
         this.candles = [];
@@ -28,11 +26,46 @@ module.exports = class MACD {
     }
 
     period(indicatorPeriod) {
-        return strategy.macd(
+        return this.macd(
             indicatorPeriod.getPrice(),
             indicatorPeriod.getIndicator('sma200'),
             indicatorPeriod.getIndicator('ema200'),
             indicatorPeriod.getIndicator('macd'),
         )
+    }
+
+    macd(price, sma200, ema200, macd) {
+        return new Promise(async (resolve) => {
+            let before = macd.slice(-2)[0].histogram
+            let last = macd.slice(-1)[0].histogram
+
+            // sma long
+
+            let long = price >= sma200.slice(-1)[0]
+
+            // ema long
+            if (!long) {
+                long = price >= ema200.slice(-1)[0]
+            }
+
+            if (long) {
+                // long
+                if(before < 0 && last > 0) {
+                    resolve({
+                        'signal': 'long',
+                    })
+                }
+            } else {
+                // short
+
+                if(before > 0 && last < 0) {
+                    resolve({
+                        'signal': 'short',
+                    })
+                }
+            }
+
+            resolve()
+        })
     }
 }
