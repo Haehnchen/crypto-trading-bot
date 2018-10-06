@@ -31,75 +31,77 @@ module.exports = class CCI {
     }
 
     cci(price, sma200, ema200, cci) {
-        return new Promise((resolve) => {
-            (async () => {
-                // sma long
+        return new Promise(async (resolve) => {
+            if (cci.length <= 0) {
+                resolve()
+                return
+            }
 
-                let debug = {
-                    'sma200': sma200.slice(-1)[0],
-                    'ema200': ema200.slice(-1)[0],
-                    'cci': cci.slice(-1)[0],
-                }
+            let debug = {
+                'sma200': sma200.slice(-1)[0],
+                'ema200': ema200.slice(-1)[0],
+                'cci': cci.slice(-1)[0],
+            }
 
-                let long = price >= sma200.slice(-1)[0]
+            let long = price >= sma200.slice(-1)[0]
 
-                // ema long
-                if (!long) {
-                    long = price >= ema200.slice(-1)[0]
-                }
+            // ema long
+            if (!long) {
+                long = price >= ema200.slice(-1)[0]
+            }
 
-                let before = cci.slice(-2)[0]
-                let last = cci.slice(-1)[0]
-                let count = cci.length - 1
+            let before = cci.slice(-2)[0]
+            let last = cci.slice(-1)[0]
+            let count = cci.length - 1
 
-                if (long) {
-                    // long
+            if (long) {
+                // long
 
-                    if(before <= -100 && last >= -100) {
-                        let rangeValues = []
+                if(before <= -100 && last >= -100) {
+                    let rangeValues = []
 
-                        for (let i = count - 1; i >= 0; i--) {
-                            if (cci[i] >= -100){
-                                rangeValues = cci.slice(i, count)
-                                break;
-                            }
-                        }
-
-                        let min = Math.min(...rangeValues);
-                        if(min <= -200) {
-                            resolve({
-                                'signal': 'long',
-                                '_trigger': min,
-                                'debug': debug
-                            })
+                    for (let i = count - 1; i >= 0; i--) {
+                        if (cci[i] >= -100){
+                            rangeValues = cci.slice(i, count)
+                            break;
                         }
                     }
 
-                } else {
-                    if(before >= 100 && last <= 100) {
-                        let count = cci.length - 1
-                        let rangeValues = []
-
-                        for (let i = count - 1; i >= 0; i--) {
-                            if (cci[i] <= 100){
-                                rangeValues = cci.slice(i, count)
-                                break;
-                            }
-                        }
-
-                        let max = Math.max(...rangeValues);
-                        if(max >= 200) {
-                            resolve({
-                                'signal': 'short',
-                                '_trigger': max,
-                                'debug': debug
-                            })
-                        }
+                    let min = Math.min(...rangeValues);
+                    if(min <= -200) {
+                        resolve({
+                            'signal': 'long',
+                            '_trigger': min,
+                            'debug': debug
+                        })
                     }
                 }
 
-                resolve({'debug': debug})
-            })()
+            } else {
+                if(before >= 100 && last <= 100) {
+                    let count = cci.length - 1
+                    let rangeValues = []
+
+                    for (let i = count - 1; i >= 0; i--) {
+                        if (cci[i] <= 100){
+                            rangeValues = cci.slice(i, count)
+                            break;
+                        }
+                    }
+
+                    let max = Math.max(...rangeValues);
+                    if(max >= 200) {
+                        resolve({
+                            'signal': 'short',
+                            '_trigger': max,
+                            'debug': debug
+                        })
+                    }
+                }
+            }
+
+            resolve({'debug': debug})
+
         })
     }
 }

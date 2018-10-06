@@ -32,6 +32,11 @@ module.exports = class MACD {
 
     macd(price, sma200, ema200, macd) {
         return new Promise(async (resolve) => {
+            if (macd.length <= 0) {
+                resolve()
+                return
+            }
+
             let debug = {
                 'sma200': sma200.slice(-1)[0],
                 'ema200': ema200.slice(-1)[0],
