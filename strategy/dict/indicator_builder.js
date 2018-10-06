@@ -5,10 +5,11 @@ module.exports = class IndicatorBuilder {
         this.indicators = {};
     }
 
-    add(key, indicator, options) {
+    add(key, indicator, period , options) {
         this.indicators[key] = {
             'indicator': indicator,
             'key': key,
+            'period': period,
             'options': options || {},
         }
     }

@@ -9,7 +9,7 @@ describe('#strategy macd', () => {
         let indicatorBuilder = new IndicatorBuilder()
         let macd = new MACD()
 
-        macd.buildIndicator(indicatorBuilder)
+        macd.buildIndicator(indicatorBuilder, {'period': '15m'})
 
         assert.equal(3, indicatorBuilder.all().length)
 

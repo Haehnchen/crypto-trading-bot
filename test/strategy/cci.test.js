@@ -9,7 +9,7 @@ describe('#strategy cci', () => {
         let indicatorBuilder = new IndicatorBuilder()
         let cci = new CCI()
 
-        cci.buildIndicator(indicatorBuilder)
+        cci.buildIndicator(indicatorBuilder, {'period': '15m'})
 
         assert.equal(3, indicatorBuilder.all().length)
 

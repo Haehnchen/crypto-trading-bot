@@ -16,8 +16,6 @@ module.exports = class TickListener {
     }
 
     onTick() {
-        let me = this
-
         this.instances.symbols.forEach((symbol) => {
             let ticker = this.tickers.get(symbol.exchange, symbol.symbol)
 
@@ -26,39 +24,27 @@ module.exports = class TickListener {
                 return;
             }
 
-            let sql = 'SELECT * from candlesticks where exchange = ? AND symbol = ? and period = ? order by time DESC LIMIT 500'
-
-            this.db.all(sql, [symbol.exchange, symbol.symbol, '15m'], (err, rows) => me.taTick(symbol, ticker, '15m', ['cci'], err, rows))
-            this.db.all(sql, [symbol.exchange, symbol.symbol, '1h'], (err, rows) => me.taTick(symbol, ticker, '1h', ['cci', 'macd'], err, rows))
-        })
-    }
-
-    async taTick(symbol, ticker, period, namedStrategies, err, rows) {
-        if (err) {
-            console.log(err);
-            return;
-        }
-
-        let candles = rows.map((row) => {
-            return new Candlestick(row.time, row.open, row.high, row.low, row.close, row.volume)
-        });
-
-        namedStrategies.forEach(async (strategyName) => {
-            let signal = await this.strategyManager.executeStrategy(strategyName, ticker.ask, candles.slice().reverse())
-
-            if (signal && signal.signal) {
-                let signalWindow = moment().subtract(30, 'minutes').toDate();
-
-                if (this.notified[symbol.exchange + symbol.symbol + strategyName + period] && signalWindow <= this.notified[symbol.exchange + symbol.symbol + strategyName + period]) {
-                    // console.log('blocked')
-                } else {
-                    this.notified[symbol.exchange + symbol.symbol + strategyName + period] = new Date()
-                    this.notifier.send('[' + signal.signal + ' (' + strategyName + ' ' + period + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
-
-                    // log signal
-                    this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'period': period, 'strategy': strategyName}, signal.signal, strategyName)
-                }
+            if (!symbol.strategies) {
+                return;
             }
+
+            symbol.strategies.forEach(async (strategy) => {
+                let signal = await this.strategyManager.executeStrategy(strategy.name, ticker.ask, symbol.exchange, symbol.symbol, strategy['options'] || {})
+
+                if (signal && signal.signal) {
+                    let signalWindow = moment().subtract(30, 'minutes').toDate();
+
+                    if (this.notified[symbol.exchange + symbol.symbol + strategyName + period] && signalWindow <= this.notified[symbol.exchange + symbol.symbol + strategyName + period]) {
+                        // console.log('blocked')
+                    } else {
+                        this.notified[symbol.exchange + symbol.symbol + strategyName + period] = new Date()
+                        this.notifier.send('[' + signal.signal + ' (' + strategyName + ' ' + period + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
+
+                        // log signal
+                        this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'period': period, 'strategy': strategyName}, signal.signal, strategyName)
+                    }
+                }
+            })
         })
     }
 };

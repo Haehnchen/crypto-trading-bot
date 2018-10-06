@@ -4,7 +4,21 @@
       "symbol": "EOSUSD",
       "periods": ["15m"],
       "exchange": "bitfinex",
-      "state": "watch"
+      "state": "watch",
+      "strategies": [
+        {
+          "name": "cci",
+          "options": {
+            "period": "15m"
+          }
+        },
+        {
+          "name": "macd",
+          "options": {
+            "period": "1h"
+          }
+        }
+      ]
     },
     {
       "symbol": "ETPUSD",

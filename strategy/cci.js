@@ -11,14 +11,18 @@ module.exports = class CCI {
         return 'cci'
     }
 
-    buildIndicator(indicatorBuilder) {
-        indicatorBuilder.add('cci' , 'cci')
+    buildIndicator(indicatorBuilder, options) {
+        if (!options['period']) {
+            throw 'Invalid period'
+        }
 
-        indicatorBuilder.add('sma200', 'sma', {
+        indicatorBuilder.add('cci', 'cci', options['period'])
+
+        indicatorBuilder.add('sma200', 'sma', options['period'], {
             'length': 200,
         })
 
-        indicatorBuilder.add('ema200', 'ema', {
+        indicatorBuilder.add('ema200', 'ema', options['period'], {
             'length': 200,
         })
     }

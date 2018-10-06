@@ -23,6 +23,7 @@ let SignalHttp = require('../modules/signal/signal_http')
 let SignalListener = require('../modules/signal/signal_listener')
 
 let SignalRepository = require('../modules/repository/signal_repository')
+let CandlestickRepository = require('../modules/repository/candlestick_repository')
 let StrategyManager = require('../strategy/strategy_manager')
 
 let Bitfinex = require('../exchange/bitfinex')
@@ -54,6 +55,7 @@ let signalHttp = undefined
 let signalListener = undefined
 
 let signalRepository = undefined
+let candlestickRepository = undefined
 
 let exchanges = undefined
 
@@ -182,6 +184,16 @@ module.exports = {
         )
     },
 
+    getCandlestickRepository: function() {
+        if (candlestickRepository) {
+            return candlestickRepository
+        }
+
+        return candlestickRepository = new CandlestickRepository(
+            this.getDatabase(),
+        )
+    },
+
     getEventEmitter: function() {
         if (eventEmitter) {
             return eventEmitter;
@@ -233,7 +245,7 @@ module.exports = {
             return strategyManager
         }
 
-        return strategyManager = new StrategyManager()
+        return strategyManager = new StrategyManager(this.getCandlestickRepository())
     },
 
     createWebserverInstance: function() {

@@ -11,14 +11,18 @@ module.exports = class MACD {
         return 'macd'
     }
 
-    buildIndicator(indicatorBuilder) {
-        indicatorBuilder.add('macd' , 'macd')
+    buildIndicator(indicatorBuilder, options) {
+        if (!options['period']) {
+            throw 'Invalid period'
+        }
 
-        indicatorBuilder.add('sma200', 'sma', {
+        indicatorBuilder.add('macd', 'macd', options['period'])
+
+        indicatorBuilder.add('sma200', 'sma', options['period'], {
             'length': 200,
         })
 
-        indicatorBuilder.add('ema200', 'ema', {
+        indicatorBuilder.add('ema200', 'ema', options['period'], {
             'length': 200,
         })
     }
