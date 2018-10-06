@@ -69,7 +69,7 @@ module.exports = class MACD {
                 }
             }
 
-            resolve(debug)
+            resolve({'debug': debug})
         })
     }
 }

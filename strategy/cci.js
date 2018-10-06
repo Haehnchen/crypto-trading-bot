@@ -98,7 +98,7 @@ module.exports = class CCI {
                     }
                 }
 
-                resolve(debug)
+                resolve({'debug': debug})
             })()
         })
     }
