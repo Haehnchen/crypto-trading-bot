@@ -112,7 +112,6 @@ module.exports = {
         }
 
         return tickListener = new TickListener(
-            this.getDatabase(),
             this.getTickers(),
             this.getInstances(),
             this.getNotifier(),

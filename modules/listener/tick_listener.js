@@ -4,8 +4,7 @@ let Candlestick = require('../../dict/candlestick');
 const moment = require('moment');
 
 module.exports = class TickListener {
-    constructor(db, tickers, instances, notifier, signalLogger, strategyManager) {
-        this.db = db
+    constructor(tickers, instances, notifier, signalLogger, strategyManager) {
         this.tickers = tickers
         this.instances = instances
         this.notifier = notifier
@@ -29,7 +28,9 @@ module.exports = class TickListener {
             }
 
             symbol.strategies.forEach(async (strategy) => {
-                let signal = await this.strategyManager.executeStrategy(strategy.name, ticker.ask, symbol.exchange, symbol.symbol, strategy['options'] || {})
+                let strategyName = strategy.name;
+
+                let signal = await this.strategyManager.executeStrategy(strategyName, ticker.ask, symbol.exchange, symbol.symbol, strategy['options'] || {})
 
                 if (signal && signal.signal) {
                     let signalWindow = moment().subtract(30, 'minutes').toDate();
