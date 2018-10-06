@@ -1,10 +1,6 @@
 'use strict';
 
 module.exports = class CCI {
-    constructor() {
-        this.candles = [];
-    }
-
     getName() {
         return 'cci'
     }

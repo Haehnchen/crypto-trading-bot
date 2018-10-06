@@ -1,10 +1,6 @@
 'use strict';
 
 module.exports = class MACD {
-    constructor() {
-        this.candles = [];
-    }
-
     getName() {
         return 'macd'
     }
