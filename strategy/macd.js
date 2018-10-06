@@ -32,6 +32,12 @@ module.exports = class MACD {
 
     macd(price, sma200, ema200, macd) {
         return new Promise(async (resolve) => {
+            let debug = {
+                'sma200': sma200.slice(-1)[0],
+                'ema200': ema200.slice(-1)[0],
+                'histogram': macd.slice(-1)[0].histogram,
+            }
+
             let before = macd.slice(-2)[0].histogram
             let last = macd.slice(-1)[0].histogram
 
@@ -49,6 +55,7 @@ module.exports = class MACD {
                 if(before < 0 && last > 0) {
                     resolve({
                         'signal': 'long',
+                        'debug': debug
                     })
                 }
             } else {
@@ -57,11 +64,12 @@ module.exports = class MACD {
                 if(before > 0 && last < 0) {
                     resolve({
                         'signal': 'short',
+                        'debug': debug
                     })
                 }
             }
 
-            resolve()
+            resolve(debug)
         })
     }
 }

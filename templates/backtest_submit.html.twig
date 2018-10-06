@@ -1,0 +1,35 @@
+{% extends './layout.html.twig' %}
+
+{% block content %}
+    <div class="container-fluid">
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Time</th>
+                <th scope="col">Price</th>
+                <th scope="col">Signal</th>
+                <th scope="col">Debug</th>
+            </tr>
+
+            </thead>
+            <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td>{{ row.time|date('Y-m-d H:i:s') }}</td>
+                    <td>{{ row.result.price|default }}</td>
+                    <td>
+                        {% if row.result.signal is defined %}
+                            {% if row.result.signal == 'long' %}
+                                <i class="fas fa-chevron-circle-up text-success"></i>
+                            {% elseif row.result.signal == 'short' %}
+                                <i class="fas fa-chevron-circle-down text-danger"></i>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>{{ row.result|json_encode }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

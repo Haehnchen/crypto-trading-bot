@@ -7,16 +7,15 @@ describe('#strategy manager', () => {
         let strategyManager = new StrategyManager(createCandlestickRepository())
 
         let result = await strategyManager.executeStrategy('cci', 6000, 'foobar', 'BTCUSD', {'period': '15m'})
-        assert.equal(undefined, result)
+        assert.equal(undefined, result['signal'])
     });
 
     it('strategy macd', async () => {
         let strategyManager = new StrategyManager(createCandlestickRepository())
 
         let result = await strategyManager.executeStrategy('macd', 6000, 'foobar', 'BTCUSD', {'period': '15m'})
-        assert.equal(undefined, result)
+        assert.equal(undefined, result['signal'])
     });
-
 
     var createCandlestickRepository = () => {
         return {

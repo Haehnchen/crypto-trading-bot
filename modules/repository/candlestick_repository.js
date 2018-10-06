@@ -23,4 +23,21 @@ module.exports = class CandlestickRepository {
             })
         })
     }
+
+    getLookbacksSince(exchange, symbol, period, start) {
+        return new Promise((resolve) => {
+            let sql = 'SELECT * from candlesticks where exchange = ? AND symbol = ? and period = ? and time > ? order by time DESC'
+
+            this.db.all(sql, [exchange, symbol, period, start], (err, rows) => {
+                if (err) {
+                    console.log(err);
+                    return resolve();
+                }
+
+                resolve(rows.map((row) => {
+                    return new Candlestick(row.time, row.open, row.high, row.low, row.close, row.volume)
+                }))
+            })
+        })
+    }
 }

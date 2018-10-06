@@ -35,6 +35,12 @@ module.exports = class CCI {
             (async () => {
                 // sma long
 
+                let debug = {
+                    'sma200': sma200.slice(-1)[0],
+                    'ema200': ema200.slice(-1)[0],
+                    'cci': cci.slice(-1)[0],
+                }
+
                 let long = price >= sma200.slice(-1)[0]
 
                 // ema long
@@ -64,6 +70,7 @@ module.exports = class CCI {
                             resolve({
                                 'signal': 'long',
                                 '_trigger': min,
+                                'debug': debug
                             })
                         }
                     }
@@ -85,12 +92,13 @@ module.exports = class CCI {
                             resolve({
                                 'signal': 'short',
                                 '_trigger': max,
+                                'debug': debug
                             })
                         }
                     }
                 }
 
-                resolve()
+                resolve(debug)
             })()
         })
     }

@@ -21,17 +21,17 @@ describe('#strategy macd', () => {
             'macd': [{'histogram': -1}, {'histogram': 0.1}],
         })))['signal'])
 
-        assert.equal(undefined, await macd.period(new IndicatorPeriod(404, {
+        assert.equal(undefined, (await macd.period(new IndicatorPeriod(404, {
             'sma200': [500, 400],
             'ema200': [500, 400],
             'macd': [{'histogram': -2}, {'histogram': -1}],
-        })))
+        })))['signal'])
 
-        assert.equal(undefined, await macd.period(new IndicatorPeriod(404, {
+        assert.equal(undefined, (await macd.period(new IndicatorPeriod(404, {
             'sma200': [500, 400],
             'ema200': [500, 400],
             'macd': [{'histogram': 2}, {'histogram': -1}],
-        })))
+        })))['signal'])
     })
 
     it('macd short', async () => {
@@ -43,10 +43,10 @@ describe('#strategy macd', () => {
             'macd': [{'histogram': 1}, {'histogram': -0.1}],
         })))['signal'])
 
-        assert.equal(undefined, await macd.period(new IndicatorPeriod(403, {
+        assert.equal(undefined, (await macd.period(new IndicatorPeriod(403, {
             'sma200': [500, 400],
             'ema200': [500, 400],
             'macd': [{'histogram': 1}, {'histogram': -0.1}],
-        })))
+        }))['signal']))
     })
 })

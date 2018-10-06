@@ -3,10 +3,11 @@
 let express = require('express')
 
 module.exports = class Http {
-    constructor(config, ta, signalHttp) {
+    constructor(config, ta, signalHttp, backtest) {
         this.config = config
         this.ta = ta
         this.signalHttp = signalHttp
+        this.backtest = backtest
     }
 
     start() {
@@ -29,6 +30,7 @@ module.exports = class Http {
             strict_variables: true
         });
 
+        app.use(express.urlencoded());
         app.use(express.static(__dirname + '/../web/static'))
 
         let ta = this.ta
@@ -37,6 +39,26 @@ module.exports = class Http {
             ta.getTaForPeriods(periods).then((result) => {
                 res.render('../templates/base.html.twig', result);
             })
+        });
+
+        app.get('/backtest', async (req, res) => {
+            res.render('../templates/backtest.html.twig', {
+                'strategies': this.backtest.getBacktestStrategies(),
+                'pairs': this.backtest.getBacktestPairs(),
+            });
+        });
+
+        app.post('/backtest/submit', async (req, res) => {
+            let pair = req.body.pair.split('.')
+
+            res.render('../templates/backtest_submit.html.twig', await this.backtest.getBacktestResult(
+                parseInt(req.body['ticker_interval']),
+                req.body.hours,
+                req.body.strategy,
+                pair[0],
+                pair[1],
+                req.body.options ? JSON.parse(req.body.options) : {}
+            ));
         });
 
         app.get('/tradingview/:symbol', (req, res) => {

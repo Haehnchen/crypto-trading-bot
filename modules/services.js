@@ -31,6 +31,7 @@ let Bitmex = require('../exchange/bitmex')
 
 let Trade = require('../modules/trade')
 let Http = require('../modules/http')
+let Backtest = require('../modules/backtest')
 
 var _ = require('lodash');
 
@@ -58,6 +59,7 @@ let signalRepository = undefined
 let candlestickRepository = undefined
 
 let exchanges = undefined
+let backtest = undefined
 
 var strategyManager = undefined
 
@@ -88,6 +90,18 @@ module.exports = {
 
         let Ta = require('../modules/ta.js');
         return ta = new Ta(this.getDatabase(), this.getInstances())
+    },
+
+    getBacktest: function() {
+        if (backtest) {
+            return backtest;
+        }
+
+        return backtest = new Backtest(
+            this.getCandlestickRepository(),
+            this.getInstances(),
+            this.getStrategyManager(),
+        )
     },
 
     getCandleStickListener: function() {
@@ -248,7 +262,12 @@ module.exports = {
     },
 
     createWebserverInstance: function() {
-        return new Http(this.getConfig(), this.getTa(), this.getSignalHttp())
+        return new Http(
+            this.getConfig(),
+            this.getTa(),
+            this.getSignalHttp(),
+            this.getBacktest(),
+        )
     },
 
     getExchangeInstances: function() {

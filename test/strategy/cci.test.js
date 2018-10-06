@@ -30,7 +30,7 @@ describe('#strategy cci', () => {
             'cci': [80, 90, 100, 110, 130, 150, 180, 190, 199, 180, 150, 130, 90],
         }))
 
-        assert.equal(undefined, result2)
+        assert.equal(undefined, result2['signal'])
     });
 
     it('strategy cci long', async () => {
@@ -51,7 +51,7 @@ describe('#strategy cci', () => {
             'cci': [-80, -90, -100, -110, -130, -150, -180, -190, -199, -180, -150, -130, -90],
         }))
 
-        assert.equal(undefined, result2)
+        assert.equal(undefined, result2['signal'])
 
         let result3 = await cci.period(new IndicatorPeriod(404, {
             'sma200': [900, 900],
