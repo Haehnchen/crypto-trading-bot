@@ -33,6 +33,10 @@ describe('#technical_analysis for candles', () => {
             {
                 'indicator': 'macd',
                 'key': 'macd',
+            },
+            {
+                'indicator': 'obv',
+                'key': 'obv',
             }
         ]);
 
@@ -42,6 +46,8 @@ describe('#technical_analysis for candles', () => {
         assert.equal(8145, Math.round(result['ema_55'][0]))
         assert.equal(7994, Math.round(result['sma_200'][0]))
         assert.equal(0.31, parseFloat(result['macd'][1]['histogram']).toFixed(2))
+
+        assert.equal(-12689695, parseFloat(result['obv'][1]))
     })
 
     it('technical_analysis for bollinger percent', () => {

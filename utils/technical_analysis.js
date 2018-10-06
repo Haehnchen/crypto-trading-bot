@@ -423,6 +423,15 @@ module.exports = {
                             resolve(values)
                         })
                     }))
+                } else if (indicatorName === 'obv') {
+                    calculations.push(new Promise((resolve) => {
+                        tulind.indicators.obv.indicator([marketData.close, marketData.volume], [], (err, results) => {
+                            let values = {}
+                            values[indicatorKey] = results[0]
+
+                            resolve(values)
+                        })
+                    }))
                 }
             })
 
