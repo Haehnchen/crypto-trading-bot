@@ -69,14 +69,24 @@ Some browser links
  * UI: http://127.0.0.1:8080
  * Signals: http://127.0.0.1:8080/signals
  * Tradingview: http://127.0.0.1:8080/tradingview/BTCUSD
- 
+ * Backtesting: http://127.0.0.1:8080/backtest
+  
 ![Webserver UI](documentation/cryptobot.png "Webserver UI")
 
 ## Backtesting
 
+Currently there is only the UI for backtesting
+
 ```
 node index.js backtest -s bitfinex.EOS-USD -p 15m
 ```
+
+## Strategies
+
+For custom strategies use [var/strategies](var/strategies) folder.
+
+Find some example strategies inside [modules/strategy/strategies](modules/strategy/strategies)
+
 
 ## Tests
 

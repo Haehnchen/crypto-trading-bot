@@ -1,7 +1,7 @@
 let assert = require('assert')
-let MACD = require('../../strategy/macd')
-let IndicatorBuilder = require('../../strategy/dict/indicator_builder')
-let IndicatorPeriod = require('../../strategy/dict/indicator_period')
+let MACD = require('../../../../modules/strategy/strategies/macd')
+let IndicatorBuilder = require('../../../../modules/strategy/dict/indicator_builder')
+let IndicatorPeriod = require('../../../../modules/strategy/dict/indicator_period')
 
 describe('#strategy macd', () => {
     it('macd indicator builder', async () => {

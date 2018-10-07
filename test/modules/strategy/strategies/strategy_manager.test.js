@@ -1,5 +1,5 @@
 let assert = require('assert');
-let StrategyManager = require('../../strategy/strategy_manager');
+let StrategyManager = require('../../../../modules/strategy/strategy_manager');
 let fs = require('fs');
 
 describe('#strategy manager', () => {
@@ -26,6 +26,6 @@ describe('#strategy manager', () => {
     }
 
     var createCandleFixtures = () => {
-        return JSON.parse(fs.readFileSync(__dirname + '/../utils/fixtures/xbt-usd-5m.json', 'utf8'));
+        return JSON.parse(fs.readFileSync(__dirname + '/../../../utils/fixtures/xbt-usd-5m.json', 'utf8'));
     }
 });

@@ -24,7 +24,7 @@ let SignalListener = require('../modules/signal/signal_listener')
 
 let SignalRepository = require('../modules/repository/signal_repository')
 let CandlestickRepository = require('../modules/repository/candlestick_repository')
-let StrategyManager = require('../strategy/strategy_manager')
+let StrategyManager = require('./strategy/strategy_manager')
 
 let Bitfinex = require('../exchange/bitfinex')
 let Bitmex = require('../exchange/bitmex')

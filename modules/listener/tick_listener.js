@@ -35,14 +35,14 @@ module.exports = class TickListener {
                 if (signal && signal.signal) {
                     let signalWindow = moment().subtract(30, 'minutes').toDate();
 
-                    if (this.notified[symbol.exchange + symbol.symbol + strategyName + period] && signalWindow <= this.notified[symbol.exchange + symbol.symbol + strategyName + period]) {
+                    if (this.notified[symbol.exchange + symbol.symbol + strategyName] && signalWindow <= this.notified[symbol.exchange + symbol.symbol + strategyName]) {
                         // console.log('blocked')
                     } else {
-                        this.notified[symbol.exchange + symbol.symbol + strategyName + period] = new Date()
-                        this.notifier.send('[' + signal.signal + ' (' + strategyName + ' ' + period + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
+                        this.notified[symbol.exchange + symbol.symbol + strategyName] = new Date()
+                        this.notifier.send('[' + signal.signal + ' (' + strategyName + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
 
                         // log signal
-                        this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'period': period, 'strategy': strategyName}, signal.signal, strategyName)
+                        this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyName}, signal.signal, strategyName)
                     }
                 }
             })

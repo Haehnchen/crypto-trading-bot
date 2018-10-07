@@ -1,25 +1,47 @@
 'use strict';
 
-let CCI = require('./cci');
-let MACD = require('./macd');
 let IndicatorBuilder = require('./dict/indicator_builder');
 let IndicatorPeriod = require('./dict/indicator_period');
-let ta = require('../utils/technical_analysis');
+let ta = require('../../utils/technical_analysis');
+var fs = require('fs');
 
 module.exports = class StrategyManager {
     constructor(candlestickRepository) {
         this.candlestickRepository = candlestickRepository
+        this.strategies = undefined
+    }
 
-        this.strategies = [
-            new CCI(),
-            new MACD(),
-        ];
+    getStrategies() {
+        if (this.strategies !== undefined) {
+            return this.strategies
+        }
+
+        let strategies = []
+
+        let dirs = [
+            __dirname + '/strategies',
+            __dirname + '/../../strategies',
+        ]
+
+        dirs.forEach((dir) => {
+            if (!fs.existsSync(dir)) {
+                return
+            }
+
+            fs.readdirSync(dir).forEach(file => {
+                if (file.endsWith('.js')) {
+                    strategies.push(new (require('./strategies/' + file.substr(0, file.length - 3)))())
+                }
+            })
+        })
+
+        return this.strategies = strategies
     }
 
     executeStrategy(strategyName, price, exchange, symbol, options) {
         options = options || {}
 
-        let strategy = this.strategies.find((strategy) => {
+        let strategy = this.getStrategies().find((strategy) => {
             return strategy.getName() === strategyName
         })
 
@@ -68,7 +90,7 @@ module.exports = class StrategyManager {
     executeStrategyBacktest(strategyName, exchange, symbol, options) {
         options = options || {}
 
-        let strategy = this.strategies.find((strategy) => {
+        let strategy = this.getStrategies().find((strategy) => {
             return strategy.getName() === strategyName
         })
 
@@ -127,6 +149,6 @@ module.exports = class StrategyManager {
     }
 
     getStrategyNames() {
-        return this.strategies.map(strategy => strategy.getName())
+        return this.getStrategies().map(strategy => strategy.getName())
     }
 }

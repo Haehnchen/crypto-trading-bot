@@ -30,7 +30,7 @@ module.exports = class Http {
             strict_variables: true
         });
 
-        app.use(express.urlencoded());
+        app.use(express.urlencoded())
         app.use(express.static(__dirname + '/../web/static'))
 
         let ta = this.ta

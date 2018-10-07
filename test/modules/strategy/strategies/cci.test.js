@@ -1,7 +1,7 @@
 let assert = require('assert');
-let CCI = require('../../strategy/cci');
-let IndicatorBuilder = require('../../strategy/dict/indicator_builder')
-let IndicatorPeriod = require('../../strategy/dict/indicator_period')
+let CCI = require('../../../../modules/strategy/strategies/cci');
+let IndicatorBuilder = require('../../../../modules/strategy/dict/indicator_builder')
+let IndicatorPeriod = require('../../../../modules/strategy/dict/indicator_period')
 
 describe('#strategy cci', () => {
     it('cci indicator builder', async () => {

@@ -1,7 +1,7 @@
 'use strict';
 
 const moment = require('moment');
-const StrategyManager = require('../strategy/strategy_manager')
+const StrategyManager = require('./strategy/strategy_manager')
 
 module.exports = class Backtest{
     constructor(candlestickRepository, instances, strategyManager) {
