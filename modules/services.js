@@ -65,7 +65,7 @@ var strategyManager = undefined
 
 module.exports = {
     boot: function() {
-        instances = JSON.parse(fs.readFileSync('./instance.json', 'utf8'))
+        instances = require('../instance')
         config = JSON.parse(fs.readFileSync('./conf.json', 'utf8'))
 
         this.getDatabase()

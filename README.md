@@ -40,7 +40,7 @@ npm install
 Create instance file for pairs and changes
 
 ```
-cp instance.json.dist instance.json
+cp instance.js.dist instance.js
 ```
 
 Provide a configuration with your exchange credentials
