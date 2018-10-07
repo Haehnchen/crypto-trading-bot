@@ -87,6 +87,11 @@ For custom strategies use [var/strategies](var/strategies) folder.
 
 Find some example strategies inside [modules/strategy/strategies](modules/strategy/strategies)
 
+## Signals
+
+### Slack
+
+![Webserver UI](documentation/slack_signals.png "Slack signals")
 
 ## Tests
 
