@@ -7,13 +7,13 @@
       "state": "watch",
       "strategies": [
         {
-          "name": "cci",
+          "strategy": "cci",
           "options": {
             "period": "15m"
           }
         },
         {
-          "name": "macd",
+          "strategy": "macd",
           "options": {
             "period": "1h"
           }

@@ -1,7 +1,6 @@
 'use strict';
 
-let Candlestick = require('../../dict/candlestick');
-const moment = require('moment');
+const moment = require('moment')
 
 module.exports = class TickListener {
     constructor(tickers, instances, notifier, signalLogger, strategyManager) {
@@ -28,21 +27,21 @@ module.exports = class TickListener {
             }
 
             symbol.strategies.forEach(async (strategy) => {
-                let strategyName = strategy.name;
+                let strategyKey = strategy.strategy
 
-                let signal = await this.strategyManager.executeStrategy(strategyName, ticker.ask, symbol.exchange, symbol.symbol, strategy['options'] || {})
+                let signal = await this.strategyManager.executeStrategy(strategyKey, ticker.ask, symbol.exchange, symbol.symbol, strategy['options'] || {})
 
                 if (signal && signal.signal) {
                     let signalWindow = moment().subtract(30, 'minutes').toDate();
 
-                    if (this.notified[symbol.exchange + symbol.symbol + strategyName] && signalWindow <= this.notified[symbol.exchange + symbol.symbol + strategyName]) {
+                    if (this.notified[symbol.exchange + symbol.symbol + strategyKey] && signalWindow <= this.notified[symbol.exchange + symbol.symbol + strategyKey]) {
                         // console.log('blocked')
                     } else {
-                        this.notified[symbol.exchange + symbol.symbol + strategyName] = new Date()
-                        this.notifier.send('[' + signal.signal + ' (' + strategyName + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
+                        this.notified[symbol.exchange + symbol.symbol + strategyKey] = new Date()
+                        this.notifier.send('[' + signal.signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
 
                         // log signal
-                        this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyName}, signal.signal, strategyName)
+                        this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyKey}, signal.signal, strategyKey)
                     }
                 }
             })
