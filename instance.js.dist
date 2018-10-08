@@ -22,6 +22,9 @@ x.forEach((pair) => {
                 }
             },
             {
+                'strategy': 'obv_pump_dump'
+            },
+            {
                 'strategy': 'macd',
                 'options': {
                     'period': '1h'
