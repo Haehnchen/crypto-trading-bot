@@ -20,7 +20,7 @@ module.exports = class StrategyManager {
 
         let dirs = [
             __dirname + '/strategies',
-            __dirname + '/../../strategies',
+            __dirname + '/../../var/strategies',
         ]
 
         dirs.forEach((dir) => {
@@ -30,7 +30,7 @@ module.exports = class StrategyManager {
 
             fs.readdirSync(dir).forEach(file => {
                 if (file.endsWith('.js')) {
-                    strategies.push(new (require('./strategies/' + file.substr(0, file.length - 3)))())
+                    strategies.push(new (require(dir + '/' + file.substr(0, file.length - 3)))())
                 }
             })
         })
