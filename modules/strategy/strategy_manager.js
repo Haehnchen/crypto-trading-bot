@@ -81,7 +81,7 @@ module.exports = class StrategyManager {
 
             let indicatorPeriod = new IndicatorPeriod(price, results)
 
-            let trigger = await strategy.period(indicatorPeriod)
+            let trigger = await strategy.period(indicatorPeriod, options)
 
             resolve(trigger)
         })
@@ -138,7 +138,7 @@ module.exports = class StrategyManager {
 
             let indicatorPeriod = new IndicatorPeriod(price, results)
 
-            let trigger = await strategy.period(indicatorPeriod)
+            let trigger = await strategy.period(indicatorPeriod, options)
 
             trigger = trigger || {}
 
