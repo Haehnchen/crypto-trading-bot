@@ -20,7 +20,7 @@ module.exports = class {
         return new Promise((resolve) => {
             let obv = indicatorPeriod.getIndicator('obv')
 
-            if (obv.length <= 30) {
+            if (obv.length <= 20) {
                 resolve()
                 return
             }
