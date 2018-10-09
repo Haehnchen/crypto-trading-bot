@@ -12,7 +12,7 @@ module.exports = {
         let grouped = []
 
         candlesticks.forEach((candle) => {
-            const start = moment(candle['time']).subtract();
+            const start = moment(candle['time'] * 1000).subtract();
             const remainder = minutes - (start.minute() % minutes);
 
             const group = moment(start).add(remainder, "minutes").format('YYYY-MM-DD:HH:mm:00.000Z');
@@ -39,7 +39,7 @@ module.exports = {
                 x['volume'].push(candle['volume'])
             })
 
-            const start = moment(candles[candles.length - 1]['time']).add({'minutes': 1});
+            const start = moment(candles[candles.length - 1]['time'] * 1000).add({'minutes': 1});
             const mod = minutes - (start.minute() % minutes);
 
             const group = moment(start).add(mod, "minutes").format('YYYY-MM-DDTHH:mm:00.000Z');
@@ -50,7 +50,7 @@ module.exports = {
                 'high': Math.max(...x['high']),
                 'low': Math.min(...x['low']),
                 'close': candles[0]['close'],
-                'volume': x['volume'].reduce(function(sum, a) { return sum + Number(a) }, 0),
+                'volume': x['volume'].reduce((sum, a) => { return sum + Number(a) }, 0),
                 '_time': group,
                 '_candle_count': candles.length,
             })
