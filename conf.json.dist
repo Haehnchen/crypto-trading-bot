@@ -7,6 +7,10 @@
         "bitmex": {
             "key": "xxx",
             "secret": "xxx"
+        },
+        "binance": {
+            "key": "xxx",
+            "secret": "xxx"
         }
     },
     "notify": {

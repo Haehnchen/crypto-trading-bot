@@ -28,6 +28,7 @@ let StrategyManager = require('./strategy/strategy_manager')
 
 let Bitfinex = require('../exchange/bitfinex')
 let Bitmex = require('../exchange/bitmex')
+let Binance = require('../exchange/binance')
 
 let Trade = require('../modules/trade')
 let Http = require('../modules/http')
@@ -282,20 +283,29 @@ module.exports = {
         let instances = this.getInstances();
         let config = this.getConfig();
 
-        let filter = instances.symbols.filter(function (symbol) {
+        let bitmex = instances.symbols.filter((symbol) => {
             return symbol['exchange'] === 'bitmex' && symbol['state'] === 'watch';
         });
 
-        if(filter.length > 0) {
-            myExchanges['bitmex'] = new Bitmex(eventEmitter, filter, this.getLogger());
+        if(bitmex.length > 0) {
+            myExchanges['bitmex'] = new Bitmex(eventEmitter, bitmex, this.getLogger());
         }
 
-        let filter2 = instances.symbols.filter(function (symbol) {
+        let bitfinex = instances.symbols.filter((symbol) => {
             return symbol['exchange'] === 'bitfinex' && symbol['state'] === 'watch';
         });
 
-        if(filter2.length > 0) {
-            myExchanges['bitfinex'] = new Bitfinex(eventEmitter, config.exchanges.bitfinex, filter2, this.getLogger());
+        if(bitfinex.length > 0) {
+            myExchanges['bitfinex'] = new Bitfinex(eventEmitter, config.exchanges.bitfinex, bitfinex, this.getLogger());
+        }
+
+        let binance = instances.symbols.filter((symbol) => {
+            return symbol['exchange'] === 'binance' && symbol['state'] === 'watch';
+        })
+
+
+        if(binance.length > 0) {
+            myExchanges['binance'] = new Binance(eventEmitter, config.exchanges.binance || {}, binance, this.getLogger());
         }
 
         return exchanges = myExchanges
