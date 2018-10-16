@@ -41,7 +41,7 @@ module.exports = class TickListener {
                         this.notifier.send('[' + signal.signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
 
                         // log signal
-                        this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyKey}, signal.signal, strategyKey)
+                        this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyKey, 'raw': signal}, signal.signal, strategyKey)
                     }
                 }
             })
