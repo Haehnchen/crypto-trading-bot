@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = class ExchangeOrder {
-    constructor(id, symbol, status, price, amount, retry, ourId, side) {
+    constructor(id, symbol, status, price, amount, retry, ourId, side, updatedAt) {
         this.id = id
         this.symbol = symbol
         this.status = status
@@ -10,5 +10,6 @@ module.exports = class ExchangeOrder {
         this.retry = retry
         this.ourId = ourId
         this.side = side
+        this.updatedAt = updatedAt;
     }
 };

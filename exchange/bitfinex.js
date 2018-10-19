@@ -338,7 +338,8 @@ module.exports = class Bitfinex {
             order['amount'],
             retry,
             order['cid'],
-            order['amount'] < 0 ? 'sell' : 'buy'
+            order['amount'] < 0 ? 'sell' : 'buy',
+            new Date()
         )
     }
 
@@ -365,7 +366,8 @@ module.exports = class Bitfinex {
             return new Position(
                 pair,
                 position[2] < 0 ? 'short' : 'long',
-                position[2]
+                position[2],
+                new Date(),
             )
         })
     }

@@ -11,13 +11,21 @@ let OrderbookEvent = require('./../event/orderbook_event')
 let resample = require('./../utils/resample')
 
 let moment = require('moment')
-const request = require('request');
+let request = require('request');
 
-const BitMEXClient = require('bitmex-realtime-api');
+let BitMEXClient = require('bitmex-realtime-api');
+let Position = require('../dict/position.js');
+let ExchangeOrder = require('../dict/exchange_order');
 
-module.exports = class Exchange {
-    constructor(eventEmitter, symbols, logger) {
-        let client = new BitMEXClient();
+module.exports = class Bitmex {
+    constructor(eventEmitter, symbols, config, logger) {
+        this.positions = {}
+        this.orders = {}
+
+        let client = new BitMEXClient({
+            'apiKeyID': config.key,
+            'apiKeySecret': config.secret,
+        })
 
         client.on('error', (error) => {
             console.error(error)
@@ -107,9 +115,34 @@ module.exports = class Exchange {
                         'bitmex',
                         symbol['symbol'],
                         new Ticker('bitmex', symbol['symbol'], moment().format('X'), instrument['bidPrice'], instrument['askPrice'])
-                    ));
+                    ))
                 })
             })
+
+            /*
+             * This stream alerts me of any change to the orders. If it is filled, closed, etc...
+             */
+            client.addStream(symbol['symbol'], 'order', (orders, symbol, tableName) => {
+                Bitmex.createPositions(orders).forEach(order => {
+                    this.orders[order.symbol] = order
+                })
+            })
+
+            /*
+             * This stream alerts me of any change to my positions. If it is filled, closed, entry price, liquidation price
+             */
+            client.addStream(symbol['symbol'], 'position', (positions, symbol, tableName) => {
+                Bitmex.createPositions(positions).forEach(position => {
+                    this.positions[position.symbol] = position
+                })
+            })
+
+            /*
+             * This stream alerts me of any executions of my orders. The results of the executions are seen in the postions stream
+
+            client.addStream(symbol['symbol'], 'execution', (data, symbol, tableName) => {
+            })
+             */
 
             /*
             Disable: huge traffic with no use case right now
@@ -141,5 +174,112 @@ module.exports = class Exchange {
 
         })
     }
-}
 
+    getOrders() {
+        let orders = []
+
+        for(let key in this.orders){
+            let order = this.orders[key];
+
+            if(order.status === 'active') {
+                orders.push(order)
+            }
+        }
+
+        return orders
+    }
+
+    getOrdersForSymbol(symbol) {
+        let orders = []
+
+        for(let key in this.orders){
+            let order = this.orders[key];
+
+            if(order.status === 'open' && order.symbol === symbol) {
+                orders.push(order)
+            }
+        }
+
+        return orders
+    }
+
+    getPositions() {
+        let results = []
+
+        for (let x in this.positions) {
+            results.push(this.positions[x])
+        }
+
+        return results
+    }
+
+    getPositionForSymbol(symbol) {
+        for (let x in this.positions) {
+            let position = this.positions[x];
+
+            if(position.symbol === symbol) {
+                return position
+            }
+        }
+
+        return undefined
+    }
+
+    static createPositions(positions) {
+        return positions.filter((position) => {
+            return position['isOpen'] === true
+        }).map(position => {
+            return new Position(
+                position['symbol'],
+                position['currentQty'] < 0 ? 'short' : 'long',
+                position['currentQty'],
+                new Date(),
+            )
+        })
+    }
+
+    static createOrders(orders) {
+        return orders.map(order => {
+            let retry = false
+
+            /*
+            match execType with
+                | "New" -> `Open, `New_order_accepted
+            | "PartiallyFilled" -> `Open, `Partially_filled
+            | "Filled" -> `Filled, `Filled
+            | "DoneForDay" -> `Open, `General_order_update
+            | "Canceled" -> `Canceled, `Canceled
+            | "PendingCancel" -> `Pending_cancel, `General_order_update
+            | "Stopped" -> `Open, `General_order_update
+            | "Rejected" -> `Rejected, `New_order_rejected
+            | "PendingNew" -> `Pending_open, `General_order_update
+            | "Expired" -> `Rejected, `New_order_rejected
+            | _ -> invalid_arg' execType ordStatus
+            */
+
+            let status = 'open'
+            let orderStatus = order['ordStatus'].toLowerCase()
+
+            if (orderStatus === 'new' || orderStatus === 'partiallyfilled' || orderStatus === 'pendingnew') {
+                status = 'open'
+            } else if (orderStatus === 'filled') {
+                status = 'done'
+            } else if (orderStatus === 'rejected' || orderStatus === 'expired') {
+                status = 'rejected'
+                retry = true
+            }
+
+            return new ExchangeOrder(
+                order['orderID'],
+                order['symbol'],
+                status,
+                order['price'],
+                order['orderQty'],
+                retry,
+                order['clOrdID'],
+                order['side'].toLowerCase() === 'sell' ? 'sell' : 'buy', // secure the value,
+                new Date()
+            )
+        })
+    }
+}

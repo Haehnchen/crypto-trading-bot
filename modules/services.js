@@ -29,6 +29,7 @@ let StrategyManager = require('./strategy/strategy_manager')
 let Bitfinex = require('../exchange/bitfinex')
 let Bitmex = require('../exchange/bitmex')
 let Binance = require('../exchange/binance')
+let CoinbasePro = require('../exchange/coinbase_pro')
 
 let Trade = require('../modules/trade')
 let Http = require('../modules/http')
@@ -288,7 +289,7 @@ module.exports = {
         });
 
         if(bitmex.length > 0) {
-            myExchanges['bitmex'] = new Bitmex(eventEmitter, bitmex, this.getLogger());
+            myExchanges['bitmex'] = new Bitmex(eventEmitter, bitmex, config.exchanges.bitmex, this.getLogger());
         }
 
         let bitfinex = instances.symbols.filter((symbol) => {
@@ -306,6 +307,15 @@ module.exports = {
 
         if(binance.length > 0) {
             myExchanges['binance'] = new Binance(eventEmitter, config.exchanges.binance || {}, binance, this.getLogger());
+        }
+
+        let coinbasePro = instances.symbols.filter((symbol) => {
+            return symbol['exchange'] === 'coinbase_pro' && symbol['state'] === 'watch';
+        })
+
+
+        if(coinbasePro.length > 0) {
+            myExchanges['coinbase_pro'] = new CoinbasePro(eventEmitter, config.exchanges.coinbasePro || {}, coinbasePro, this.getLogger());
         }
 
         return exchanges = myExchanges
