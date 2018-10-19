@@ -1,6 +1,6 @@
 'use strict';
 
-const Binance = require('binance-api-node').default
+const BinanceClient = require('binance-api-node').default
 
 let Candlestick = require('./../dict/candlestick')
 let Ticker = require('./../dict/ticker')
@@ -9,9 +9,9 @@ let TickerEvent = require('./../event/ticker_event')
 
 let moment = require('moment')
 
-module.exports = class Exchange {
+module.exports = class Binance {
     constructor(eventEmitter, config, symbols, logger) {
-        const client = Binance()
+        const client = BinanceClient()
 
         symbols.forEach(symbol => {
             symbol['periods'].forEach(interval => {
@@ -56,5 +56,25 @@ module.exports = class Exchange {
                 })
             })
         })
+    }
+
+    getOrders() {
+        return []
+    }
+
+    getOrdersForSymbol(symbol) {
+        return []
+    }
+
+    getPositions() {
+        return []
+    }
+
+    getPositionForSymbol(symbol) {
+        return undefined
+    }
+
+    getName() {
+        return 'binance'
     }
 }

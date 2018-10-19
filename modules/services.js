@@ -269,6 +269,7 @@ module.exports = {
             this.getTa(),
             this.getSignalHttp(),
             this.getBacktest(),
+            this.getExchangeInstances()
         )
     },
 

@@ -10,6 +10,7 @@ describe('#bitmex exchange implementation', function() {
         assert.equal(pos[0].symbol, 'LTCZ18')
         assert.equal(pos[0].side, 'short')
         assert.equal(pos[0].amount, -4)
+        assert.equal(pos[0].profit, 1.2)
     });
 
     it('orders are extracted', () => {
@@ -21,6 +22,8 @@ describe('#bitmex exchange implementation', function() {
         assert.equal(orders[0].amount, 2)
         assert.equal(orders[0].price, 0.00839)
         assert.equal(orders[0].retry, false)
+        assert.equal(orders[0].type, 'limit')
+        assert.equal(orders[0].createdAt.toISOString(), '2018-10-19T16:31:27.496Z')
         assert.equal(orders[0].updatedAt instanceof Date, true)
     });
 

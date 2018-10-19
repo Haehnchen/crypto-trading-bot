@@ -165,6 +165,10 @@ module.exports = class Bitfinex {
         ws.open()
     }
 
+    getName() {
+        return 'bitfinex'
+    }
+
     order(order) {
         var me = this
 
@@ -339,6 +343,8 @@ module.exports = class Bitfinex {
             retry,
             order['cid'],
             order['amount'] < 0 ? 'sell' : 'buy',
+            undefined,
+            undefined,
             new Date()
         )
     }
@@ -367,6 +373,7 @@ module.exports = class Bitfinex {
                 pair,
                 position[2] < 0 ? 'short' : 'long',
                 position[2],
+                undefined,
                 new Date(),
             )
         })

@@ -123,8 +123,8 @@ module.exports = class Bitmex {
              * This stream alerts me of any change to the orders. If it is filled, closed, etc...
              */
             client.addStream(symbol['symbol'], 'order', (orders, symbol, tableName) => {
-                Bitmex.createPositions(orders).forEach(order => {
-                    this.orders[order.symbol] = order
+                Bitmex.createOrders(orders).forEach(order => {
+                    this.orders[order.id] = order
                 })
             })
 
@@ -179,11 +179,7 @@ module.exports = class Bitmex {
         let orders = []
 
         for(let key in this.orders){
-            let order = this.orders[key];
-
-            if(order.status === 'active') {
-                orders.push(order)
-            }
+            orders.push(this.orders[key])
         }
 
         return orders
@@ -225,6 +221,10 @@ module.exports = class Bitmex {
         return undefined
     }
 
+    getName() {
+        return 'bitmex'
+    }
+
     static createPositions(positions) {
         return positions.filter((position) => {
             return position['isOpen'] === true
@@ -233,6 +233,7 @@ module.exports = class Bitmex {
                 position['symbol'],
                 position['currentQty'] < 0 ? 'short' : 'long',
                 position['currentQty'],
+                position['unrealisedRoePcnt']  * 100,
                 new Date(),
             )
         })
@@ -269,6 +270,18 @@ module.exports = class Bitmex {
                 retry = true
             }
 
+            let ordType = order['ordType'].toLowerCase();
+
+            let orderType = undefined
+            switch (ordType) {
+                case 'limit':
+                    orderType = 'limit'
+                    break;
+                case 'stop':
+                    orderType = 'stop'
+                    break;
+            }
+
             return new ExchangeOrder(
                 order['orderID'],
                 order['symbol'],
@@ -278,6 +291,8 @@ module.exports = class Bitmex {
                 retry,
                 order['clOrdID'],
                 order['side'].toLowerCase() === 'sell' ? 'sell' : 'buy', // secure the value,
+                orderType,
+                new Date(order['transactTime']),
                 new Date()
             )
         })

@@ -1,0 +1,94 @@
+{% extends './layout.html.twig' %}
+
+{% block content %}
+    <div class="container">
+
+        <h2>Positions</h2>
+
+
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Exchange</th>
+                <th scope="col">Symbol</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Profit</th>
+                <th scope="col">UpdatedAt</th>
+                <th scope="col">Side</th>
+            </tr>
+
+            </thead>
+            <tbody>
+            {% for position in positions %}
+                <tr>
+                    <td>{{ position.exchange }}</td>
+                    <td>{{ position.position.symbol }}</td>
+                    <td class="{{ position.position.amount < 0 ? 'text-danger' : 'text-success' }}">
+                        {{ position.position.amount }}
+                    </td>
+                    <td>
+                        {% if position.position.profit is defined %}
+                            <p class="{{ position.position.profit < 0 ? 'text-danger' : 'text-success' }}">{{ position.position.profit }} %</p>
+                        {% endif %}
+                    </td>
+                    <td>{{ position.position.updateAt|date('d.m.y H:i') }}</td>
+                    <td>
+                        {% if position.position.side == 'short' %}
+                            <i class="fas fa-chevron-circle-up text-success"></i>
+                        {% elseif position.position.side == 'long' %}
+                            <i class="fas fa-chevron-circle-down text-danger"></i>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+
+        <h2>Orders</h2>
+
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Exchange</th>
+                <th scope="col">Symbol</th>
+                <th scope="col">Type</th>
+                <th scope="col">ID</th>
+                <th scope="col">Price</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Retry</th>
+                <th scope="col">OurId</th>
+                <th scope="col">CreatedAt</th>
+                <th scope="col">UpdatedAt</th>
+                <th scope="col">Side</th>
+                <th scope="col">status</th>
+            </tr>
+
+            </thead>
+            <tbody>
+            {% for order in orders %}
+                <tr>
+                    <td>{{ order.exchange }}</td>
+                    <td>{{ order.order.symbol }}</td>
+                    <td>{{ order.order.type }}</td>
+                    <td>{{ order.order.id }}</td>
+                    <td>{{ order.order.price }}</td>
+                    <td class="{{ order.order.amount < 0 ? 'text-danger' : 'text-success' }}">{{ order.order.amount }}</td>
+                    <td>{{ order.order.retry }}</td>
+                    <td>{{ order.order.ourId }}</td>
+                    <td>{{ order.order.createdAt|date('d.m.y H:i') }}</td>
+                    <td>{{ order.order.updateAt|date('d.m.y H:i') }}</td>
+                    <td>{{ order.order.status }}</td>
+                    <td>
+                        {% if order.order.side == 'buy' %}
+                            <i class="fas fa-chevron-circle-up text-success"></i>
+                        {% elseif order.order.side == 'sell' %}
+                            <i class="fas fa-chevron-circle-down text-danger"></i>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

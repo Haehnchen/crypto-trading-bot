@@ -14,6 +14,7 @@ describe('#bitfinex exchange implementation', function() {
         assert.equal('IOTUSD', pos[1].symbol)
         assert.equal('long', pos[1].side)
         assert.equal(80, pos[1].amount)
+        assert.equal(pos[1].updatedAt instanceof Date, true)
     });
 
     var createResponse = function(filename) {
