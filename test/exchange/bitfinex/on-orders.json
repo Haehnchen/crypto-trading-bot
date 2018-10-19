@@ -1,0 +1,22 @@
+[
+  {
+    "id": 18233985719,
+    "gid": null,
+    "cid": 70300865307,
+    "symbol": "tBCHBTC",
+    "mtsCreate": 1539977500910,
+    "mtsUpdate": 1539977500939,
+    "amount": 0.2,
+    "amountOrig": 0.2,
+    "type": "LIMIT",
+    "typePrev": null,
+    "flags": 0,
+    "status": "ACTIVE",
+    "price": 0.067,
+    "priceAvg": 0,
+    "priceTrailing": 0,
+    "priceAuxLimit": 0,
+    "notify": false,
+    "placedId": null
+  }
+]

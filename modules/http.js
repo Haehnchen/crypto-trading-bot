@@ -99,7 +99,7 @@ module.exports = class Http {
 
             res.render('../templates/trades.html.twig', {
                 'orders': orders,
-                'positions': positions,
+                'positions': positions.sort((a,b) => a.createdAt.getTime() - b.createdAt.getTime()),
             })
         })
 

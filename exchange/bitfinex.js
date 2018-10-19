@@ -146,8 +146,8 @@ module.exports = class Bitfinex {
             me.orders[order.id] = order
         })
 
-        ws.onOrderSnapshot({}, (orders) => {
-            Bitfinex.createExchangeOrders(orders).forEach((order) => {
+        ws.onOrderSnapshot({}, orders => {
+            Bitfinex.createExchangeOrders(orders).forEach(order => {
                 me.orders[order.id] = order
             })
         })
@@ -266,11 +266,7 @@ module.exports = class Bitfinex {
         let orders = []
 
         for(let key in this.orders){
-            let order = this.orders[key];
-
-            if(order.status === 'active') {
-                orders.push(order)
-            }
+            orders.push(this.orders[key])
         }
 
         return orders
@@ -334,6 +330,16 @@ module.exports = class Bitfinex {
             symbol = symbol.substring(1)
         }
 
+        let orderType = undefined
+        switch (order.type.toLowerCase()) {
+            case 'limit':
+                orderType = 'limit'
+                break;
+            case 'stop':
+                orderType = 'stop'
+                break;
+        }
+
         return new ExchangeOrder(
             bitfinex_id,
             symbol,
@@ -343,21 +349,14 @@ module.exports = class Bitfinex {
             retry,
             order['cid'],
             order['amount'] < 0 ? 'sell' : 'buy',
-            undefined,
-            undefined,
+            orderType,
+            new Date(order['mtsUpdate']),
             new Date()
         )
     }
 
-    static createExchangeOrders(postions) {
-        let myOrders = [];
-        let me = this
-
-        postions.forEach((position) => {
-            myOrders.push(Bitfinex.createExchangeOrder(position))
-        })
-
-        return myOrders
+    static createExchangeOrders(orders) {
+        return orders.map(Bitfinex.createExchangeOrder)
     }
 
     static createPositions(positions) {
