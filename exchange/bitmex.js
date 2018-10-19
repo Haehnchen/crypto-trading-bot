@@ -123,9 +123,13 @@ module.exports = class Bitmex {
              * This stream alerts me of any change to the orders. If it is filled, closed, etc...
              */
             client.addStream(symbol['symbol'], 'order', (orders, symbol, tableName) => {
-                Bitmex.createOrders(orders).forEach(order => {
-                    this.orders[order.id] = order
+                let ourOrders = {}
+
+                Bitmex.createOrders(orders).filter(order => order.status === 'open').forEach(order => {
+                    ourOrders[order.id] = order
                 })
+
+                this.orders = ourOrders
             })
 
             /*
@@ -178,8 +182,10 @@ module.exports = class Bitmex {
     getOrders() {
         let orders = []
 
-        for(let key in this.orders){
-            orders.push(this.orders[key])
+        for (let key in this.orders){
+            if (this.orders[key].status === 'open') {
+                orders.push(this.orders[key])
+            }
         }
 
         return orders
@@ -265,6 +271,8 @@ module.exports = class Bitmex {
                 status = 'open'
             } else if (orderStatus === 'filled') {
                 status = 'done'
+            } else if (orderStatus === 'canceled') {
+                status = 'canceled'
             } else if (orderStatus === 'rejected' || orderStatus === 'expired') {
                 status = 'rejected'
                 retry = true
@@ -282,11 +290,16 @@ module.exports = class Bitmex {
                     break;
             }
 
+            let price = order['price']
+            if (orderType === 'stop') {
+                price = order['stopPx']
+            }
+
             return new ExchangeOrder(
                 order['orderID'],
                 order['symbol'],
                 status,
-                order['price'],
+                price,
                 order['orderQty'],
                 retry,
                 order['clOrdID'],

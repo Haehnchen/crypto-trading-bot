@@ -265,8 +265,10 @@ module.exports = class Bitfinex {
     getOrders() {
         let orders = []
 
-        for(let key in this.orders){
-            orders.push(this.orders[key])
+        for (let key in this.orders){
+            if (this.orders[key].status === 'open') {
+                orders.push(this.orders[key])
+            }
         }
 
         return orders

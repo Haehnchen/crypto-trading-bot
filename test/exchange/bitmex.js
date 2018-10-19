@@ -25,6 +25,9 @@ describe('#bitmex exchange implementation', function() {
         assert.equal(orders[0].type, 'limit')
         assert.equal(orders[0].createdAt.toISOString(), '2018-10-19T16:31:27.496Z')
         assert.equal(orders[0].updatedAt instanceof Date, true)
+
+        assert.equal(orders[2].price, 0.00852)
+        assert.equal(orders[2].type, 'stop')
     });
 
     var createResponse = function(filename) {
