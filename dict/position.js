@@ -7,8 +7,9 @@ module.exports = class Position {
      * @param amount negative for short and positive for long entries
      * @param profit Current profit in percent: "23.56"
      * @param updatedAt Item last found or sync
+     * @param entry The entry price
      */
-    constructor(symbol, side, amount, profit, updatedAt) {
+    constructor(symbol, side, amount, profit, updatedAt, entry) {
         if (side !== 'long' && side !== 'short') {
             throw 'Invalid position direction given:' + side
         }
@@ -26,5 +27,6 @@ module.exports = class Position {
         this.amount = amount
         this.profit = profit
         this.updatedAt = updatedAt
+        this.entry = entry
     }
 };

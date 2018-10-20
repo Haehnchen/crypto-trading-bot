@@ -18,17 +18,21 @@ let BitMEXClient = require('bitmex-realtime-api');
 let Position = require('../dict/position.js');
 let ExchangeOrder = require('../dict/exchange_order');
 
+let orderUtil = require('../utils/order_util');
+
 module.exports = class Bitmex {
     constructor(eventEmitter, logger) {
         this.eventEmitter = eventEmitter
         this.logger = logger
         this.apiKey = undefined
         this.apiSecret = undefined
+        this.tickSizes = {}
     }
 
     start(config, symbols) {
         let eventEmitter = this.eventEmitter
         let logger = this.logger
+        let tickSizes = this.tickSizes
 
         this.positions = {}
         this.orders = {}
@@ -122,6 +126,8 @@ module.exports = class Bitmex {
 
             client.addStream(symbol['symbol'], 'instrument', (instruments) => {
                 instruments.forEach((instrument) => {
+                    tickSizes[symbol['symbol']] = instrument['tickSize']
+
                     eventEmitter.emit('ticker', new TickerEvent(
                         'bitmex',
                         symbol['symbol'],
@@ -129,7 +135,6 @@ module.exports = class Bitmex {
                     ))
                 })
             })
-
 
             /*
              * This stream alerts me of any change to the orders. If it is filled, closed, etc...
@@ -237,6 +242,14 @@ module.exports = class Bitmex {
         }
 
         return undefined
+    }
+
+    formatPrice(price, symbol) {
+        if (!(symbol in this.tickSizes)) {
+            return undefined
+        }
+
+        return orderUtil.caluclateIncrementSize(price, this.tickSizes[symbol])
     }
 
     getName() {
@@ -407,6 +420,7 @@ module.exports = class Bitmex {
                 position['currentQty'],
                 position['unrealisedRoePcnt']  * 100,
                 new Date(),
+                position['avgEntryPrice']
             )
         })
     }
@@ -430,7 +444,6 @@ module.exports = class Bitmex {
             | _ -> invalid_arg' execType ordStatus
             */
 
-            console.log(order)
             let status = 'open'
             let orderStatus = order['ordStatus'].toLowerCase()
 

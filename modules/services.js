@@ -37,6 +37,8 @@ let Trade = require('../modules/trade')
 let Http = require('../modules/http')
 let Backtest = require('../modules/backtest')
 
+let StopLossCalculator = require('../modules/order/stop_loss_calculator')
+
 var _ = require('lodash');
 
 let db = undefined
@@ -67,6 +69,8 @@ let exchangeManager = undefined
 let backtest = undefined
 
 var strategyManager = undefined
+
+var stopLossCalculator = undefined
 
 module.exports = {
     boot: function() {
@@ -109,6 +113,14 @@ module.exports = {
         )
     },
 
+    getStopLossCalculator: function() {
+        if (stopLossCalculator) {
+            return stopLossCalculator
+        }
+
+        return stopLossCalculator = new StopLossCalculator(this.getTickers(), this.getLogger())
+    },
+
     getCandleStickListener: function() {
         if (candleStickListener) {
             return candleStickListener;
@@ -147,6 +159,7 @@ module.exports = {
         return exchangeOrderWatchdogListener = new ExchangeOrderWatchdogListener(
             this.getExchangeManager(),
             this.getInstances(),
+            this.getStopLossCalculator(),
             this.getLogger(),
         )
     },

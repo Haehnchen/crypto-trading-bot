@@ -45,4 +45,12 @@ describe('#order util', function() {
             new ExchangeOrder('foobar', 'BTUSD', 'open', 1337, 4, false, 'our_id', 'buy', 'stop')
         ]))
     })
+
+    it('calculate increment size', () => {
+        assert.equal(0.00857, orderUtil.caluclateIncrementSize(0.0085696, 0.00001))
+        assert.equal(50, orderUtil.caluclateIncrementSize(50.55, 2.5))
+
+        assert.equal(50, orderUtil.caluclateIncrementSize(50.22, 1))
+        assert.equal(51, orderUtil.caluclateIncrementSize(50.88, 1))
+    })
 })

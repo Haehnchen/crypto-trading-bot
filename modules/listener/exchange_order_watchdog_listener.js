@@ -3,10 +3,11 @@
 let orderUtil = require('../../utils/order_util')
 
 module.exports = class ExchangeOrderWatchdogListener {
-    constructor(exchangeManager, instances, logger) {
+    constructor(exchangeManager, instances, stopLossCalculator, logger) {
         this.exchangeManager = exchangeManager
         this.instances = instances
         this.logger = logger
+        this.stopLossCalculator = stopLossCalculator
     }
 
     onTick() {
@@ -40,9 +41,11 @@ module.exports = class ExchangeOrderWatchdogListener {
 
     async stopLossWatchdog(exchange, position) {
         let logger = this.logger
+        let stopLossCalculator = this.stopLossCalculator
+
         let orderChanges = orderUtil.syncStopLossOrder(position, exchange.getOrdersForSymbol(position.symbol));
 
-        orderChanges.forEach(orderChange => {
+        orderChanges.forEach(async orderChange => {
             logger.info('Stoploss update' + JSON.stringify({
                 'order': orderChange,
                 'symbol': position.symbol,
@@ -57,7 +60,13 @@ module.exports = class ExchangeOrderWatchdogListener {
             } else {
                 // create
 
-                let price = orderChange.price
+                let price = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position)
+                if (!price) {
+                    console.log('Stop loss: auto price skipping')
+                    return
+                }
+
+                price = exchange.formatPrice(price, position.symbol)
                 if (!price) {
                     console.log('Stop loss: auto price skipping')
                     return
@@ -66,7 +75,7 @@ module.exports = class ExchangeOrderWatchdogListener {
                 try {
                     exchange.order({
                         'symbol': position.symbol,
-                        'price': orderChange.price,
+                        'price': exchange.formatPrice(price, position.symbol),
                         'amount': orderChange.amount,
                         'type': 'stop'
                     })
