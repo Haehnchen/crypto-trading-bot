@@ -2,6 +2,10 @@
 
 module.exports = class ExchangeOrder {
     constructor(id, symbol, status, price, amount, retry, ourId, side, type, createdAt, updatedAt) {
+        if (side !== 'buy' && side !== 'sell') {
+            throw 'Invalid order direction given:' + side
+        }
+
         this.id = id
         this.symbol = symbol
         this.status = status

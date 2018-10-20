@@ -12,6 +12,7 @@ let resample = require('./../utils/resample')
 
 let moment = require('moment')
 let request = require('request');
+var crypto = require('crypto')
 
 let BitMEXClient = require('bitmex-realtime-api');
 let Position = require('../dict/position.js');
@@ -21,6 +22,8 @@ module.exports = class Bitmex {
     constructor(eventEmitter, logger) {
         this.eventEmitter = eventEmitter
         this.logger = logger
+        this.apiKey = undefined
+        this.apiSecret = undefined
     }
 
     start(config, symbols) {
@@ -31,8 +34,8 @@ module.exports = class Bitmex {
         this.orders = {}
 
         let client = new BitMEXClient({
-            'apiKeyID': config.key,
-            'apiKeySecret': config.secret,
+            'apiKeyID': this.apiKey = config.key,
+            'apiKeySecret': this.apiSecret = config.secret,
         })
 
         client.on('error', (error) => {
@@ -126,6 +129,7 @@ module.exports = class Bitmex {
                     ))
                 })
             })
+
 
             /*
              * This stream alerts me of any change to the orders. If it is filled, closed, etc...
@@ -239,6 +243,160 @@ module.exports = class Bitmex {
         return 'bitmex'
     }
 
+    order(order) {
+        if (!order.amount && !order.price && !order.symbol) {
+            throw 'Invalid amount for update'
+        }
+
+        let orderType = undefined
+        if (!order.type) {
+            orderType = 'Limit'
+        } else if(order.type === 'limit') {
+            orderType = 'Limit'
+        } else if(order.type === 'stop') {
+            orderType = 'Stop'
+        }
+
+        if (!orderType) {
+            throw 'Invalid order type'
+        }
+
+        var verb = 'POST',
+            path = '/api/v1/order',
+            expires = new Date().getTime() + (60 * 1000) // 1 min in the future
+        ;
+
+        let data = {
+            'symbol': order.symbol,
+            'orderQty': order.amount,
+            'ordType': orderType,
+            'text':	'Powered by your awesome crypto-bot watchdog',
+        }
+
+        if (orderType === 'Stop') {
+            data['stopPx'] = Math.abs(order.price)
+        } else {
+            data['price'] = Math.abs(order.price)
+        }
+
+        data['side'] = order.price < 0 ? 'Sell' : 'Buy'
+
+        if (order.id) {
+            data['clOrdID'] = order.id
+        }
+
+        var postBody = JSON.stringify(data);
+        var signature = crypto.createHmac('sha256', this.apiSecret).update(verb + path + expires + postBody).digest('hex');
+
+        var headers = {
+            'content-type' : 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'api-expires': expires,
+            'api-key': this.apiKey,
+            'api-signature': signature
+        }
+
+        let logger = this.logger
+        return new Promise((resolve, reject) => {
+            request({
+                headers: headers,
+                url:'https://www.bitmex.com' + path,
+                method: verb,
+                body: postBody
+            }, (error, response, body) => {
+                if (error) {
+                    logger.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
+                    console.log(error)
+                    reject()
+
+                    return
+                }
+
+                logger.info('Bitmex: Order created:' + JSON.stringify({'body': body}))
+
+                let order = JSON.parse(body)
+                if (order.error) {
+                    logger.error('Bitmex: Invalid order created request:' + JSON.stringify(order))
+                    console.log(body)
+                    reject()
+                    return
+                }
+
+                console.log(order)
+
+                resolve(Bitmex.createOrders([order])[0])
+            })
+        })
+    }
+
+    updateOrder(id, order) {
+        if (!order.amount && !order.price) {
+            throw 'Invalid amount for update'
+        }
+
+        var verb = 'PUT',
+            path = '/api/v1/order',
+            expires = new Date().getTime() + (60 * 1000) // 1 min in the future
+        ;
+
+        let data = {
+            'orderID': id,
+            'text':	'Powered by your awesome crypto-bot watchdog',
+        }
+
+        if (order.amount) {
+            data['orderQty'] = Math.abs(order.amount)
+        }
+
+        if (order.price) {
+            data['price'] = order.price
+        }
+
+        var postBody = JSON.stringify(data);
+        var signature = crypto.createHmac('sha256', this.apiSecret).update(verb + path + expires + postBody).digest('hex');
+
+        var headers = {
+            'content-type' : 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'api-expires': expires,
+            'api-key': this.apiKey,
+            'api-signature': signature
+        }
+
+        let logger = this.logger
+        return new Promise((resolve, reject) => {
+            request({
+                headers: headers,
+                url:'https://www.bitmex.com' + path,
+                method: verb,
+                body: postBody
+            }, (error, response, body) => {
+                if (error) {
+                    logger.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
+                    console.log(error)
+                    reject()
+
+                    return
+                }
+
+                let order = JSON.parse(body)
+
+                if (order.error) {
+                    logger.error('Bitmex: Invalid order update request:' + JSON.stringify(order))
+                    console.log(body)
+                    reject()
+                    return
+                }
+
+                logger.info('Bitmex: Order update:' + JSON.stringify({'body': body}))
+
+                resolve(Bitmex.createOrders([order])[0])
+            })
+        })
+    }
+
     static createPositions(positions) {
         return positions.filter((position) => {
             return position['isOpen'] === true
@@ -272,6 +430,7 @@ module.exports = class Bitmex {
             | _ -> invalid_arg' execType ordStatus
             */
 
+            console.log(order)
             let status = 'open'
             let orderStatus = order['ordStatus'].toLowerCase()
 

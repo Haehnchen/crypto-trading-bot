@@ -17,6 +17,7 @@ let CreateOrderListener = require('../modules/listener/create_order_listener')
 let CandleStickLogListener = require('../modules/listener/candle_stick_log_listener')
 let TickerDatabaseListener = require('../modules/listener/ticker_database_listener')
 let TickerLogListener = require('../modules/listener/ticker_log_listener')
+let ExchangeOrderWatchdogListener = require('../modules/listener/exchange_order_watchdog_listener')
 
 let SignalLogger = require('../modules/signal/signal_logger')
 let SignalHttp = require('../modules/signal/signal_http')
@@ -53,6 +54,7 @@ let tickerDatabaseListener = undefined
 let tickerLogListener = undefined
 let tickListener = undefined
 let createOrderListener = undefined
+let exchangeOrderWatchdogListener = undefined
 
 let signalLogger = undefined
 let signalHttp = undefined
@@ -134,6 +136,18 @@ module.exports = {
             this.getNotifier(),
             this.getSignalLogger(),
             this.getStrategyManager()
+        )
+    },
+
+    getExchangeOrderWatchdogListener: function() {
+        if (exchangeOrderWatchdogListener) {
+            return exchangeOrderWatchdogListener
+        }
+
+        return exchangeOrderWatchdogListener = new ExchangeOrderWatchdogListener(
+            this.getExchangeManager(),
+            this.getInstances(),
+            this.getLogger(),
         )
     },
 
@@ -300,7 +314,8 @@ module.exports = {
             this.getCandleStickLogListener(),
             this.getTickerDatabaseListener(),
             this.getTickerLogListener(),
-            this.getSignalListener()
+            this.getSignalListener(),
+            this.getExchangeOrderWatchdogListener(),
         )
     },
 
