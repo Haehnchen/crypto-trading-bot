@@ -13,9 +13,13 @@ let ExchangeOrder = require('../dict/exchange_order');
 let moment = require('moment')
 
 module.exports = class Bitfinex {
-    constructor(eventEmitter, config, instances, logger) {
+    constructor(eventEmitter, logger) {
         this.eventEmitter = eventEmitter
         this.logger = logger
+    }
+
+    start(config, symbols) {
+        let eventEmitter = this.eventEmitter
 
         const ws = this.client = new BFX({
             apiKey: config['key'],
@@ -26,7 +30,7 @@ module.exports = class Bitfinex {
         }).ws()
 
         //var ws = this.client = bfx.ws
-        let myLogger = logger
+        let myLogger = this.logger
 
         this.orders = {}
         this.positions = []
@@ -44,7 +48,7 @@ module.exports = class Bitfinex {
         ws.on('open', () => {
             myLogger.debug('Bitfinex: Connection open')
 
-            instances.forEach(function (instance) {
+            symbols.forEach(instance => {
                 // candles
                 instance.periods.forEach(function (period) {
                     if(period === '1d') {

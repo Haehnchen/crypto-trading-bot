@@ -25,6 +25,7 @@ let SignalListener = require('../modules/signal/signal_listener')
 let SignalRepository = require('../modules/repository/signal_repository')
 let CandlestickRepository = require('../modules/repository/candlestick_repository')
 let StrategyManager = require('./strategy/strategy_manager')
+let ExchangeManager = require('./exchange/exchange_manager')
 
 let Bitfinex = require('../exchange/bitfinex')
 let Bitmex = require('../exchange/bitmex')
@@ -60,7 +61,7 @@ let signalListener = undefined
 let signalRepository = undefined
 let candlestickRepository = undefined
 
-let exchanges = undefined
+let exchangeManager = undefined
 let backtest = undefined
 
 var strategyManager = undefined
@@ -71,7 +72,7 @@ module.exports = {
         config = JSON.parse(fs.readFileSync('./conf.json', 'utf8'))
 
         this.getDatabase()
-        this.getExchangeInstances()
+        this.getExchangeManager().init()
     },
 
     getDatabase: () => {
@@ -119,7 +120,7 @@ module.exports = {
             return createOrderListener;
         }
 
-        return createOrderListener = new CreateOrderListener(this.getExchangeInstances(), this.getLogger())
+        return createOrderListener = new CreateOrderListener(this.getExchangeManager(), this.getLogger())
     },
 
     getTickListener: function() {
@@ -269,57 +270,21 @@ module.exports = {
             this.getTa(),
             this.getSignalHttp(),
             this.getBacktest(),
-            this.getExchangeInstances()
+            this.getExchangeManager()
         )
     },
 
-    getExchangeInstances: function() {
-        if (exchanges) {
-            return exchanges;
+    getExchangeManager: function() {
+        if (exchangeManager) {
+            return exchangeManager;
         }
 
-        let eventEmitter = this.getEventEmitter()
-
-        let myExchanges = {}
-
-        let instances = this.getInstances();
-        let config = this.getConfig();
-
-        let bitmex = instances.symbols.filter((symbol) => {
-            return symbol['exchange'] === 'bitmex' && symbol['state'] === 'watch';
-        });
-
-        if(bitmex.length > 0) {
-            myExchanges['bitmex'] = new Bitmex(eventEmitter, bitmex, config.exchanges.bitmex, this.getLogger());
-        }
-
-        let bitfinex = instances.symbols.filter((symbol) => {
-            return symbol['exchange'] === 'bitfinex' && symbol['state'] === 'watch';
-        });
-
-        if(bitfinex.length > 0) {
-            myExchanges['bitfinex'] = new Bitfinex(eventEmitter, config.exchanges.bitfinex, bitfinex, this.getLogger());
-        }
-
-        let binance = instances.symbols.filter((symbol) => {
-            return symbol['exchange'] === 'binance' && symbol['state'] === 'watch';
-        })
-
-
-        if(binance.length > 0) {
-            myExchanges['binance'] = new Binance(eventEmitter, config.exchanges.binance || {}, binance, this.getLogger());
-        }
-
-        let coinbasePro = instances.symbols.filter((symbol) => {
-            return symbol['exchange'] === 'coinbase_pro' && symbol['state'] === 'watch';
-        })
-
-
-        if(coinbasePro.length > 0) {
-            myExchanges['coinbase_pro'] = new CoinbasePro(eventEmitter, config.exchanges.coinbasePro || {}, coinbasePro, this.getLogger());
-        }
-
-        return exchanges = myExchanges
+        return exchangeManager = new ExchangeManager(
+            this.getEventEmitter(),
+            this.getLogger(),
+            this.getInstances(),
+            this.getConfig(),
+        )
     },
 
     createTradeInstance: function() {

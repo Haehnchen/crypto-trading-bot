@@ -4,20 +4,19 @@ let Candlestick = require('../../dict/candlestick.js');
 let ta = require('../../utils/technical_analysis');
 
 module.exports = class CreateOrderListener {
-    constructor(exchanges, logger) {
-        this.exchanges = exchanges
+    constructor(exchangeManager, logger) {
+        this.exchangeManager = exchangeManager
         this.logger = logger
     }
 
     onCreateOrder(orderEvent) {
         this.logger.debug('Create Order:' + JSON.stringify(orderEvent))
 
-        if (!this.exchanges[orderEvent.exchange]) {
+        let exchange = this.exchangeManager.get(orderEvent.exchange)
+        if (!exchange) {
             console.log('order: unknown exchange:' + orderEvent.exchange)
             return
         }
-
-        let exchange = this.exchanges[orderEvent.exchange]
 
         // filter same direction
         let ordersForSymbol = exchange.getOrdersForSymbol(orderEvent.order.symbol).filter((order) => {

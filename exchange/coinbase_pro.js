@@ -10,7 +10,15 @@ let TickerEvent = require('./../event/ticker_event')
 let moment = require('moment')
 
 module.exports = class CoinbasePro {
-    constructor(eventEmitter, config, symbols, logger) {
+    constructor(eventEmitter, logger) {
+        this.eventEmitter = eventEmitter
+        this.logger = logger
+    }
+
+    start(config, symbols) {
+        let eventEmitter = this.eventEmitter
+        let logger = this.logger
+
         const websocket = new Gdax.WebsocketClient(['BTC-USD', 'ETH-USD']);
 
         const publicClient = new Gdax.PublicClient();
@@ -129,5 +137,9 @@ module.exports = class CoinbasePro {
         websocket.on('close', () => {
             /* ... */
         })
+    }
+
+    getName() {
+        return 'coinbase_pro'
     }
 }

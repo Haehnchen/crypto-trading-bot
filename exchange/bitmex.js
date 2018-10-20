@@ -18,7 +18,15 @@ let Position = require('../dict/position.js');
 let ExchangeOrder = require('../dict/exchange_order');
 
 module.exports = class Bitmex {
-    constructor(eventEmitter, symbols, config, logger) {
+    constructor(eventEmitter, logger) {
+        this.eventEmitter = eventEmitter
+        this.logger = logger
+    }
+
+    start(config, symbols) {
+        let eventEmitter = this.eventEmitter
+        let logger = this.logger
+
         this.positions = {}
         this.orders = {}
 

@@ -10,8 +10,15 @@ let TickerEvent = require('./../event/ticker_event')
 let moment = require('moment')
 
 module.exports = class Binance {
-    constructor(eventEmitter, config, symbols, logger) {
+    constructor(eventEmitter, logger) {
+        this.eventEmitter = eventEmitter
+        this.logger = logger
+    }
+
+    start(config, symbols) {
         const client = BinanceClient()
+        const eventEmitter = this.eventEmitter
+        const logger = this.logger
 
         symbols.forEach(symbol => {
             symbol['periods'].forEach(interval => {

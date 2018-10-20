@@ -3,12 +3,12 @@
 let express = require('express')
 
 module.exports = class Http {
-    constructor(config, ta, signalHttp, backtest, exchanges) {
+    constructor(config, ta, signalHttp, backtest, exchangeManager) {
         this.config = config
         this.ta = ta
         this.signalHttp = signalHttp
         this.backtest = backtest
-        this.exchanges = exchanges
+        this.exchangeManager = exchangeManager
     }
 
     start() {
@@ -74,14 +74,12 @@ module.exports = class Http {
             })
         })
 
-        let exchanges = this.exchanges
+        let exchangeManager = this.exchangeManager
         app.get('/trades', async (req, res) => {
             let positions = []
             let orders = []
 
-            for (let x in this.exchanges) {
-                let exchange = exchanges[x]
-
+            exchangeManager.all().forEach(exchange => {
                 exchange.getPositions().forEach(position => {
                     positions.push({
                         'exchange': exchange.getName(),
@@ -95,7 +93,7 @@ module.exports = class Http {
                         'order': order,
                     })
                 })
-            }
+            })
 
             res.render('../templates/trades.html.twig', {
                 'orders': orders,
