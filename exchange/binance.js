@@ -66,19 +66,19 @@ module.exports = class Binance {
     }
 
     getOrders() {
-        return []
+        return new Promise(resolve => {resolve([])})
     }
 
     getOrdersForSymbol(symbol) {
-        return []
+        return new Promise(resolve => {resolve([])})
     }
 
     getPositions() {
-        return []
+        return new Promise(resolve => {resolve([])})
     }
 
     getPositionForSymbol(symbol) {
-        return undefined
+        return new Promise(resolve => {resolve()})
     }
 
     getName() {

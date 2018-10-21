@@ -79,21 +79,26 @@ module.exports = class Http {
             let positions = []
             let orders = []
 
-            exchangeManager.all().forEach(exchange => {
-                exchange.getPositions().forEach(position => {
+            let exchanges = exchangeManager.all();
+            for (let key in exchanges) {
+                let exchange = exchanges[key]
+
+                let myPositions = await exchange.getPositions()
+                myPositions.forEach(position => {
                     positions.push({
                         'exchange': exchange.getName(),
                         'position': position,
                     })
                 })
 
-                exchange.getOrders().forEach(order => {
+                let myOrders = await exchange.getOrders()
+                myOrders.forEach(order => {
                     orders.push({
                         'exchange': exchange.getName(),
                         'order': order,
                     })
                 })
-            })
+            }
 
             res.render('../templates/trades.html.twig', {
                 'orders': orders,

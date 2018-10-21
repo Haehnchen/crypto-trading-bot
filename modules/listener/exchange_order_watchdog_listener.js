@@ -13,8 +13,8 @@ module.exports = class ExchangeOrderWatchdogListener {
     onTick() {
         let instances = this.instances
 
-        this.exchangeManager.all().forEach(exchange => {
-            let positions = exchange.getPositions()
+        this.exchangeManager.all().forEach(async exchange => {
+            let positions = await exchange.getPositions()
 
             if (positions.length === 0) {
                 return
@@ -43,7 +43,8 @@ module.exports = class ExchangeOrderWatchdogListener {
         let logger = this.logger
         let stopLossCalculator = this.stopLossCalculator
 
-        let orderChanges = orderUtil.syncStopLossOrder(position, exchange.getOrdersForSymbol(position.symbol));
+        let orders = await exchange.getOrdersForSymbol(position.symbol);
+        let orderChanges = orderUtil.syncStopLossOrder(position, orders);
 
         orderChanges.forEach(async orderChange => {
             logger.info('Stoploss update' + JSON.stringify({

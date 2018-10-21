@@ -197,51 +197,61 @@ module.exports = class Bitmex {
     }
 
     getOrders() {
-        let orders = []
+        return new Promise(resolve => {
+            let orders = []
 
-        for (let key in this.orders){
-            if (this.orders[key].status === 'open') {
-                orders.push(this.orders[key])
+            for (let key in this.orders){
+                if (this.orders[key].status === 'open') {
+                    orders.push(this.orders[key])
+                }
             }
-        }
 
-        return orders
+            resolve(orders)
+        })
     }
 
     getOrdersForSymbol(symbol) {
-        let orders = []
+        return new Promise(resolve => {
+            let orders = []
 
-        for(let key in this.orders){
-            let order = this.orders[key];
+            for(let key in this.orders){
+                let order = this.orders[key];
 
-            if(order.status === 'open' && order.symbol === symbol) {
-                orders.push(order)
+                if(order.status === 'open' && order.symbol === symbol) {
+                    orders.push(order)
+                }
             }
-        }
 
-        return orders
+            resolve(orders)
+        })
     }
 
     getPositions() {
-        let results = []
+        return new Promise(resolve => {
+            let results = []
 
-        for (let x in this.positions) {
-            results.push(this.positions[x])
-        }
+            for (let x in this.positions) {
+                results.push(this.positions[x])
+            }
 
-        return results
+            resolve(results)
+        })
     }
 
     getPositionForSymbol(symbol) {
-        for (let x in this.positions) {
-            let position = this.positions[x];
+        return new Promise(resolve => {
 
-            if(position.symbol === symbol) {
-                return position
+            for (let x in this.positions) {
+                let position = this.positions[x];
+
+                if(position.symbol === symbol) {
+                    resolve(position)
+                    return
+                }
             }
-        }
 
-        return undefined
+            return resolve()
+        })
     }
 
     formatPrice(price, symbol) {

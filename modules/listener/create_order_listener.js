@@ -9,7 +9,7 @@ module.exports = class CreateOrderListener {
         this.logger = logger
     }
 
-    onCreateOrder(orderEvent) {
+    async onCreateOrder(orderEvent) {
         this.logger.debug('Create Order:' + JSON.stringify(orderEvent))
 
         let exchange = this.exchangeManager.get(orderEvent.exchange)
@@ -19,7 +19,7 @@ module.exports = class CreateOrderListener {
         }
 
         // filter same direction
-        let ordersForSymbol = exchange.getOrdersForSymbol(orderEvent.order.symbol).filter((order) => {
+        let ordersForSymbol = (await exchange.getOrdersForSymbol(orderEvent.order.symbol)).filter((order) => {
             return order.side === orderEvent.order.side
         })
 

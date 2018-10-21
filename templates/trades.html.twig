@@ -13,6 +13,7 @@
                 <th scope="col">Symbol</th>
                 <th scope="col">Amount</th>
                 <th scope="col">Profit</th>
+                <th scope="col">Entry</th>
                 <th scope="col">UpdatedAt</th>
                 <th scope="col">Side</th>
             </tr>
@@ -31,6 +32,7 @@
                             <p class="{{ position.position.profit < 0 ? 'text-danger' : 'text-success' }}">{{ position.position.profit }} %</p>
                         {% endif %}
                     </td>
+                    <td>{{ position.position.entry }}</td>
                     <td>{{ position.position.updateAt|date('d.m.y H:i') }}</td>
                     <td>
                         {% if position.position.side == 'short' %}
@@ -60,8 +62,8 @@
                 <th scope="col">OurId</th>
                 <th scope="col">CreatedAt</th>
                 <th scope="col">UpdatedAt</th>
+                <th scope="col">Status</th>
                 <th scope="col">Side</th>
-                <th scope="col">status</th>
             </tr>
 
             </thead>

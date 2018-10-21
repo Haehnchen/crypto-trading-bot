@@ -267,45 +267,54 @@ module.exports = class Bitfinex {
     }
 
     getOrders() {
-        let orders = []
+        return new Promise(resolve => {
+            let orders = []
 
-        for (let key in this.orders){
-            if (this.orders[key].status === 'open') {
-                orders.push(this.orders[key])
+            for (let key in this.orders){
+                if (this.orders[key].status === 'open') {
+                    orders.push(this.orders[key])
+                }
             }
-        }
 
-        return orders
+            resolve(orders)
+        })
     }
 
     getOrdersForSymbol(symbol) {
-        let orders = []
+        return new Promise(resolve => {
+            let orders = []
 
-        for(let key in this.orders){
-            let order = this.orders[key];
+            for(let key in this.orders){
+                let order = this.orders[key];
 
-            if(order.status === 'open' && order.symbol === symbol) {
-                orders.push(order)
+                if(order.status === 'open' && order.symbol === symbol) {
+                    orders.push(order)
+                }
             }
-        }
 
-        return orders
+            resolve(orders)
+        })
     }
 
     getPositions() {
-        return this.positions
+        return new Promise(resolve => {
+            resolve(this.positions)
+        })
     }
 
     getPositionForSymbol(symbol) {
-        for (let key in this.positions) {
-            let position = this.positions[key];
+        return new Promise(resolve => {
+            for (let key in this.positions) {
+                let position = this.positions[key];
 
-            if(position.symbol === symbol) {
-                return position
+                if (position.symbol === symbol) {
+                    resolve(position)
+                    return
+                }
             }
-        }
 
-        return undefined
+            return resolve()
+        })
     }
 
     static createExchangeOrder(order) {
@@ -384,5 +393,3 @@ module.exports = class Bitfinex {
         })
     }
 }
-
-
