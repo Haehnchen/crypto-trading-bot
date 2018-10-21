@@ -45,6 +45,9 @@ y.forEach((pair) => {
         'periods': ['1m', '15m', '1h'],
         'exchange': 'bitmex',
         'state': 'watch',
+        'extra': {
+            'bitmex_leverage': 5,
+        },
         'strategies': [
             {
                 'strategy': 'cci',

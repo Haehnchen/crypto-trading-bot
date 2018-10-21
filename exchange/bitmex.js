@@ -19,6 +19,7 @@ let Position = require('../dict/position.js');
 let ExchangeOrder = require('../dict/exchange_order');
 
 let orderUtil = require('../utils/order_util');
+var _ = require('lodash')
 
 module.exports = class Bitmex {
     constructor(eventEmitter, logger) {
@@ -28,6 +29,7 @@ module.exports = class Bitmex {
         this.apiSecret = undefined
         this.tickSizes = {}
         this.lotSizes = {}
+        this.symbols = []
     }
 
     start(config, symbols) {
@@ -36,6 +38,7 @@ module.exports = class Bitmex {
         let tickSizes = this.tickSizes
         let lotSizes = this.lotSizes
 
+        this.symbols = symbols
         this.positions = {}
         this.orders = {}
 
@@ -346,7 +349,10 @@ module.exports = class Bitmex {
         }
 
         let logger = this.logger
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
+            // update leverage for pair position
+            await this.updateLeverage(order.symbol)
+
             request({
                 headers: headers,
                 url:'https://www.bitmex.com' + path,
@@ -371,9 +377,85 @@ module.exports = class Bitmex {
                     return
                 }
 
-                console.log(order)
-
                 resolve(Bitmex.createOrders([order])[0])
+            })
+        })
+    }
+
+    /**
+     * Set the configured leverage size "0-100" for pair before creating an order default "3" if not provided in configuration
+     *
+     * symbol configuration via:
+     *
+     * "extra.bitmex_leverage": 5
+     *
+     * @param symbol
+     * @returns {Promise<any>}
+     */
+    async updateLeverage(symbol) {
+        let logger = this.logger
+        return new Promise((resolve, reject) => {
+            let config = this.symbols.find(cSymbol => cSymbol.symbol === symbol)
+            if (!config) {
+                this.logger.error('Bitmex: Invalid leverage config for:' + symbol)
+                resolve(false)
+
+                return
+            }
+
+            // use default leverage to "3"
+            let leverageSize = _.get(config, 'extra.bitmex_leverage', 3)
+
+            if (leverageSize < 0 || leverageSize > 100) {
+                throw 'Invalid leverage size for: ' + leverageSize + ' ' + symbol
+            }
+
+            var verb = 'POST',
+                path = '/api/v1/position/leverage',
+                expires = new Date().getTime() + (60 * 1000) // 1 min in the future
+            ;
+
+            let data = {
+                'symbol': symbol,
+                'leverage': leverageSize,
+            }
+
+            var postBody = JSON.stringify(data);
+            var signature = crypto.createHmac('sha256', this.apiSecret).update(verb + path + expires + postBody).digest('hex');
+
+            var headers = {
+                'content-type' : 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'api-expires': expires,
+                'api-key': this.apiKey,
+                'api-signature': signature
+            }
+
+            request({
+                headers: headers,
+                url:'https://www.bitmex.com' + path,
+                method: verb,
+                body: postBody
+            }, (error, response, body) => {
+                if (error) {
+                    logger.error('Bitmex: Invalid leverage update request:' + JSON.stringify({'error': error, 'body': body}))
+                    console.log(error)
+                    resolve(false)
+
+                    return
+                }
+
+                let result = JSON.parse(body)
+                if (result.error) {
+                    logger.error('Bitmex: Invalid leverage update request:' + JSON.stringify(result))
+                    console.log(body)
+                    reject()
+                    return
+                }
+
+                logger.debug('Bitmex: Leverage update:' + JSON.stringify(result))
+                resolve(true)
             })
         })
     }
