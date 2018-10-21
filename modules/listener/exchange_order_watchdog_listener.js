@@ -67,7 +67,7 @@ module.exports = class ExchangeOrderWatchdogListener {
                     return
                 }
 
-                price = exchange.formatPrice(price, position.symbol)
+                price = exchange.calculatePrice(price, position.symbol)
                 if (!price) {
                     console.log('Stop loss: auto price skipping')
                     return
@@ -76,7 +76,7 @@ module.exports = class ExchangeOrderWatchdogListener {
                 try {
                     exchange.order({
                         'symbol': position.symbol,
-                        'price': exchange.formatPrice(price, position.symbol),
+                        'price': price,
                         'amount': orderChange.amount,
                         'type': 'stop'
                     })

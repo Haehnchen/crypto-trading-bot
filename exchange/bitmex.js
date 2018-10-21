@@ -27,12 +27,14 @@ module.exports = class Bitmex {
         this.apiKey = undefined
         this.apiSecret = undefined
         this.tickSizes = {}
+        this.lotSizes = {}
     }
 
     start(config, symbols) {
         let eventEmitter = this.eventEmitter
         let logger = this.logger
         let tickSizes = this.tickSizes
+        let lotSizes = this.lotSizes
 
         this.positions = {}
         this.orders = {}
@@ -127,6 +129,7 @@ module.exports = class Bitmex {
             client.addStream(symbol['symbol'], 'instrument', (instruments) => {
                 instruments.forEach((instrument) => {
                     tickSizes[symbol['symbol']] = instrument['tickSize']
+                    lotSizes[symbol['symbol']] = instrument['lotSize']
 
                     eventEmitter.emit('ticker', new TickerEvent(
                         'bitmex',
@@ -254,12 +257,34 @@ module.exports = class Bitmex {
         })
     }
 
-    formatPrice(price, symbol) {
+    /**
+     * LTC: 0.008195 => 0.00820
+     *
+     * @param price
+     * @param symbol
+     * @returns {*}
+     */
+    calculatePrice(price, symbol) {
         if (!(symbol in this.tickSizes)) {
             return undefined
         }
 
-        return orderUtil.caluclateIncrementSize(price, this.tickSizes[symbol])
+        return orderUtil.calculateNearestSize(price, this.tickSizes[symbol])
+    }
+
+    /**
+     * LTC: 0.65 => 1
+     *
+     * @param amount
+     * @param symbol
+     * @returns {*}
+     */
+    calculateAmount(amount, symbol) {
+        if (!(symbol in this.lotSizes)) {
+            return undefined
+        }
+
+        return orderUtil.calculateNearestSize(amount, this.lotSizes[symbol])
     }
 
     getName() {

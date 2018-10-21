@@ -12,7 +12,7 @@ describe('#bitmex exchange implementation', function() {
         assert.equal(pos[0].amount, -4)
         assert.equal(pos[0].profit, 1.2)
         assert.equal(pos[0].entry, 0.00832)
-    });
+    })
 
     it('orders are extracted', () => {
         let orders = Bitmex.createOrders(createResponse('ws-orders.json'))
@@ -29,9 +29,27 @@ describe('#bitmex exchange implementation', function() {
 
         assert.equal(orders[2].price, 0.00852)
         assert.equal(orders[2].type, 'stop')
-    });
+    })
+
+    it('calculate instrument rounding sizes', () => {
+        let bitmex = new Bitmex()
+
+        bitmex.lotSizes = {
+            'LTC': 1,
+        }
+
+        bitmex.tickSizes = {
+            'LTC': 0.00001,
+        }
+
+        assert.equal(bitmex.calculatePrice(0.0085696, 'LTC'), 0.00857)
+        assert.equal(bitmex.calculateAmount(0.85, 'LTC'), 1)
+
+        assert.equal(bitmex.calculatePrice(-0.0085696, 'LTC'), -0.00857)
+        assert.equal(bitmex.calculateAmount(-0.85, 'LTC'), -1)
+    })
 
     var createResponse = function(filename) {
         return JSON.parse(fs.readFileSync(__dirname + '/bitmex/' + filename, 'utf8'));
     }
-});
+})

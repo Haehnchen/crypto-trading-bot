@@ -30,7 +30,14 @@ module.exports = {
         return []
     },
 
-    caluclateIncrementSize: (num, tickSize) => {
+    /**
+     * LTC: "0.008195" => "0.00820"
+     *
+     * @param num 0.008195
+     * @param tickSize 0.00001
+     * @returns {*}
+     */
+    calculateNearestSize: (num, tickSize) => {
         let number = Math.round(num / tickSize) * tickSize
 
         // fix float issues:
