@@ -20,7 +20,7 @@ module.exports = class ExchangeOrderWatchdogListener {
                 return
             }
 
-            positions.forEach((position) => {
+            positions.forEach(async position => {
                 let pair = instances.symbols.find(
                     instance => instance.exchange === exchange.getName() && instance.symbol === position.symbol
                 )
@@ -30,16 +30,15 @@ module.exports = class ExchangeOrderWatchdogListener {
                     return
                 }
 
-                let names = pair.watchdogs.map((watchdog) => watchdog.name)
-
-                if (names.indexOf('stoploss') >= 0) {
-                    this.stopLossWatchdog(exchange, position)
+                let stopLoss = pair.watchdogs.find(watchdog => watchdog.name === 'stoploss')
+                if(stopLoss) {
+                    await this.stopLossWatchdog(exchange, position, stopLoss)
                 }
             })
         })
     }
 
-    async stopLossWatchdog(exchange, position) {
+    async stopLossWatchdog(exchange, position, stopLoss) {
         let logger = this.logger
         let stopLossCalculator = this.stopLossCalculator
 
@@ -61,7 +60,7 @@ module.exports = class ExchangeOrderWatchdogListener {
             } else {
                 // create
 
-                let price = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position)
+                let price = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss)
                 if (!price) {
                     console.log('Stop loss: auto price skipping')
                     return

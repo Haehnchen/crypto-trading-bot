@@ -48,6 +48,12 @@ y.forEach((pair) => {
         'extra': {
             'bitmex_leverage': 5,
         },
+        // 'watchdogs': [
+        //    {
+        //        'name': 'stoploss',
+        //        'percent': 3,
+        //    }
+        //],
         'strategies': [
             {
                 'strategy': 'cci',

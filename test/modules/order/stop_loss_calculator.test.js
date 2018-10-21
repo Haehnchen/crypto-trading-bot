@@ -27,6 +27,17 @@ describe('#stop loss order calculation', function() {
         ))
 
         assert.equal(result.toFixed(1), 6306.7)
+
+        let result2 = await calculator.calculateForOpenPosition('noop', new Position(
+            'BTCUSD',
+            'long',
+            0.15,
+            6500.66,
+            new Date(),
+            6501.76
+        ), {'percent': 5})
+
+        assert.equal(result2.toFixed(1), 6176.7)
     })
 
     it('calculate stop lose for short', async () => {

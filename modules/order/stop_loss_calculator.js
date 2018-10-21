@@ -6,7 +6,7 @@ module.exports = class StopLossCalculator {
         this.logger = logger
     }
 
-    async calculateForOpenPosition(exchange, position, options = {'percent_lost': 3}) {
+    async calculateForOpenPosition(exchange, position, options = {'percent': 3}) {
         let tickers = this.tickers
 
         return new Promise(resolve => {
@@ -19,12 +19,12 @@ module.exports = class StopLossCalculator {
 
             let price = undefined
             if (position.side === 'long') {
-                if (options.percent_lost) {
-                    price = position.entry * (1 - options.percent_lost / 100)
+                if (options.percent) {
+                    price = position.entry * (1 - options.percent / 100)
                 }
             } else {
-                if (options.percent_lost) {
-                    price = position.entry * (1 + options.percent_lost / 100)
+                if (options.percent) {
+                    price = position.entry * (1 + options.percent / 100)
                 }
             }
 
