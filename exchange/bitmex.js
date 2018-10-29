@@ -62,6 +62,17 @@ module.exports = class Bitmex {
             console.log('Bitmex: Connection closed.')
         })
 
+        let me = this
+        client.on('end', () => {
+            logger.info('Bitmex: Connection closed.')
+            console.log('Bitmex: Connection closed.')
+
+            // retry connecting after some second to not bothering on high load
+            setTimeout(() => {
+                me.start(config, symbols)
+            }, 10000);
+        })
+
         symbols.forEach(symbol => {
             symbol['periods'].forEach(time => {
 
