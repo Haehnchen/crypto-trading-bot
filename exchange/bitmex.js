@@ -85,7 +85,7 @@ module.exports = class Bitmex {
                     resamplePeriod = 15
                 }
 
-                request('https://www.bitmex.com/api/v1/trade/bucketed?binSize=' + wantPeriod + '&partial=false&symbol=' + symbol['symbol'] + '&count=500&reverse=true', { json: true }, (err, res, body) => {
+                request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + wantPeriod + '&partial=false&symbol=' + symbol['symbol'] + '&count=500&reverse=true', { json: true }, (err, res, body) => {
                     if (err) {
                         console.log(err)
                         logger.error('Bitmex candle backfill error: ' + err)
@@ -617,5 +617,9 @@ module.exports = class Bitmex {
                 new Date()
             )
         })
+    }
+
+    getBaseUrl() {
+        return 'https://www.bitmex.com'
     }
 }
