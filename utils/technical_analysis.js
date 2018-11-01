@@ -213,7 +213,7 @@ module.exports = {
 
             indicators.forEach((indicator) => {
                 let indicatorKey = indicator.key
-                let options = indicator.options
+                let options = indicator.options || {}
 
                 let indicatorName = indicator.indicator;
 
@@ -266,6 +266,99 @@ module.exports = {
 
                             resolve(values)
                         })
+                    }))
+                } else if (indicatorName === 'macd_ext') {
+                    calculations.push(new Promise((resolve) => {
+                        let talib = require('talib')
+
+                        /**
+                         * Extract int from string input eg (SMA = 0)
+                         *
+                         * @see https://github.com/oransel/node-talib
+                         * @see https://github.com/markcheno/go-talib/blob/master/talib.go#L20
+                         */
+                        let getMaTypeFromString = function(maType) {
+                            // no constant in lib?
+
+                            switch (maType.toUpperCase()) {
+                                case 'SMA':
+                                    return 0
+                                case 'EMA':
+                                    return 1
+                                case 'WMA':
+                                    return 2
+                                case 'DEMA':
+                                    return 3
+                                case 'TEMA':
+                                    return 4
+                                case 'TRIMA':
+                                    return 5
+                                case 'KAMA':
+                                    return 6
+                                case 'MAMA':
+                                    return 7
+                                case 'T3':
+                                    return 8
+                                default:
+                                    return 0
+                            }
+                        }
+
+                        let types = {
+                            'fast_ma_type': options['default_ma_type'] || 'EMA',
+                            'slow_ma_type': options['default_ma_type'] || 'EMA',
+                            'signal_ma_type': options['default_ma_type'] || 'EMA',
+                        }
+
+                        if (options['fast_ma_type']) {
+                            types['fast_ma_type'] = options['fast_ma_type']
+                        }
+
+                        if (options['slow_ma_type']) {
+                            types['slow_ma_type'] = options['slow_ma_type']
+                        }
+
+                        if (options['signal_ma_type']) {
+                            types['signal_ma_type'] = options['signal_ma_type']
+                        }
+
+                        talib.execute({
+                            name: 'MACDEXT',
+                            startIdx: 0,
+                            endIdx: marketData.close.length -1,
+                            inReal: marketData.close.slice(),
+                            optInFastPeriod: options['fast_period'] || 12,
+                            optInSlowPeriod: options['slow_period'] || 26,
+                            optInSignalPeriod: options['signal_period'] || 9,
+                            optInFastMAType: getMaTypeFromString(types['fast_ma_type']),
+                            optInSlowMAType: getMaTypeFromString(types['slow_ma_type']),
+                            optInSignalMAType: getMaTypeFromString(types['signal_ma_type']),
+                        }, function (err, result) {
+                            if (err) {
+                                resolve({})
+                                return
+                            }
+                            // Result format: (note: outReal  can have multiple items in the array)
+                            // {
+                            //   begIndex: 8,
+                            //   nbElement: 1,
+                            //   result: { outReal: [ 1820.8621111111108 ] }
+                            // }
+                            let resultHistory = [];
+                            for (let i = 0; i < result.nbElement; i++) {
+                                resultHistory.push({
+                                    'macd': result.result.outMACD[i],
+                                    'histogram': result.result.outMACDHist[i],
+                                    'signal': result.result.outMACDSignal[i],
+                                })
+                            }
+
+                            let values = {}
+                            values[indicatorKey] = resultHistory
+
+                            resolve(values)
+                        })
+
                     }))
                 } else if (indicatorName === 'obv') {
                     calculations.push(new Promise((resolve) => {

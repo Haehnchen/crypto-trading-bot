@@ -37,7 +37,32 @@ describe('#technical_analysis for candles', () => {
             {
                 'indicator': 'obv',
                 'key': 'obv',
-            }
+            },
+            {
+                'indicator': 'macd_ext',
+                'key': 'macd_ext',
+            },
+            {
+                'indicator': 'macd_ext',
+                'key': 'macd_ext',
+            },
+            {
+                'indicator': 'macd_ext',
+                'key': 'macd_ext_dema',
+                'options': {
+                    'default_ma_type': 'DEMA',
+                },
+            },
+            {
+                'indicator': 'macd_ext',
+                'key': 'macd_ext_dema_slow',
+                'options': {
+                    'default_ma_type': 'DEMA',
+                    'fast_period': 16,
+                    'slow_period': 39,
+                    'signal_period': 9,
+                },
+            },
         ]);
 
         assert.equal(result['ema_55'].length, 490)
@@ -48,6 +73,13 @@ describe('#technical_analysis for candles', () => {
         assert.equal(0.31, parseFloat(result['macd'][1]['histogram']).toFixed(2))
 
         assert.equal(-12689695, parseFloat(result['obv'][1]))
+
+        // test macd implementations
+        assert.equal(-3.89, parseFloat(result['macd'][result['macd'].length - 1]['histogram']).toFixed(2))
+        assert.equal(-4.07, parseFloat(result['macd_ext'][result['macd_ext'].length - 1]['histogram']).toFixed(2))
+
+        assert.equal(2.50, parseFloat(result['macd_ext_dema'][result['macd_ext_dema'].length - 1]['histogram']).toFixed(2))
+        assert.equal(1.12, parseFloat(result['macd_ext_dema_slow'][result['macd_ext_dema_slow'].length - 1]['histogram']).toFixed(2))
     })
 
     it('technical_analysis for bollinger percent', () => {
