@@ -23,6 +23,7 @@ As most trading bots just provide basic buy and sell signals they provide many s
  * sqlite3
  * [technicalindicators](https://github.com/anandanand84/technicalindicators)
  * [tulipindicators - tulind](https://tulipindicators.org/list)
+ * [TA-Lib](https://mrjbq7.github.io/ta-lib/) 
  * twig
  * express
  * Bootstrap v4
@@ -77,16 +78,18 @@ Some browser links
 
 Currently there is only the UI for backtesting
 
-```
-node index.js backtest -s bitfinex.EOS-USD -p 15m
-```
-
 ## Strategies
 
 For custom strategies use [var/strategies](var/strategies) folder.
 
 Find some example strategies inside [modules/strategy/strategies](modules/strategy/strategies)
 
+## Exchanges
+
+ * Bitmex with leverage configuration (+testnet)
+ * Binance
+ * Bitfinex (margin wallet)
+ 
 ## Signals
 
 ### Slack
@@ -109,6 +112,7 @@ Other bots with possible design pattern
  * https://github.com/magic8bot/magic8bot
  * https://github.com/askmike/gekko
  * https://github.com/freqtrade/freqtrade
+ * https://github.com/Ekliptor/WolfBot
 
 ### Strategies
 
@@ -118,3 +122,4 @@ Some strategies based on technical indicators for collection some ideas
  * https://github.com/freqtrade/freqtrade-strategies/tree/master/user_data/strategies/berlinguyinca
  * https://github.com/xFFFFF/Gekko-Strategies
  * https://github.com/sthewissen/Mynt/tree/master/src/Mynt.Core/Strategies
+ * https://github.com/Ekliptor/WolfBot/tree/master/src/Strategies
