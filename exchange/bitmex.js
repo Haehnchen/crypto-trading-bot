@@ -335,6 +335,15 @@ module.exports = class Bitmex {
             'text':	'Powered by your awesome crypto-bot watchdog',
         }
 
+        let execInst = [];
+        if (order.options && order.options.reduceOnly === true) {
+            execInst.push('ReduceOnly')
+        }
+
+        if(execInst.length > 0) {
+            data['execInst'] = execInst.join(',')
+        }
+
         if (orderType === 'Stop') {
             data['stopPx'] = Math.abs(order.price)
         } else {

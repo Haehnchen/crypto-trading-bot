@@ -61,6 +61,11 @@ module.exports = class StopLossCalculator {
                 }
             }
 
+            // inverse price for lose long position via sell
+            if (position.side === 'long') {
+                price = price * -1
+            }
+
             resolve(price)
         })
     }

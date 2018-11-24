@@ -77,7 +77,10 @@ module.exports = class ExchangeOrderWatchdogListener {
                         'symbol': position.symbol,
                         'price': price,
                         'amount': orderChange.amount,
-                        'type': 'stop'
+                        'type': 'stop',
+                        'options': {
+                            'reduceOnly': true,
+                        }
                     })
                 } catch(e) {
                     let msg = 'Stoploss update' + JSON.stringify({
