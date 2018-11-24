@@ -389,6 +389,8 @@ module.exports = class Bitfinex {
                 position[2],
                 undefined,
                 new Date(),
+                undefined,
+                new Date(),
             )
         })
     }

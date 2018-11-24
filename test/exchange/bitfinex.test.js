@@ -15,6 +15,7 @@ describe('#bitfinex exchange implementation', function() {
         assert.equal('long', pos[1].side)
         assert.equal(80, pos[1].amount)
         assert.equal(pos[1].updatedAt instanceof Date, true)
+        assert.equal(pos[1].createdAt instanceof Date, true)
     })
 
     it('orders are extracted', () => {

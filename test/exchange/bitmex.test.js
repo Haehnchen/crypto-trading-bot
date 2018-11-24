@@ -12,6 +12,8 @@ describe('#bitmex exchange implementation', function() {
         assert.equal(pos[0].amount, -4)
         assert.equal(pos[0].profit, 1.2)
         assert.equal(pos[0].entry, 0.00832)
+
+        assert.equal(pos[0].createdAt.toISOString(), '2018-10-19T17:00:00.000Z')
     })
 
     it('orders are extracted', () => {

@@ -548,7 +548,8 @@ module.exports = class Bitmex {
                 position['currentQty'],
                 position['unrealisedRoePcnt']  * 100,
                 new Date(),
-                position['avgEntryPrice']
+                position['avgEntryPrice'],
+                new Date(position['openingTimestamp'])
             )
         })
     }
