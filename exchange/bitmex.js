@@ -153,25 +153,40 @@ module.exports = class Bitmex {
                 })
             })
 
-            /*
-             * This stream alerts me of any change to the orders. If it is filled, closed, etc...
-             */
-            client.addStream(symbol['symbol'], 'order', (orders, symbol, tableName) => {
-                let ourOrders = {}
+            client.addStream(symbol['symbol'], 'order', (orders) => {
+                let ourOrders = this.orders
 
-                Bitmex.createOrders(orders).filter(order => order.status === 'open').forEach(order => {
+                Bitmex.createOrders(orders).forEach(order => {
                     ourOrders[order.id] = order
                 })
 
-                this.orders = ourOrders
+                // order cleanup
+                for (let key in ourOrders){
+                    let order = ourOrders[key];
+                    if (order.status !== 'open') {
+                        logger.debug('Cleanup non open order:' + JSON.stringify(order))
+                        delete ourOrders[key]
+                    }
+                }
             })
 
-            /*
-             * This stream alerts me of any change to my positions. If it is filled, closed, entry price, liquidation price
-             */
-            client.addStream(symbol['symbol'], 'position', (positions, symbol, tableName) => {
+            // open position listener
+            client.addStream(symbol['symbol'], 'position', (positions) => {
+                let myPositions = this.positions
+
+                // cleanup our local known positions that are possible not open anymore
+                positions
+                    .filter(position => position['isOpen'] === false)
+                    .map(position => position.symbol)
+                    .filter(symbol => symbol in myPositions)
+                    .forEach(symbol => {
+                        logger.debug('Cleanup closed position: ' + symbol)
+                        delete myPositions[symbol]
+                    })
+
+                // add open positions
                 Bitmex.createPositions(positions).forEach(position => {
-                    this.positions[position.symbol] = position
+                    myPositions[position.symbol] = position
                 })
             })
 

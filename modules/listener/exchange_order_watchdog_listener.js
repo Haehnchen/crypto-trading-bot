@@ -73,7 +73,7 @@ module.exports = class ExchangeOrderWatchdogListener {
                 }
 
                 try {
-                    exchange.order({
+                    await exchange.order({
                         'symbol': position.symbol,
                         'price': price,
                         'amount': orderChange.amount,
