@@ -38,9 +38,9 @@
                     <td>{{ position.position.createdAt|date('d.m.y H:i') }}</td>
                     <td>
                         {% if position.position.side == 'short' %}
-                            <i class="fas fa-chevron-circle-up text-success"></i>
-                        {% elseif position.position.side == 'long' %}
                             <i class="fas fa-chevron-circle-down text-danger"></i>
+                        {% elseif position.position.side == 'long' %}
+                            <i class="fas fa-chevron-circle-up text-success"></i>
                         {% endif %}
                     </td>
                 </tr>
