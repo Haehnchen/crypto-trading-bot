@@ -16,21 +16,21 @@ describe('#strategy macd', () => {
         let macd = new MACD()
 
         assert.equal('long', (await macd.period(new IndicatorPeriod(404, {
-            'sma200': [500, 400],
-            'ema200': [500, 400],
-            'macd': [{'histogram': -1}, {'histogram': 0.1}],
+            'sma200': [500, 400, 388],
+            'ema200': [500, 400, 388],
+            'macd': [{'histogram': -1}, {'histogram': 0.1}, {'histogram': 0.3}],
         })))['signal'])
 
         assert.equal(undefined, (await macd.period(new IndicatorPeriod(404, {
-            'sma200': [500, 400],
-            'ema200': [500, 400],
-            'macd': [{'histogram': -2}, {'histogram': -1}],
+            'sma200': [500, 400, 388],
+            'ema200': [500, 400, 388],
+            'macd': [{'histogram': -2}, {'histogram': -1}, {'histogram': -0.3}],
         })))['signal'])
 
         assert.equal(undefined, (await macd.period(new IndicatorPeriod(404, {
-            'sma200': [500, 400],
-            'ema200': [500, 400],
-            'macd': [{'histogram': 2}, {'histogram': -1}],
+            'sma200': [500, 400, 388],
+            'ema200': [500, 400, 388],
+            'macd': [{'histogram': 2}, {'histogram': -1}, {'histogram': -0.3}],
         })))['signal'])
     })
 
@@ -38,15 +38,15 @@ describe('#strategy macd', () => {
         let macd = new MACD()
 
         assert.equal('short', (await macd.period(new IndicatorPeriod(394, {
-            'sma200': [500, 400],
-            'ema200': [500, 400],
-            'macd': [{'histogram': 1}, {'histogram': -0.1}],
+            'sma200': [500, 400, 399],
+            'ema200': [500, 400, 399],
+            'macd': [{'histogram': 1}, {'histogram': -0.1}, {'histogram': -0.2}],
         })))['signal'])
 
         assert.equal(undefined, (await macd.period(new IndicatorPeriod(403, {
-            'sma200': [500, 400],
-            'ema200': [500, 400],
-            'macd': [{'histogram': 1}, {'histogram': -0.1}],
+            'sma200': [500, 400, 399],
+            'ema200': [500, 400, 399],
+            'macd': [{'histogram': 1}, {'histogram': -0.1}, {'histogram': -0.2}],
         }))['signal']))
     })
 })

@@ -30,12 +30,17 @@ module.exports = class MACD {
         )
     }
 
-    macd(price, sma200, ema200, macd) {
+    macd(price, sma200Full, ema200Full, macdFull) {
         return new Promise(async (resolve) => {
-            if (macd.length <= 0) {
+            if (macdFull.length <= 0) {
                 resolve()
                 return
             }
+
+            // remove incomplete candle
+            let sma200 = sma200Full.slice(0, -1)
+            let ema200 = ema200Full.slice(0, -1)
+            let macd = macdFull.slice(0, -1)
 
             let debug = {
                 'sma200': sma200.slice(-1)[0],

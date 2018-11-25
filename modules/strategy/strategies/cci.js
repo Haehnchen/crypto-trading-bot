@@ -30,12 +30,17 @@ module.exports = class CCI {
         )
     }
 
-    cci(price, sma200, ema200, cci) {
+    cci(price, sma200Full, ema200Full, cciFull) {
         return new Promise(async (resolve) => {
-            if (cci.length <= 0) {
+            if (cciFull.length <= 0) {
                 resolve()
                 return
             }
+
+            // remove incomplete candle
+            let sma200 = sma200Full.slice(0, -1)
+            let ema200 = ema200Full.slice(0, -1)
+            let cci = cciFull.slice(0, -1)
 
             let debug = {
                 'sma200': sma200.slice(-1)[0],
