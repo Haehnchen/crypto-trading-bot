@@ -45,6 +45,7 @@ module.exports = class Bitmex {
         let client = new BitMEXClient({
             'apiKeyID': this.apiKey = config.key,
             'apiKeySecret': this.apiSecret = config.secret,
+            'testnet': this.getBaseUrl().includes('testnet'),
         })
 
         client.on('error', (error) => {
@@ -113,7 +114,7 @@ module.exports = class Bitmex {
                         sticks = resample.resampleMinutes(sticks, resamplePeriod)
                     }
 
-                    eventEmitter.emit('candlestick', new CandlestickEvent('bitmex', symbol['symbol'], time, sticks));
+                    eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], time, sticks));
                 });
 
                 client.addStream(symbol['symbol'], 'tradeBin' + wantPeriod, (candles) => {
@@ -136,7 +137,7 @@ module.exports = class Bitmex {
                         sticks = resample.resampleMinutes(sticks, resamplePeriod)
                     }
 
-                    eventEmitter.emit('candlestick', new CandlestickEvent('bitmex', symbol['symbol'], time, sticks));
+                    eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], time, sticks));
                 })
             })
 
@@ -146,47 +147,10 @@ module.exports = class Bitmex {
                     lotSizes[symbol['symbol']] = instrument['lotSize']
 
                     eventEmitter.emit('ticker', new TickerEvent(
-                        'bitmex',
+                        this.getName(),
                         symbol['symbol'],
-                        new Ticker('bitmex', symbol['symbol'], moment().format('X'), instrument['bidPrice'], instrument['askPrice'])
+                        new Ticker(this.getName(), symbol['symbol'], moment().format('X'), instrument['bidPrice'], instrument['askPrice'])
                     ))
-                })
-            })
-
-            client.addStream(symbol['symbol'], 'order', (orders) => {
-                let ourOrders = this.orders
-
-                Bitmex.createOrders(orders).forEach(order => {
-                    ourOrders[order.id] = order
-                })
-
-                // order cleanup
-                for (let key in ourOrders){
-                    let order = ourOrders[key];
-                    if (order.status !== 'open') {
-                        logger.debug('Cleanup non open order:' + JSON.stringify(order))
-                        delete ourOrders[key]
-                    }
-                }
-            })
-
-            // open position listener
-            client.addStream(symbol['symbol'], 'position', (positions) => {
-                let myPositions = this.positions
-
-                // cleanup our local known positions that are possible not open anymore
-                positions
-                    .filter(position => position['isOpen'] === false)
-                    .map(position => position.symbol)
-                    .filter(symbol => symbol in myPositions)
-                    .forEach(symbol => {
-                        logger.debug('Cleanup closed position: ' + symbol)
-                        delete myPositions[symbol]
-                    })
-
-                // add open positions
-                Bitmex.createPositions(positions).forEach(position => {
-                    myPositions[position.symbol] = position
                 })
             })
 
@@ -225,6 +189,43 @@ module.exports = class Bitmex {
             });
             */
 
+        })
+
+        client.addStream('*', 'order', (orders) => {
+            let ourOrders = this.orders
+
+            Bitmex.createOrders(orders).forEach(order => {
+                ourOrders[order.id] = order
+            })
+
+            // order cleanup
+            for (let key in ourOrders){
+                let order = ourOrders[key];
+                if (order.status !== 'open') {
+                    logger.debug('Cleanup non open order:' + JSON.stringify(order))
+                    delete ourOrders[key]
+                }
+            }
+        })
+
+        // open position listener
+        client.addStream('*', 'position', (positions) => {
+            let myPositions = this.positions
+
+            // cleanup our local known positions that are possible not open anymore
+            positions
+                .filter(position => position['isOpen'] === false)
+                .map(position => position.symbol)
+                .filter(symbol => symbol in myPositions)
+                .forEach(symbol => {
+                    logger.debug('Cleanup closed position: ' + symbol)
+                    delete myPositions[symbol]
+                })
+
+            // add open positions
+            Bitmex.createPositions(positions).forEach(position => {
+                myPositions[position.symbol] = position
+            })
         })
     }
 
@@ -390,7 +391,7 @@ module.exports = class Bitmex {
 
             request({
                 headers: headers,
-                url:'https://www.bitmex.com' + path,
+                url: this.getBaseUrl() + path,
                 method: verb,
                 body: postBody
             }, (error, response, body) => {
@@ -469,7 +470,7 @@ module.exports = class Bitmex {
 
             request({
                 headers: headers,
-                url:'https://www.bitmex.com' + path,
+                url: this.getBaseUrl() + path,
                 method: verb,
                 body: postBody
             }, (error, response, body) => {
@@ -534,7 +535,7 @@ module.exports = class Bitmex {
         return new Promise((resolve, reject) => {
             request({
                 headers: headers,
-                url:'https://www.bitmex.com' + path,
+                url: this.getBaseUrl() + path,
                 method: verb,
                 body: postBody
             }, (error, response, body) => {
