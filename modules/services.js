@@ -38,6 +38,7 @@ let Http = require('../modules/http')
 let Backtest = require('../modules/backtest')
 
 let StopLossCalculator = require('../modules/order/stop_loss_calculator')
+let PairsHttp = require('../modules/pairs/pairs_http')
 
 var _ = require('lodash');
 
@@ -71,6 +72,7 @@ let backtest = undefined
 var strategyManager = undefined
 
 var stopLossCalculator = undefined
+var pairsHttp = undefined
 
 module.exports = {
     boot: function() {
@@ -297,7 +299,8 @@ module.exports = {
             this.getTa(),
             this.getSignalHttp(),
             this.getBacktest(),
-            this.getExchangeManager()
+            this.getExchangeManager(),
+            this.getHttpPairs(),
         )
     },
 
@@ -311,6 +314,17 @@ module.exports = {
             this.getLogger(),
             this.getInstances(),
             this.getConfig(),
+        )
+    },
+
+    getHttpPairs: function() {
+        if (pairsHttp) {
+            return pairsHttp;
+        }
+
+        return pairsHttp = new PairsHttp(
+            this.getInstances(),
+            this.getExchangeManager(),
         )
     },
 

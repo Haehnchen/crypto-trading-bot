@@ -48,6 +48,30 @@ module.exports = class ExchangeManager {
         return this.exchanges.find(exchange => exchange.getName() === name)
     }
 
+    async getPosition(exchangeName, symbol) {
+        return new Promise(async (resolve) => {
+            let exchange = this.get(exchangeName);
+            if (!exchange) {
+                resolve()
+                return;
+            }
+
+            resolve(await exchange.getPositionForSymbol(symbol))
+        })
+    }
+
+    async getOrders(exchangeName, symbol) {
+        return new Promise(async (resolve) => {
+            let exchange = this.get(exchangeName);
+            if (!exchange) {
+                resolve([])
+                return;
+            }
+
+            return await exchange.getOrdersForSymbol(symbol)
+        })
+    }
+
     createExchanges() {
         let exchanges = []
 

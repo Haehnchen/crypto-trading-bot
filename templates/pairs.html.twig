@@ -1,0 +1,51 @@
+{% extends './layout.html.twig' %}
+
+{% block content %}
+    <div class="container">
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Exchange</th>
+                <th scope="col">Symbol</th>
+                <th scope="col">State</th>
+                <th scope="col">Options</th>
+                <th scope="col">Actions</th>
+            </tr>
+
+            </thead>
+            <tbody>
+            {% for pair in pairs %}
+                <tr>
+                    <td>{{ pair.exchange }}</td>
+                    <td>{{ pair.symbol }}</td>
+                    <td>{{ pair.state }}</td>
+                    <td>
+                        {% if pair.watchdogs %}
+                            {{ pair.watchdogs|json_encode }}
+                        {% endif %}
+                    </td>
+
+                    <td class="text-right">
+                        <form action="/pairs/{{ pair.exchange }}-{{ pair.symbol }}" method="post" style="margin:0; padding:0">
+                            <div class="btn-group">
+                                {% if pair.has_position|default(false) == false %}
+                                    <button name="action" value="long" data-toggle="tooltip" title="long" class="btn btn-success btn-sm"><i class="fas fa-cart-plus"></i> Long</button>
+                                    <button name="action" value="short" data-toggle="tooltip" title="short" class="btn btn-danger btn-sm"><i class="fas fa-shopping-cart"></i> Short</button>
+                                {% endif %}
+
+                                {% if pair.has_position|default(false) %}
+                                    <button name="action" value="close" data-toggle="tooltip" title="close" class="btn btn-dark btn-sm"><i class="fas fa-window-close"></i> Close</button>
+                                {% endif %}
+
+                                {% if pair.has_order|default(false) %}
+                                    <button name="action" value="cancel" data-toggle="tooltip" title="close" class="btn btn-primary btn-sm"><i class="fas fa-trash"></i> Cancel</button>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

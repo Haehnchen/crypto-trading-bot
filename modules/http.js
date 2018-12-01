@@ -3,12 +3,13 @@
 let express = require('express')
 
 module.exports = class Http {
-    constructor(config, ta, signalHttp, backtest, exchangeManager) {
+    constructor(config, ta, signalHttp, backtest, exchangeManager, pairsHttp) {
         this.config = config
         this.ta = ta
         this.signalHttp = signalHttp
         this.backtest = backtest
         this.exchangeManager = exchangeManager
+        this.pairsHttp = pairsHttp
     }
 
     start() {
@@ -71,6 +72,23 @@ module.exports = class Http {
         app.get('/signals', async (req, res) => {
             res.render('../templates/signals.html.twig', {
                 signals: await this.signalHttp.getSignals(Math.floor(Date.now() / 1000) - (60 * 60 * 48)),
+            })
+        })
+
+        app.get('/pairs', async (req, res) => {
+            res.render('../templates/pairs.html.twig', {
+                pairs: await this.pairsHttp.getTradePairs(),
+            })
+        })
+
+        app.post('/pairs/:pair', async (req, res) => {
+            let pair = req.params.pair.split('-')
+            let body = req.body;
+
+            res.render('../templates/pair_action.html.twig', {
+                exchange: pair[0],
+                symbol: pair[1],
+                action: body.action
             })
         })
 
