@@ -9,4 +9,19 @@ module.exports = class Order {
         this.amount = amount
         this.type = type
     }
+
+    static createMarketOrder(symbol, side, amount) {
+        if(side !== 'long' && side !== 'short') {
+            throw 'Invalid order side:' + side;
+        }
+
+        return new Order(
+            Math.round(((new Date()).getTime()).toString() * Math.random()),
+            symbol,
+            side,
+            side === 'long' ? 1 : -1,
+            amount,
+            'market'
+        );
+    }
 };

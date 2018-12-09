@@ -1,5 +1,7 @@
 'use strict';
 
+let Order = require('./../../dict/order')
+
 module.exports = class PairsHttp {
     constructor(instances, exchangeManager) {
         this.instances = instances
@@ -19,11 +21,22 @@ module.exports = class PairsHttp {
                     'watchdogs': symbol.watchdogs,
                     'state': symbol.state,
                     'has_position': position !== undefined,
-                    'has_order': true,
+                    'in_order_process': false,
                 })
             }
 
             resolve(pairs)
+        })
+    }
+
+    async executeOrder(exchangeName, symbol, side) {
+        return new Promise(async resolve => {
+            let order = await this.exchangeManager.createOrder(
+                exchangeName,
+                Order.createMarketOrder(symbol, side,50)
+            );
+
+            resolve(order)
         })
     }
 }

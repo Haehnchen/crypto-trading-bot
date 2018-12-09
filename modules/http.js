@@ -85,10 +85,12 @@ module.exports = class Http {
             let pair = req.params.pair.split('-')
             let body = req.body;
 
+            await this.pairsHttp.executeOrder(pair[0], pair[1], body.action),
+
             res.render('../templates/pair_action.html.twig', {
                 exchange: pair[0],
                 symbol: pair[1],
-                action: body.action
+                action: body.action,
             })
         })
 

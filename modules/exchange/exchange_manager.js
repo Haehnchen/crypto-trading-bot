@@ -72,6 +72,18 @@ module.exports = class ExchangeManager {
         })
     }
 
+    async createOrder(exchangeName, order) {
+        return new Promise(async (resolve) => {
+            let exchange = this.get(exchangeName);
+            if (!exchange) {
+                resolve()
+                return;
+            }
+
+            return resolve(await exchange.order(order))
+        })
+    }
+
     createExchanges() {
         let exchanges = []
 
