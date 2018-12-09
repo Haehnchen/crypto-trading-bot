@@ -154,7 +154,7 @@ module.exports = class OrderExecutor {
 
             let price = ticker.bid
             if(side === 'short') {
-                price = ticker.ask
+                price = ticker.ask * -1
             }
 
             resolve(price)

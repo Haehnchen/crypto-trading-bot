@@ -529,8 +529,9 @@ module.exports = class Bitmex {
             data['orderQty'] = Math.abs(order.amount)
         }
 
+        // order create needs negative price; order update positive value for "short"
         if (order.price) {
-            data['price'] = order.price
+            data['price'] = Math.abs(order.price)
         }
 
         var postBody = JSON.stringify(data);
