@@ -333,6 +333,8 @@ module.exports = class Bitmex {
             orderType = 'Limit'
         } else if(order.type === 'stop') {
             orderType = 'Stop'
+        } else if(order.type === 'market') {
+            orderType = 'Market'
         }
 
         if (!orderType) {
@@ -362,7 +364,7 @@ module.exports = class Bitmex {
 
         if (orderType === 'Stop') {
             data['stopPx'] = Math.abs(order.price)
-        } else {
+        } else if(orderType === 'Limit') {
             data['price'] = Math.abs(order.price)
         }
 
