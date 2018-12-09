@@ -4,10 +4,6 @@ let _ = require('lodash')
 
 module.exports = class Order {
     constructor(id, symbol, side, price, amount, type, options = {}) {
-        if(side !== 'long' && side !== 'short') {
-            throw 'Invalid order side:' + side;
-        }
-
         this.id = id
         this.symbol = symbol
         this.side = side
@@ -22,6 +18,10 @@ module.exports = class Order {
     }
 
     static createMarketOrder(symbol, side, amount) {
+        if(side !== 'long' && side !== 'short') {
+            throw 'Invalid order side:' + side;
+        }
+
         return new Order(
             Math.round(((new Date()).getTime()).toString() * Math.random()),
             symbol,
@@ -33,6 +33,10 @@ module.exports = class Order {
     }
 
     static createLimitPostOnlyOrder(symbol, side, price, amount, options) {
+        if(side !== 'long' && side !== 'short') {
+            throw 'Invalid order side:' + side;
+        }
+
         return new Order(
             Math.round(((new Date()).getTime()).toString() * Math.random()),
             symbol,
@@ -47,12 +51,20 @@ module.exports = class Order {
     }
 
     static createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, side, amount) {
+        if(side !== 'long' && side !== 'short') {
+            throw 'Invalid order side:' + side;
+        }
+
         return Order.createLimitPostOnlyOrder(symbol, side, undefined, amount, {
             'adjust_price': true,
         })
     }
 
     static createRetryOrder(order) {
+        if(order.side !== 'long' && order.side !== 'short') {
+            throw 'Invalid order side:' + order.side;
+        }
+
         return new Order(
             Math.round(((new Date()).getTime()).toString() * Math.random()),
             order.symbol,
@@ -65,6 +77,10 @@ module.exports = class Order {
     }
 
     static createRetryOrderWithPriceAdjustment(order, price) {
+        if(order.side !== 'long' && order.side !== 'short') {
+            throw 'Invalid order side:' + order.side;
+        }
+
         return new Order(
             Math.round(((new Date()).getTime()).toString() * Math.random()),
             order.symbol,
@@ -73,6 +89,18 @@ module.exports = class Order {
             order.amount,
             order.type,
             order.options,
+        )
+    }
+
+    static createPriceUpdateOrder(id, price) {
+        return new Order(
+            id,
+            undefined,
+            undefined,
+            price,
+            undefined,
+            undefined,
+            undefined,
         )
     }
 };

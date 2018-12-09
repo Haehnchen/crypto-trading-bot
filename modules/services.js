@@ -366,6 +366,7 @@ module.exports = {
             this.getTickerLogListener(),
             this.getSignalListener(),
             this.getExchangeOrderWatchdogListener(),
+            this.getOrderExecutor(),
         )
     },
 

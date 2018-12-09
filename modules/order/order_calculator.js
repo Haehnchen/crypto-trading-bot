@@ -2,7 +2,7 @@
 
 var _ = require('lodash')
 
-module.exports = class OrderExecutor {
+module.exports = class OrderCalculator {
     constructor(instances) {
         this.instances = instances
     }

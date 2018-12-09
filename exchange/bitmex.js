@@ -243,6 +243,14 @@ module.exports = class Bitmex {
         })
     }
 
+    findOrderById(id) {
+        return new Promise(async resolve => {
+            resolve((await this.getOrders()).find(order =>
+                order.id === id
+            ))
+        })
+    }
+
     getOrdersForSymbol(symbol) {
         return new Promise(resolve => {
             let orders = []
@@ -504,7 +512,7 @@ module.exports = class Bitmex {
 
     updateOrder(id, order) {
         if (!order.amount && !order.price) {
-            throw 'Invalid amount for update'
+            throw 'Invalid amount / price for update'
         }
 
         var verb = 'PUT',

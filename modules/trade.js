@@ -18,7 +18,8 @@ module.exports = class Trade {
         tickerDatabaseListener,
         tickerLogListener,
         signalListener,
-        exchangeOrderWatchdogListener
+        exchangeOrderWatchdogListener,
+        orderExecutor
     ) {
         this.eventEmitter = eventEmitter
         this.instances = instances
@@ -33,6 +34,7 @@ module.exports = class Trade {
         this.tickerLogListener = tickerLogListener
         this.signalListener = signalListener
         this.exchangeOrderWatchdogListener = exchangeOrderWatchdogListener
+        this.orderExecutor = orderExecutor
     }
 
     start() {
@@ -69,6 +71,10 @@ module.exports = class Trade {
 
         setInterval(() => {
             eventEmitter.emit('watchdog', {})
+        }, 5000)
+
+        setInterval(() => {
+            eventEmitter.emit('order_adjust', {})
         }, 5000)
 
         let me = this
@@ -108,5 +114,7 @@ module.exports = class Trade {
         })
 
         eventEmitter.on('signal_tick', async () => me.signalListener.onSignalTick())
+
+        eventEmitter.on('order_adjust', async () => me.orderExecutor.adjustOpenOrdersPrice())
     }
 };
