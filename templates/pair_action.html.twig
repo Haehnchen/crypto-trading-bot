@@ -3,5 +3,9 @@
 {% block content %}
     <div class="container">
         <h2>{{ exchange }} - {{ symbol }} - {{ action }}</h2>
+
+        <code>
+            {{ order|json_encode }}
+        </code>
     </div>
 {% endblock %}

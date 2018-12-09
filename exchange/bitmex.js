@@ -358,6 +358,10 @@ module.exports = class Bitmex {
             execInst.push('ReduceOnly')
         }
 
+        if (order.options && order.options.postOnly === true) {
+            execInst.push('ParticipateDoNotInitiate')
+        }
+
         if(execInst.length > 0) {
             data['execInst'] = execInst.join(',')
         }
@@ -609,6 +613,11 @@ module.exports = class Bitmex {
                 status = 'done'
             } else if (orderStatus === 'canceled') {
                 status = 'canceled'
+
+                // price of order out of ask / bid range from orderbook; we can retry it with updated price
+                if (order.execInst.includes('ParticipateDoNotInitiate') && order.text.includes('ParticipateDoNotInitiate')) {
+                    retry = true
+                }
             } else if (orderStatus === 'rejected' || orderStatus === 'expired') {
                 status = 'rejected'
                 retry = true
@@ -616,6 +625,7 @@ module.exports = class Bitmex {
 
             let ordType = order['ordType'].toLowerCase();
 
+            // secure the value
             let orderType = undefined
             switch (ordType) {
                 case 'limit':

@@ -28,9 +28,22 @@ describe('#bitmex exchange implementation', function() {
         assert.equal(orders[0].type, 'limit')
         assert.equal(orders[0].createdAt.toISOString(), '2018-10-19T16:31:27.496Z')
         assert.equal(orders[0].updatedAt instanceof Date, true)
+        assert.equal(orders[0].retry, false)
+        assert.equal(orders[0].status, 'open')
 
         assert.equal(orders[2].price, 0.00852)
         assert.equal(orders[2].type, 'stop')
+        assert.equal(orders[2].retry, false)
+
+        assert.equal(orders[4].retry, false)
+        assert.equal(orders[4].status, 'done')
+    })
+
+    it('orders retry trigger', () => {
+        let orders = Bitmex.createOrders(createResponse('ws-orders.json'))
+
+        assert.equal(orders[3].retry, true)
+        assert.equal(orders[3].status, 'canceled')
     })
 
     it('calculate instrument rounding sizes', () => {
