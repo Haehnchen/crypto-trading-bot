@@ -35,6 +35,7 @@ let Backtest = require('../modules/backtest')
 let StopLossCalculator = require('../modules/order/stop_loss_calculator')
 let PairsHttp = require('../modules/pairs/pairs_http')
 let OrderExecutor = require('../modules/order/order_executor')
+let OrderCalculator = require('../modules/order/order_calculator')
 
 var _ = require('lodash');
 
@@ -70,6 +71,7 @@ var strategyManager = undefined
 var stopLossCalculator = undefined
 var pairsHttp = undefined
 var orderExecutor = undefined
+var orderCalculator = undefined
 
 module.exports = {
     boot: function() {
@@ -326,6 +328,16 @@ module.exports = {
         )
     },
 
+    getOrderCalculator: function() {
+        if (orderCalculator) {
+            return orderCalculator;
+        }
+
+        return orderCalculator = new OrderCalculator(
+            this.getInstances(),
+        )
+    },
+
     getHttpPairs: function() {
         if (pairsHttp) {
             return pairsHttp;
@@ -335,6 +347,7 @@ module.exports = {
             this.getInstances(),
             this.getExchangeManager(),
             this.getOrderExecutor(),
+            this.getOrderCalculator(),
         )
     },
 

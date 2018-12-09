@@ -1,5 +1,3 @@
-let Order = require('../dict/order');
-
 module.exports = {
     calculateOrderAmount: (price, capital) => {
         return capital / price

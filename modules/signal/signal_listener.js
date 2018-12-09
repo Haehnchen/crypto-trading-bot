@@ -62,7 +62,7 @@ module.exports = class SignalListener {
 
         let e = new OrderEvent(signal.exchange, order)
 
-        console.log(order)
+        //console.log(order)
 
         //this.notifier.send('Create order: ' + JSON.stringify(e))
 
