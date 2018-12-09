@@ -79,7 +79,7 @@ module.exports = class ExchangeOrderWatchdogListener {
                         'amount': orderChange.amount,
                         'type': 'stop',
                         'options': {
-                            'reduceOnly': true,
+                            'reduce_only': true,
                         }
                     })
                 } catch(e) {

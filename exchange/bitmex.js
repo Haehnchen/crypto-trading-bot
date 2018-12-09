@@ -354,11 +354,11 @@ module.exports = class Bitmex {
         }
 
         let execInst = [];
-        if (order.options && order.options.reduceOnly === true) {
+        if (order.options && order.options.reduce_only === true) {
             execInst.push('ReduceOnly')
         }
 
-        if (order.options && order.options.postOnly === true) {
+        if (order.options && order.options.post_only === true) {
             execInst.push('ParticipateDoNotInitiate')
         }
 
@@ -652,7 +652,8 @@ module.exports = class Bitmex {
                 order['side'].toLowerCase() === 'sell' ? 'sell' : 'buy', // secure the value,
                 orderType,
                 new Date(order['transactTime']),
-                new Date()
+                new Date(),
+                JSON.stringify(orders)
             )
         })
     }

@@ -28,17 +28,13 @@ let CandlestickRepository = require('../modules/repository/candlestick_repositor
 let StrategyManager = require('./strategy/strategy_manager')
 let ExchangeManager = require('./exchange/exchange_manager')
 
-let Bitfinex = require('../exchange/bitfinex')
-let Bitmex = require('../exchange/bitmex')
-let Binance = require('../exchange/binance')
-let CoinbasePro = require('../exchange/coinbase_pro')
-
 let Trade = require('../modules/trade')
 let Http = require('../modules/http')
 let Backtest = require('../modules/backtest')
 
 let StopLossCalculator = require('../modules/order/stop_loss_calculator')
 let PairsHttp = require('../modules/pairs/pairs_http')
+let OrderExecutor = require('../modules/order/order_executor')
 
 var _ = require('lodash');
 
@@ -73,6 +69,7 @@ var strategyManager = undefined
 
 var stopLossCalculator = undefined
 var pairsHttp = undefined
+var orderExecutor = undefined
 
 module.exports = {
     boot: function() {
@@ -317,6 +314,18 @@ module.exports = {
         )
     },
 
+    getOrderExecutor: function() {
+        if (orderExecutor) {
+            return orderExecutor;
+        }
+
+        return orderExecutor = new OrderExecutor(
+            this.getExchangeManager(),
+            this.getTickers(),
+            this.getLogger(),
+        )
+    },
+
     getHttpPairs: function() {
         if (pairsHttp) {
             return pairsHttp;
@@ -325,6 +334,7 @@ module.exports = {
         return pairsHttp = new PairsHttp(
             this.getInstances(),
             this.getExchangeManager(),
+            this.getOrderExecutor(),
         )
     },
 

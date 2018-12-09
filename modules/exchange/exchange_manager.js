@@ -72,25 +72,6 @@ module.exports = class ExchangeManager {
         })
     }
 
-    async createOrder(exchangeName, order) {
-        return new Promise(async (resolve) => {
-            let exchange = this.get(exchangeName)
-            if (!exchange) {
-                resolve()
-                return;
-            }
-
-            let orderResult = undefined
-            try {
-                orderResult = await exchange.order(order)
-            } catch(err) {
-                this.logger.error('Order canceled:' + JSON.stringify(order) + ' - ' + JSON.stringify(err))
-            }
-
-            return resolve(orderResult)
-        })
-    }
-
     createExchanges() {
         let exchanges = []
 

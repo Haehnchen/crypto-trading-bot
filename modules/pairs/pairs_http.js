@@ -3,9 +3,10 @@
 let Order = require('./../../dict/order')
 
 module.exports = class PairsHttp {
-    constructor(instances, exchangeManager) {
+    constructor(instances, exchangeManager, orderExecutor) {
         this.instances = instances
         this.exchangeManager = exchangeManager
+        this.orderExecutor = orderExecutor
     }
 
     async getTradePairs() {
@@ -30,11 +31,12 @@ module.exports = class PairsHttp {
     }
 
     async executeOrder(exchangeName, symbol, side) {
+        // Order.createMarketOrder(symbol, side,500000)
         return new Promise(async resolve => {
-            let order = await this.exchangeManager.createOrder(
+            let order = await this.orderExecutor.executeOrder(
                 exchangeName,
-                Order.createMarketOrder(symbol, side,50)
-            );
+                Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, side, 50)
+            )
 
             resolve(order)
         })
