@@ -1,5 +1,6 @@
 let assert = require('assert');
 let Bitmex = require('../../exchange/bitmex');
+let Order = require('../../dict/order');
 
 let fs = require('fs');
 
@@ -62,6 +63,70 @@ describe('#bitmex exchange implementation', function() {
 
         assert.equal(bitmex.calculatePrice(-0.0085696, 'LTC'), -0.00857)
         assert.equal(bitmex.calculateAmount(-0.85, 'LTC'), -1)
+    })
+
+    it('test that request body for order is created (limit order)', () => {
+        let body = Bitmex.createOrderBody(Order.createLimitPostOnlyOrder('BTCUSD', 'long', 1337, 0.5))
+        body['clOrdID'] = 'foobar'
+
+        assert.deepEqual(body, {
+            symbol: 'BTCUSD',
+            orderQty: 0.5,
+            ordType: 'Limit',
+            text: 'Powered by your awesome crypto-bot watchdog',
+            execInst: 'ParticipateDoNotInitiate',
+            price: 1337,
+            side: 'Buy',
+            clOrdID: 'foobar',
+        })
+    })
+
+    it('test that request body for order is created (limit order) [short]', () => {
+        let body = Bitmex.createOrderBody(Order.createLimitPostOnlyOrder('BTCUSD', 'short', -1337, 0.5))
+        body['clOrdID'] = 'foobar'
+
+        assert.deepEqual(body, {
+            symbol: 'BTCUSD',
+            orderQty: 0.5,
+            ordType: 'Limit',
+            text: 'Powered by your awesome crypto-bot watchdog',
+            execInst: 'ParticipateDoNotInitiate',
+            price: 1337,
+            side: 'Sell',
+            clOrdID: 'foobar'
+        })
+    })
+
+    it('test that request body for order is created (stop order)', () => {
+        let body = Bitmex.createOrderBody(Order.createStopLossOrder('BTCUSD', 1337, 0.5))
+        body['clOrdID'] = 'foobar'
+
+        assert.deepEqual(body, {
+            symbol: 'BTCUSD',
+            orderQty: 0.5,
+            ordType: 'Stop',
+            text: 'Powered by your awesome crypto-bot watchdog',
+            execInst: 'Close,LastPrice',
+            stopPx: 1337,
+            side: 'Buy',
+            clOrdID: 'foobar',
+        })
+    })
+
+    it('test that request body for order is created (stop order) [short]', () => {
+        let body = Bitmex.createOrderBody(Order.createStopLossOrder('BTCUSD', -1337, 0.5))
+        body['clOrdID'] = 'foobar'
+
+        assert.deepEqual(body, {
+            symbol: 'BTCUSD',
+            orderQty: 0.5,
+            ordType: 'Stop',
+            text: 'Powered by your awesome crypto-bot watchdog',
+            execInst: 'Close,LastPrice',
+            stopPx: 1337,
+            side: 'Sell',
+            clOrdID: 'foobar',
+        })
     })
 
     var createResponse = function(filename) {

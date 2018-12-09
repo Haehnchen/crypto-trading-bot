@@ -330,70 +330,17 @@ module.exports = class Bitmex {
     }
 
     order(order) {
-        if (!order.amount && !order.price && !order.symbol) {
-            throw 'Invalid amount for update'
-        }
+        let data = Bitmex.createOrderBody(order)
 
-        let orderType = undefined
-        if (!order.type) {
-            orderType = 'Limit'
-        } else if(order.type === 'limit') {
-            orderType = 'Limit'
-        } else if(order.type === 'stop') {
-            orderType = 'Stop'
-        } else if(order.type === 'market') {
-            orderType = 'Market'
-        }
-
-        if (!orderType) {
-            throw 'Invalid order type'
-        }
-
-        var verb = 'POST',
+        let verb = 'POST',
             path = '/api/v1/order',
             expires = new Date().getTime() + (60 * 1000) // 1 min in the future
         ;
 
-        let data = {
-            'symbol': order.symbol,
-            'orderQty': order.amount,
-            'ordType': orderType,
-            'text':	'Powered by your awesome crypto-bot watchdog',
-        }
+        let postBody = JSON.stringify(data);
+        let signature = crypto.createHmac('sha256', this.apiSecret).update(verb + path + expires + postBody).digest('hex');
 
-        let execInst = [];
-        if (order.options && order.options.reduce_only === true &&  orderType === 'Limit') {
-            execInst.push('ReduceOnly')
-        }
-
-        if (order.options && order.options.close === true && orderType === 'Stop') {
-            execInst.push('Close')
-        }
-
-        if (order.options && order.options.post_only === true) {
-            execInst.push('ParticipateDoNotInitiate')
-        }
-
-        if(execInst.length > 0) {
-            data['execInst'] = execInst.join(',')
-        }
-
-        if (orderType === 'Stop') {
-            data['stopPx'] = Math.abs(order.price)
-        } else if(orderType === 'Limit') {
-            data['price'] = Math.abs(order.price)
-        }
-
-        data['side'] = order.price < 0 ? 'Sell' : 'Buy'
-
-        if (order.id) {
-            data['clOrdID'] = order.id
-        }
-
-        var postBody = JSON.stringify(data);
-        var signature = crypto.createHmac('sha256', this.apiSecret).update(verb + path + expires + postBody).digest('hex');
-
-        var headers = {
+        let headers = {
             'content-type' : 'application/json',
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
@@ -669,6 +616,76 @@ module.exports = class Bitmex {
                 JSON.stringify(orders)
             )
         })
+    }
+
+    /**
+     * Create a REST API body for Bitmex based on our internal order
+     *
+     * @param order
+     * @returns {{symbol: *, orderQty: *, ordType: undefined, text: string}}
+     */
+    static createOrderBody(order) {
+        if (!order.amount && !order.price && !order.symbol) {
+            throw 'Invalid amount for update'
+        }
+
+        let orderType = undefined
+        if (!order.type) {
+            orderType = 'Limit'
+        } else if(order.type === 'limit') {
+            orderType = 'Limit'
+        } else if(order.type === 'stop') {
+            orderType = 'Stop'
+        } else if(order.type === 'market') {
+            orderType = 'Market'
+        }
+
+        if (!orderType) {
+            throw 'Invalid order type'
+        }
+
+        let body = {
+            'symbol': order.symbol,
+            'orderQty': order.amount,
+            'ordType': orderType,
+            'text':	'Powered by your awesome crypto-bot watchdog',
+        }
+
+        let execInst = [];
+        if (order.options && order.options.reduce_only === true &&  orderType === 'Limit') {
+            execInst.push('ReduceOnly')
+        }
+
+        if (order.options && order.options.close === true && orderType === 'Stop') {
+            execInst.push('Close')
+        }
+
+        // we need a trigger; else order is filled directly on: "market sell [short]"
+        if (orderType === 'Stop') {
+            execInst.push('LastPrice')
+        }
+
+        if (order.options && order.options.post_only === true) {
+            execInst.push('ParticipateDoNotInitiate')
+        }
+
+        if(execInst.length > 0) {
+            body['execInst'] = execInst.join(',')
+        }
+
+        if (orderType === 'Stop') {
+            body['stopPx'] = Math.abs(order.price)
+        } else if(orderType === 'Limit') {
+            body['price'] = Math.abs(order.price)
+        }
+
+        body['side'] = order.price < 0 ? 'Sell' : 'Buy'
+
+        if (order.id) {
+            body['clOrdID'] = order.id
+        }
+
+        return body
     }
 
     getBaseUrl() {
