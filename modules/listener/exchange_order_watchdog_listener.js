@@ -1,6 +1,7 @@
 'use strict';
 
 let orderUtil = require('../../utils/order_util')
+let Order = require('../../dict/order')
 
 module.exports = class ExchangeOrderWatchdogListener {
     constructor(exchangeManager, instances, stopLossCalculator, logger) {
@@ -46,7 +47,7 @@ module.exports = class ExchangeOrderWatchdogListener {
         let orderChanges = orderUtil.syncStopLossOrder(position, orders);
 
         orderChanges.forEach(async orderChange => {
-            logger.info('Stoploss update' + JSON.stringify({
+            logger.info('Stoploss update: ' + JSON.stringify({
                 'order': orderChange,
                 'symbol': position.symbol,
                 'exchange': exchange.getName(),
@@ -72,19 +73,14 @@ module.exports = class ExchangeOrderWatchdogListener {
                     return
                 }
 
+                let order = Order.createStopLossOrder(position.symbol, price, orderChange.amount)
+
                 try {
-                    await exchange.order({
-                        'symbol': position.symbol,
-                        'price': price,
-                        'amount': orderChange.amount,
-                        'type': 'stop',
-                        'options': {
-                            'reduce_only': true,
-                        }
-                    })
+                    await exchange.order(order)
                 } catch(e) {
-                    let msg = 'Stoploss update' + JSON.stringify({
+                    let msg = 'Stoploss create' + JSON.stringify({
                         'error': e,
+                        'order': order,
                     });
 
                     logger.error(msg)

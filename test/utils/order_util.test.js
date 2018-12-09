@@ -44,6 +44,9 @@ describe('#order util', function() {
         assert.deepEqual([], orderUtil.syncStopLossOrder(position, [
             new ExchangeOrder('foobar', 'BTUSD', 'open', 1337, 4, false, 'our_id', 'buy', 'stop')
         ]))
+
+        // stop loss create
+        assert.deepEqual([{ amount: 4}], orderUtil.syncStopLossOrder(position, []))
     })
 
     it('calculate increment size', () => {

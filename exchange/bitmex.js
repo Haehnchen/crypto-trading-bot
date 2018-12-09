@@ -362,8 +362,12 @@ module.exports = class Bitmex {
         }
 
         let execInst = [];
-        if (order.options && order.options.reduce_only === true) {
+        if (order.options && order.options.reduce_only === true &&  orderType === 'Limit') {
             execInst.push('ReduceOnly')
+        }
+
+        if (order.options && order.options.close === true && orderType === 'Stop') {
+            execInst.push('Close')
         }
 
         if (order.options && order.options.post_only === true) {

@@ -103,4 +103,16 @@ module.exports = class Order {
             undefined,
         )
     }
+
+    static createStopLossOrder(symbol, price, amount) {
+        return new Order(
+            Math.round(((new Date()).getTime()).toString() * Math.random()),
+            symbol,
+            undefined,
+            price,
+            amount,
+            'stop',
+            {'close': true},
+        )
+    }
 };

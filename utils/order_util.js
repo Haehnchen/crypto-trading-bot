@@ -7,7 +7,7 @@ module.exports = {
         if (orders.filter(order => order.type === 'stop').length === 0) {
             return [
                 {
-                    'amount': position.amount,
+                    'amount': Math.abs(position.amount),
                 },
             ]
         }
