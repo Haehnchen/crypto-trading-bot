@@ -4,11 +4,13 @@ let orderUtil = require('../../utils/order_util')
 let Order = require('../../dict/order')
 
 module.exports = class ExchangeOrderWatchdogListener {
-    constructor(exchangeManager, instances, stopLossCalculator, logger) {
+    constructor(exchangeManager, instances, stopLossCalculator, riskRewardRatioCalculator, orderExecutor, logger) {
         this.exchangeManager = exchangeManager
         this.instances = instances
-        this.logger = logger
         this.stopLossCalculator = stopLossCalculator
+        this.riskRewardRatioCalculator = riskRewardRatioCalculator
+        this.orderExecutor = orderExecutor
+        this.logger = logger
     }
 
     onTick() {
@@ -34,6 +36,11 @@ module.exports = class ExchangeOrderWatchdogListener {
                 let stopLoss = pair.watchdogs.find(watchdog => watchdog.name === 'stoploss')
                 if(stopLoss) {
                     await this.stopLossWatchdog(exchange, position, stopLoss)
+                }
+
+                let riskRewardRatio = pair.watchdogs.find(watchdog => watchdog.name === 'risk_reward_ratio')
+                if (riskRewardRatio) {
+                    await this.riskRewardRatioWatchdog(exchange, position, riskRewardRatio)
                 }
             })
         })
@@ -87,6 +94,37 @@ module.exports = class ExchangeOrderWatchdogListener {
                     console.error(msg)
                 }
             }
+        })
+    }
+
+    async riskRewardRatioWatchdog(exchange, position, riskRewardRatioOptions) {
+        let logger = this.logger
+
+        let orders = await exchange.getOrdersForSymbol(position.symbol)
+        let orderChanges = await this.riskRewardRatioCalculator.createRiskRewardOrdersOrders(position, orders, riskRewardRatioOptions)
+
+        orderChanges.forEach(async order => {
+            logger.info('Risk Reward: order update: ' + JSON.stringify({
+                'order': order,
+                'symbol': position.symbol,
+                'exchange': exchange.getName(),
+            }))
+
+            let price = exchange.calculatePrice(order.price, order.symbol)
+            if (!price) {
+                logger.error('Risk Reward: Invalid price: ' + JSON.stringify({
+                    'order': order,
+                    'symbol': position.symbol,
+                    'exchange': exchange.getName(),
+                }))
+
+                return
+            }
+
+            // we need to normalize the price here: more general solution?
+            order.price = price
+
+            await this.orderExecutor.executeOrder(exchange.getName(), order)
         })
     }
 }

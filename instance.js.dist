@@ -52,6 +52,11 @@ y.forEach((pair) => {
         //    {
         //        'name': 'stoploss',
         //        'percent': 3,
+        //    },
+        //    {
+        //        'name': 'risk_reward_ratio',
+        //        'target_percent': 3,
+        //        'stop_percent': 3,
         //    }
         //],
         'strategies': [

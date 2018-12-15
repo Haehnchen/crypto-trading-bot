@@ -33,6 +33,7 @@ let Http = require('../modules/http')
 let Backtest = require('../modules/backtest')
 
 let StopLossCalculator = require('../modules/order/stop_loss_calculator')
+let RiskRewardRatioCalculator = require('../modules/order/risk_reward_ratio_calculator')
 let PairsHttp = require('../modules/pairs/pairs_http')
 let OrderExecutor = require('../modules/order/order_executor')
 let OrderCalculator = require('../modules/order/order_calculator')
@@ -69,6 +70,7 @@ let backtest = undefined
 var strategyManager = undefined
 
 var stopLossCalculator = undefined
+var riskRewardRatioCalculator = undefined
 var pairsHttp = undefined
 var orderExecutor = undefined
 var orderCalculator = undefined
@@ -122,6 +124,14 @@ module.exports = {
         return stopLossCalculator = new StopLossCalculator(this.getTickers(), this.getLogger())
     },
 
+    getRiskRewardRatioCalculator: function() {
+        if (riskRewardRatioCalculator) {
+            return riskRewardRatioCalculator
+        }
+
+        return riskRewardRatioCalculator = new RiskRewardRatioCalculator(this.getLogger())
+    },
+
     getCandleStickListener: function() {
         if (candleStickListener) {
             return candleStickListener;
@@ -161,6 +171,8 @@ module.exports = {
             this.getExchangeManager(),
             this.getInstances(),
             this.getStopLossCalculator(),
+            this.getRiskRewardRatioCalculator(),
+            this.getOrderExecutor(),
             this.getLogger(),
         )
     },

@@ -50,6 +50,20 @@ module.exports = class Order {
         )
     }
 
+    static createLimitPostOnlyOrderAutoSide(symbol, price, amount, options) {
+        return new Order(
+            Math.round(((new Date()).getTime()).toString() * Math.random()),
+            symbol,
+            price < 0 ? 'short' : 'long',
+            price,
+            amount,
+            'limit',
+            _.merge(options, {
+                'post_only': true,
+            })
+        )
+    }
+
     static createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, side, amount) {
         if(side !== 'long' && side !== 'short') {
             throw 'Invalid order side:' + side;
