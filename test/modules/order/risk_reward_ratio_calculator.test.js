@@ -46,8 +46,8 @@ describe('#risk reward order calculation', function() {
             6501.76
         ))
 
-        assert.equal(result.stop.toFixed(1), 6891.9)
-        assert.equal(result.target.toFixed(1), 6306.7)
+        assert.equal(result.stop.toFixed(1), 6696.8)
+        assert.equal(result.target.toFixed(1), 6111.7)
 
         result = await calculator.calculateForOpenPosition(new Position(
             'BTCUSD',
@@ -58,8 +58,8 @@ describe('#risk reward order calculation', function() {
             6501.76
         ), {'stop_percent': 0.5, 'target_percent': 0.25})
 
-        assert.equal(result.stop.toFixed(1), 6518.0)
-        assert.equal(result.target.toFixed(1), 6469.3)
+        assert.equal(result.stop.toFixed(1), 6534.3)
+        assert.equal(result.target.toFixed(1), 6485.5)
     })
 
     it('create risk reward ratio changeset orders (long)', async () => {
@@ -118,8 +118,8 @@ describe('#risk reward order calculation', function() {
 
         let result = await calculator.syncRatioRewardOrders(position, [], {'stop_percent': 0.5, 'target_percent': 0.25})
 
-        assert.deepEqual(result['stop'], { amount: 0.15, price: 6518.0144 })
-        assert.deepEqual(result['target'], { amount: 0.15, price: 6469.251200000001 })
+        assert.deepEqual(result['stop'], { amount: 0.15, price: 6534.2688 })
+        assert.deepEqual(result['target'], { amount: 0.15, price: 6485.5056 })
 
         // target create
         assert.deepEqual(await calculator.syncRatioRewardOrders(
@@ -129,7 +129,7 @@ describe('#risk reward order calculation', function() {
         ), {
             "target": {
                 "amount": 0.15,
-                "price": 6469.251200000001
+                "price": 6485.5056
             }
         })
 
@@ -141,7 +141,7 @@ describe('#risk reward order calculation', function() {
         ), {
             "stop": {
                 "amount": 0.15,
-                "price": 6518.0144
+                "price": 6534.2688
             }
         })
     })
@@ -178,8 +178,8 @@ describe('#risk reward order calculation', function() {
 
         let orders = await calculator.createRiskRewardOrdersOrders(position, [], {'stop_percent': 0.5, 'target_percent': 0.25})
 
-        assert.deepEqual(orders.find(order => order.type === 'limit').price, 6469.251200000001)
-        assert.deepEqual(orders.find(order => order.type === 'stop').price, 6518.0144)
+        assert.deepEqual(orders.find(order => order.type === 'limit').price, 6485.5056)
+        assert.deepEqual(orders.find(order => order.type === 'stop').price, 6534.2688)
     })
 
     function createLoggerInstance() {

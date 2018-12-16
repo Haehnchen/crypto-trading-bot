@@ -28,8 +28,8 @@ module.exports = class RiskRewardRatioCalculator {
                 result['target'] = entryPrice * (1 + options.target_percent / 100)
                 result['stop'] = entryPrice * (1 - options.stop_percent / 100)
             } else {
-                result['target'] = entryPrice * (1 - options.stop_percent / 100)
-                result['stop'] = entryPrice * (1 + options.target_percent / 100)
+                result['target'] = entryPrice * (1 - options.target_percent / 100)
+                result['stop'] = entryPrice * (1 + options.stop_percent / 100)
             }
 
             resolve(result)
