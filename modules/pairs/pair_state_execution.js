@@ -52,6 +52,7 @@ module.exports = class PairStateExecution {
                 pair.exchange,
                 pair.symbol,
                 side,
+                pair.options,
             )
 
             this.managedOrders.push(order)
@@ -87,6 +88,7 @@ module.exports = class PairStateExecution {
                 pair.exchange,
                 pair.symbol,
                 position.side === 'short' ? amount : amount * -1, // invert the current position
+                pair.options,
             )
 
             this.managedOrders.push(order)
@@ -116,7 +118,7 @@ module.exports = class PairStateExecution {
         return this.managedOrders.find(order => order.id === orderId) !== undefined
     }
 
-    async executeOrder(exchangeName, symbol, side) {
+    async executeOrder(exchangeName, symbol, side, options) {
         return new Promise(async resolve => {
             let orderSize = this.orderCalculator.calculateOrderSize(exchangeName, symbol)
             if (!orderSize) {
@@ -125,19 +127,21 @@ module.exports = class PairStateExecution {
                 return
             }
 
-            let order = await this.orderExecutor.executeOrder(
-                exchangeName,
-                Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, side, orderSize)
-            )
+            let myOrder = options['market'] === true
+                ? Order.createMarketOrder(symbol, orderSize)
+                : Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, orderSize)
+
+            let order = await this.orderExecutor.executeOrder(exchangeName, myOrder)
 
             resolve(order)
         })
     }
 
-    async executeCloseOrder(exchangeName, symbol, orderSize) {
-        return this.orderExecutor.executeOrder(
-            exchangeName,
-            Order.createCloseOrderWithPriceAdjustment(symbol, orderSize)
-        )
+    async executeCloseOrder(exchangeName, symbol, orderSize, options) {
+        let myOrder = options['market'] === true
+            ? Order.createMarketOrder(symbol, orderSize)
+            : Order.createCloseOrderWithPriceAdjustment(symbol, orderSize)
+
+        return this.orderExecutor.executeOrder(exchangeName, myOrder)
     }
 }

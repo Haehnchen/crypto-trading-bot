@@ -35,9 +35,17 @@ module.exports = class PairsHttp {
         })
     }
 
-    async triggerOrder(exchangeName, symbol, side) {
+    async triggerOrder(exchangeName, symbol, action) {
         return new Promise(async resolve => {
-            this.pairStateManager.update(exchangeName, symbol, side)
+
+            let side = action
+            let options = {}
+            if (['long_market', 'short_market', 'close_market'].includes(action)) {
+                options['market'] = true
+                side = side.replace('_market', '')
+            }
+
+            this.pairStateManager.update(exchangeName, symbol, side, options)
             this.eventEmitter.emit('order_pair_state')
 
             resolve()

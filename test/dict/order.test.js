@@ -10,11 +10,24 @@ describe('#order dict test', function() {
 
     })
 
-    it('test order dict creation (post only + adjusted)', () => {
-        let order = Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder('BTCUSD', 'long', 12)
+    it('test order dict creation (post only + adjusted) [long]', () => {
+        let order = Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder('BTCUSD', 12)
 
         assert.equal(order.price,undefined)
         assert.equal(order.options.adjust_price, true)
+        assert.equal(order.amount,12)
+        assert.equal(order.side,'long')
+
+        assert.equal(order.hasAdjustedPrice(), true)
+    })
+
+    it('test order dict creation (post only + adjusted) [short]', () => {
+        let order = Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder('BTCUSD', -12)
+
+        assert.equal(order.price,undefined)
+        assert.equal(order.options.adjust_price, true)
+        assert.equal(order.amount,-12)
+        assert.equal(order.side,'short')
 
         assert.equal(order.hasAdjustedPrice(), true)
     })
@@ -29,5 +42,17 @@ describe('#order dict test', function() {
         assert.equal(order.side, 'short')
 
         assert.equal(Order.createCloseOrderWithPriceAdjustment('BTCUSD', 12).side, 'long')
+    })
+
+    it('test market order', () => {
+        let order = Order.createMarketOrder('BTCUSD', -12)
+
+        assert.equal(order.price < 0,true)
+        assert.equal(order.side, 'short')
+
+        order = Order.createMarketOrder('BTCUSD', 12)
+
+        assert.equal(order.price > 0,true)
+        assert.equal(order.side, 'long')
     })
 })

@@ -85,9 +85,12 @@ module.exports = class Http {
             let pair = req.params.pair.split('-')
             let body = req.body;
 
-            let order = await this.pairsHttp.triggerOrder(pair[0], pair[1], body.action)
+            await this.pairsHttp.triggerOrder(pair[0], pair[1], body.action)
 
-            res.redirect('/pairs');
+            // simple sleep for async ui blocking for exchange communication
+            setTimeout(() => {
+                res.redirect('/pairs');
+            }, 800)
         })
 
         let exchangeManager = this.exchangeManager

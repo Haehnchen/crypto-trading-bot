@@ -5,14 +5,14 @@ module.exports = class PairStateManager {
         this.stats = {}
     }
 
-    update(exchange, symbol, state, options) {
+    update(exchange, symbol, state, options = {}) {
         if (!['long', 'close', 'short', 'cancel'].includes(state)) {
             throw 'Invalidate state: ' + state
         }
 
         this.stats[exchange + symbol] = {
             'state': state,
-            'options': options,
+            'options': options || {},
             'time': new Date(),
             'symbol': symbol,
             'exchange': exchange,

@@ -17,16 +17,12 @@ module.exports = class Order {
         return this.options.adjust_price === true
     }
 
-    static createMarketOrder(symbol, side, amount) {
-        if(side !== 'long' && side !== 'short') {
-            throw 'Invalid order side:' + side;
-        }
-
+    static createMarketOrder(symbol, amount) {
         return new Order(
             Math.round(((new Date()).getTime()).toString() * Math.random()),
             symbol,
-            side,
-            side === 'long' ? 1 : -1,
+            amount > 0 ? 'long' : 'short',
+            amount > 0 ? 0.000001 : -0.000001, // fake prices
             amount,
             'market'
         );
@@ -64,14 +60,15 @@ module.exports = class Order {
         )
     }
 
-    static createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, side, amount, options = {}) {
-        if(side !== 'long' && side !== 'short') {
-            throw 'Invalid order side:' + side;
-        }
-
-        return Order.createLimitPostOnlyOrder(symbol, side, undefined, amount,  _.merge(options, {
-            'adjust_price': true,
-        }))
+    static createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, amount, options = {}) {
+        return Order.createLimitPostOnlyOrder(
+            symbol,
+            amount < 0 ? 'short' : 'long',
+            undefined,
+            amount,
+            _.merge(options, {
+                'adjust_price': true,
+            }))
     }
 
     static createRetryOrder(order) {
@@ -133,7 +130,6 @@ module.exports = class Order {
     static createCloseOrderWithPriceAdjustment(symbol, amount) {
         return Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(
             symbol,
-            amount < 0 ? 'short' : 'long',
             amount,
             {'close': true},
         )
