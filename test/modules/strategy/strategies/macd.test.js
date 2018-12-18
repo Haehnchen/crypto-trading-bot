@@ -36,6 +36,29 @@ describe('#strategy macd', () => {
         })))['signal'])
     })
 
+    it('macd long (close)', async () => {
+        let macd = new MACD()
+
+        let context = new StrategyContext(new Ticker('goo', 'goo', 'goo', 404))
+        context.lastSignal = 'long'
+
+        assert.equal('close', (await macd.period(new IndicatorPeriod(context, {
+            'sma200': [500, 400, 388],
+            'ema200': [500, 400, 388],
+            'macd': [{'histogram': 0.1}, {'histogram': -1}, {'histogram': 0.3}],
+        })))['signal'])
+
+
+        context = new StrategyContext(new Ticker('goo', 'goo', 'goo', 404))
+        context.lastSignal = 'short'
+
+        assert.equal(undefined, (await macd.period(new IndicatorPeriod(context, {
+            'sma200': [500, 400, 388],
+            'ema200': [500, 400, 388],
+            'macd': [{'histogram': 0.1}, {'histogram': -1}, {'histogram': 0.3}],
+        })))['signal'])
+    })
+
     it('macd short', async () => {
         let macd = new MACD()
 
@@ -50,6 +73,19 @@ describe('#strategy macd', () => {
             'ema200': [500, 400, 399],
             'macd': [{'histogram': 1}, {'histogram': -0.1}, {'histogram': -0.2}],
         }))['signal']))
+    })
+
+    it('macd short (close)', async () => {
+        let macd = new MACD()
+
+        let context = new StrategyContext(new Ticker('goo', 'goo', 'goo', 394))
+        context.lastSignal = 'short'
+
+        assert.equal('close', (await macd.period(new IndicatorPeriod(context, {
+            'sma200': [500, 400, 399],
+            'ema200': [500, 400, 399],
+            'macd': [{'histogram': -0.1}, {'histogram': 1}, {'histogram': -0.2}],
+        })))['signal'])
     })
 
     let createStrategyContext = (price) => {

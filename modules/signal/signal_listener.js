@@ -28,6 +28,10 @@ module.exports = class SignalListener {
     }
 
     onSignal(signal, instance) {
+        // disabled
+        return
+
+
         let ticker = this.tickers.get(signal.exchange, signal.symbol);
 
         if (!ticker) {

@@ -10,6 +10,14 @@ module.exports = class IndicatorPeriod {
         return this.strategyContext.bid
     }
 
+    getLastSignal() {
+        if (!this.strategyContext || !this.strategyContext.lastSignal) {
+            return undefined
+        }
+
+        return this.strategyContext.lastSignal
+    }
+
     getIndicator(key) {
         for (let k in this.indicators) {
             if (k === key) {

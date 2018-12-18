@@ -166,6 +166,7 @@ module.exports = {
             this.getSignalLogger(),
             this.getStrategyManager(),
             this.getExchangeManager(),
+            this.getPairStateManager(),
         )
     },
 

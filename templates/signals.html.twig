@@ -25,6 +25,8 @@
                             <i class="fas fa-chevron-circle-up text-success"></i>
                         {% elseif signal.side == 'short' %}
                             <i class="fas fa-chevron-circle-down text-danger"></i>
+                        {% elseif signal.side == 'close' %}
+                            <i class="fa fa-times" aria-hidden="true"></i>
                         {% endif %}
                     </td>
                     <td>{{ signal.strategy }}</td>

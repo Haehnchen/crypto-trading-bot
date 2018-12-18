@@ -65,7 +65,15 @@ module.exports = class PairStateExecution {
 
         if (!position) {
             this.pairStateManager.clear(pair.exchange, pair.symbol)
-            this.logger.debug('block selling order; open position:' + JSON.stringify([pair.exchange, pair.symbol]))
+            this.logger.debug('Close Pair: Block selling order; open position: ' + JSON.stringify([pair.exchange, pair.symbol]))
+
+            // clear untouched order
+            let orders = (await this.exchangeManager.getOrders(pair.exchange, pair.symbol))
+            if (orders.length > 0) {
+                this.logger.debug('Close Pair: Found open orders clearing: ' + JSON.stringify([pair.exchange, pair.symbol]))
+                await this.orderExecutor.cancelAll(pair.exchange, pair.symbol)
+            }
+
             return
         }
 

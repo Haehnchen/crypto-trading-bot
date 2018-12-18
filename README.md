@@ -53,8 +53,8 @@ cp conf.json.dist conf.json
 Create a new sqlite data base
 
 ```
-sqlite3 bot.db
 # use bot.sql scheme to create the tables
+sqlite3 bot.db < bot.sql
 ```
 
 Lets start it
