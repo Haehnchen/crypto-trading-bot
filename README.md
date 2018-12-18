@@ -71,7 +71,8 @@ Some browser links
  * Signals: http://127.0.0.1:8080/signals
  * Tradingview: http://127.0.0.1:8080/tradingview/BTCUSD
  * Backtesting: http://127.0.0.1:8080/backtest
-  
+ * Order & Pair Management: http://127.0.0.1:8080/pairs
+   
 ![Webserver UI](documentation/cryptobot.png "Webserver UI")
 
 ## Backtesting
@@ -89,6 +90,29 @@ Find some example strategies inside [modules/strategy/strategies](modules/strate
  * Bitmex with leverage configuration (+testnet)
  * Binance
  * Bitfinex (margin wallet)
+ 
+## Tools / Watchdog
+ 
+ * `order_adjust` Keep open orders in bid / ask of the orderbook in first position
+ 
+### Watchdog
+
+ * `stoploss` provide general stoploss order in percent of entry price (Exchange Order)
+ * `risk_reward_ratio` Creates Risk Reward order for take profit and stoploss (Exchange Order Limit+Stop) 
+
+```
+    'watchdogs': [
+        {
+            'name': 'stoploss',
+            'percent': 3,
+        },
+        {
+            'name': 'risk_reward_ratio',
+            'target_percent': 6,
+            'stop_percent': 3,
+        }
+    ],
+```
  
 ## Signals
 
@@ -113,6 +137,8 @@ Other bots with possible design pattern
  * https://github.com/askmike/gekko
  * https://github.com/freqtrade/freqtrade
  * https://github.com/Ekliptor/WolfBot
+ * https://github.com/andresilvasantos/bitprophet
+ * https://github.com/kavehs87/PHPTradingBot
 
 ### Strategies
 

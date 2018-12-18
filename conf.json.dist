@@ -28,5 +28,16 @@
     },
     "webserver": {
         "port": 8080
+    },
+    "tick": {
+        "default": null,
+        "signal": null,
+        "watchdog": null,
+        "order_adjust": null,
+        "order_pair_state": null
+    },
+    "order": {
+        "retry": null,
+        "retry_ms": null
     }
 }

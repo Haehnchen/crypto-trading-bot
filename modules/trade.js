@@ -20,7 +20,8 @@ module.exports = class Trade {
         signalListener,
         exchangeOrderWatchdogListener,
         orderExecutor,
-        pairStateExecution
+        pairStateExecution,
+        systemUtil,
     ) {
         this.eventEmitter = eventEmitter
         this.instances = instances
@@ -37,6 +38,7 @@ module.exports = class Trade {
         this.exchangeOrderWatchdogListener = exchangeOrderWatchdogListener
         this.orderExecutor = orderExecutor
         this.pairStateExecution = pairStateExecution
+        this.systemUtil = systemUtil
     }
 
     start() {
@@ -61,27 +63,28 @@ module.exports = class Trade {
         */
 
         let eventEmitter = this.eventEmitter
+        eventEmitter.setMaxListeners(15);
 
         setInterval(() => {
             eventEmitter.emit('tick', {})
-        }, 5000)
+        }, this.systemUtil.getConfig('tick.default', 5500))
 
         // order create tick
         setInterval(() => {
             eventEmitter.emit('signal_tick', {})
-        }, 1000)
+        }, this.systemUtil.getConfig('tick.signal', 3100))
 
         setInterval(() => {
             eventEmitter.emit('watchdog', {})
-        }, 5000)
+        }, this.systemUtil.getConfig('tick.watchdog', 5100))
 
         setInterval(() => {
             eventEmitter.emit('order_adjust', {})
-        }, 5000)
+        }, this.systemUtil.getConfig('tick.order_adjust', 5600))
 
         setInterval(() => {
             eventEmitter.emit('order_pair_state', {})
-        }, 5000)
+        }, this.systemUtil.getConfig('tick.order_pair_state', 5300))
 
         let me = this
         let tickers = this.tickers

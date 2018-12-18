@@ -39,6 +39,7 @@ let OrderExecutor = require('../modules/order/order_executor')
 let OrderCalculator = require('../modules/order/order_calculator')
 let PairStateManager = require('../modules/pairs/pair_state_manager')
 let PairStateExecution = require('../modules/pairs/pair_state_execution')
+let SystemUtil = require('../modules/system/system_util')
 
 var _ = require('lodash');
 
@@ -71,14 +72,14 @@ let backtest = undefined
 let pairStateManager = undefined
 let pairStateExecution = undefined
 
-var strategyManager = undefined
+let strategyManager = undefined
 
-var stopLossCalculator = undefined
-var riskRewardRatioCalculator = undefined
-var pairsHttp = undefined
-var orderExecutor = undefined
-var orderCalculator = undefined
-
+let stopLossCalculator = undefined
+let riskRewardRatioCalculator = undefined
+let pairsHttp = undefined
+let orderExecutor = undefined
+let orderCalculator = undefined
+let systemUtil = undefined
 
 module.exports = {
     boot: function() {
@@ -342,6 +343,7 @@ module.exports = {
         return orderExecutor = new OrderExecutor(
             this.getExchangeManager(),
             this.getTickers(),
+            this.getSystemUtil(),
             this.getLogger(),
         )
     },
@@ -391,6 +393,16 @@ module.exports = {
         )
     },
 
+    getSystemUtil: function() {
+        if (systemUtil) {
+            return systemUtil;
+        }
+
+        return systemUtil = new SystemUtil(
+            this.getConfig(),
+        )
+    },
+
     createTradeInstance: function() {
         return new Trade(
             this.getEventEmitter(),
@@ -408,6 +420,7 @@ module.exports = {
             this.getExchangeOrderWatchdogListener(),
             this.getOrderExecutor(),
             this.getPairStateExecution(),
+            this.getSystemUtil(),
         )
     },
 

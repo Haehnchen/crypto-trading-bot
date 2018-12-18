@@ -4,11 +4,11 @@ let Order = require('../../dict/order')
 const _ = require('lodash');
 
 module.exports = class OrderExecutor {
-    constructor(exchangeManager, tickers, logger) {
+    constructor(exchangeManager, tickers, systemUtil, logger) {
         this.exchangeManager = exchangeManager
         this.tickers = tickers
         this.logger = logger
-        this.orderRetryMs = 1500
+        this.systemUtil = systemUtil
 
         this.orders = []
     }
@@ -107,7 +107,7 @@ module.exports = class OrderExecutor {
     }
 
     async triggerOrder(resolve, exchangeName, order, retry = 0) {
-        if(retry > 3) {
+        if(retry > this.systemUtil.getConfig('order.retry', 3)) {
             console.log('Retry limit stop creating order: ' + JSON.stringify(order))
             resolve()
             return
@@ -148,7 +148,7 @@ module.exports = class OrderExecutor {
                 let retryOrder = await this.createRetryOrder(exchangeName, order)
 
                 await this.triggerOrder(resolve, exchangeName, retryOrder, ++retry)
-            }, this.orderRetryMs);
+            }, this.systemUtil.getConfig('order.retry_ms', 1500));
 
             return
         }
