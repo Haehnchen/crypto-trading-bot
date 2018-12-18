@@ -88,13 +88,13 @@ module.exports = class Bitmex {
 
                 request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + wantPeriod + '&partial=false&symbol=' + symbol['symbol'] + '&count=500&reverse=true', { json: true }, (err, res, body) => {
                     if (err) {
-                        console.log(err)
+                        console.log('Bitmex candle backfill error: ' + JSON.stringify(err))
                         logger.error('Bitmex candle backfill error: ' + err)
                         return
                     }
 
                     if(!Array.isArray(body)) {
-                        console.log(body);
+                        console.log('Bitmex candle backfill error: ' + JSON.stringify(body));
                         logger.error('Bitmex candle backfill error: ' + JSON.stringify(body))
                         return
                     }
@@ -362,7 +362,7 @@ module.exports = class Bitmex {
             }, (error, response, body) => {
                 if (error) {
                     logger.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
-                    console.log(error)
+                    console.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
                     reject()
 
                     return
@@ -372,8 +372,8 @@ module.exports = class Bitmex {
 
                 let order = JSON.parse(body)
                 if (order.error) {
-                    logger.error('Bitmex: Invalid order created request:' + JSON.stringify(order))
-                    console.log(body)
+                    logger.error('Bitmex: Invalid order created request:' + order)
+                    console.error('Bitmex: Invalid order created request:' + order)
                     reject()
                     return
                 }
@@ -441,7 +441,7 @@ module.exports = class Bitmex {
             }, (error, response, body) => {
                 if (error) {
                     logger.error('Bitmex: Invalid leverage update request:' + JSON.stringify({'error': error, 'body': body}))
-                    console.log(error)
+                    console.error('Bitmex: Invalid leverage update request:' + JSON.stringify({'error': error, 'body': body}))
                     resolve(false)
 
                     return
@@ -449,8 +449,8 @@ module.exports = class Bitmex {
 
                 let result = JSON.parse(body)
                 if (result.error) {
-                    logger.error('Bitmex: Invalid leverage update request:' + JSON.stringify(result))
-                    console.log(body)
+                    logger.error('Bitmex: Invalid leverage update request:' + body)
+                    console.error('Bitmex: Invalid leverage update request:' + body)
                     reject()
                     return
                 }
@@ -494,7 +494,7 @@ module.exports = class Bitmex {
             }, (error, response, body) => {
                 if (error) {
                     logger.error('Bitmex: Invalid cancel update response:' + JSON.stringify({'error': error, 'body': body}))
-                    console.log(error)
+                    console.error('Bitmex: Invalid cancel update response:' + JSON.stringify({'error': error, 'body': body}))
                     reject()
 
                     return
@@ -502,11 +502,9 @@ module.exports = class Bitmex {
 
                 let order = JSON.parse(body)
 
-                console.log(body)
-
                 if (order.error) {
-                    logger.error('Bitmex: Invalid order update response:' + JSON.stringify(order))
-                    console.log(body)
+                    logger.error('Bitmex: Invalid order update response:' + order)
+                    console.error('Bitmex: Invalid order update response:' + order)
                     reject()
                     return
                 }
@@ -551,7 +549,7 @@ module.exports = class Bitmex {
             }, (error, response, body) => {
                 if (error) {
                     logger.error('Bitmex: Invalid cancel update response:' + JSON.stringify({'error': error, 'body': body}))
-                    console.log(error)
+                    console.error('Bitmex: Invalid cancel update response:' + JSON.stringify({'error': error, 'body': body}))
                     reject()
 
                     return
@@ -559,11 +557,9 @@ module.exports = class Bitmex {
 
                 let order = JSON.parse(body)
 
-                console.log(body)
-
                 if (order.error) {
-                    logger.error('Bitmex: Invalid order update response:' + JSON.stringify(order))
-                    console.log(body)
+                    logger.error('Bitmex: Invalid order update response:' + order)
+                    console.error('Bitmex: Invalid order update response:' + order)
                     reject()
                     return
                 }
@@ -621,7 +617,7 @@ module.exports = class Bitmex {
             }, (error, response, body) => {
                 if (error) {
                     logger.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
-                    console.log(error)
+                    console.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
                     reject()
 
                     return
@@ -631,7 +627,7 @@ module.exports = class Bitmex {
 
                 if (order.error) {
                     logger.error('Bitmex: Invalid order update request:' + JSON.stringify(order))
-                    console.log(body)
+                    console.error('Bitmex: Invalid order update request:' + body)
                     reject()
                     return
                 }

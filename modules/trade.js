@@ -97,11 +97,11 @@ module.exports = class Trade {
         });
 
         eventEmitter.on('exchange_order', function(exchangeOrderEvent) {
-            console.log(exchangeOrderEvent)
+            console.log('exchangeOrderEvent: ' + JSON.stringify(exchangeOrderEvent))
         });
 
         eventEmitter.on('exchange_orders', function(exchangeOrderEvent) {
-            console.log(exchangeOrderEvent)
+            console.log('exchange_orders: ' + JSON.stringify(exchangeOrderEvent))
         });
 
         eventEmitter.on('candlestick', async (event) => {

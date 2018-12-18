@@ -154,7 +154,7 @@ module.exports = class OrderExecutor {
         }
 
         this.logger.info('Order created: ' + JSON.stringify(orderResult))
-        console.log('Order created: ' + JSON.stringify(orderResult))
+        console.log('Order created: ' + JSON.stringify([orderResult.id, exchangeName, orderResult.symbol, orderResult.symbol]))
 
         this.orders.push({
             'id': orderResult.id,

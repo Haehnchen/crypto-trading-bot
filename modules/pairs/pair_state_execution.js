@@ -16,6 +16,7 @@ module.exports = class PairStateExecution {
         this.orderCalculator = orderCalculator
         this.orderExecutor = orderExecutor
         this.logger = logger
+        this.running = false
 
         this.managedOrders = []
     }
@@ -95,23 +96,43 @@ module.exports = class PairStateExecution {
         }
     }
 
-    onPairStateExecutionTick() {
+    async onPairStateExecutionTick() {
+        // block ui running
+        if (this.running) {
+            this.logger.debug('onPairStateExecutionTick blocked for running')
+           console.log('onPairStateExecutionTick blocked for running')
+
+           return
+        }
+
+        this.running = true
+
+        let promises = []
+
         // ordering in priority
-        this.pairStateManager.getCancelPairs().forEach(async pair => {
-            await this.onCancelPair(pair)
+        this.pairStateManager.getCancelPairs().forEach(pair => {
+            promises.push(this.onCancelPair(pair))
         })
 
-        this.pairStateManager.getClosingPairs().forEach(async pair => {
-            await this.onClosePair(pair)
+        this.pairStateManager.getClosingPairs().forEach(pair => {
+            promises.push(this.onClosePair(pair))
         })
 
-        this.pairStateManager.getSellingPairs().forEach(async pair => {
-            await this.onSellBuyPair(pair, 'short')
+        this.pairStateManager.getSellingPairs().forEach(pair => {
+            promises.push(this.onSellBuyPair(pair, 'short'))
         })
 
-        this.pairStateManager.getBuyingPairs().forEach(async pair => {
-            await this.onSellBuyPair(pair, 'long')
+        this.pairStateManager.getBuyingPairs().forEach(pair => {
+            promises.push(this.onSellBuyPair(pair, 'long'))
         })
+
+        try {
+            await Promise.all(promises)
+        } catch (e) {
+            console.error(e)
+        }
+
+        this.running = false
     }
 
     isManagedOrder(orderId) {

@@ -38,7 +38,7 @@ module.exports = class CreateOrderListener {
         }
 
         exchange.updateOrder(currentOrder.id, orderEvent.order).then((order) => {
-            console.log(order)
+            console.log('OderUpdate:' + JSON.stringify(order))
         }).catch(() => {
             console.log('order update error')
         })
