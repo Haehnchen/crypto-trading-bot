@@ -1,13 +1,13 @@
 'use strict';
 
 module.exports = class IndicatorPeriod {
-    constructor(price, indicators) {
-        this.price = price
+    constructor(strategyContext, indicators) {
+        this.strategyContext = strategyContext
         this.indicators = indicators
     }
 
     getPrice() {
-        return this.price
+        return this.strategyContext.bid
     }
 
     getIndicator(key) {

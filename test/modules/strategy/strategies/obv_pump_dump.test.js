@@ -1,7 +1,9 @@
-let assert = require('assert');
-let OBVPumpDump = require('../../../../modules/strategy/strategies/obv_pump_dump');
+let assert = require('assert')
+let OBVPumpDump = require('../../../../modules/strategy/strategies/obv_pump_dump')
 let IndicatorBuilder = require('../../../../modules/strategy/dict/indicator_builder')
 let IndicatorPeriod = require('../../../../modules/strategy/dict/indicator_period')
+let StrategyContext = require('../../../../dict/strategy_context')
+let Ticker = require('../../../../dict/ticker')
 
 describe('#strategy obv_pump_dump', () => {
     it('obv_pump_dump strategy builder', async() => {
@@ -15,7 +17,7 @@ describe('#strategy obv_pump_dump', () => {
     it('obv_pump_dump strategy long', async() => {
         let obv = new OBVPumpDump()
 
-        let result = await obv.period(new IndicatorPeriod(394, {
+        let result = await obv.period(new IndicatorPeriod(createStrategyContext(), {
             'ema': [380, 370],
             'obv': [-2358, -2395, -2395, -2395, -2385, -2165, -1987, -1987, -1990, -1990, -1990, -1990, -1990, -1948, -1808, -1601, -1394, -1394, -1147, 988, 3627, 6607, 11467],
         }), {})
@@ -27,7 +29,7 @@ describe('#strategy obv_pump_dump', () => {
     it('obv_pump_dump strategy long options', async() => {
         let obv = new OBVPumpDump()
 
-        let result = await obv.period(new IndicatorPeriod(394, {
+        let result = await obv.period(new IndicatorPeriod(createStrategyContext(), {
             'ema': [380, 370],
             'obv': [-2358, -2395, -2395, -2395, -2385, -2165, -1987, -1987, -1990, -1990, -1990, -1990, -1990, -1948, -1808, -1601, -1394, -1394, -1147, 988, 3627, 6607, 11467],
         }), {'trigger_multiplier': 1000})
@@ -35,4 +37,8 @@ describe('#strategy obv_pump_dump', () => {
         assert.equal(undefined, result['signal'])
         assert.equal('up', result['debug']['trend'])
     })
+
+    let createStrategyContext = () => {
+        return new StrategyContext(new Ticker('goo', 'goo', 'goo', 394, 394))
+    }
 })

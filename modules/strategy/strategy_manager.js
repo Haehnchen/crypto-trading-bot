@@ -38,7 +38,7 @@ module.exports = class StrategyManager {
         return this.strategies = strategies
     }
 
-    executeStrategy(strategyName, price, exchange, symbol, options) {
+    executeStrategy(strategyName, context, exchange, symbol, options) {
         options = options || {}
 
         let strategy = this.getStrategies().find((strategy) => {
@@ -79,7 +79,7 @@ module.exports = class StrategyManager {
                 }
             }
 
-            let indicatorPeriod = new IndicatorPeriod(price, results)
+            let indicatorPeriod = new IndicatorPeriod(context, results)
 
             let trigger = await strategy.period(indicatorPeriod, options)
 

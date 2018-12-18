@@ -1,17 +1,17 @@
 {% extends './layout.html.twig' %}
 
 {% block content %}
-    <div class="container-fluid">
+    <div class="container">
         <table class="table">
             <thead>
             <tr>
                 <th scope="col">Exchange</th>
                 <th scope="col">Symbol</th>
-                <th scope="col">Strategy</th>
-                <th scope="col">Income</th>
-                <th scope="col">Options</th>
                 <th scope="col">Side</th>
+                <th scope="col">Strategy</th>
+                <th scope="col">Time</th>
                 <th scope="col">State</th>
+                <th scope="col">Options</th>
             </tr>
 
             </thead>
@@ -20,9 +20,6 @@
                 <tr>
                     <td>{{ signal.exchange }}</td>
                     <td>{{ signal.symbol }}</td>
-                    <td>{{ signal.strategy }}</td>
-                    <td>{{ signal.income_at|date('d.m.y H:i') }}</td>
-                    <td>{{ signal.options }}</td>
                     <td>
                         {% if signal.side == 'long' %}
                             <i class="fas fa-chevron-circle-up text-success"></i>
@@ -30,7 +27,10 @@
                             <i class="fas fa-chevron-circle-down text-danger"></i>
                         {% endif %}
                     </td>
+                    <td>{{ signal.strategy }}</td>
+                    <td>{{ signal.income_at|date('d.m.y H:i') }}</td>
                     <td>{{ signal.state }}</td>
+                    <td class="text-muted">{{ signal.options }}</td>
                 </tr>
             {% endfor %}
             </tbody>

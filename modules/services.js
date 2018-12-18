@@ -164,7 +164,8 @@ module.exports = {
             this.getInstances(),
             this.getNotifier(),
             this.getSignalLogger(),
-            this.getStrategyManager()
+            this.getStrategyManager(),
+            this.getExchangeManager(),
         )
     },
 
