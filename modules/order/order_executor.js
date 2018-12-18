@@ -1,7 +1,7 @@
 'use strict';
 
 let Order = require('../../dict/order')
-var _ = require('lodash')
+const _ = require('lodash');
 
 module.exports = class OrderExecutor {
     constructor(exchangeManager, tickers, logger) {
@@ -31,8 +31,7 @@ module.exports = class OrderExecutor {
             // order not known by exchange cleanup
             let lastExchangeOrder = await exchange.findOrderById(order.id);
             if (!lastExchangeOrder) {
-                console.info('Unknown order cleanup: ' + order.exchangeOrder.id)
-                this.logger.info('Unknown order cleanup: ' + order.exchangeOrder.id)
+                this.logger.info(order.exchange + ':Unknown order cleanup: ' + order.exchangeOrder.id)
 
                 this.orders = this.orders.filter(myOrder => {
                     return myOrder.id !== order.id
@@ -62,6 +61,48 @@ module.exports = class OrderExecutor {
     async executeOrder(exchangeName, order) {
         return new Promise(async resolve => {
             await this.triggerOrder(resolve, exchangeName, order)
+        })
+    }
+
+    async cancelOrder(exchangeName, orderId) {
+        return new Promise(async resolve => {
+            let exchange = this.exchangeManager.get(exchangeName)
+            if (!exchange) {
+                console.error('Invalid exchange: ' + exchangeName)
+
+                resolve()
+                return;
+            }
+
+            try {
+                resolve(exchange.cancelOrder(orderId))
+            } catch(err) {
+                this.logger.error('Order cancel error: ' + orderId)
+                console.log('Order error: ' + orderId)
+
+                resolve()
+            }
+        })
+    }
+
+    async cancelAll(exchangeName, symbol) {
+        return new Promise(async resolve => {
+            let exchange = this.exchangeManager.get(exchangeName)
+            if (!exchange) {
+                console.error('Invalid exchange: ' + exchangeName)
+
+                resolve()
+                return;
+            }
+
+            try {
+                resolve(exchange.cancelAll(symbol))
+            } catch(err) {
+                this.logger.error('Order cancel all error: ' + symbol)
+                console.log('Order all error: ' + symbol)
+
+                resolve()
+            }
         })
     }
 

@@ -37,6 +37,8 @@ let RiskRewardRatioCalculator = require('../modules/order/risk_reward_ratio_calc
 let PairsHttp = require('../modules/pairs/pairs_http')
 let OrderExecutor = require('../modules/order/order_executor')
 let OrderCalculator = require('../modules/order/order_calculator')
+let PairStateManager = require('../modules/pairs/pair_state_manager')
+let PairStateExecution = require('../modules/pairs/pair_state_execution')
 
 var _ = require('lodash');
 
@@ -66,6 +68,8 @@ let candlestickRepository = undefined
 
 let exchangeManager = undefined
 let backtest = undefined
+let pairStateManager = undefined
+let pairStateExecution = undefined
 
 var strategyManager = undefined
 
@@ -74,6 +78,7 @@ var riskRewardRatioCalculator = undefined
 var pairsHttp = undefined
 var orderExecutor = undefined
 var orderCalculator = undefined
+
 
 module.exports = {
     boot: function() {
@@ -173,6 +178,7 @@ module.exports = {
             this.getStopLossCalculator(),
             this.getRiskRewardRatioCalculator(),
             this.getOrderExecutor(),
+            this.getPairStateManager(),
             this.getLogger(),
         )
     },
@@ -358,8 +364,30 @@ module.exports = {
         return pairsHttp = new PairsHttp(
             this.getInstances(),
             this.getExchangeManager(),
-            this.getOrderExecutor(),
+            this.getPairStateManager(),
+            this.getEventEmitter(),
+        )
+    },
+
+    getPairStateManager: function() {
+        if (pairStateManager) {
+            return pairStateManager;
+        }
+
+        return pairStateManager = new PairStateManager()
+    },
+
+    getPairStateExecution: function() {
+        if (pairStateExecution) {
+            return pairStateExecution
+        }
+
+        return pairStateExecution = new PairStateExecution(
+            this.getPairStateManager(),
+            this.getExchangeManager(),
             this.getOrderCalculator(),
+            this.getOrderExecutor(),
+            this.getLogger(),
         )
     },
 
@@ -379,6 +407,7 @@ module.exports = {
             this.getSignalListener(),
             this.getExchangeOrderWatchdogListener(),
             this.getOrderExecutor(),
+            this.getPairStateExecution(),
         )
     },
 

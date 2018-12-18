@@ -85,14 +85,9 @@ module.exports = class Http {
             let pair = req.params.pair.split('-')
             let body = req.body;
 
-            let order = await this.pairsHttp.executeOrder(pair[0], pair[1], body.action)
+            let order = await this.pairsHttp.triggerOrder(pair[0], pair[1], body.action)
 
-            res.render('../templates/pair_action.html.twig', {
-                exchange: pair[0],
-                symbol: pair[1],
-                action: body.action,
-                order: order,
-            })
+            res.redirect('/pairs');
         })
 
         let exchangeManager = this.exchangeManager

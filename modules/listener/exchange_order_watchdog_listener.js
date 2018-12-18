@@ -4,12 +4,13 @@ let orderUtil = require('../../utils/order_util')
 let Order = require('../../dict/order')
 
 module.exports = class ExchangeOrderWatchdogListener {
-    constructor(exchangeManager, instances, stopLossCalculator, riskRewardRatioCalculator, orderExecutor, logger) {
+    constructor(exchangeManager, instances, stopLossCalculator, riskRewardRatioCalculator, orderExecutor, pairStateManager, logger) {
         this.exchangeManager = exchangeManager
         this.instances = instances
         this.stopLossCalculator = stopLossCalculator
         this.riskRewardRatioCalculator = riskRewardRatioCalculator
         this.orderExecutor = orderExecutor
+        this.pairStateManager = pairStateManager
         this.logger = logger
     }
 
@@ -28,8 +29,16 @@ module.exports = class ExchangeOrderWatchdogListener {
                     instance => instance.exchange === exchange.getName() && instance.symbol === position.symbol
                 )
 
-
                 if (!pair || !pair.watchdogs) {
+                    return
+                }
+
+                if (!this.pairStateManager.isNeutral(exchange.getName(), position.symbol)) {
+                    this.logger.debug('Watchdog: block for action in place: ' + JSON.stringify({
+                        'exchange': exchange.getName(),
+                        'symbol':  position.symbol,
+                    }))
+
                     return
                 }
 

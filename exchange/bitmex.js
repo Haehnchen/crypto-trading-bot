@@ -461,6 +461,120 @@ module.exports = class Bitmex {
         })
     }
 
+    cancelOrder(id) {
+        var verb = 'DELETE',
+            path = '/api/v1/order',
+            expires = new Date().getTime() + (60 * 1000) // 1 min in the future
+        ;
+
+        let data = {
+            'orderID': id,
+            'text':	'Powered by your awesome crypto-bot watchdog',
+        }
+
+        var postBody = JSON.stringify(data);
+        var signature = crypto.createHmac('sha256', this.apiSecret).update(verb + path + expires + postBody).digest('hex');
+
+        var headers = {
+            'content-type' : 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'api-expires': expires,
+            'api-key': this.apiKey,
+            'api-signature': signature
+        }
+
+        let logger = this.logger
+        return new Promise((resolve, reject) => {
+            request({
+                headers: headers,
+                url: this.getBaseUrl() + path,
+                method: verb,
+                body: postBody
+            }, (error, response, body) => {
+                if (error) {
+                    logger.error('Bitmex: Invalid cancel update response:' + JSON.stringify({'error': error, 'body': body}))
+                    console.log(error)
+                    reject()
+
+                    return
+                }
+
+                let order = JSON.parse(body)
+
+                console.log(body)
+
+                if (order.error) {
+                    logger.error('Bitmex: Invalid order update response:' + JSON.stringify(order))
+                    console.log(body)
+                    reject()
+                    return
+                }
+
+                logger.info('Bitmex: Order canceled:' + JSON.stringify({'body': body}))
+
+                resolve(Bitmex.createOrders(order))
+            })
+        })
+    }
+
+    cancelAll(symbol) {
+        var verb = 'DELETE',
+            path = '/api/v1/order/all',
+            expires = new Date().getTime() + (60 * 1000) // 1 min in the future
+        ;
+
+        let data = {
+            'symbol': symbol,
+            'text':	'Powered by your awesome crypto-bot watchdog',
+        }
+
+        var postBody = JSON.stringify(data);
+        var signature = crypto.createHmac('sha256', this.apiSecret).update(verb + path + expires + postBody).digest('hex');
+
+        var headers = {
+            'content-type' : 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'api-expires': expires,
+            'api-key': this.apiKey,
+            'api-signature': signature
+        }
+
+        let logger = this.logger
+        return new Promise((resolve, reject) => {
+            request({
+                headers: headers,
+                url: this.getBaseUrl() + path,
+                method: verb,
+                body: postBody
+            }, (error, response, body) => {
+                if (error) {
+                    logger.error('Bitmex: Invalid cancel update response:' + JSON.stringify({'error': error, 'body': body}))
+                    console.log(error)
+                    reject()
+
+                    return
+                }
+
+                let order = JSON.parse(body)
+
+                console.log(body)
+
+                if (order.error) {
+                    logger.error('Bitmex: Invalid order update response:' + JSON.stringify(order))
+                    console.log(body)
+                    reject()
+                    return
+                }
+
+                logger.info('Bitmex: Order canceled:' + JSON.stringify({'body': body}))
+
+                resolve(Bitmex.createOrders(order))
+            })
+        })
+    }
+
     updateOrder(id, order) {
         if (!order.amount && !order.price) {
             throw 'Invalid amount / price for update'

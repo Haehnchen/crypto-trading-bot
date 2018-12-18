@@ -18,4 +18,16 @@ describe('#order dict test', function() {
 
         assert.equal(order.hasAdjustedPrice(), true)
     })
+
+    it('test order close creation', () => {
+        let order = Order.createCloseOrderWithPriceAdjustment('BTCUSD', -12)
+
+        assert.equal(order.price,undefined)
+        assert.equal(order.options.adjust_price, true)
+        assert.equal(order.options.close, true)
+
+        assert.equal(order.side, 'short')
+
+        assert.equal(Order.createCloseOrderWithPriceAdjustment('BTCUSD', 12).side, 'long')
+    })
 })

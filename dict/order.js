@@ -64,14 +64,14 @@ module.exports = class Order {
         )
     }
 
-    static createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, side, amount) {
+    static createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, side, amount, options = {}) {
         if(side !== 'long' && side !== 'short') {
             throw 'Invalid order side:' + side;
         }
 
-        return Order.createLimitPostOnlyOrder(symbol, side, undefined, amount, {
+        return Order.createLimitPostOnlyOrder(symbol, side, undefined, amount,  _.merge(options, {
             'adjust_price': true,
-        })
+        }))
     }
 
     static createRetryOrder(order) {
@@ -126,6 +126,15 @@ module.exports = class Order {
             price,
             amount,
             'stop',
+            {'close': true},
+        )
+    }
+
+    static createCloseOrderWithPriceAdjustment(symbol, amount) {
+        return Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(
+            symbol,
+            amount < 0 ? 'short' : 'long',
+            amount,
             {'close': true},
         )
     }

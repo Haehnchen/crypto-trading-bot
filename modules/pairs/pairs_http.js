@@ -1,13 +1,11 @@
 'use strict';
 
-let Order = require('./../../dict/order')
-
 module.exports = class PairsHttp {
-    constructor(instances, exchangeManager, orderExecutor, orderCalculator) {
+    constructor(instances, exchangeManager, pairStateManager, eventEmitter) {
         this.instances = instances
         this.exchangeManager = exchangeManager
-        this.orderExecutor = orderExecutor
-        this.orderCalculator = orderCalculator
+        this.pairStateManager = pairStateManager
+        this.eventEmitter = eventEmitter
     }
 
     async getTradePairs() {
@@ -16,36 +14,33 @@ module.exports = class PairsHttp {
 
             for (const symbol of this.instances.symbols) {
                 let position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol)
+                let state = await this.pairStateManager.get(symbol.exchange, symbol.symbol)
 
-                pairs.push({
+                let item = {
                     'exchange': symbol.exchange,
                     'symbol': symbol.symbol,
                     'watchdogs': symbol.watchdogs,
                     'state': symbol.state,
                     'has_position': position !== undefined,
-                    'in_order_process': false,
-                })
+                }
+
+                if (state && state.state) {
+                    item['process'] = state.state
+                }
+
+                pairs.push(item)
             }
 
             resolve(pairs)
         })
     }
 
-    async executeOrder(exchangeName, symbol, side) {
+    async triggerOrder(exchangeName, symbol, side) {
         return new Promise(async resolve => {
-            let orderSize = this.orderCalculator.calculateOrderSize(exchangeName, symbol)
-            if (!orderSize) {
-                console.error('Invalid order size: ' + JSON.stringify([exchangeName, symbol, side]))
-                resolve()
-                return
-            }
+            this.pairStateManager.update(exchangeName, symbol, side)
+            this.eventEmitter.emit('order_pair_state')
 
-            let order = await this.orderExecutor.executeOrder(
-                exchangeName,
-                Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, side, orderSize)
-            )
-
-            resolve(order)
+            resolve()
         })
     }
 }

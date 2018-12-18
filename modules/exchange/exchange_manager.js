@@ -65,10 +65,10 @@ module.exports = class ExchangeManager {
             let exchange = this.get(exchangeName);
             if (!exchange) {
                 resolve([])
-                return;
+                return
             }
 
-            return await exchange.getOrdersForSymbol(symbol)
+            resolve(await exchange.getOrdersForSymbol(symbol))
         })
     }
 
