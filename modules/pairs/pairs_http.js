@@ -1,11 +1,10 @@
 'use strict';
 
 module.exports = class PairsHttp {
-    constructor(instances, exchangeManager, pairStateManager, eventEmitter) {
+    constructor(instances, exchangeManager, pairStateManager) {
         this.instances = instances
         this.exchangeManager = exchangeManager
         this.pairStateManager = pairStateManager
-        this.eventEmitter = eventEmitter
     }
 
     async getTradePairs() {
@@ -46,7 +45,6 @@ module.exports = class PairsHttp {
             }
 
             this.pairStateManager.update(exchangeName, symbol, side, options)
-            this.eventEmitter.emit('order_pair_state')
 
             resolve()
         })
