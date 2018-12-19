@@ -56,7 +56,9 @@ module.exports = class PairStateExecution {
                 pair.options,
             )
 
-            this.managedOrders.push(order)
+            if (order) {
+                this.managedOrders.push(order)
+            }
         }
     }
 
@@ -100,7 +102,9 @@ module.exports = class PairStateExecution {
                 pair.options,
             )
 
-            this.managedOrders.push(order)
+            if (order) {
+                this.managedOrders.push(order)
+            }
         }
     }
 

@@ -368,15 +368,16 @@ module.exports = class Bitmex {
                     return
                 }
 
-                logger.info('Bitmex: Order created:' + JSON.stringify({'body': body}))
-
                 let order = JSON.parse(body)
                 if (order.error) {
-                    logger.error('Bitmex: Invalid order created request:' + order)
-                    console.error('Bitmex: Invalid order created request:' + order)
+                    logger.error('Bitmex: Invalid order created request:' + JSON.stringify({'body': body}))
+                    console.error('Bitmex: Invalid order created request:' + JSON.stringify({'body': body}))
                     reject()
                     return
                 }
+
+
+                logger.info('Bitmex: Order created:' + JSON.stringify({'body': body}))
 
                 resolve(Bitmex.createOrders([order])[0])
             })
@@ -451,7 +452,7 @@ module.exports = class Bitmex {
                 if (result.error) {
                     logger.error('Bitmex: Invalid leverage update request:' + body)
                     console.error('Bitmex: Invalid leverage update request:' + body)
-                    reject()
+                    resolve(false)
                     return
                 }
 
