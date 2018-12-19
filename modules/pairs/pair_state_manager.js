@@ -27,6 +27,16 @@ module.exports = class PairStateManager {
         return undefined
     }
 
+    all() {
+        let stats = []
+
+        for (let key in this.stats) {
+            stats.push(this.stats[key])
+        }
+
+        return stats
+    }
+
     clear(exchange, symbol) {
         delete this.stats[exchange + symbol]
     }

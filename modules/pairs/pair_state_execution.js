@@ -173,4 +173,17 @@ module.exports = class PairStateExecution {
 
         return this.orderExecutor.executeOrder(exchangeName, myOrder)
     }
+
+    async onTerminate() {
+        let running = this.pairStateManager.all()
+
+        for (let key in running) {
+            let pair = running[key]
+
+            this.logger.info('Terminate: Force managed orders cancel: ' + JSON.stringify(pair))
+            console.log('Terminate: Force managed orders cancel: ' + JSON.stringify(pair))
+
+            await this.onCancelPair(pair)
+        }
+    }
 }

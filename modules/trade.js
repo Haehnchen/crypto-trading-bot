@@ -44,6 +44,17 @@ module.exports = class Trade {
     start() {
         this.logger.debug('Trade module started')
 
+        process.on('SIGINT', async () => {
+            // force exit in any case
+            setTimeout(() => {
+                process.exit()
+            }, 7500);
+
+            await this.pairStateExecution.onTerminate()
+
+            process.exit()
+        });
+
         const instanceId = crypto.randomBytes(4).toString('hex');
 
         let notifyActivePairs = this.instances.symbols.filter((symbol) => {
