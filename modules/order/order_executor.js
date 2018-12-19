@@ -31,7 +31,7 @@ module.exports = class OrderExecutor {
             // order not known by exchange cleanup
             let lastExchangeOrder = await exchange.findOrderById(order.id);
             if (!lastExchangeOrder) {
-                this.logger.info(order.exchange + ':Unknown order cleanup: ' + order.exchangeOrder.id)
+                // this.logger.info(order.exchange + ':Unknown order cleanup: ' + order.exchangeOrder.id)
 
                 // asyn issues: we are faster then exchange; even in high load: implement a gobal order management
                 // and filter out executed order (eg LIMIT order process)
