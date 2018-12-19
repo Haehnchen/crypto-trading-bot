@@ -3,7 +3,9 @@ let PairStateManager = require('../../../modules/pairs/pair_state_manager')
 
 describe('#pair state manager', function() {
     it('test pair state changes', () => {
-        let manager = new PairStateManager()
+        let manager = new PairStateManager(
+            {'info': () => {}, 'debug': () => {}},
+        )
 
         manager.update('foo1', 'BTCUSD2', 'long', {'foobar': 'test'})
         manager.update('foo2', 'BTCUSD3', 'short', {'foobar': 'test'})

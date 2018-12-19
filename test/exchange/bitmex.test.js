@@ -113,6 +113,13 @@ describe('#bitmex exchange implementation', function() {
         })
     })
 
+    it('test that request body for limit order to close is generated', () => {
+        let body = Bitmex.createOrderBody(Order.createCloseOrderWithPriceAdjustment('BTCUSD', -1337))
+        body['clOrdID'] = 'foobar'
+
+        assert.equal(body['execInst'], 'ReduceOnly,ParticipateDoNotInitiate')
+    })
+
     it('test that request body for order is created (stop order) [short]', () => {
         let body = Bitmex.createOrderBody(Order.createStopLossOrder('BTCUSD', -1337, 0.5))
         body['clOrdID'] = 'foobar'

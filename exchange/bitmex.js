@@ -192,18 +192,22 @@ module.exports = class Bitmex {
         })
 
         client.addStream('*', 'order', (orders) => {
-            let ourOrders = this.orders
+            for (let order of Bitmex.createOrders(orders)) {
+                // we get some order history here
+                if (!(order.id in this.orders) && ['canceled', 'rejected', 'canceled', 'done'].includes(order.status)) {
+                    continue
+                }
 
-            Bitmex.createOrders(orders).forEach(order => {
-                ourOrders[order.id] = order
-            })
+                this.orders[order.id] = order
+            }
 
             // order cleanup
-            for (let key in ourOrders){
-                let order = ourOrders[key];
+            for (let key in this.orders){
+                let order = this.orders[key]
+
                 if (order.status !== 'open') {
                     logger.debug('Bitmex: Cleanup non open order:' + JSON.stringify([order.id, order.symbol]))
-                    delete ourOrders[key]
+                    delete this.orders[key]
                 }
             }
         })
@@ -311,6 +315,20 @@ module.exports = class Bitmex {
     }
 
     /**
+     * Force an order update only if order is "not closed" for any reason already by exchange
+     *
+     * @param order
+     */
+    triggerOrder(order) {
+        // dont overwrite state closed order
+        if (order.id in this.orders && ['done', 'canceled'].includes(this.orders[order.id].status)) {
+            return
+        }
+
+        this.orders[order.id] = order
+    }
+
+    /**
      * LTC: 0.65 => 1
      *
      * @param amount
@@ -350,6 +368,7 @@ module.exports = class Bitmex {
         }
 
         let logger = this.logger
+        let me = this
         return new Promise(async (resolve, reject) => {
             // update leverage for pair position
             await this.updateLeverage(order.symbol)
@@ -363,6 +382,7 @@ module.exports = class Bitmex {
                 let result = Bitmex.resolveOrderResponse(logger, error, response, body, order)
 
                 if(result) {
+                    me.triggerOrder(result)
                     resolve(result)
                 } else {
                     reject()
@@ -506,6 +526,7 @@ module.exports = class Bitmex {
         }
 
         let logger = this.logger
+        let me = this
         return new Promise((resolve, reject) => {
             request({
                 headers: headers,
@@ -532,6 +553,7 @@ module.exports = class Bitmex {
 
                 logger.info('Bitmex: Order canceled:' + JSON.stringify({'body': body}))
 
+                me.triggerOrder(order)
                 resolve(Bitmex.createOrders(order))
             })
         })
@@ -561,6 +583,7 @@ module.exports = class Bitmex {
         }
 
         let logger = this.logger
+        let me = this
         return new Promise((resolve, reject) => {
             request({
                 headers: headers,
@@ -587,7 +610,10 @@ module.exports = class Bitmex {
 
                 logger.info('Bitmex: Order canceled:' + JSON.stringify({'body': body}))
 
-                resolve(Bitmex.createOrders(order))
+                let orders = Bitmex.createOrders(order)
+
+                orders.forEach(order => {me.triggerOrder(order)})
+                resolve(orders)
             })
         })
     }
@@ -629,6 +655,7 @@ module.exports = class Bitmex {
         }
 
         let logger = this.logger
+        let me = this
         return new Promise((resolve, reject) => {
             request({
                 headers: headers,
@@ -655,7 +682,10 @@ module.exports = class Bitmex {
 
                 logger.info('Bitmex: Order update:' + JSON.stringify({'body': body}))
 
-                resolve(Bitmex.createOrders([order])[0])
+                let myOrder = Bitmex.createOrders([order])[0];
+                me.triggerOrder(myOrder)
+
+                resolve(myOrder)
             })
         })
     }
@@ -783,7 +813,7 @@ module.exports = class Bitmex {
         }
 
         let execInst = [];
-        if (order.options && order.options.reduce_only === true &&  orderType === 'Limit') {
+        if (order.options && order.options.close === true &&  orderType === 'Limit') {
             execInst.push('ReduceOnly')
         }
 

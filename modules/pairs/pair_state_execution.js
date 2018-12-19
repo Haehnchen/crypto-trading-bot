@@ -49,6 +49,8 @@ module.exports = class PairStateExecution {
         }
 
         if (!hasManagedOrder) {
+            this.logger.info('Pair State: Create position open order: ' + JSON.stringify(pair.exchange))
+
             let order = await this.executeOrder(
                 pair.exchange,
                 pair.symbol,
@@ -58,6 +60,17 @@ module.exports = class PairStateExecution {
 
             if (order) {
                 this.managedOrders.push(order)
+            }
+        }
+
+        // found multiple order; clear this invalid state
+        // we also reset or managed order here
+        let newOrders = (await this.exchangeManager.getOrders(pair.exchange, pair.symbol))
+        if (newOrders.length > 1) {
+            this.logger.error('Pair State: Clear invalid orders:' + JSON.stringify([newOrders.length]))
+
+            for (let key in newOrders) {
+                await this.orderExecutor.cancelOrder(pair.exchange, newOrders[key].id)
             }
         }
     }
@@ -93,6 +106,8 @@ module.exports = class PairStateExecution {
         }
 
         if (!hasManagedOrder) {
+            this.logger.info('Pair State: Create position close order: ' + JSON.stringify(pair.exchange))
+
             let amount = Math.abs(position.amount)
 
             let order = await this.executeCloseOrder(
@@ -106,13 +121,24 @@ module.exports = class PairStateExecution {
                 this.managedOrders.push(order)
             }
         }
+
+        // found multiple order; clear this invalid state
+        // we also reset or managed order here
+        let newOrders = (await this.exchangeManager.getOrders(pair.exchange, pair.symbol))
+        if (newOrders.length > 1) {
+            this.logger.error('Pair State: Clear invalid orders:' + JSON.stringify([newOrders.length]))
+
+            for (let key in newOrders) {
+                await this.orderExecutor.cancelOrder(pair.exchange, newOrders[key].id)
+            }
+        }
     }
 
     async onPairStateExecutionTick() {
         // block ui running
         if (this.running) {
             this.logger.debug('onPairStateExecutionTick blocked for running')
-           console.log('onPairStateExecutionTick blocked for running')
+            console.log('onPairStateExecutionTick blocked for running')
 
            return
         }
@@ -141,6 +167,7 @@ module.exports = class PairStateExecution {
         try {
             await Promise.all(promises)
         } catch (e) {
+            this.logger.error('onPairStateExecutionTick error: ' + JSON.stringify(e))
             console.error(e)
         }
 
