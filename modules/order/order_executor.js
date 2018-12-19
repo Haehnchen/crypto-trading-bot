@@ -47,13 +47,13 @@ module.exports = class OrderExecutor {
 
             // normalize prices for positions compare; we can have negative prices depending on "side"
             if (Math.abs(lastExchangeOrder.price) === Math.abs(price)) {
-                this.logger.info('No price update needed:' + JSON.stringify([lastExchangeOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price)]))
+                this.logger.info('No price update needed:' + JSON.stringify([lastExchangeOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), order.exchange, order.symbol]))
                 return
             }
 
             try {
                 let updatedOrder = await exchange.updateOrder(orderUpdate.id, orderUpdate)
-                this.logger.info('Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price)]))
+                this.logger.info('Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), order.exchange, order.symbol]))
             } catch(err) {
                 this.logger.error('Order adjusted failed:' + JSON.stringify(order) + ' - ' + JSON.stringify(err))
                 console.error('Order adjusted failed:' + JSON.stringify(order) + ' - ' + JSON.stringify(err))

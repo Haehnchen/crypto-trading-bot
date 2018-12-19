@@ -129,7 +129,47 @@ describe('#bitmex exchange implementation', function() {
         })
     })
 
-    var createResponse = function(filename) {
+    it('test that overload response must provide a retry', () => {
+        let order = Bitmex.resolveOrderResponse(
+            {'error': () => {}},
+            undefined,
+            undefined,
+            JSON.stringify({'error': {
+                    'message': 'The system is currently overloaded. Please try again later.',
+                }}),
+            Order.createMarketOrder('BTCUSD', 12)
+        )
+
+        assert.equal(order.retry, true)
+        assert.equal(order.status, 'canceled')
+    })
+
+    it('test that unknown request must provide a error', () => {
+        let order = Bitmex.resolveOrderResponse(
+            {'error': () => {}},
+            undefined,
+            undefined,
+            JSON.stringify({'error': {}}),
+            Order.createMarketOrder('BTCUSD', 12)
+        )
+
+        assert.equal(order, undefined)
+    })
+
+    it('test that order response is provide', () => {
+        let order = Bitmex.resolveOrderResponse(
+            {'error': () => {}, 'info': () => {}},
+            undefined,
+            undefined,
+            JSON.stringify(createResponse('ws-orders.json')[0]),
+            Order.createMarketOrder('BTCUSD', 12)
+        )
+
+        assert.equal(order.type, 'limit')
+        assert.equal(order.side, 'sell')
+    })
+
+    let createResponse = function(filename) {
         return JSON.parse(fs.readFileSync(__dirname + '/bitmex/' + filename, 'utf8'));
     }
 })

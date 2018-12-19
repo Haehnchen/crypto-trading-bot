@@ -15,7 +15,7 @@ let request = require('request');
 var crypto = require('crypto')
 
 let BitMEXClient = require('bitmex-realtime-api');
-let Position = require('../dict/position.js');
+let Position = require('../dict/position');
 let ExchangeOrder = require('../dict/exchange_order');
 
 let orderUtil = require('../utils/order_util');
@@ -360,28 +360,48 @@ module.exports = class Bitmex {
                 method: verb,
                 body: postBody
             }, (error, response, body) => {
-                if (error) {
-                    logger.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
-                    console.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
+                let result = Bitmex.resolveOrderResponse(logger, error, response, body, order)
+
+                if(result) {
+                    resolve(result)
+                } else {
                     reject()
-
-                    return
                 }
-
-                let order = JSON.parse(body)
-                if (order.error) {
-                    logger.error('Bitmex: Invalid order created request:' + JSON.stringify({'body': body}))
-                    console.error('Bitmex: Invalid order created request:' + JSON.stringify({'body': body}))
-                    reject()
-                    return
-                }
-
-
-                logger.info('Bitmex: Order created:' + JSON.stringify({'body': body}))
-
-                resolve(Bitmex.createOrders([order])[0])
             })
         })
+    }
+
+    /**
+     * Extract order responses
+     */
+    static resolveOrderResponse(logger, error, response, body, originOrder) {
+        if (error) {
+            logger.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
+            console.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
+
+            return
+        }
+
+        let order = JSON.parse(body)
+        if (order.error) {
+            logger.error('Bitmex: Invalid order created request:' + JSON.stringify({'body': body}))
+            console.error('Bitmex: Invalid order created request:' + JSON.stringify({'body': body}))
+
+            /*
+             * Catch overload issues. Let it create the order
+             *
+             * {"error":{"message":"The system is currently overloaded. Please try again later.","name":"HTTPError"}}
+             */
+            if (order.error && typeof order.error.message === 'string' && order.error.message.toLowerCase().includes('overload')) {
+                return ExchangeOrder.createBlankRetryOrder(originOrder.side === 'long' ? 'buy' : 'sell')
+            }
+
+            return
+        }
+
+        logger.info('Bitmex: Order created:' + JSON.stringify({'body': body}))
+
+        return Bitmex.createOrders([order])[0]
     }
 
     /**

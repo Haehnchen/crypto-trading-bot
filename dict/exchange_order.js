@@ -19,4 +19,20 @@ module.exports = class ExchangeOrder {
         this.updatedAt = updatedAt
         this.raw = raw
     }
-};
+
+    static createBlankRetryOrder(side) {
+        return new ExchangeOrder(
+            undefined,
+            undefined,
+            'canceled',
+            undefined,
+            undefined,
+            true,
+            undefined,
+            side,
+            undefined,
+            new Date(),
+            new Date(),
+        )
+    }
+}
