@@ -2,6 +2,7 @@
 
 const moment = require('moment')
 const StrategyContext = require('../../dict/strategy_context')
+let _ = require('lodash')
 
 module.exports = class TickListener {
     constructor(tickers, instances, notifier, signalLogger, strategyManager, exchangeManager, pairStateManager) {
@@ -76,7 +77,7 @@ module.exports = class TickListener {
             throw 'Invalid signal: ' + signal.signal
         }
 
-        let signalWindow = moment().subtract(30, 'minutes').toDate();
+        let signalWindow = moment().subtract(_.get(symbol, 'trade.signal_slowdown_minutes', 15), 'minutes').toDate();
 
         let noteKey = symbol.exchange + symbol.symbol
         if (noteKey in this.notified && this.notified[noteKey] >= signalWindow) {
@@ -84,6 +85,7 @@ module.exports = class TickListener {
         }
 
         // log signal
+        console.log(new Date().toISOString(), signal.signal, strategyKey, symbol.exchange, symbol.symbol, ticker.ask)
         this.notifier.send('[' + signal.signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
         this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyKey, 'raw': signal}, signal.signal, strategyKey)
         this.notified[noteKey] = new Date()
