@@ -4,14 +4,22 @@ module.exports = {
     /**
      * Resample eg 5m candle sticks into 15m or other minutes
      *
-     * @param candlesticks
+     * @param lookbackNewestFirst
      * @param minutes
      * @returns {Array}
      */
-    resampleMinutes: function (candlesticks, minutes) {
+    resampleMinutes: function (lookbackNewestFirst, minutes) {
+        if(lookbackNewestFirst.length === 0) {
+            return []
+        }
+
+        if(lookbackNewestFirst.length > 1 && lookbackNewestFirst[0].time < lookbackNewestFirst[1].time) {
+            throw 'Invalid candle stick order'
+        }
+
         let grouped = []
 
-        candlesticks.forEach((candle) => {
+        lookbackNewestFirst.forEach((candle) => {
             const start = moment(candle['time'] * 1000).subtract();
             const remainder = minutes - (start.minute() % minutes);
 

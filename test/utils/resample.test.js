@@ -1,6 +1,6 @@
 let assert = require('assert');
 let resmaple = require('../../utils/resample');
-
+let moment = require('moment')
 let fs = require('fs');
 
 describe('#resample of candles', function() {
@@ -46,6 +46,33 @@ describe('#resample of candles', function() {
         assert.equal(resmaple.convertPeriodToMinute('1w'), 10080)
         assert.equal(resmaple.convertPeriodToMinute('2w'), 20160)
         assert.equal(resmaple.convertPeriodToMinute('1y'), 3588480)
+    });
+
+    it('test that resample starting time is matching given candle lookback', function() {
+        let candles = []
+
+        for (let i = 1; i < 20; i++) {
+            let time = moment().minute(Math.floor(moment().minute() / 15) * 15).second(0).subtract(15 * i, 'minutes');
+
+            candles.push({
+                'time': time.unix(),
+                'volume': i * 100,
+                'open': i * 2,
+                'close': i * 2.1,
+                'high': i * 1.1,
+                'low': i * 0.9,
+                '_time': time,
+            })
+        }
+
+        let resampleCandles = resmaple.resampleMinutes(candles, 60)
+
+        // this must not be in the future? (at least for Bitmex it does not match)
+        // check how changes provide this: candles are in future unto close or when the start
+        assert.equal(new Date(resampleCandles[0]['time'] * 1000).getHours(), new Date().getHours() + 1)
+
+        let firstFullCandle = resampleCandles[1]
+        assert.equal(4, firstFullCandle['_candle_count'])
     });
 
     let createCandleFixtures = function() {
