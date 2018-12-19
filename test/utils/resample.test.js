@@ -51,7 +51,7 @@ describe('#resample of candles', function() {
     it('test that resample starting time is matching given candle lookback', function() {
         let candles = []
 
-        for (let i = 1; i < 20; i++) {
+        for (let i = 0; i < 20; i++) {
             let time = moment().minute(Math.floor(moment().minute() / 15) * 15).second(0).subtract(15 * i, 'minutes');
 
             candles.push({
