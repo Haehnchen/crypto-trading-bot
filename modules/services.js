@@ -383,7 +383,9 @@ module.exports = {
             return pairStateManager;
         }
 
-        return pairStateManager = new PairStateManager()
+        return pairStateManager = new PairStateManager(
+            this.getLogger(),
+        )
     },
 
     getPairStateExecution: function() {

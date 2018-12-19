@@ -1,22 +1,31 @@
 'use strict';
 
 module.exports = class PairStateManager {
-    constructor() {
+    constructor(logger) {
+        this.logger = logger
         this.stats = {}
     }
 
     update(exchange, symbol, state, options = {}) {
         if (!['long', 'close', 'short', 'cancel'].includes(state)) {
+            this.logger.error('Invalidate state: ' + state)
             throw 'Invalidate state: ' + state
         }
 
-        this.stats[exchange + symbol] = {
+        let vars = {
             'state': state,
             'options': options || {},
             'time': new Date(),
             'symbol': symbol,
             'exchange': exchange,
         }
+
+        this.logger.info('Pair state changed: ' + JSON.stringify({
+            'new': vars,
+            'old': this.stats[exchange + symbol] || {},
+        }))
+
+        this.stats[exchange + symbol] = vars
     }
 
     get(exchange, symbol) {
@@ -38,6 +47,10 @@ module.exports = class PairStateManager {
     }
 
     clear(exchange, symbol) {
+        if ((exchange + symbol) in this.stats) {
+            this.logger.debug('Pair state cleared: ' + JSON.stringify(this.stats[exchange + symbol]))
+        }
+
         delete this.stats[exchange + symbol]
     }
 
