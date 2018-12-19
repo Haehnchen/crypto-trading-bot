@@ -31,6 +31,7 @@
     },
     "tick": {
         "default": null,
+        "warmup": null,
         "signal": null,
         "watchdog": null,
         "order_adjust": null,

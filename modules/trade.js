@@ -56,35 +56,34 @@ module.exports = class Trade {
 
         this.notify.send(message)
 
-        /*
-        setInterval(() => {
-            this.notify.send('Heartbeat: ' + instanceId + ' - ' + os.hostname() + ' - ' + os.platform() + ' - ' + moment().format() + ' - ' + notifyActivePairs.join(', '))
-        }, 60 * 60 * 30);
-        */
-
         let eventEmitter = this.eventEmitter
-        eventEmitter.setMaxListeners(15);
 
-        setInterval(() => {
-            eventEmitter.emit('tick', {})
-        }, this.systemUtil.getConfig('tick.default', 5500))
+        // let the system bootup; eg let the candle be filled by exchanges
+        setTimeout(() => {
+            console.log('Trade module: warmup done; starting ticks')
+            this.logger.info('Trade module: warmup done; starting ticks')
 
-        // order create tick
-        setInterval(() => {
-            eventEmitter.emit('signal_tick', {})
-        }, this.systemUtil.getConfig('tick.signal', 3100))
+            setInterval(() => {
+                eventEmitter.emit('tick', {})
+            }, this.systemUtil.getConfig('tick.default', 5500))
 
-        setInterval(() => {
-            eventEmitter.emit('watchdog', {})
-        }, this.systemUtil.getConfig('tick.watchdog', 5100))
+            // order create tick
+            setInterval(() => {
+                eventEmitter.emit('signal_tick', {})
+            }, this.systemUtil.getConfig('tick.signal', 3100))
 
-        setInterval(() => {
-            eventEmitter.emit('order_adjust', {})
-        }, this.systemUtil.getConfig('tick.order_adjust', 5600))
+            setInterval(() => {
+                eventEmitter.emit('watchdog', {})
+            }, this.systemUtil.getConfig('tick.watchdog', 5100))
 
-        setInterval(() => {
-            eventEmitter.emit('order_pair_state', {})
-        }, this.systemUtil.getConfig('tick.order_pair_state', 5300))
+            setInterval(() => {
+                eventEmitter.emit('order_adjust', {})
+            }, this.systemUtil.getConfig('tick.order_adjust', 5600))
+
+            setInterval(() => {
+                eventEmitter.emit('order_pair_state', {})
+            }, this.systemUtil.getConfig('tick.order_pair_state', 5300))
+        }, this.systemUtil.getConfig('tick.warmup', 30000));
 
         let me = this
         let tickers = this.tickers
