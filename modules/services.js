@@ -40,6 +40,7 @@ let OrderCalculator = require('../modules/order/order_calculator')
 let PairStateManager = require('../modules/pairs/pair_state_manager')
 let PairStateExecution = require('../modules/pairs/pair_state_execution')
 let SystemUtil = require('../modules/system/system_util')
+let TechnicalAnalysisValidator = require('../utils/technical_analysis_validator')
 
 var _ = require('lodash');
 
@@ -80,6 +81,7 @@ let pairsHttp = undefined
 let orderExecutor = undefined
 let orderCalculator = undefined
 let systemUtil = undefined
+let technicalAnalysisValidator = undefined
 
 module.exports = {
     boot: function() {
@@ -310,7 +312,11 @@ module.exports = {
             return strategyManager
         }
 
-        return strategyManager = new StrategyManager(this.getCandlestickRepository())
+        return strategyManager = new StrategyManager(
+            this.getCandlestickRepository(),
+            this.getTechnicalAnalysisValidator(),
+            this.getLogger(),
+        )
     },
 
     createWebserverInstance: function() {
@@ -403,6 +409,14 @@ module.exports = {
         return systemUtil = new SystemUtil(
             this.getConfig(),
         )
+    },
+
+    getTechnicalAnalysisValidator: function() {
+        if (technicalAnalysisValidator) {
+            return technicalAnalysisValidator;
+        }
+
+        return technicalAnalysisValidator = new TechnicalAnalysisValidator()
     },
 
     createTradeInstance: function() {

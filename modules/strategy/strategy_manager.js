@@ -3,11 +3,14 @@
 let IndicatorBuilder = require('./dict/indicator_builder');
 let IndicatorPeriod = require('./dict/indicator_period');
 let ta = require('../../utils/technical_analysis');
-var fs = require('fs');
+let fs = require('fs');
 
 module.exports = class StrategyManager {
-    constructor(candlestickRepository) {
+    constructor(candlestickRepository, technicalAnalysisValidator, logger) {
         this.candlestickRepository = candlestickRepository
+        this.technicalAnalysisValidator = technicalAnalysisValidator
+
+        this.logger = logger
         this.strategies = undefined
     }
 
@@ -65,11 +68,24 @@ module.exports = class StrategyManager {
 
             var results = {};
 
-            for (let k in periodGroups) {
-                let periodGroup = periodGroups[k];
+            for (let period in periodGroups) {
+                let periodGroup = periodGroups[period];
+
+                let lookbackNewestFirst = (await this.candlestickRepository.getLookbacksForPair(exchange, symbol, period)).slice()
+                let lookbacks = lookbackNewestFirst.slice().reverse()
+
+                // check if candle to close time is outside our allow time window
+                if (!this.technicalAnalysisValidator.isValidCandleStickLookback(lookbackNewestFirst, period)) {
+                    console.log('Outdated candle stick period detected: ' + JSON.stringify([period, strategyName, exchange, symbol]))
+                    this.logger.error('Outdated candle stick period detected: ' + JSON.stringify([period, strategyName, exchange, symbol]))
+
+                    // stop current run
+                    resolve()
+                    return
+                }
 
                 let result = await ta.createIndicatorsLookback(
-                    (await this.candlestickRepository.getLookbacksForPair(exchange, symbol, k)).slice().reverse(),
+                    lookbacks,
                     periodGroup
                 )
 

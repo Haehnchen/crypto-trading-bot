@@ -58,4 +58,29 @@ module.exports = {
 
         return merge;
     },
+
+    /**
+     * Resample eg 5m candle sticks into 15m or other minutes
+     *
+     * @returns integer
+     * @param period
+     */
+    convertPeriodToMinute: function (period) {
+        let unit = period.slice(-1).toLowerCase();
+
+        switch (unit) {
+            case 'm':
+                return period.substring(0, period.length - 1)
+            case 'h':
+                return period.substring(0, period.length - 1) * 60
+            case 'd':
+                return period.substring(0, period.length - 1) * 60 * 24
+            case 'w':
+                return period.substring(0, period.length - 1) * 60 * 24 * 7
+            case 'y':
+                return period.substring(0, period.length - 1) * 60 * 24 * 7 * 356
+            default :
+                throw 'Unsupported period unit: ' + period
+        }
+    }
 }

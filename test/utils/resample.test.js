@@ -38,7 +38,17 @@ describe('#resample of candles', function() {
         assert.equal(candles[2]['time'], 1533141900)
     });
 
-    var createCandleFixtures = function() {
+    it('should format period based on unit', function() {
+        assert.equal(resmaple.convertPeriodToMinute('15m'), 15)
+        assert.equal(resmaple.convertPeriodToMinute('30M'), 30)
+        assert.equal(resmaple.convertPeriodToMinute('1H'), 60)
+        assert.equal(resmaple.convertPeriodToMinute('2h'), 120)
+        assert.equal(resmaple.convertPeriodToMinute('1w'), 10080)
+        assert.equal(resmaple.convertPeriodToMinute('2w'), 20160)
+        assert.equal(resmaple.convertPeriodToMinute('1y'), 3588480)
+    });
+
+    let createCandleFixtures = function() {
         return JSON.parse(fs.readFileSync(__dirname + '/fixtures/xbt-usd-5m.json', 'utf8'));
     }
 });
