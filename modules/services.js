@@ -321,7 +321,7 @@ module.exports = {
 
     createWebserverInstance: function() {
         return new Http(
-            this.getConfig(),
+            this.getSystemUtil(),
             this.getTa(),
             this.getSignalHttp(),
             this.getBacktest(),

@@ -3,8 +3,8 @@
 let express = require('express')
 
 module.exports = class Http {
-    constructor(config, ta, signalHttp, backtest, exchangeManager, pairsHttp) {
-        this.config = config
+    constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp) {
+        this.systemUtil = systemUtil
         this.ta = ta
         this.signalHttp = signalHttp
         this.backtest = backtest
@@ -125,10 +125,11 @@ module.exports = class Http {
             })
         })
 
-        let port = this.config.webserver.port || 8080;
+        let ip = this.systemUtil.getConfig('webserver.ip', '0.0.0.0')
+        let port = this.systemUtil.getConfig('webserver.port', 8080)
 
-        app.listen(port);
+        app.listen(port, ip)
 
-        console.log('Webserver listening on: ' + port)
+        console.log('Webserver listening on: ' + ip + ':' + port)
     }
 }
