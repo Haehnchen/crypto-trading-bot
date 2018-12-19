@@ -31,7 +31,7 @@ module.exports = class PairStateExecution {
 
         if (position) {
             this.pairStateManager.clear(pair.exchange, pair.symbol)
-            this.logger.debug('block selling order; open position:' + JSON.stringify([pair.exchange, pair.symbol]))
+            this.logger.debug('block ' + side + ' order; open position:' + JSON.stringify([pair.exchange, pair.symbol]))
             return
         }
 
@@ -158,6 +158,11 @@ module.exports = class PairStateExecution {
                 console.error('Invalid order size: ' + JSON.stringify([exchangeName, symbol, side]))
                 resolve()
                 return
+            }
+
+            // inverse price for short
+            if (side === 'short') {
+                orderSize = orderSize * -1
             }
 
             let myOrder = options['market'] === true

@@ -40,6 +40,8 @@ describe('#order dict test', function() {
         assert.equal(order.options.close, true)
 
         assert.equal(order.side, 'short')
+        assert.equal(order.hasAdjustedPrice(), true)
+        assert.deepEqual(order.options, { close: true, adjust_price: true, post_only: true })
 
         assert.equal(Order.createCloseOrderWithPriceAdjustment('BTCUSD', 12).side, 'long')
     })

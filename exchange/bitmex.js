@@ -202,7 +202,7 @@ module.exports = class Bitmex {
             for (let key in ourOrders){
                 let order = ourOrders[key];
                 if (order.status !== 'open') {
-                    logger.debug('Cleanup non open order:' + JSON.stringify(order))
+                    logger.debug('Bitmex: Cleanup non open order:' + JSON.stringify([order.id, order.symbol]))
                     delete ourOrders[key]
                 }
             }
@@ -456,7 +456,7 @@ module.exports = class Bitmex {
                     return
                 }
 
-                logger.debug('Bitmex: Leverage update:' + JSON.stringify(result))
+                logger.debug('Bitmex: Leverage update:' + JSON.stringify(symbol))
                 resolve(true)
             })
         })

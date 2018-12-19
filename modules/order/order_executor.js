@@ -33,9 +33,11 @@ module.exports = class OrderExecutor {
             if (!lastExchangeOrder) {
                 this.logger.info(order.exchange + ':Unknown order cleanup: ' + order.exchangeOrder.id)
 
-                this.orders = this.orders.filter(myOrder => {
-                    return myOrder.id !== order.id
-                })
+                // asyn issues: we are faster then exchange; even in high load: implement a gobal order management
+                // and filter out executed order (eg LIMIT order process)
+                //this.orders = this.orders.filter(myOrder => {
+                //      return myOrder.id !== order.id
+                //  })
 
                 return
             }
@@ -43,14 +45,15 @@ module.exports = class OrderExecutor {
             let price = await this.getCurrentPrice(order.exchange, order.order.symbol, order.order.side)
             let orderUpdate = Order.createPriceUpdateOrder(order.exchangeOrder.id, price)
 
-            if(lastExchangeOrder.price === price) {
-                this.logger.info('No price update needed:' + JSON.stringify(lastExchangeOrder.id))
+            // normalize prices for positions compare; we can have negative prices depending on "side"
+            if (Math.abs(lastExchangeOrder.price) === Math.abs(price)) {
+                this.logger.info('No price update needed:' + JSON.stringify([lastExchangeOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price)]))
                 return
             }
 
             try {
                 let updatedOrder = await exchange.updateOrder(orderUpdate.id, orderUpdate)
-                this.logger.info('Order adjusted with orderbook price: ' + JSON.stringify(updatedOrder.id))
+                this.logger.info('Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price)]))
             } catch(err) {
                 this.logger.error('Order adjusted failed:' + JSON.stringify(order) + ' - ' + JSON.stringify(err))
                 console.error('Order adjusted failed:' + JSON.stringify(order) + ' - ' + JSON.stringify(err))
