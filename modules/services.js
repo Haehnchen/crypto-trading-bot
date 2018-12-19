@@ -3,7 +3,7 @@ let TransactionDatabase = require("sqlite3-transactions").TransactionDatabase;
 let fs = require('fs');
 let events = require('events')
 
-const { createLogger, transports } = require('winston');
+const { createLogger, transports, format } = require('winston');
 
 const Notify = require('../notify/notify');
 let Slack = require('../notify/slack');
@@ -275,10 +275,17 @@ module.exports = {
         }
 
         return logger = createLogger({
-            level: 'debug',
+            format: format.combine(
+                format.timestamp(),
+                format.json()
+            ),
             transports: [
-                new transports.File({filename: './var/log/log.log', timestamp: true}),
-                //new transports.Console()
+                new transports.File({
+                    filename: './var/log/log.log',
+                }),
+                new transports.Console({
+                    level: 'error',
+                }),
             ]
         });
     },
