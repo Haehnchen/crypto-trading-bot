@@ -240,7 +240,166 @@ describe('#bitmex exchange implementation', function() {
         assert.equal((await bitmex.getPositionForSymbol('FOOUSD')), undefined)
     })
 
-    let createResponse = function(filename) {
+    it('test update of order', async () => {
+        let bitmex = new Bitmex(undefined, {'info': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
+
+        bitmex.requestClient = {
+            'executeRequest': (options) => {
+                return new Promise((resolve) => {
+                    myOptions = options
+
+                    resolve({
+                        'error': undefined,
+                        'response': undefined,
+                        'body': JSON.stringify(createResponse('ws-orders.json')[0]),
+                    })
+                })
+            }
+        }
+
+        let order = await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
+
+        assert.equal(myOptions.method, 'PUT')
+        assert.equal(myOptions.body, '{"orderID":"0815foobar","text":"Powered by your awesome crypto-bot watchdog","price":null}')
+        assert.equal(myOptions.url, 'https://www.bitmex.com/api/v1/order')
+
+        assert.equal(Object.keys(myOptions.headers).includes('api-expires'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-key'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-signature'), true)
+
+        assert.equal(order.id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
+        assert.equal(order.retry, false)
+    })
+
+    it('test update of order with retry', async () => {
+        let bitmex = new Bitmex(undefined, {'info': () => {}, 'error': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let responses = []
+
+        for (let retry = 0; retry < 2; retry++) {
+            responses.push({
+                'error': undefined,
+                'response': undefined,
+                'body': JSON.stringify({'error': {
+                        'message': 'The system is currently overloaded. Please try again later.',
+                    }}),
+            })
+            responses.push({
+                'error': undefined,
+                'response': {'statusCode': 503},
+                'body': undefined,
+            })
+        }
+
+        responses.push({
+            'error': undefined,
+            'response': undefined,
+            'body': JSON.stringify(createResponse('ws-orders.json')[0]),
+        })
+
+        let i = 0
+
+        bitmex.requestClient = {
+            'executeRequest': () => {
+                return new Promise((resolve) => {
+                    resolve(responses[i++])
+                })
+            }
+        }
+
+        let order = await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
+
+        assert.equal(order.id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
+        assert.equal(order.retry, false)
+    })
+
+    it('test update of order with retry limit reached', async () => {
+        let bitmex = new Bitmex(undefined, {'info': () => {}, 'error': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let responses = []
+
+        for (let retry = 0; retry < 10; retry++) {
+            responses.push({
+                'error': undefined,
+                'response': undefined,
+                'body': JSON.stringify({'error': {
+                        'message': 'The system is currently overloaded. Please try again later.',
+                    }}),
+            })
+        }
+
+        let i = 0
+
+        bitmex.requestClient = {
+            'executeRequest': () => {
+                return new Promise((resolve) => {
+                    resolve(responses[i++])
+                })
+            }
+        }
+
+        let err = 'foobar'
+        try {
+            await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
+        } catch (e) {
+            err = e
+        }
+
+        assert.equal(err, undefined)
+    })
+
+    it('test update of order with retry limit reached with status code 503', async () => {
+        let bitmex = new Bitmex(undefined, {'info': () => {}, 'error': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let responses = []
+
+        for (let retry = 0; retry < 10; retry++) {
+            responses.push({
+                'error': undefined,
+                'response': {'statusCode': 503},
+                'body': undefined,
+            })
+        }
+
+        let i = 0
+
+        bitmex.requestClient = {
+            'executeRequest': () => {
+                return new Promise((resolve) => {
+                    resolve(responses[i++])
+                })
+            }
+        }
+
+        let err = 'foobar'
+        try {
+            await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
+        } catch (e) {
+            err = e
+        }
+
+        assert.equal(err, undefined)
+    })
+
+    let createResponse = (filename) => {
         return JSON.parse(fs.readFileSync(__dirname + '/bitmex/' + filename, 'utf8'));
     }
 })
