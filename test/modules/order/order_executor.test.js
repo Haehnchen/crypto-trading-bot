@@ -130,4 +130,50 @@ describe('#order executor', () => {
         assert.equal(orderUpdate.price, -1338)
         assert.equal(Object.keys(executor.runningOrders).length, 0)
     })
+
+    it('test that all orders are canceled', async () => {
+        let mySymbol = undefined
+
+        let executor = new OrderExecutor(
+            {
+                'get': () => { return {
+                    'cancelAll': (symbol) => { return new Promise(resolve => {
+                        mySymbol = symbol
+
+                        resolve()
+                    })},
+                }},
+            },
+            {'get': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
+            undefined,
+            {'info': () => {}, 'error': () => {}}
+        )
+
+        await executor.cancelAll('FOO_EXCHANGE', 'test')
+
+        assert.equal(mySymbol, 'test')
+    })
+
+    it('test that order is canceled', async () => {
+        let mySymbol = undefined
+
+        let executor = new OrderExecutor(
+            {
+                'get': () => { return {
+                    'cancelOrder': (symbol) => { return new Promise(resolve => {
+                        mySymbol = symbol
+
+                        resolve()
+                    })},
+                }},
+            },
+            {'get': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
+            undefined,
+            {'info': () => {}, 'error': () => {}}
+        )
+
+        await executor.cancelOrder('FOO_EXCHANGE', '1337-ABCD')
+
+        assert.equal(mySymbol, '1337-ABCD')
+    })
 })

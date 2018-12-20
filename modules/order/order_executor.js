@@ -97,13 +97,13 @@ module.exports = class OrderExecutor {
         }))
     }
 
-    async executeOrder(exchangeName, order) {
+    executeOrder(exchangeName, order) {
         return new Promise(async resolve => {
             await this.triggerOrder(resolve, exchangeName, order)
         })
     }
 
-    async cancelOrder(exchangeName, orderId) {
+    cancelOrder(exchangeName, orderId) {
         return new Promise(async resolve => {
             let exchange = this.exchangeManager.get(exchangeName)
             if (!exchange) {
@@ -114,17 +114,17 @@ module.exports = class OrderExecutor {
             }
 
             try {
-                resolve(exchange.cancelOrder(orderId))
+                resolve(await exchange.cancelOrder(orderId))
             } catch(err) {
-                this.logger.error('Order cancel error: ' + orderId)
-                console.log('Order error: ' + orderId)
+                this.logger.error('Order cancel error: ' + orderId + err)
+                console.log('Order error: ' + orderId + err)
 
                 resolve()
             }
         })
     }
 
-    async cancelAll(exchangeName, symbol) {
+    cancelAll(exchangeName, symbol) {
         return new Promise(async resolve => {
             let exchange = this.exchangeManager.get(exchangeName)
             if (!exchange) {
@@ -135,7 +135,7 @@ module.exports = class OrderExecutor {
             }
 
             try {
-                resolve(exchange.cancelAll(symbol))
+                resolve(await exchange.cancelAll(symbol))
             } catch(err) {
                 this.logger.error('Order cancel all error: ' + symbol)
                 console.log('Order all error: ' + symbol)
@@ -212,7 +212,7 @@ module.exports = class OrderExecutor {
      * @param order
      * @returns {Promise<*>}
      */
-    async createAdjustmentOrder(exchangeName, order)
+    createAdjustmentOrder(exchangeName, order)
     {
         return new Promise(async resolve => {
             let price = await this.getCurrentPrice(exchangeName, order.symbol, order.side)
@@ -220,8 +220,7 @@ module.exports = class OrderExecutor {
         })
     }
 
-
-    async getCurrentPrice(exchangeName, symbol, side)
+    getCurrentPrice(exchangeName, symbol, side)
     {
         return new Promise(resolve => {
             let ticker = this.tickers.get(exchangeName, symbol)
@@ -241,7 +240,7 @@ module.exports = class OrderExecutor {
         })
     }
 
-    async createRetryOrder(exchangeName, order)
+    createRetryOrder(exchangeName, order)
     {
         return new Promise(resolve => {
             resolve(Order.createRetryOrder(order))

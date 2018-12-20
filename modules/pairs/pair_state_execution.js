@@ -35,7 +35,7 @@ module.exports = class PairStateExecution {
             return
         }
 
-        let orders = (await this.exchangeManager.getOrders(pair.exchange, pair.symbol))
+        let orders = await this.exchangeManager.getOrders(pair.exchange, pair.symbol)
 
         let hasManagedOrder = false
         for (let key in orders) {
