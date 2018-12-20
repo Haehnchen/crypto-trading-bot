@@ -225,7 +225,7 @@ module.exports = {
                     let length = options['length']
 
                     if (!length) {
-                        throw 'Invalid length for indicator: ' + JSON.stringify(indicator)
+                        throw 'Invalid length for indicator: ' + JSON.stringify([indicator, options])
                     }
 
                     calculations.push(new Promise((resolve) => {
