@@ -201,6 +201,10 @@ module.exports = {
         return new Promise((resolve) => {
             let marketData = { open: [], close: [], high: [], low: [], volume: [] }
 
+            if (lookbacks.length > 1 && lookbacks[0].time > lookbacks[1].time) {
+                throw 'Invalid candlestick order'
+            }
+
             lookbacks.slice(-1000).forEach(function (lookback) {
                 marketData.open.push(lookback.open)
                 marketData.high.push(lookback.high)
