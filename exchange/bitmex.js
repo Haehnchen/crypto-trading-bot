@@ -31,6 +31,7 @@ module.exports = class Bitmex {
         this.lotSizes = {}
         this.leverageUpdated = {}
 
+        this.positions = {}
         this.symbols = []
     }
 
@@ -76,6 +77,15 @@ module.exports = class Bitmex {
                 me.start(config, symbols)
             }, 10000);
         })
+
+        // in addition to websocket also try to catch positions via API; run in directly and in interval
+        let apiOrderInterval = _.get(config, 'extra.bitmex_rest_order_sync', 45000);
+        if (apiOrderInterval > 5000) {
+            setInterval(function f() {
+                me.syncPositionViaRestApi()
+                return f
+            }(), apiOrderInterval);
+        }
 
         symbols.forEach(symbol => {
             symbol['periods'].forEach(time => {
@@ -196,44 +206,40 @@ module.exports = class Bitmex {
 
         client.addStream('*', 'order', (orders) => {
             for (let order of Bitmex.createOrders(orders)) {
-                // we get some order history here
-                if (!(order.id in this.orders) && ['canceled', 'rejected', 'canceled', 'done'].includes(order.status)) {
-                    continue
-                }
-
                 this.orders[order.id] = order
-            }
-
-            // order cleanup
-            for (let key in this.orders){
-                let order = this.orders[key]
-
-                if (order.status !== 'open') {
-                    logger.debug('Bitmex: Cleanup non open order:' + JSON.stringify([order.id, order.symbol]))
-                    delete this.orders[key]
-                }
             }
         })
 
         // open position listener
         client.addStream('*', 'position', (positions) => {
-            let myPositions = this.positions
-
-            // cleanup our local known positions that are possible not open anymore
-            positions
-                .filter(position => position['isOpen'] === false)
-                .map(position => position.symbol)
-                .filter(symbol => symbol in myPositions)
-                .forEach(symbol => {
-                    logger.debug('Cleanup closed position: ' + symbol)
-                    delete myPositions[symbol]
-                })
-
-            // add open positions
-            Bitmex.createPositions(positions).forEach(position => {
-                myPositions[position.symbol] = position
-            })
+            me.fullPositionsUpdate(positions)
         })
+    }
+
+    /**
+     * Updates all position; must be a full update not delta. Unknown current non orders are assumed to be closed
+     *
+     * @param positions Postion in raw json from Bitmex
+     */
+    fullPositionsUpdate(positions) {
+        let openPositions = []
+
+        for (const position of positions) {
+            if (position['isOpen'] !== true) {
+                delete this.positions[position.symbol]
+                continue
+            }
+
+            openPositions.push(position)
+        }
+
+        let currentPositions = {}
+
+        for(const position of Bitmex.createPositions(openPositions)) {
+            currentPositions[position.symbol] = position
+        }
+
+        this.positions = currentPositions
     }
 
     getOrders() {
@@ -288,7 +294,6 @@ module.exports = class Bitmex {
 
     getPositionForSymbol(symbol) {
         return new Promise(resolve => {
-
             for (let x in this.positions) {
                 let position = this.positions[x];
 
@@ -298,7 +303,7 @@ module.exports = class Bitmex {
                 }
             }
 
-            return resolve()
+            resolve()
         })
     }
 
@@ -632,6 +637,46 @@ module.exports = class Bitmex {
                 orders.forEach(order => {me.triggerOrder(order)})
                 resolve(orders)
             })
+        })
+    }
+
+    /**
+     * As a websocket fallback update positions also on REST
+     */
+    syncPositionViaRestApi() {
+        var verb = 'GET',
+            path = '/api/v1/position',
+            expires = new Date().getTime() + (60 * 1000) // 1 min in the future
+        ;
+
+        var signature = crypto.createHmac('sha256', this.apiSecret).update(verb + path + expires).digest('hex');
+
+        var headers = {
+            'content-type' : 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'api-expires': expires,
+            'api-key': this.apiKey,
+            'api-signature': signature
+        }
+
+        let me = this
+
+        request({
+            headers: headers,
+            url: this.getBaseUrl() + path,
+            method: verb
+        }, (error, response, body) => {
+            if (error) {
+                me.logger.error('Bitmex: Invalid position update:' + JSON.stringify({'error': error, 'body': body}))
+                return
+            }
+
+            if (response.statusCode === 200) {
+                me.logger.debug('Bitmex: Positions via API updated')
+
+                me.fullPositionsUpdate(JSON.parse(body))
+            }
         })
     }
 

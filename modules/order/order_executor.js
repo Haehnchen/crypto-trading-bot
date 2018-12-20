@@ -30,8 +30,8 @@ module.exports = class OrderExecutor {
         }
 
         orders.forEach(async order => {
-            if(order.id in this.runningOrders) {
-                this.logger.info('Order adjust already running: ' + JSON.stringify(order.id, order.exchange, order.symbol))
+            if (order.id in this.runningOrders) {
+                this.logger.info('OrderAdjust: already running: ' + JSON.stringify([order.id, order.exchange, order.symbol]))
                 return
             }
 
@@ -39,7 +39,7 @@ module.exports = class OrderExecutor {
 
             let exchange = this.exchangeManager.get(order.exchange)
             if (!exchange) {
-                console.error('Invalid exchange')
+                console.error('OrderAdjust: Invalid exchange:' + order.exchange)
                 delete this.runningOrders[order.id]
 
                 return
@@ -47,14 +47,14 @@ module.exports = class OrderExecutor {
 
             // order not known by exchange cleanup
             let lastExchangeOrder = await exchange.findOrderById(order.id);
-            if (!lastExchangeOrder) {
-                // this.logger.info(order.exchange + ':Unknown order cleanup: ' + order.exchangeOrder.id)
+            if (!lastExchangeOrder || lastExchangeOrder.status !== 'open') {
+                this.logger.info('OrderAdjust: Unknown order cleanup: ' + JSON.stringify([order.exchangeOrder.id]))
 
-                // asyn issues: we are faster then exchange; even in high load: implement a gobal order management
+                // async issues? we are faster then exchange; even in high load: implement a global order management
                 // and filter out executed order (eg LIMIT order process)
-                //this.orders = this.orders.filter(myOrder => {
-                //      return myOrder.id !== order.id
-                //  })
+                this.orders = this.orders.filter(myOrder => {
+                    return myOrder.id !== order.id
+                })
 
                 delete this.runningOrders[order.id]
 
@@ -66,7 +66,7 @@ module.exports = class OrderExecutor {
 
             // normalize prices for positions compare; we can have negative prices depending on "side"
             if (Math.abs(lastExchangeOrder.price) === Math.abs(price)) {
-                this.logger.info('No price update needed:' + JSON.stringify([lastExchangeOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), order.exchange, order.symbol]))
+                this.logger.info('OrderAdjust: No price update needed:' + JSON.stringify([lastExchangeOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), order.exchange, order.symbol]))
                 delete this.runningOrders[order.id]
 
                 return
@@ -74,9 +74,18 @@ module.exports = class OrderExecutor {
 
             try {
                 let updatedOrder = await exchange.updateOrder(orderUpdate.id, orderUpdate)
-                this.logger.info('Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), order.exchange, order.symbol]))
+
+                if (updatedOrder.status === 'open') {
+                    this.logger.info('OrderAdjust: Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), order.exchange, order.symbol]))
+                } else if(updatedOrder.status === 'canceled' && updatedOrder.retry === true) {
+                    // we update the price outside the orderbook price range on PostOnly we will cancel the order directly
+                    this.logger.error('OrderAdjust: Updated order canceled: ' + JSON.stringify(order))
+                    // @TODO: recreate order?
+                } else {
+                    this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify(order))
+                }
             } catch(err) {
-                this.logger.error('Order adjusted failed: ' + JSON.stringify([order, err]))
+                this.logger.error('OrderAdjust: adjusted failed: ' + JSON.stringify([order, err]))
             }
 
             delete this.runningOrders[order.id]

@@ -47,6 +47,7 @@ y.forEach((pair) => {
         'state': 'watch',
         'extra': {
             'bitmex_leverage': 5,
+            'bitmex_rest_order_sync': 45000
         },
         // 'watchdogs': [
         //    {

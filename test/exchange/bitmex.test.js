@@ -176,6 +176,40 @@ describe('#bitmex exchange implementation', function() {
         assert.equal(order.side, 'sell')
     })
 
+    it('test position updates with workflow', async () => {
+        let bitmex = new Bitmex(undefined, undefined)
+
+        let positions = createResponse('ws-positions-updates.json');
+
+        // init positions
+        bitmex.fullPositionsUpdate(positions)
+        assert.equal((await bitmex.getPositions()).length, 2)
+        assert.equal((await bitmex.getPositionForSymbol('BTCUSD')).symbol, 'BTCUSD')
+        assert.equal((await bitmex.getPositionForSymbol('LTCZ18')).symbol, 'LTCZ18')
+        assert.equal((await bitmex.getPositionForSymbol('FOOUSD')), undefined)
+
+        // remove one item
+        bitmex.fullPositionsUpdate(positions.slice().filter(position => position.symbol !== 'LTCZ18'))
+        assert.equal((await bitmex.getPositions()).length, 1)
+        assert.equal((await bitmex.getPositionForSymbol('BTCUSD')).symbol, 'BTCUSD')
+        assert.equal((await bitmex.getPositionForSymbol('LTCZ18')), undefined)
+        assert.equal((await bitmex.getPositionForSymbol('FOOUSD')), undefined)
+
+        // full update again
+        bitmex.fullPositionsUpdate(positions)
+        assert.equal((await bitmex.getPositions()).length, 2)
+
+        // set LTCZ18 TO be closed; previous state was open
+        let positions1 = positions.slice()
+        positions1[0].isOpen = false
+
+        bitmex.fullPositionsUpdate(positions1)
+        assert.equal((await bitmex.getPositions()).length, 1)
+        assert.equal((await bitmex.getPositionForSymbol('BTCUSD')).symbol, 'BTCUSD')
+        assert.equal((await bitmex.getPositionForSymbol('LTCZ18')), undefined)
+        assert.equal((await bitmex.getPositionForSymbol('FOOUSD')), undefined)
+    })
+
     let createResponse = function(filename) {
         return JSON.parse(fs.readFileSync(__dirname + '/bitmex/' + filename, 'utf8'));
     }
