@@ -458,7 +458,7 @@ module.exports = class Bitmex {
 
             // we dont get the selected leverage value in websocket or api endpoints
             // so we update them only in a given time window; system overload is often blocked
-            if (symbol in this.leverageUpdated && this.leverageUpdated[symbol] > moment().subtract(1, 'minutes')) {
+            if (symbol in this.leverageUpdated && this.leverageUpdated[symbol] > moment().subtract(45, 'minutes')) {
                 this.logger.debug('Bitmex: leverage update not needed: ' + symbol)
                 resolve(true)
                 return

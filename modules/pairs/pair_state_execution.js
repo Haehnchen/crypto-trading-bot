@@ -147,21 +147,23 @@ module.exports = class PairStateExecution {
 
         let promises = []
 
-        // ordering in priority
-        this.pairStateManager.getCancelPairs().forEach(pair => {
-            promises.push(this.onCancelPair(pair))
-        })
-
-        this.pairStateManager.getClosingPairs().forEach(pair => {
-            promises.push(this.onClosePair(pair))
-        })
-
-        this.pairStateManager.getSellingPairs().forEach(pair => {
-            promises.push(this.onSellBuyPair(pair, 'short'))
-        })
-
-        this.pairStateManager.getBuyingPairs().forEach(pair => {
-            promises.push(this.onSellBuyPair(pair, 'long'))
+        this.pairStateManager.all().forEach(pair => {
+            switch (pair.state) {
+                case 'cancel':
+                    promises.push(this.onCancelPair(pair))
+                    break
+                case 'close':
+                    promises.push(this.onClosePair(pair))
+                    break
+                case 'short':
+                    promises.push(this.onSellBuyPair(pair, 'short'))
+                    break
+                case 'long':
+                    promises.push(this.onSellBuyPair(pair, 'long'))
+                    break
+                default:
+                    throw 'Unsupported state: ' + pair.state
+            }
         })
 
         try {
