@@ -1,7 +1,8 @@
 'use strict';
 
-let Order = require('../../dict/order')
-const _ = require('lodash');
+const Order = require('../../dict/order')
+const _ = require('lodash')
+const moment = require('moment')
 
 module.exports = class OrderExecutor {
     constructor(exchangeManager, tickers, systemUtil, logger) {
@@ -29,7 +30,7 @@ module.exports = class OrderExecutor {
             }
         }
 
-        orders.forEach(async order => {
+        let visitExchangeOrder = async order => {
             if (order.id in this.runningOrders) {
                 this.logger.info('OrderAdjust: already running: ' + JSON.stringify([order.id, order.exchange, order.symbol]))
                 return
@@ -52,9 +53,9 @@ module.exports = class OrderExecutor {
 
                 // async issues? we are faster then exchange; even in high load: implement a global order management
                 // and filter out executed order (eg LIMIT order process)
-                this.orders = this.orders.filter(myOrder => {
-                    return myOrder.id !== order.id
-                })
+                this.orders = this.orders.filter(myOrder =>
+                    myOrder.id !== order.id
+                )
 
                 delete this.runningOrders[order.id]
 
@@ -89,7 +90,11 @@ module.exports = class OrderExecutor {
             }
 
             delete this.runningOrders[order.id]
-        })
+        }
+
+        return Promise.all(orders.map(order => {
+            return visitExchangeOrder(order)
+        }))
     }
 
     async executeOrder(exchangeName, order) {
@@ -164,9 +169,9 @@ module.exports = class OrderExecutor {
             order = await this.createAdjustmentOrder(exchangeName, order)
         }
 
-        let orderResult = undefined
+        let exchangeOrder = undefined
         try {
-            orderResult = await exchange.order(order)
+            exchangeOrder = await exchange.order(order)
         } catch(err) {
             this.logger.error('Order canceled:' + JSON.stringify(order) + ' - ' + JSON.stringify(err))
             console.log('Order canceled:' + JSON.stringify(order) + ' - ' + JSON.stringify(err))
@@ -175,9 +180,9 @@ module.exports = class OrderExecutor {
             return
         }
 
-        if (orderResult.retry === true) {
+        if (exchangeOrder.retry === true) {
             setTimeout(async () => {
-                console.log('Order rejected: ' + JSON.stringify(orderResult))
+                console.log('Order rejected: ' + JSON.stringify(exchangeOrder))
 
                 let retryOrder = await this.createRetryOrder(exchangeName, order)
 
@@ -187,17 +192,17 @@ module.exports = class OrderExecutor {
             return
         }
 
-        this.logger.info('Order created: ' + JSON.stringify(orderResult))
-        console.log('Order created: ' + JSON.stringify([orderResult.id, exchangeName, orderResult.symbol, orderResult.symbol]))
+        this.logger.info('Order created: ' + JSON.stringify(exchangeOrder))
+        console.log('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol, exchangeOrder.symbol]))
 
         this.orders.push({
-            'id': orderResult.id,
+            'id': exchangeOrder.id,
             'exchange': exchangeName,
-            'exchangeOrder': orderResult,
+            'exchangeOrder': exchangeOrder,
             'order': order,
         })
 
-        resolve(orderResult)
+        resolve(exchangeOrder)
     }
 
     /**

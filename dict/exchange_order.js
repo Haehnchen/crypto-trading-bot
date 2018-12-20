@@ -22,7 +22,7 @@ module.exports = class ExchangeOrder {
 
     static createBlankRetryOrder(side) {
         return new ExchangeOrder(
-            undefined,
+            Math.round(((new Date()).getTime()).toString() * Math.random()),
             undefined,
             'canceled',
             undefined,
