@@ -210,22 +210,22 @@ module.exports = class Bitmex {
             }
         })
 
-        // open position listener
+        // open position listener; provides only per position updates; no overall update
         client.addStream('*', 'position', (positions) => {
-            me.fullPositionsUpdate(positions)
+            me.deltaPositionsUpdate(positions)
         })
     }
 
     /**
      * Updates all position; must be a full update not delta. Unknown current non orders are assumed to be closed
      *
-     * @param positions Postion in raw json from Bitmex
+     * @param positions Position in raw json from Bitmex
      */
     fullPositionsUpdate(positions) {
         let openPositions = []
 
         for (const position of positions) {
-            if (position['isOpen'] !== true) {
+            if (position['symbol'] in this.positions && position['isOpen'] !== true) {
                 delete this.positions[position.symbol]
                 continue
             }
@@ -235,11 +235,33 @@ module.exports = class Bitmex {
 
         let currentPositions = {}
 
-        for(const position of Bitmex.createPositions(openPositions)) {
+        for(const position of Bitmex.createPositionsWithOpenStateOnly(openPositions)) {
             currentPositions[position.symbol] = position
         }
 
         this.positions = currentPositions
+    }
+
+    /**
+     * Updates delta positions; Websocket just given use one position per callback
+     *
+     * @param positions Position in raw json from Bitmex
+     */
+    deltaPositionsUpdate(positions) {
+        let openPositions = []
+
+        for (const position of positions) {
+            if (position['symbol'] in this.positions && position['isOpen'] !== true) {
+                delete this.positions[position.symbol]
+                continue
+            }
+
+            openPositions.push(position)
+        }
+
+        for(const position of Bitmex.createPositionsWithOpenStateOnly(openPositions)) {
+            this.positions[position.symbol] = position
+        }
     }
 
     getOrders() {
@@ -281,7 +303,7 @@ module.exports = class Bitmex {
     }
 
     getPositions() {
-        return new Promise(resolve => {
+        return new Promise(async resolve => {
             let results = []
 
             for (let x in this.positions) {
@@ -293,10 +315,8 @@ module.exports = class Bitmex {
     }
 
     getPositionForSymbol(symbol) {
-        return new Promise(resolve => {
-            for (let x in this.positions) {
-                let position = this.positions[x];
-
+        return new Promise(async resolve => {
+            for (let position of (await this.getPositions())) {
                 if(position.symbol === symbol) {
                     resolve(position)
                     return
@@ -752,7 +772,13 @@ module.exports = class Bitmex {
         })
     }
 
-    static createPositions(positions) {
+    /**
+     * Convert incoming positions only if they are open
+     *
+     * @param positions
+     * @returns {*}
+     */
+    static createPositionsWithOpenStateOnly(positions) {
         return positions.filter((position) => {
             return position['isOpen'] === true
         }).map(position => {
