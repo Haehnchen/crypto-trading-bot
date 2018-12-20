@@ -88,12 +88,8 @@ module.exports = class Trade {
             }, this.systemUtil.getConfig('tick.watchdog', 5100))
 
             setInterval(() => {
-                eventEmitter.emit('order_adjust', {})
-            }, this.systemUtil.getConfig('tick.order_adjust', 5600))
-
-            setInterval(() => {
-                eventEmitter.emit('order_pair_state', {})
-            }, this.systemUtil.getConfig('tick.order_pair_state', 5300))
+                eventEmitter.emit('tick_ordering', {})
+            }, this.systemUtil.getConfig('tick.ordering', 5300))
         }, this.systemUtil.getConfig('tick.warmup', 30000));
 
         let me = this
@@ -134,7 +130,9 @@ module.exports = class Trade {
 
         eventEmitter.on('signal_tick', async () => me.signalListener.onSignalTick())
 
-        eventEmitter.on('order_adjust', async () => me.orderExecutor.adjustOpenOrdersPrice())
-        eventEmitter.on('order_pair_state', async () => me.pairStateExecution.onPairStateExecutionTick())
+        eventEmitter.on('tick_ordering', async () => {
+            await me.pairStateExecution.onPairStateExecutionTick()
+            await me.orderExecutor.adjustOpenOrdersPrice()
+        })
     }
 };

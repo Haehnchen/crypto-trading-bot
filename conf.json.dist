@@ -35,8 +35,7 @@
         "warmup": null,
         "signal": null,
         "watchdog": null,
-        "order_adjust": null,
-        "order_pair_state": null
+        "ordering": null,
     },
     "order": {
         "retry": null,

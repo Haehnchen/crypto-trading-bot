@@ -29,6 +29,8 @@ module.exports = class Bitmex {
         this.apiSecret = undefined
         this.tickSizes = {}
         this.lotSizes = {}
+        this.leverageUpdated = {}
+
         this.symbols = []
     }
 
@@ -41,6 +43,7 @@ module.exports = class Bitmex {
         this.symbols = symbols
         this.positions = {}
         this.orders = {}
+        this.leverageUpdated = {}
 
         let client = new BitMEXClient({
             'apiKeyID': this.apiKey = config.key,
@@ -436,6 +439,7 @@ module.exports = class Bitmex {
      */
     async updateLeverage(symbol) {
         let logger = this.logger
+
         return new Promise((resolve, reject) => {
             let config = this.symbols.find(cSymbol => cSymbol.symbol === symbol)
             if (!config) {
@@ -450,6 +454,14 @@ module.exports = class Bitmex {
 
             if (leverageSize < 0 || leverageSize > 100) {
                 throw 'Invalid leverage size for: ' + leverageSize + ' ' + symbol
+            }
+
+            // we dont get the selected leverage value in websocket or api endpoints
+            // so we update them only in a given time window; system overload is often blocked
+            if (symbol in this.leverageUpdated && this.leverageUpdated[symbol] > moment().subtract(1, 'minutes')) {
+                this.logger.debug('Bitmex: leverage update not needed: ' + symbol)
+                resolve(true)
+                return
             }
 
             var verb = 'POST',
@@ -474,6 +486,7 @@ module.exports = class Bitmex {
                 'api-signature': signature
             }
 
+            let me = this
             request({
                 headers: headers,
                 url: this.getBaseUrl() + path,
@@ -497,6 +510,10 @@ module.exports = class Bitmex {
                 }
 
                 logger.debug('Bitmex: Leverage update:' + JSON.stringify(symbol))
+
+                // set updated indicator; for not update on next request
+                me.leverageUpdated[symbol] = new Date()
+
                 resolve(true)
             })
         })

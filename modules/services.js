@@ -282,6 +282,7 @@ module.exports = {
             transports: [
                 new transports.File({
                     filename: './var/log/log.log',
+                    level: 'debug',
                 }),
                 new transports.Console({
                     level: 'error',
