@@ -304,7 +304,7 @@ module.exports = {
                                 case 'T3':
                                     return 8
                                 default:
-                                    return 0
+                                    return 1
                             }
                         }
 
