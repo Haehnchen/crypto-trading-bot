@@ -12,6 +12,10 @@ module.exports = class PairsHttp {
             let pairs = []
 
             for (const symbol of this.instances.symbols) {
+                if (!symbol.trade || !symbol.trade.capital || symbol.trade.capital <= 0) {
+                    continue
+                }
+
                 let position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol)
                 let state = await this.pairStateManager.get(symbol.exchange, symbol.symbol)
 
