@@ -72,6 +72,37 @@ Some browser links
  * Tradingview: http://127.0.0.1:8080/tradingview/BTCUSD
  * Backtesting: http://127.0.0.1:8080/backtest
  * Order & Pair Management: http://127.0.0.1:8080/pairs
+ 
+ 
+### Security / Authentication
+
+As the webserver provides just basic auth for access you should combine some with eh a https for public server. Here s simple `proxy_pass` for nginx. 
+
+```
+# /etc/nginx/sites-available/YOURHOST
+server {
+    server_name YOURHOST;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/YOURHOST/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/YOURHOST/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+
+```
+
+You should also set the listen ip to a local one
+
+```
+# config.json
+webserver.ip: 127.0.0.1
+
+```
    
 ![Webserver UI](documentation/cryptobot.png "Webserver UI")
 
