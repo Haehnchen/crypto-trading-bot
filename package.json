@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "async": "^2.6.1",
+    "basic-auth": "^2.0.1",
     "better-queue": "^3.8.10",
     "binance-api-node": "^0.8.8",
     "bitfinex-api-node": "^2.0.1",

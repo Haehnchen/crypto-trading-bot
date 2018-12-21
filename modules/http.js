@@ -1,6 +1,8 @@
 'use strict';
 
 let express = require('express')
+let twig = require("twig")
+let auth = require('basic-auth');
 
 module.exports = class Http {
     constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp) {
@@ -15,10 +17,6 @@ module.exports = class Http {
     start() {
         let periods = ['15m', '1h'];
 
-        var twig = require("twig"),
-            express = require('express'),
-            app = express();
-
         twig.extendFilter('price_format', function(value) {
             if (parseFloat(value) < 1) {
                 return Intl.NumberFormat('en-US', {useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 6}).format(value)
@@ -27,6 +25,8 @@ module.exports = class Http {
             return Intl.NumberFormat('en-US', {useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2}).format(value)
         });
 
+        const app = express();
+
         app.set('twig options', {
             allow_async: true,
             strict_variables: true
@@ -34,6 +34,22 @@ module.exports = class Http {
 
         app.use(express.urlencoded())
         app.use(express.static(__dirname + '/../web/static'))
+
+        let username = this.systemUtil.getConfig('webserver.username')
+        let password = this.systemUtil.getConfig('webserver.password')
+
+        if (username && password) {
+            app.use((request, response, next) => {
+                let user = auth(request)
+
+                if (!user || (user.name !== username && user.pass !== password)) {
+                    response.set('WWW-Authenticate', 'Basic realm="Please Login"');
+                    return response.status(401).send();
+                }
+
+                return next()
+            })
+        }
 
         let ta = this.ta
 
