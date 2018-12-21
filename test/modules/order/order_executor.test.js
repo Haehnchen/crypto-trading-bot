@@ -71,7 +71,7 @@ describe('#order executor', () => {
                     },
                 }},
             },
-            {'get': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
+            {'getIfUpToDate': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
             undefined,
             {'info': () => {}, 'error': () => {}}
         )
@@ -112,7 +112,7 @@ describe('#order executor', () => {
                     },
                 }},
             },
-            {'get': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
+            {'getIfUpToDate': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
             undefined,
             {'info': () => {}, 'error': () => {}}
         )
@@ -144,7 +144,7 @@ describe('#order executor', () => {
                     })},
                 }},
             },
-            {'get': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
+            {'getIfUpToDate': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
             undefined,
             {'info': () => {}, 'error': () => {}}
         )
@@ -167,7 +167,7 @@ describe('#order executor', () => {
                     })},
                 }},
             },
-            {'get': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
+            {'getIfUpToDate': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
             undefined,
             {'info': () => {}, 'error': () => {}}
         )
@@ -175,5 +175,25 @@ describe('#order executor', () => {
         await executor.cancelOrder('FOO_EXCHANGE', '1337-ABCD')
 
         assert.equal(mySymbol, '1337-ABCD')
+    })
+
+    it('test that current price is injected by time', async () => {
+        let i = 0
+
+        let executor = new OrderExecutor(
+            undefined,
+            {'getIfUpToDate': () => {
+                return i++ > 5 ? new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338) : undefined
+            }},
+            undefined,
+            {'info': () => {}, 'error': () => {}}
+        )
+
+        executor.tickerPriceInterval = 2
+
+        let price = await executor.getCurrentPrice('FOO_EXCHANGE', '1337-ABCD', 'short')
+
+        assert.equal(i > 1, true)
+        assert.equal(price, -1338)
     })
 })

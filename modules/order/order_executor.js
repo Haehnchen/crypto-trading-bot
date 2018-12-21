@@ -12,6 +12,9 @@ module.exports = class OrderExecutor {
         this.systemUtil = systemUtil
         this.runningOrders = {}
 
+        this.tickerPriceInterval = 200
+        this.tickerPriceRetries = 20
+
         this.orders = []
     }
 
@@ -63,6 +66,14 @@ module.exports = class OrderExecutor {
             }
 
             let price = await this.getCurrentPrice(order.exchange, order.order.symbol, order.order.side)
+            if (!price) {
+                this.logger.info('OrderAdjust: No up to date ticker price found: ' + JSON.stringify([order.exchange, order.order.symbol, order.order.side]))
+
+                delete this.runningOrders[order.id]
+
+                return
+            }
+
             let orderUpdate = Order.createPriceUpdateOrder(order.exchangeOrder.id, price)
 
             // normalize prices for positions compare; we can have negative prices depending on "side"
@@ -162,11 +173,17 @@ module.exports = class OrderExecutor {
             console.error('Invalid exchange')
 
             resolve()
-            return;
+            return
         }
 
         if (order.hasAdjustedPrice() === true) {
             order = await this.createAdjustmentOrder(exchangeName, order)
+
+            if (!order) {
+                this.logger.error('Order price adjsut failed:' + JSON.stringify([exchangeName, order]))
+                resolve()
+                return;
+            }
         }
 
         let exchangeOrder = undefined
@@ -184,7 +201,7 @@ module.exports = class OrderExecutor {
             setTimeout(async () => {
                 console.log('Order rejected: ' + JSON.stringify(exchangeOrder))
 
-                let retryOrder = await this.createRetryOrder(exchangeName, order)
+                let retryOrder = Order.createRetryOrder(order)
 
                 await this.triggerOrder(resolve, exchangeName, retryOrder, ++retry)
             }, this.systemUtil.getConfig('order.retry_ms', 1500));
@@ -216,17 +233,48 @@ module.exports = class OrderExecutor {
     {
         return new Promise(async resolve => {
             let price = await this.getCurrentPrice(exchangeName, order.symbol, order.side)
+            if(!price) {
+                this.logger.error('Stop creating order; can not find up to date ticker price' + JSON.stringify([exchangeName, order.symbol, order.side]))
+                resolve()
+                return
+            }
+
             resolve(Order.createRetryOrderWithPriceAdjustment(order, price))
         })
     }
 
+    /**
+     * Get current price based on the ticker. This function is block and waiting until getting an up to date ticker price
+     *
+     * @param exchangeName
+     * @param symbol
+     * @param side
+     * @returns {Promise<any>}
+     */
     getCurrentPrice(exchangeName, symbol, side)
     {
-        return new Promise(resolve => {
-            let ticker = this.tickers.get(exchangeName, symbol)
+        return new Promise(async resolve => {
+            let wait = (time) => {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        resolve();
+                    }, time);
+                });
+            }
+
+            let ticker = undefined
+
+            for (let retry = 0; retry < this.tickerPriceRetries; retry++) {
+                ticker = this.tickers.getIfUpToDate(exchangeName, symbol, 10000)
+                if (ticker) {
+                    break
+                }
+
+                await wait(this.tickerPriceInterval)
+            }
 
             if(!ticker) {
-                console.log('Unknown ticker: ' + JSON.stringify([exchangeName, symbol, side]))
+                this.logger.error('OrderExecutor: ticker price not found: ' + JSON.stringify([exchangeName, symbol, side]))
                 resolve()
                 return
             }
@@ -237,13 +285,6 @@ module.exports = class OrderExecutor {
             }
 
             resolve(price)
-        })
-    }
-
-    createRetryOrder(exchangeName, order)
-    {
-        return new Promise(resolve => {
-            resolve(Order.createRetryOrder(order))
         })
     }
 }
