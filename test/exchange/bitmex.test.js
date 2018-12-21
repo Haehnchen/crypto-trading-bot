@@ -136,46 +136,6 @@ describe('#bitmex exchange implementation', function() {
         })
     })
 
-    it('test that overload response must provide a retry', () => {
-        let order = Bitmex.resolveOrderResponse(
-            {'error': () => {}},
-            undefined,
-            undefined,
-            JSON.stringify({'error': {
-                    'message': 'The system is currently overloaded. Please try again later.',
-                }}),
-            Order.createMarketOrder('BTCUSD', 12)
-        )
-
-        assert.equal(order.retry, true)
-        assert.equal(order.status, 'canceled')
-    })
-
-    it('test that unknown request must provide a error', () => {
-        let order = Bitmex.resolveOrderResponse(
-            {'error': () => {}},
-            undefined,
-            undefined,
-            JSON.stringify({'error': {}}),
-            Order.createMarketOrder('BTCUSD', 12)
-        )
-
-        assert.equal(order, undefined)
-    })
-
-    it('test that order response is provide', () => {
-        let order = Bitmex.resolveOrderResponse(
-            {'error': () => {}, 'info': () => {}},
-            undefined,
-            undefined,
-            JSON.stringify(createResponse('ws-orders.json')[0]),
-            Order.createMarketOrder('BTCUSD', 12)
-        )
-
-        assert.equal(order.type, 'limit')
-        assert.equal(order.side, 'sell')
-    })
-
     it('test position updates with workflow', async () => {
         let bitmex = new Bitmex(undefined, undefined)
 
@@ -250,7 +210,7 @@ describe('#bitmex exchange implementation', function() {
         let myOptions = undefined
 
         bitmex.requestClient = {
-            'executeRequest': (options) => {
+            'executeRequestRetry': (options) => {
                 return new Promise((resolve) => {
                     myOptions = options
 
@@ -275,52 +235,9 @@ describe('#bitmex exchange implementation', function() {
 
         assert.equal(order.id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
         assert.equal(order.retry, false)
-    })
 
-    it('test update of order with retry', async () => {
-        let bitmex = new Bitmex(undefined, {'info': () => {}, 'error': () => {}})
-
-        bitmex.apiKey = 'my_key'
-        bitmex.apiSecret = 'my_secret'
-        bitmex.retryOverloadMs = 10
-
-        let responses = []
-
-        for (let retry = 0; retry < 2; retry++) {
-            responses.push({
-                'error': undefined,
-                'response': undefined,
-                'body': JSON.stringify({'error': {
-                        'message': 'The system is currently overloaded. Please try again later.',
-                    }}),
-            })
-            responses.push({
-                'error': undefined,
-                'response': {'statusCode': 503},
-                'body': undefined,
-            })
-        }
-
-        responses.push({
-            'error': undefined,
-            'response': undefined,
-            'body': JSON.stringify(createResponse('ws-orders.json')[0]),
-        })
-
-        let i = 0
-
-        bitmex.requestClient = {
-            'executeRequest': () => {
-                return new Promise((resolve) => {
-                    resolve(responses[i++])
-                })
-            }
-        }
-
-        let order = await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
-
-        assert.equal(order.id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
-        assert.equal(order.retry, false)
+        assert.equal((await bitmex.getOrders()).length, 1)
+        assert.equal((await bitmex.findOrderById('fb7972c4-b4fa-080f-c0b1-1919db50bc63')).id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
     })
 
     it('test update of order with retry limit reached', async () => {
@@ -330,24 +247,16 @@ describe('#bitmex exchange implementation', function() {
         bitmex.apiSecret = 'my_secret'
         bitmex.retryOverloadMs = 10
 
-        let responses = []
-
-        for (let retry = 0; retry < 10; retry++) {
-            responses.push({
-                'error': undefined,
-                'response': undefined,
-                'body': JSON.stringify({'error': {
-                        'message': 'The system is currently overloaded. Please try again later.',
-                    }}),
-            })
-        }
-
-        let i = 0
-
         bitmex.requestClient = {
-            'executeRequest': () => {
+            'executeRequestRetry': () => {
                 return new Promise((resolve) => {
-                    resolve(responses[i++])
+                    resolve({
+                        'error': undefined,
+                        'response': undefined,
+                        'body': JSON.stringify({'error': {
+                                'message': 'The system is currently overloaded. Please try again later.',
+                            }}),
+                    })
                 })
             }
         }
@@ -371,20 +280,14 @@ describe('#bitmex exchange implementation', function() {
 
         let responses = []
 
-        for (let retry = 0; retry < 10; retry++) {
-            responses.push({
-                'error': undefined,
-                'response': {'statusCode': 503},
-                'body': undefined,
-            })
-        }
-
-        let i = 0
-
         bitmex.requestClient = {
-            'executeRequest': () => {
+            'executeRequestRetry': () => {
                 return new Promise((resolve) => {
-                    resolve(responses[i++])
+                    resolve({
+                        'error': undefined,
+                        'response': {'statusCode': 503},
+                        'body': undefined,
+                    })
                 })
             }
         }
@@ -397,6 +300,184 @@ describe('#bitmex exchange implementation', function() {
         }
 
         assert.equal(err, undefined)
+    })
+
+    it('test cancel of order', async () => {
+        let bitmex = new Bitmex(undefined, {'info': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
+
+        bitmex.requestClient = {
+            'executeRequestRetry': (options) => {
+                return new Promise((resolve) => {
+                    myOptions = options
+
+                    resolve({
+                        'error': undefined,
+                        'response': undefined,
+                        'body': JSON.stringify(createResponse('ws-orders.json')),
+                    })
+                })
+            }
+        }
+
+        let order = await bitmex.cancelOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
+
+        assert.equal(myOptions.method, 'DELETE')
+        assert.equal(myOptions.body, '{"orderID":"0815foobar","text":"Powered by your awesome crypto-bot watchdog"}')
+        assert.equal(myOptions.url, 'https://www.bitmex.com/api/v1/order')
+
+        assert.equal(Object.keys(myOptions.headers).includes('api-expires'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-key'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-signature'), true)
+
+        assert.equal(order.id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
+        assert.equal(order.retry, false)
+
+        assert.equal((await bitmex.getOrders()).length, 3)
+        assert.equal((await bitmex.findOrderById('fb7972c4-b4fa-080f-c0b1-1919db50bc63')).id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
+    })
+
+    it('test cancel of all orders', async () => {
+        let bitmex = new Bitmex(undefined, {'info': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
+
+        bitmex.requestClient = {
+            'executeRequestRetry': (options) => {
+                return new Promise((resolve) => {
+                    myOptions = options
+
+                    resolve({
+                        'error': undefined,
+                        'response': undefined,
+                        'body': JSON.stringify(createResponse('ws-orders.json')),
+                    })
+                })
+            }
+        }
+
+        let orders = await bitmex.cancelAll('BTCUSD')
+
+        assert.equal(myOptions.method, 'DELETE')
+        assert.equal(myOptions.body, '{"symbol":"BTCUSD","text":"Powered by your awesome crypto-bot watchdog"}')
+        assert.equal(myOptions.url, 'https://www.bitmex.com/api/v1/order/all')
+
+        assert.equal(Object.keys(myOptions.headers).includes('api-expires'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-key'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-signature'), true)
+
+        let order = orders.find(order => order.id === 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
+
+        assert.equal(order.id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
+        assert.equal(order.retry, false)
+
+        assert.equal((await bitmex.getOrders()).length, 3)
+        assert.equal((await bitmex.findOrderById('fb7972c4-b4fa-080f-c0b1-1919db50bc63')).id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
+    })
+
+    it('test order creation fails', async () => {
+        let bitmex = new Bitmex(undefined, {'info': () => {}, 'error': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
+
+        bitmex.requestClient = {
+            'executeRequestRetry': (options) => {
+                return new Promise((resolve) => {
+                    myOptions = options
+
+                    resolve({
+                        'error': undefined,
+                        'response': undefined,
+                        'body': JSON.stringify({'error': {}}),
+                    })
+                })
+            }
+        }
+
+        let result = undefined
+        try {
+            result = await bitmex.order(Order.createMarketOrder('BTCUSD', 12))
+        } catch (e) {
+        }
+
+        let body = JSON.parse(myOptions.body)
+        delete body['clOrdID']
+
+        assert.equal(myOptions.method, 'POST')
+        assert.deepEqual(body, { symbol: 'BTCUSD',
+            orderQty: 12,
+            ordType: 'Market',
+            text: 'Powered by your awesome crypto-bot watchdog',
+            side: 'Buy' })
+
+        assert.equal(myOptions.url, 'https://www.bitmex.com/api/v1/order')
+
+        assert.equal(Object.keys(myOptions.headers).includes('api-expires'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-key'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-signature'), true)
+
+        assert.equal(result, undefined)
+    })
+
+    it('test that order response is provide', async () => {
+        let bitmex = new Bitmex(undefined, {'info': () => {}, 'error': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
+
+        bitmex.requestClient = {
+            'executeRequestRetry': (options) => {
+                return new Promise((resolve) => {
+                    myOptions = options
+
+                    resolve({
+                        'error': undefined,
+                        'response': undefined,
+                        'body': JSON.stringify(createResponse('ws-orders.json')[0]),
+                    })
+                })
+            }
+        }
+
+        let order = await bitmex.order(Order.createMarketOrder('BTCUSD', 12))
+
+        let body = JSON.parse(myOptions.body)
+        delete body['clOrdID']
+
+        assert.equal(myOptions.method, 'POST')
+        assert.deepEqual(body, { symbol: 'BTCUSD',
+            orderQty: 12,
+            ordType: 'Market',
+            text: 'Powered by your awesome crypto-bot watchdog',
+            side: 'Buy' })
+
+        assert.equal(myOptions.url, 'https://www.bitmex.com/api/v1/order')
+
+        assert.equal(Object.keys(myOptions.headers).includes('api-expires'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-key'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-signature'), true)
+
+        assert.equal(order.type, 'limit')
+        assert.equal(order.side, 'sell')
+
+        assert.equal((await bitmex.getOrders()).length, 1)
+        assert.equal((await bitmex.findOrderById('fb7972c4-b4fa-080f-c0b1-1919db50bc63')).id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
     })
 
     let createResponse = (filename) => {

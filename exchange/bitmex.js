@@ -31,7 +31,7 @@ module.exports = class Bitmex {
         this.tickSizes = {}
         this.lotSizes = {}
         this.leverageUpdated = {}
-        this.requestClient = new RequestClient()
+        this.requestClient = new RequestClient(this.logger)
         this.retryOverloadMs = 944 // Overload: API docs says use 500ms we give us more space
         this.retryOverloadLimit = 5 // Overload: Retry until fail finally
 
@@ -353,6 +353,10 @@ module.exports = class Bitmex {
      * @param order
      */
     triggerOrder(order) {
+        if (!(order instanceof ExchangeOrder)) {
+            throw 'Invalid order given'
+        }
+
         // dont overwrite state closed order
         if (order.id in this.orders && ['done', 'canceled'].includes(this.orders[order.id].status)) {
             return
@@ -406,55 +410,42 @@ module.exports = class Bitmex {
             // update leverage for pair position
             await this.updateLeverage(order.symbol)
 
-            request({
+            let result = await this.requestClient.executeRequestRetry({
                 headers: headers,
                 url: this.getBaseUrl() + path,
                 method: verb,
                 body: postBody
-            }, (error, response, body) => {
-                let result = Bitmex.resolveOrderResponse(logger, error, response, body, order)
+            }, result => {
+                return result && result.response && result.response.statusCode === 503
+            }, this.retryOverloadMs, this.retryOverloadLimit)
 
-                if(result) {
-                    me.triggerOrder(result)
-                    resolve(result)
-                } else {
-                    reject()
-                }
-            })
-        })
-    }
+            let error = result.error
+            let body = result.body
 
-    /**
-     * Extract order responses
-     */
-    static resolveOrderResponse(logger, error, response, body, originOrder) {
-        if (error) {
-            logger.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
-            console.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
+            if (error) {
+                logger.error('Bitmex: Invalid order update request:' + JSON.stringify({'error': error, 'body': body}))
+                reject()
 
-            return
-        }
-
-        let order = JSON.parse(body)
-        if (order.error) {
-            logger.error('Bitmex: Invalid order created request:' + JSON.stringify({'body': body}))
-            console.error('Bitmex: Invalid order created request:' + JSON.stringify({'body': body}))
-
-            /*
-             * Catch overload issues. Let it create the order
-             *
-             * {"error":{"message":"The system is currently overloaded. Please try again later.","name":"HTTPError"}}
-             */
-            if (order.error && typeof order.error.message === 'string' && order.error.message.toLowerCase().includes('overload')) {
-                return ExchangeOrder.createBlankRetryOrder(originOrder.side === 'long' ? 'buy' : 'sell')
+                return
             }
 
-            return
-        }
+            let orderResponse = JSON.parse(body)
+            if (orderResponse.error) {
+                logger.error('Bitmex: Invalid order created request:' + JSON.stringify({'body': body}))
 
-        logger.info('Bitmex: Order created:' + JSON.stringify({'body': body}))
+                reject()
+                return
+            }
 
-        return Bitmex.createOrders([order])[0]
+            logger.info('Bitmex: Order created:' + JSON.stringify({'body': body}))
+
+            let orders = Bitmex.createOrders([orderResponse])
+            orders.forEach(order => {
+                me.triggerOrder(order)
+            })
+
+            resolve(orders[0])
+        })
     }
 
     /**
@@ -574,35 +565,43 @@ module.exports = class Bitmex {
 
         let logger = this.logger
         let me = this
-        return new Promise((resolve, reject) => {
-            request({
+        return new Promise(async (resolve, reject) => {
+            let result = await this.requestClient.executeRequestRetry({
                 headers: headers,
                 url: this.getBaseUrl() + path,
                 method: verb,
                 body: postBody
-            }, (error, response, body) => {
-                if (error) {
-                    logger.error('Bitmex: Invalid cancel update response:' + JSON.stringify({'error': error, 'body': body}))
-                    console.error('Bitmex: Invalid cancel update response:' + JSON.stringify({'error': error, 'body': body}))
-                    reject()
+            }, (result) => {
+                return result && result.response && result.response.statusCode === 503
+            }, this.retryOverloadMs, this.retryOverloadLimit)
 
-                    return
-                }
+            let error = result.error
+            let body = result.body
 
-                let order = JSON.parse(body)
+            if (error) {
+                logger.error('Bitmex: Invalid cancel order response:' + JSON.stringify({'error': error, 'body': body}))
+                reject()
 
-                if (order.error) {
-                    logger.error('Bitmex: Invalid order update response:' + order)
-                    console.error('Bitmex: Invalid order update response:' + order)
-                    reject()
-                    return
-                }
+                return
+            }
 
-                logger.info('Bitmex: Order canceled:' + JSON.stringify({'body': body}))
+            let orders = JSON.parse(body)
 
+            if (orders.error) {
+                logger.error('Bitmex: Invalid cancel order  response:' + order)
+                reject()
+                return
+            }
+
+            logger.info('Bitmex: Order canceled:' + JSON.stringify({'body': body}))
+
+
+            let ourOrders = Bitmex.createOrders(orders)
+            ourOrders.forEach(order => {
                 me.triggerOrder(order)
-                resolve(Bitmex.createOrders(order))
             })
+
+            resolve(ourOrders[0])
         })
     }
 
@@ -631,37 +630,40 @@ module.exports = class Bitmex {
 
         let logger = this.logger
         let me = this
-        return new Promise((resolve, reject) => {
-            request({
+        return new Promise(async (resolve, reject) => {
+            let result = await this.requestClient.executeRequestRetry({
                 headers: headers,
                 url: this.getBaseUrl() + path,
                 method: verb,
                 body: postBody
-            }, (error, response, body) => {
-                if (error) {
-                    logger.error('Bitmex: Invalid cancel update response:' + JSON.stringify({'error': error, 'body': body}))
-                    console.error('Bitmex: Invalid cancel update response:' + JSON.stringify({'error': error, 'body': body}))
-                    reject()
+            }, result => {
+                return result && result.response && result.response.statusCode === 503
+            }, this.retryOverloadMs, this.retryOverloadLimit)
 
-                    return
-                }
+            let error = result.error
+            let body = result.body
 
-                let order = JSON.parse(body)
+            if (error) {
+                logger.error('Bitmex: Invalid cancel all update response:' + JSON.stringify({'error': error, 'body': body}))
+                reject()
 
-                if (order.error) {
-                    logger.error('Bitmex: Invalid order update response:' + order)
-                    console.error('Bitmex: Invalid order update response:' + order)
-                    reject()
-                    return
-                }
+                return
+            }
 
-                logger.info('Bitmex: Order canceled:' + JSON.stringify({'body': body}))
+            let order = JSON.parse(body)
 
-                let orders = Bitmex.createOrders(order)
+            if (order.error) {
+                logger.error('Bitmex: Invalid order cancel response:' + order)
+                reject()
+                return
+            }
 
-                orders.forEach(order => {me.triggerOrder(order)})
-                resolve(orders)
-            })
+            logger.info('Bitmex: Order canceled: ' + JSON.stringify({'body': body}))
+
+            let orders = Bitmex.createOrders(order)
+
+            orders.forEach(order => {me.triggerOrder(order)})
+            resolve(orders)
         })
     }
 
@@ -706,36 +708,6 @@ module.exports = class Bitmex {
     }
 
     updateOrder(id, order) {
-        let wait = function (time) {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    resolve();
-                }, time);
-            });
-        }
-
-        return new Promise(async (resolve, reject) => {
-            for (let retry = 0; retry < this.retryOverloadLimit; retry++) {
-                try {
-                    resolve(await this.updateOrderRetry(id, order))
-                    return
-                } catch (err) {
-                    if(!err || err.retry !== true) {
-                        reject(err)
-                        return
-                    }
-
-                    this.logger.info('Bitmex: Overload retry updateOrder:' + JSON.stringify([this.retryOverloadMs + 'ms', id, order]))
-
-                    await wait(this.retryOverloadMs);
-                }
-            }
-
-            reject()
-        })
-    }
-
-    updateOrderRetry(id, order) {
         if (!order.amount && !order.price) {
             throw 'Invalid amount / price for update'
         }
@@ -774,12 +746,14 @@ module.exports = class Bitmex {
         let logger = this.logger
         let me = this
         return new Promise(async (resolve, reject) => {
-            let result = await this.requestClient.executeRequest({
+            let result = await this.requestClient.executeRequestRetry({
                 headers: headers,
                 url: this.getBaseUrl() + path,
                 method: verb,
                 body: postBody
-            })
+            }, result => {
+                return result && result.response && result.response.statusCode === 503
+            }, this.retryOverloadMs, this.retryOverloadLimit)
 
             let error = result.error
             let response = result.response
@@ -793,17 +767,8 @@ module.exports = class Bitmex {
                 return
             }
 
-            // overload status code
-            if (response && response.statusCode === 503) {
-                reject({
-                    'retry': true
-                })
-
-                return
-            }
-
             if (!body) {
-                logger.error('Bitmex: Blank order update response' + JSON.stringify([(response && response.statusCode === 503)]))
+                logger.error('Bitmex: Blank order update response' + JSON.stringify([(response && response.statusCode)]))
                 reject()
 
                 return
@@ -812,23 +777,6 @@ module.exports = class Bitmex {
             let order = JSON.parse(body)
 
             if (order.error) {
-                /*
-                 * Catch overload issues
-                 *
-                 * @see https://www.bitmex.com/app/restAPI#Overload
-                 * body: {"error":{"message":"The system is currently overloaded. Please try again later.","name":"HTTPError"}}
-                 *
-                 * ... When this happens, you will quickly receive a 503 status code with the message "The system is currently overloaded. Please try again later." ...
-                 */
-                if (order.error && typeof order.error.message === 'string' && order.error.message.toLowerCase().includes('overload')) {
-                    reject({
-                        'retry': true
-                    })
-
-                    return
-                }
-
-                // other errors must block
                 logger.error('Bitmex: Invalid order created response:' + JSON.stringify({'body': body}))
                 console.error('Bitmex: Invalid order created response:' + JSON.stringify({'body': body}))
 
