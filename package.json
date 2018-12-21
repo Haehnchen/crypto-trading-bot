@@ -4,7 +4,7 @@
     "basic-auth": "^2.0.1",
     "better-queue": "^3.8.10",
     "binance-api-node": "^0.8.8",
-    "bitfinex-api-node": "^2.0.1",
+    "bitfinex-api-node": "^2.0.4",
     "bitmex-realtime-api": "^0.4.0",
     "colors": "^1.3.2",
     "commander": "^2.19.0",

@@ -36,7 +36,7 @@ module.exports = class Bitfinex {
         this.positions = []
 
         ws.on('error', err => {
-            myLogger.error('Bitfinex: error: ' + JSON.stringify([err]))
+            myLogger.error('Bitfinex: error: ' + String(err))
         })
 
         ws.on('close', () => {
