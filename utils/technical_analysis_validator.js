@@ -13,7 +13,20 @@ module.exports = class TechnicalAnalysisValidator {
         }
 
         // check if candle to close no outside candle size with a little buffer
-        let allowedOutdatedWindow = Resample.convertPeriodToMinute(period) * 1.76
+        let factor = 1.76
+
+        // we only get candles if we trades inside this range
+        // as low timeframes can be silent allow some failings
+        let minutes = Resample.convertPeriodToMinute(period);
+        if (minutes === 1) {
+            factor = 40
+        } else if(minutes === 2) {
+            factor = 20
+        } else if(minutes < 10) {
+            factor = 4
+        }
+
+        let allowedOutdatedWindow = minutes * factor
         let candleOpenToCurrentTime = Math.abs((Math.floor(Date.now() / 1000) - lookbackNewestFirst[0]['time']) / 60)
 
         if (candleOpenToCurrentTime > allowedOutdatedWindow) {

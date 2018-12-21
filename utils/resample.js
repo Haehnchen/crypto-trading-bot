@@ -70,7 +70,7 @@ module.exports = {
     /**
      * Resample eg 5m candle sticks into 15m or other minutes
      *
-     * @returns integer
+     * @returns number
      * @param period
      */
     convertPeriodToMinute: function (period) {
@@ -78,15 +78,15 @@ module.exports = {
 
         switch (unit) {
             case 'm':
-                return period.substring(0, period.length - 1)
+                return parseInt(period.substring(0, period.length - 1))
             case 'h':
-                return period.substring(0, period.length - 1) * 60
+                return parseInt(period.substring(0, period.length - 1) * 60)
             case 'd':
-                return period.substring(0, period.length - 1) * 60 * 24
+                return parseInt(period.substring(0, period.length - 1) * 60 * 24)
             case 'w':
-                return period.substring(0, period.length - 1) * 60 * 24 * 7
+                return parseInt(period.substring(0, period.length - 1) * 60 * 24 * 7)
             case 'y':
-                return period.substring(0, period.length - 1) * 60 * 24 * 7 * 356
+                return parseInt(period.substring(0, period.length - 1) * 60 * 24 * 7 * 356)
             default :
                 throw 'Unsupported period unit: ' + period
         }

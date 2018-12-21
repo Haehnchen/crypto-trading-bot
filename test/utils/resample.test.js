@@ -39,13 +39,13 @@ describe('#resample of candles', function() {
     });
 
     it('should format period based on unit', function() {
-        assert.equal(resmaple.convertPeriodToMinute('15m'), 15)
-        assert.equal(resmaple.convertPeriodToMinute('30M'), 30)
-        assert.equal(resmaple.convertPeriodToMinute('1H'), 60)
-        assert.equal(resmaple.convertPeriodToMinute('2h'), 120)
-        assert.equal(resmaple.convertPeriodToMinute('1w'), 10080)
-        assert.equal(resmaple.convertPeriodToMinute('2w'), 20160)
-        assert.equal(resmaple.convertPeriodToMinute('1y'), 3588480)
+        assert.strictEqual(resmaple.convertPeriodToMinute('15m'), 15)
+        assert.strictEqual(resmaple.convertPeriodToMinute('30M'), 30)
+        assert.strictEqual(resmaple.convertPeriodToMinute('1H'), 60)
+        assert.strictEqual(resmaple.convertPeriodToMinute('2h'), 120)
+        assert.strictEqual(resmaple.convertPeriodToMinute('1w'), 10080)
+        assert.strictEqual(resmaple.convertPeriodToMinute('2w'), 20160)
+        assert.strictEqual(resmaple.convertPeriodToMinute('1y'), 3588480)
     });
 
     it('test that resample starting time is matching given candle lookback', function() {
