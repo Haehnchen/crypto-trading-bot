@@ -127,6 +127,10 @@ module.exports = class Bitfinex {
         var me = this
 
         ws.onOrderUpdate({}, (orderUpdate) => {
+            if (orderUpdate.type.toLowerCase().includes('exchange')) {
+                return
+            }
+
             let order = Bitfinex.createExchangeOrder(orderUpdate)
 
             me.logger.info('Bitfinex: order cancel: ' + JSON.stringify(order))
@@ -135,6 +139,10 @@ module.exports = class Bitfinex {
         })
 
         ws.onOrderNew({}, (orderUpdate) => {
+            if (orderUpdate.type.toLowerCase().includes('exchange')) {
+                return
+            }
+
             let order = Bitfinex.createExchangeOrder(orderUpdate)
 
             me.logger.info('Bitfinex: order cancel: ' + JSON.stringify(order))
@@ -143,6 +151,10 @@ module.exports = class Bitfinex {
         })
 
         ws.onOrderClose({}, (orderCancel) => {
+            if (orderCancel.type.toLowerCase().includes('exchange')) {
+                return
+            }
+
             let order = Bitfinex.createExchangeOrder(orderCancel)
 
             me.logger.info('Bitfinex: order cancel: ' + JSON.stringify(order))
@@ -151,7 +163,11 @@ module.exports = class Bitfinex {
         })
 
         ws.onOrderSnapshot({}, orders => {
-            Bitfinex.createExchangeOrders(orders).forEach(order => {
+            let marginOrder = orders.filter(order =>
+                !order.type.toLowerCase().includes('exchange')
+            )
+
+            Bitfinex.createExchangeOrders(marginOrder).forEach(order => {
                 me.orders[order.id] = order
             })
         })
