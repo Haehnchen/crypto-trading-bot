@@ -39,6 +39,10 @@ describe('#technical_analysis for candles', () => {
                 'key': 'obv',
             },
             {
+                'indicator': 'ao',
+                'key': 'ao',
+            },
+            {
                 'indicator': 'macd_ext',
                 'key': 'macd_ext',
             },
@@ -73,6 +77,7 @@ describe('#technical_analysis for candles', () => {
         assert.equal(0.31, parseFloat(result['macd'][1]['histogram']).toFixed(2))
 
         assert.equal(-12689695, parseFloat(result['obv'][1]))
+        assert.equal(-10.657352941176214, parseFloat(result['ao'][1]))
 
         // test macd implementations
         assert.equal(-3.89, parseFloat(result['macd'][result['macd'].length - 1]['histogram']).toFixed(2))

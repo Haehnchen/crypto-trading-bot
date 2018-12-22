@@ -373,6 +373,15 @@ module.exports = {
                             resolve(values)
                         })
                     }))
+                } else if (indicatorName === 'ao') {
+                    calculations.push(new Promise((resolve) => {
+                        tulind.indicators.ao.indicator([marketData.high, marketData.low], [], (err, results) => {
+                            let values = {}
+                            values[indicatorKey] = results[0]
+
+                            resolve(values)
+                        })
+                    }))
                 }
             })
 
