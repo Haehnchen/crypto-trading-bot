@@ -60,7 +60,7 @@ describe('#request client', function() {
             })
         }
 
-        let result = await client.executeRequestRetry({}, (result) => {
+        let result = await client.executeRequestRetry({'url': 'http://test.de'}, (result) => {
             return result && result.response && result.response.statusCode === 503
         }, 5)
 

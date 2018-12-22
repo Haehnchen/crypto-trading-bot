@@ -31,7 +31,7 @@ module.exports = class RequestClient {
         return new Promise(async resolve => {
             let lastResult = undefined
 
-            for (let retry = 0; retry < retries; retry++) {
+            for (let retry = 1; retry <= retries; retry++) {
                 let result = lastResult = await this.executeRequest(options)
 
                 let shouldRetry = retryCallback(result)
@@ -42,7 +42,13 @@ module.exports = class RequestClient {
                 }
 
                 if (this.logger) {
-                    this.logger.error('Request: error retry in ' + retryMs + 'ms')
+                    let debug = JSON.stringify([
+                        options.url ? options.url : '',
+                        result && result.response && result.response.statusCode ? result.response.statusCode : '',
+                        options.body ? options.body.substring(0, 50) : '',
+                    ])
+
+                    this.logger.error(`Request: error retry (${retry}) in ${retryMs}ms ${debug}`)
                 }
 
                 await wait(retryMs);
