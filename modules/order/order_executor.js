@@ -159,20 +159,19 @@ module.exports = class OrderExecutor {
     }
 
     async triggerOrder(resolve, exchangeName, order, retry = 0) {
-        if(retry > this.systemUtil.getConfig('order.retry', 3)) {
-            console.log('Retry limit stop creating order: ' + JSON.stringify(order))
+        if(retry > this.systemUtil.getConfig('order.retry', 4)) {
+            this.logger.error('Retry (${retry}) creating order reached: ' + JSON.stringify(order))
             resolve()
             return
         }
 
         if (retry > 0) {
-            this.logger.info('Retry (' + retry + ') creating order: ' + JSON.stringify(order))
-            console.log('Retry (' + retry + ') creating order: ' + JSON.stringify(order))
+            this.logger.info(`Retry (${retry}) creating order: ` + JSON.stringify(order))
         }
 
         let exchange = this.exchangeManager.get(exchangeName)
         if (!exchange) {
-            console.error('Invalid exchange')
+            console.error('Invalid exchange: ' + exchangeName)
 
             resolve()
             return
@@ -192,17 +191,16 @@ module.exports = class OrderExecutor {
         try {
             exchangeOrder = await exchange.order(order)
         } catch(err) {
-            this.logger.error('Order canceled:' + JSON.stringify(order) + ' - ' + JSON.stringify(err))
-            console.log('Order canceled:' + JSON.stringify(order) + ' - ' + JSON.stringify(err))
+            this.logger.error('Order create canceled:' + JSON.stringify(order) + ' - ' + JSON.stringify(String(err)))
 
             resolve()
             return
         }
 
         if (exchangeOrder.retry === true) {
-            setTimeout(async () => {
-                console.log('Order rejected: ' + JSON.stringify(exchangeOrder))
+            this.logger.info('Order not placed force retry: ' + JSON.stringify(exchangeOrder))
 
+            setTimeout(async () => {
                 let retryOrder = Order.createRetryOrder(order)
 
                 await this.triggerOrder(resolve, exchangeName, retryOrder, ++retry)
@@ -211,7 +209,7 @@ module.exports = class OrderExecutor {
             return
         }
 
-        this.logger.info('Order created: ' + JSON.stringify(exchangeOrder))
+        this.logger.info('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol, exchangeOrder.symbol]))
         console.log('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol, exchangeOrder.symbol]))
 
         this.orders.push({

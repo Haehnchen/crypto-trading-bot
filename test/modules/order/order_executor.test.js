@@ -6,6 +6,96 @@ let ExchangeOrder = require('../../../dict/exchange_order')
 const moment = require('moment')
 
 describe('#order executor', () => {
+    it('test order create execution', async () => {
+        let exchangeOrders = [
+            new ExchangeOrder('1815-1337-1', undefined, undefined, undefined, undefined, false, undefined, 'buy'),
+        ]
+
+        let configs = {
+            'order.retry': 3,
+            'order.retry_ms': 8,
+        }
+
+        let i = 0
+        let executor = new OrderExecutor(
+            {'get': () => { return {
+                    'order': () => { return exchangeOrders[i++] },
+                }}},
+            undefined,
+            {'getConfig': (key) => { return configs[key] }},
+            {'info': () => {}, 'error': () => {}}
+        )
+
+        let result = await executor.executeOrder('foobar', Order.createLimitPostOnlyOrderAutoSide('BTCUSD', 1337, -10))
+
+        assert.equal(i, 1)
+        assert.equal(result.id, '1815-1337-1')
+        assert.equal(executor.orders.find(o => o.id === '1815-1337-1').id, '1815-1337-1')
+    })
+
+    it('test order create execution with retry', async () => {
+        let exchangeOrders = [
+            new ExchangeOrder('1815-1337-1', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
+            new ExchangeOrder('1815-1337-2', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
+            new ExchangeOrder('1815-1337-3', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
+            new ExchangeOrder('1815-1337-4', undefined, undefined, undefined, undefined, false, undefined, 'buy'),
+        ]
+
+        let configs = {
+            'order.retry': 3,
+            'order.retry_ms': 8,
+        }
+
+        let i = 0
+        let executor = new OrderExecutor(
+            {'get': () => { return {
+                'order': () => { return exchangeOrders[i++] },
+            }}},
+            undefined,
+            {'getConfig': (key) => { return configs[key] }},
+            {'info': () => {}, 'error': () => {}}
+        )
+
+        let result = await executor.executeOrder('foobar', Order.createLimitPostOnlyOrderAutoSide('BTCUSD', 1337, -10))
+
+        assert.equal(i, 4)
+        assert.equal(result.id, '1815-1337-4')
+
+        assert.equal(executor.orders.find(o => o.id === '1815-1337-4').id, '1815-1337-4')
+        assert.equal(executor.orders.find(o => o.id === '1815-1337-3'), undefined)
+    })
+
+    it('test order create execution with out of retry limit', async () => {
+        let exchangeOrders = [
+            new ExchangeOrder('1815-1337-1', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
+            new ExchangeOrder('1815-1337-2', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
+            new ExchangeOrder('1815-1337-3', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
+            new ExchangeOrder('1815-1337-4', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
+            new ExchangeOrder('1815-1337-4', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
+        ]
+
+        let configs = {
+            'order.retry': 3,
+            'order.retry_ms': 8,
+        }
+
+        let i = 0
+        let executor = new OrderExecutor(
+            {'get': () => { return {
+                    'order': () => { return exchangeOrders[i++] },
+                }}},
+            undefined,
+            {'getConfig': (key) => { return configs[key] }},
+            {'info': () => {}, 'error': () => {}}
+        )
+
+        let result = await executor.executeOrder('foobar', Order.createLimitPostOnlyOrderAutoSide('BTCUSD', 1337, -10))
+
+        assert.equal(i, 4)
+        assert.equal(result, undefined)
+        assert.equal(executor.orders.length, 0)
+    })
+
     it('test that adjust price handler must clean up unknown orders', async () => {
         let exchangeOrder = new ExchangeOrder('1815-1337', undefined, undefined, undefined, undefined, undefined, undefined, 'buy')
 
