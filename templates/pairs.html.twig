@@ -8,9 +8,12 @@
                 <th scope="col">Exchange</th>
                 <th scope="col">Symbol</th>
                 <th scope="col">State</th>
+                <th scope="col">Capital</th>
+                <th scope="col">Strategies</th>
                 <th scope="col">Options</th>
                 <th scope="col">Process</th>
-                <th scope="col">Actions</th>
+                <th scope="col">Limit</th>
+                <th scope="col">Market</th>
             </tr>
 
             </thead>
@@ -20,7 +23,9 @@
                     <td>{{ pair.exchange }}</td>
                     <td>{{ pair.symbol }}</td>
                     <td>{{ pair.state }}</td>
-                    <td>
+                    <td><strong>{{ pair.capital }}</strong></td>
+                    <td class="text-muted">{{ pair.strategies|json_encode }}</td>
+                    <td class="text-muted">
                         {% if pair.watchdogs %}
                             {{ pair.watchdogs|json_encode }}
                         {% endif %}

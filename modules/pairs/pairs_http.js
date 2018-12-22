@@ -25,6 +25,8 @@ module.exports = class PairsHttp {
                     'watchdogs': symbol.watchdogs,
                     'state': symbol.state,
                     'has_position': position !== undefined,
+                    'capital': symbol.trade.capital,
+                    'strategies': symbol.trade.strategies || [],
                 }
 
                 if (state && state.state) {
