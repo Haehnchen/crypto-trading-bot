@@ -1,9 +1,11 @@
 'use strict';
 
-let IndicatorBuilder = require('./dict/indicator_builder');
-let IndicatorPeriod = require('./dict/indicator_period');
-let ta = require('../../utils/technical_analysis');
+let IndicatorBuilder = require('./dict/indicator_builder')
+let IndicatorPeriod = require('./dict/indicator_period')
+let ta = require('../../utils/technical_analysis')
 let fs = require('fs');
+const StrategyContext = require('../../dict/strategy_context')
+const Ticker = require('../../dict/ticker')
 
 module.exports = class StrategyManager {
     constructor(candlestickRepository, technicalAnalysisValidator, logger) {
@@ -103,7 +105,7 @@ module.exports = class StrategyManager {
         })
     }
 
-    executeStrategyBacktest(strategyName, exchange, symbol, options) {
+    executeStrategyBacktest(strategyName, exchange, symbol, options, lastSignal) {
         options = options || {}
 
         let strategy = this.getStrategies().find((strategy) => {
@@ -152,7 +154,10 @@ module.exports = class StrategyManager {
                 }
             }
 
-            let indicatorPeriod = new IndicatorPeriod(price, results)
+            let context = StrategyContext.create(new Ticker(exchange, symbol, undefined, price, price))
+            context.lastSignal = lastSignal
+
+            let indicatorPeriod = new IndicatorPeriod(context, results)
 
             let trigger = await strategy.period(indicatorPeriod, options)
 

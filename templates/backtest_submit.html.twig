@@ -23,6 +23,8 @@
                                 <i class="fas fa-chevron-circle-up text-success"></i>
                             {% elseif row.result.signal == 'short' %}
                                 <i class="fas fa-chevron-circle-down text-danger"></i>
+                            {% elseif row.result.signal == 'close' %}
+                                <i class="fa fa-times"></i>
                             {% endif %}
                         {% endif %}
                     </td>

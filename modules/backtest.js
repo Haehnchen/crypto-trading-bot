@@ -35,6 +35,8 @@ module.exports = class Backtest{
 
             let current = start
 
+            let lastSignal = undefined
+
             while (current < end) {
                 let item = {
                     'time': current
@@ -59,7 +61,14 @@ module.exports = class Backtest{
 
                 let strategyManager = new StrategyManager(mockedRepository)
 
-                item['result'] = await strategyManager.executeStrategyBacktest(strategy, exchange, pair, options)
+                let backtestResult = await strategyManager.executeStrategyBacktest(strategy, exchange, pair, options, lastSignal)
+                item['result'] = backtestResult
+
+                if(['long', 'short'].includes(backtestResult.signal)) {
+                    lastSignal = backtestResult.signal
+                } else if(backtestResult.signal === 'close') {
+                    lastSignal = undefined
+                }
 
                 rows.push(item)
 

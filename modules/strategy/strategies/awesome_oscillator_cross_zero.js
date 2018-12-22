@@ -2,7 +2,7 @@
 
 module.exports = class AwesomeOscillatorCrossZero {
     getName() {
-        return 'macd_ext'
+        return 'awesome_oscillator_cross_zero'
     }
 
     buildIndicator(indicatorBuilder, options) {
