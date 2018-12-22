@@ -28,19 +28,12 @@ module.exports = class OrderExecutor {
 
         // cleanup
         for (let orderId in this.runningOrders) {
-            if (this.runningOrders[orderId] < moment().subtract(30, 'minutes')) {
+            if (this.runningOrders[orderId] < moment().subtract(2, 'minutes')) {
                 delete this.runningOrders[orderId]
             }
         }
 
         let visitExchangeOrder = async order => {
-            if (order.id in this.runningOrders) {
-                this.logger.info('OrderAdjust: already running: ' + JSON.stringify([order.id, order.exchange, order.symbol]))
-                return
-            }
-
-            this.runningOrders[order.id] = new Date()
-
             let exchange = this.exchangeManager.get(order.exchange)
             if (!exchange) {
                 console.error('OrderAdjust: Invalid exchange:' + order.exchange)
@@ -64,6 +57,13 @@ module.exports = class OrderExecutor {
 
                 return
             }
+
+            if (order.id in this.runningOrders) {
+                this.logger.info('OrderAdjust: already running: ' + JSON.stringify([order.id, order.exchange, order.symbol]))
+                return
+            }
+
+            this.runningOrders[order.id] = new Date()
 
             let price = await this.getCurrentPrice(order.exchange, order.order.symbol, order.order.side)
             if (!price) {
@@ -94,7 +94,7 @@ module.exports = class OrderExecutor {
                     this.logger.error('OrderAdjust: Updated order canceled recreate: ' + JSON.stringify(order))
 
                     // recreate order
-                    await this.executeOrder(order.exchange, order)
+                    await this.executeOrder(order.exchange, Order.createRetryOrder(order))
                 } else {
                     this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify(order))
                 }
