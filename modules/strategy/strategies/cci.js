@@ -27,10 +27,11 @@ module.exports = class CCI {
             indicatorPeriod.getIndicator('sma200'),
             indicatorPeriod.getIndicator('ema200'),
             indicatorPeriod.getIndicator('cci'),
+            indicatorPeriod.getLastSignal(),
         )
     }
 
-    cci(price, sma200Full, ema200Full, cciFull) {
+    cci(price, sma200Full, ema200Full, cciFull, lastSignal) {
         return new Promise(async (resolve) => {
             if (cciFull.length <= 0) {
                 resolve()
@@ -48,6 +49,22 @@ module.exports = class CCI {
                 'cci': cci.slice(-1)[0],
             }
 
+            let before = cci.slice(-2)[0]
+            let last = cci.slice(-1)[0]
+
+            // trend change
+            if (
+                (lastSignal === 'long' && before > 100 && last < 100)
+                || (lastSignal === 'short' && before < -100 && last > -100)
+            ) {
+                resolve({
+                    'signal': 'close',
+                    'debug': debug,
+                })
+
+                return
+            }
+
             let long = price >= sma200.slice(-1)[0]
 
             // ema long
@@ -55,8 +72,6 @@ module.exports = class CCI {
                 long = price >= ema200.slice(-1)[0]
             }
 
-            let before = cci.slice(-2)[0]
-            let last = cci.slice(-1)[0]
             let count = cci.length - 1
 
             if (long) {

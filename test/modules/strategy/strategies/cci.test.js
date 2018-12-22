@@ -65,6 +65,52 @@ describe('#strategy cci', () => {
         assert.equal(-280, result3['_trigger'])
     })
 
+    it('strategy cci long [close]', async () => {
+        let cci = new CCI()
+
+        let strategyContext = createStrategyContext(404)
+        strategyContext.lastSignal = 'long'
+
+        let result = await cci.period(new IndicatorPeriod(strategyContext, {
+            'sma200': [550, 400, 388],
+            'ema200': [550, 400, 388],
+            'cci': [120, 80, -1],
+        }))
+
+        assert.equal('close', result['signal'])
+
+        let result2 = await cci.period(new IndicatorPeriod(strategyContext, {
+            'sma200': [550, 400, 388],
+            'ema200': [550, 400, 388],
+            'cci': [120, 150, -1],
+        }))
+
+        assert.equal(undefined, result2['signal'])
+    })
+
+    it('strategy cci short [close]', async () => {
+        let cci = new CCI()
+
+        let strategyContext = createStrategyContext(404)
+        strategyContext.lastSignal = 'short'
+
+        let result = await cci.period(new IndicatorPeriod(strategyContext, {
+            'sma200': [550, 400, 388],
+            'ema200': [550, 400, 388],
+            'cci': [-120, -80, 1],
+        }))
+
+        assert.equal('close', result['signal'])
+
+        let result2 = await cci.period(new IndicatorPeriod(strategyContext, {
+            'sma200': [550, 400, 388],
+            'ema200': [550, 400, 388],
+            'cci': [-120, -150, -1],
+        }))
+
+        assert.equal(undefined, result2['signal'])
+    })
+
     let createStrategyContext = (price) => {
         return new StrategyContext(new Ticker('goo', 'goo', 'goo', price))
     }

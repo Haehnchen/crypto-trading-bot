@@ -160,7 +160,7 @@ module.exports = class OrderExecutor {
 
     async triggerOrder(resolve, exchangeName, order, retry = 0) {
         if(retry > this.systemUtil.getConfig('order.retry', 4)) {
-            this.logger.error('Retry (${retry}) creating order reached: ' + JSON.stringify(order))
+            this.logger.error(`Retry (${retry}) creating order reached: ` + JSON.stringify(order))
             resolve()
             return
         }
