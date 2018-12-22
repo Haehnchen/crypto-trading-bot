@@ -78,8 +78,8 @@ module.exports = class StrategyManager {
 
                 // check if candle to close time is outside our allow time window
                 if (!this.technicalAnalysisValidator.isValidCandleStickLookback(lookbackNewestFirst, period)) {
-                    console.log('Outdated candle stick period detected: ' + JSON.stringify([period, strategyName, exchange, symbol]))
-                    this.logger.error('Outdated candle stick period detected: ' + JSON.stringify([period, strategyName, exchange, symbol]))
+                    // too noisy for now; @TODO provide a logging throttle
+                    // this.logger.error('Outdated candle stick period detected: ' + JSON.stringify([period, strategyName, exchange, symbol]))
 
                     // stop current run
                     resolve()
