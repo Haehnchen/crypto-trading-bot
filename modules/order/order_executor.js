@@ -91,8 +91,10 @@ module.exports = class OrderExecutor {
                     this.logger.info('OrderAdjust: Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), order.exchange, order.symbol]))
                 } else if(updatedOrder.status === 'canceled' && updatedOrder.retry === true) {
                     // we update the price outside the orderbook price range on PostOnly we will cancel the order directly
-                    this.logger.error('OrderAdjust: Updated order canceled: ' + JSON.stringify(order))
-                    // @TODO: recreate order?
+                    this.logger.error('OrderAdjust: Updated order canceled recreate: ' + JSON.stringify(order))
+
+                    // recreate order
+                    await this.executeOrder(order.exchange, order)
                 } else {
                     this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify(order))
                 }
@@ -180,9 +182,9 @@ module.exports = class OrderExecutor {
             order = await this.createAdjustmentOrder(exchangeName, order)
 
             if (!order) {
-                this.logger.error('Order price adjsut failed:' + JSON.stringify([exchangeName, order]))
+                this.logger.error('Order price adjust failed:' + JSON.stringify([exchangeName, order]))
                 resolve()
-                return;
+                return
             }
         }
 

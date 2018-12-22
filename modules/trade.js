@@ -130,9 +130,16 @@ module.exports = class Trade {
 
         eventEmitter.on('signal_tick', async () => me.signalListener.onSignalTick())
 
+        let running = undefined
         eventEmitter.on('tick_ordering', async () => {
-            await me.pairStateExecution.onPairStateExecutionTick()
-            await me.orderExecutor.adjustOpenOrdersPrice()
+            if (typeof running === 'undefined' || running < moment().subtract(20, 'seconds')) {
+                running = new Date()
+                await me.pairStateExecution.onPairStateExecutionTick()
+                await me.orderExecutor.adjustOpenOrdersPrice()
+                running = undefined
+            } else {
+                me.logger.debug('tick_ordering still running')
+            }
         })
     }
 };
