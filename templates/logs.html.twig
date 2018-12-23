@@ -1,0 +1,32 @@
+{% extends './layout.html.twig' %}
+
+{% block content %}
+    <div class="container">
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Level</th>
+                <th scope="col">Message</th>
+                <th scope="col">CreatedAt</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for log in logs %}
+                <tr>
+                    <td>
+                        {% if log.level == 'debug' %}
+                            <span class="text-muted">{{ log.level }}</span>
+                        {% elseif log.level == 'info' %}
+                            <span class="text-info">{{ log.level }}</span>
+                        {% elseif log.level == 'error' %}
+                            <span class="text-danger">{{ log.level }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ log.message }}</td>
+                    <td>{{ log.created_at|date('Y-m-d H:i:s') }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

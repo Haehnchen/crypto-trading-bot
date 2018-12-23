@@ -5,13 +5,14 @@ let twig = require("twig")
 let auth = require('basic-auth');
 
 module.exports = class Http {
-    constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp) {
+    constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp, logsHttp) {
         this.systemUtil = systemUtil
         this.ta = ta
         this.signalHttp = signalHttp
         this.backtest = backtest
         this.exchangeManager = exchangeManager
         this.pairsHttp = pairsHttp
+        this.logsHttp = logsHttp
     }
 
     start() {
@@ -95,6 +96,10 @@ module.exports = class Http {
             res.render('../templates/pairs.html.twig', {
                 pairs: await this.pairsHttp.getTradePairs(),
             })
+        })
+
+        app.get('/logs', async (req, res) => {
+            res.render('../templates/logs.html.twig', await this.logsHttp.getLogsPageVariables())
         })
 
         app.post('/pairs/:pair', async (req, res) => {

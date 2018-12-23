@@ -41,6 +41,9 @@ let PairStateManager = require('../modules/pairs/pair_state_manager')
 let PairStateExecution = require('../modules/pairs/pair_state_execution')
 let SystemUtil = require('../modules/system/system_util')
 let TechnicalAnalysisValidator = require('../utils/technical_analysis_validator')
+let WinstonSqliteTransport = require('../utils/winston_sqlite_transport')
+let LogsHttp = require('./system/logs_http')
+let LogsRepository = require('../modules/repository/logs_repository')
 
 var _ = require('lodash');
 
@@ -82,6 +85,8 @@ let orderExecutor = undefined
 let orderCalculator = undefined
 let systemUtil = undefined
 let technicalAnalysisValidator = undefined
+let logsHttp = undefined
+let logsRepository = undefined
 
 module.exports = {
     boot: function() {
@@ -287,6 +292,11 @@ module.exports = {
                 new transports.Console({
                     level: 'error',
                 }),
+                new WinstonSqliteTransport({
+                    level: 'debug',
+                    database_connection: this.getDatabase(),
+                    table: 'logs',
+                })
             ]
         });
     },
@@ -335,6 +345,7 @@ module.exports = {
             this.getBacktest(),
             this.getExchangeManager(),
             this.getHttpPairs(),
+            this.getLogsHttp(),
         )
     },
 
@@ -428,6 +439,22 @@ module.exports = {
         return technicalAnalysisValidator = new TechnicalAnalysisValidator()
     },
 
+    getLogsRepository: function() {
+        if (logsRepository) {
+            return logsRepository;
+        }
+
+        return logsRepository = new LogsRepository(this.getDatabase())
+    },
+
+    getLogsHttp: function() {
+        if (logsHttp) {
+            return logsHttp;
+        }
+
+        return logsHttp = new LogsHttp(this.getLogsRepository())
+    },
+
     createTradeInstance: function() {
         return new Trade(
             this.getEventEmitter(),
@@ -446,6 +473,7 @@ module.exports = {
             this.getOrderExecutor(),
             this.getPairStateExecution(),
             this.getSystemUtil(),
+            this.getLogsRepository()
         )
     },
 

@@ -1,4 +1,4 @@
-CREATE TABLE candlesticks (
+CREATE TABLE IF NOT EXISTS candlesticks (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   exchange   VARCHAR(255) NULL,
   symbol     VARCHAR(255) NULL,
@@ -17,7 +17,7 @@ CREATE UNIQUE INDEX unique_candle
 CREATE INDEX time_idx ON candlesticks  (time);
 
 
-CREATE TABLE candlesticks_log (
+CREATE TABLE IF NOT EXISTS candlesticks_log (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   income_at  BIGINT       NULL,
   exchange   VARCHAR(255) NULL,
@@ -33,7 +33,7 @@ CREATE TABLE candlesticks_log (
 
 CREATE INDEX candle_idx ON candlesticks_log (exchange, symbol, period, time);
 
-CREATE TABLE ticker (
+CREATE TABLE IF NOT EXISTS ticker (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   exchange   VARCHAR(255) NULL,
   symbol     VARCHAR(255) NULL,
@@ -45,7 +45,7 @@ CREATE TABLE ticker (
 CREATE UNIQUE INDEX ticker_unique
   ON ticker (exchange, symbol);
 
-CREATE TABLE ticker_log (
+CREATE TABLE IF NOT EXISTS ticker_log (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   exchange   VARCHAR(255) NULL,
   symbol     VARCHAR(255) NULL,
@@ -55,7 +55,7 @@ CREATE TABLE ticker_log (
 );
 CREATE INDEX ticker_log_idx ON ticker_log (exchange, symbol);
 
-CREATE TABLE signals (
+CREATE TABLE IF NOT EXISTS signals (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   exchange   VARCHAR(255) NULL,
   symbol     VARCHAR(255) NULL,
@@ -68,3 +68,14 @@ CREATE TABLE signals (
   state      VARCHAR(50)  NULL
 );
 CREATE INDEX symbol_idx ON signals (exchange, symbol);
+
+CREATE TABLE IF NOT EXISTS logs (
+  uuid       VARCHAR(64) PRIMARY KEY,
+  level      VARCHAR(32) NOT NULL,
+  message    TEXT NULL,
+  created_at INT NOT NULL
+);
+
+CREATE INDEX created_at_idx ON logs (created_at);
+CREATE INDEX level_created_at_idx ON logs (level, created_at);
+CREATE INDEX level_idx ON logs (level);

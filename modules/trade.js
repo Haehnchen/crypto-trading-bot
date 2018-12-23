@@ -22,6 +22,7 @@ module.exports = class Trade {
         orderExecutor,
         pairStateExecution,
         systemUtil,
+        logsRepository,
     ) {
         this.eventEmitter = eventEmitter
         this.instances = instances
@@ -39,6 +40,7 @@ module.exports = class Trade {
         this.orderExecutor = orderExecutor
         this.pairStateExecution = pairStateExecution
         this.systemUtil = systemUtil
+        this.logsRepository = logsRepository
     }
 
     start() {
@@ -67,6 +69,7 @@ module.exports = class Trade {
 
         this.notify.send(message)
 
+        let me = this
         let eventEmitter = this.eventEmitter
 
         // let the system bootup; eg let the candle be filled by exchanges
@@ -92,7 +95,12 @@ module.exports = class Trade {
             }, this.systemUtil.getConfig('tick.ordering', 5300))
         }, this.systemUtil.getConfig('tick.warmup', 30000));
 
-        let me = this
+        // cronjob like tasks
+        setInterval(async () => {
+            await me.logsRepository.cleanOldLogEntries()
+            me.logger.debug('Logs: Cleanup old entries')
+        }, 86455)
+
         let tickers = this.tickers
 
         eventEmitter.on('ticker', async function(tickerEvent) {
