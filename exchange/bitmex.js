@@ -21,6 +21,7 @@ let ExchangeOrder = require('../dict/exchange_order');
 let orderUtil = require('../utils/order_util')
 let RequestClient = require('../utils/request_client')
 var _ = require('lodash')
+const querystring = require('querystring');
 
 module.exports = class Bitmex {
     constructor(eventEmitter, logger) {
@@ -88,6 +89,7 @@ module.exports = class Bitmex {
         if (apiOrderInterval > 5000) {
             setInterval(function f() {
                 me.syncPositionViaRestApi()
+                me.syncOrdersViaRestApi()
                 return f
             }(), apiOrderInterval);
         }
@@ -248,6 +250,20 @@ module.exports = class Bitmex {
     }
 
     /**
+     * Updates all position; must be a full update not delta. Unknown current non orders are assumed to be closed
+     *
+     * @param orders Orders in raw json from Bitmex
+     */
+    fullOrdersUpdate(orders) {
+        let ourOrders = {}
+        for (let order of Bitmex.createOrders(orders).filter(order => order.status === 'open')) {
+            ourOrders[order.id] = order
+        }
+
+        this.orders = ourOrders
+    }
+
+    /**
      * Updates delta positions; Websocket just given use one position per callback
      *
      * @param positions Position in raw json from Bitmex
@@ -293,17 +309,7 @@ module.exports = class Bitmex {
 
     getOrdersForSymbol(symbol) {
         return new Promise(resolve => {
-            let orders = []
-
-            for(let key in this.orders){
-                let order = this.orders[key];
-
-                if(order.status === 'open' && order.symbol === symbol) {
-                    orders.push(order)
-                }
-            }
-
-            resolve(orders)
+            resolve(this.getOrders().filter(order => order.symbol === symbol))
         })
     }
 
@@ -670,7 +676,7 @@ module.exports = class Bitmex {
     /**
      * As a websocket fallback update positions also on REST
      */
-    syncPositionViaRestApi() {
+    async syncPositionViaRestApi() {
         var verb = 'GET',
             path = '/api/v1/position',
             expires = new Date().getTime() + (60 * 1000) // 1 min in the future
@@ -689,22 +695,69 @@ module.exports = class Bitmex {
 
         let me = this
 
-        request({
+        let result = await this.requestClient.executeRequestRetry({
             headers: headers,
             url: this.getBaseUrl() + path,
-            method: verb
-        }, (error, response, body) => {
-            if (error) {
-                me.logger.error('Bitmex: Invalid position update:' + JSON.stringify({'error': error, 'body': body}))
-                return
-            }
+            method: verb,
+        }, result => {
+            return result && result.response && result.response.statusCode === 503
+        }, this.retryOverloadMs, this.retryOverloadLimit)
 
-            if (response.statusCode === 200) {
-                me.logger.debug('Bitmex: Positions via API updated')
+        let error = result.error
+        let response = result.response
+        let body = result.body
 
-                me.fullPositionsUpdate(JSON.parse(body))
-            }
-        })
+        if (error || !response || response.statusCode !== 200) {
+            me.logger.error('Bitmex: Invalid position update:' + JSON.stringify({'error': error, 'body': body}))
+            return
+        }
+
+        me.logger.debug('Bitmex: Positions via API updated')
+        me.fullPositionsUpdate(JSON.parse(body))
+    }
+
+    /**
+     * As a websocket fallback update orders also on REST
+     */
+    async syncOrdersViaRestApi() {
+        var verb = 'GET',
+            path = '/api/v1/order?' + querystring.stringify({"filter": JSON.stringify({ "open": true})}),
+            expires = new Date().getTime() + (60 * 1000) // 1 min in the future
+        ;
+
+        var signature = crypto.createHmac('sha256', this.apiSecret).update(verb + path + expires).digest('hex');
+
+        var headers = {
+            'content-type' : 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'api-expires': expires,
+            'api-key': this.apiKey,
+            'api-signature': signature
+        }
+
+        let me = this
+
+        let result = await this.requestClient.executeRequestRetry({
+            headers: headers,
+            url: this.getBaseUrl() + path,
+            method: verb,
+        }, result => {
+            return result && result.response && result.response.statusCode === 503
+        }, this.retryOverloadMs, this.retryOverloadLimit)
+
+        let error = result.error
+        let response = result.response
+        let body = result.body
+
+        if (error || !response || response.statusCode !== 200) {
+            me.logger.error('Bitmex: Invalid orders sync:' + JSON.stringify({'error': error, 'body': body}))
+            return
+        }
+
+        me.logger.debug('Bitmex: Orders via API updated')
+
+        me.fullOrdersUpdate(JSON.parse(body))
     }
 
     updateOrder(id, order) {
@@ -835,10 +888,10 @@ module.exports = class Bitmex {
             | _ -> invalid_arg' execType ordStatus
             */
 
-            let status = 'open'
+            let status = undefined
             let orderStatus = order['ordStatus'].toLowerCase()
 
-            if (orderStatus === 'new' || orderStatus === 'partiallyfilled' || orderStatus === 'pendingnew') {
+            if (['new', 'partiallyfilled', 'pendingnew', 'doneforday', 'stopped'].includes(orderStatus)) {
                 status = 'open'
             } else if (orderStatus === 'filled') {
                 status = 'done'

@@ -480,6 +480,86 @@ describe('#bitmex exchange implementation', function() {
         assert.equal((await bitmex.findOrderById('fb7972c4-b4fa-080f-c0b1-1919db50bc63')).id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
     })
 
+    it('test full order update via api', async () => {
+        let bitmex = new Bitmex(undefined, {'debug': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
+
+        bitmex.requestClient = {
+            'executeRequestRetry': (options) => {
+                return new Promise((resolve) => {
+                    myOptions = options
+
+                    resolve({
+                        'error': undefined,
+                        'response': {'statusCode': 200},
+                        'body': JSON.stringify(createResponse('ws-orders.json')),
+                    })
+                })
+            }
+        }
+
+        await bitmex.syncOrdersViaRestApi('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
+
+        let orders = await bitmex.getOrders()
+
+        assert.equal(myOptions.method, 'GET')
+        assert.equal(myOptions.url, 'https://www.bitmex.com/api/v1/order?filter=%7B%22open%22%3Atrue%7D')
+
+        assert.equal(Object.keys(myOptions.headers).includes('api-expires'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-key'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-signature'), true)
+
+        let order = orders.find(order => order.id === 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
+
+        assert.equal(order.id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
+        assert.equal(order.retry, false)
+
+        assert.equal((await bitmex.getOrders()).length, 3)
+        assert.equal((await bitmex.findOrderById('fb7972c4-b4fa-080f-c0b1-1919db50bc63')).id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
+    })
+
+    it('test full position update via api', async () => {
+        let bitmex = new Bitmex(undefined, {'debug': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
+
+        bitmex.requestClient = {
+            'executeRequestRetry': (options) => {
+                return new Promise((resolve) => {
+                    myOptions = options
+
+                    resolve({
+                        'error': undefined,
+                        'response': {'statusCode': 200},
+                        'body': JSON.stringify(createResponse('ws-positions.json')),
+                    })
+                })
+            }
+        }
+
+        await bitmex.syncPositionViaRestApi('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
+
+        let positions = await bitmex.getPositions()
+
+        assert.equal(myOptions.method, 'GET')
+        assert.equal(myOptions.url, 'https://www.bitmex.com/api/v1/position')
+
+        assert.equal(Object.keys(myOptions.headers).includes('api-expires'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-key'), true)
+        assert.equal(Object.keys(myOptions.headers).includes('api-signature'), true)
+
+        assert.equal(positions.filter(p => p.symbol === 'LTCZ18').length, 1)
+    })
+
     let createResponse = (filename) => {
         return JSON.parse(fs.readFileSync(__dirname + '/bitmex/' + filename, 'utf8'));
     }
