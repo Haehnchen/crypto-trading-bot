@@ -308,8 +308,8 @@ module.exports = class Bitmex {
     }
 
     getOrdersForSymbol(symbol) {
-        return new Promise(resolve => {
-            resolve(this.getOrders().filter(order => order.symbol === symbol))
+        return new Promise(async resolve => {
+            resolve((await this.getOrders()).filter(order => order.symbol === symbol))
         })
     }
 

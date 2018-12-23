@@ -521,6 +521,10 @@ describe('#bitmex exchange implementation', function() {
 
         assert.equal((await bitmex.getOrders()).length, 3)
         assert.equal((await bitmex.findOrderById('fb7972c4-b4fa-080f-c0b1-1919db50bc63')).id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')
+        assert.equal(
+            (await bitmex.getOrdersForSymbol('LTCZ18')).find(order => order.id === 'fb7972c4-b4fa-080f-c0b1-1919db50bc63').id,
+            'fb7972c4-b4fa-080f-c0b1-1919db50bc63'
+        )
     })
 
     it('test full position update via api', async () => {
