@@ -99,7 +99,7 @@ module.exports = class Trade {
         setInterval(async () => {
             await me.logsRepository.cleanOldLogEntries()
             me.logger.debug('Logs: Cleanup old entries')
-        }, 86455)
+        }, 86455000)
 
         let tickers = this.tickers
 
