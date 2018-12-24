@@ -39,7 +39,7 @@
                             <span class="text-danger"><strong>{{ log.level }}</strong></span>
                         {% endif %}
                     </td>
-                    <td>{{ log.message }}</td>
+                    <td>{{ log.message|e }}</td>
                     <td>{{ log.created_at|date('Y-m-d H:i:s') }}</td>
                 </tr>
             {% endfor %}
