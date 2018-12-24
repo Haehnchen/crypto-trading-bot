@@ -13,7 +13,7 @@ module.exports = class OrderExecutor {
         this.runningOrders = {}
 
         this.tickerPriceInterval = 200
-        this.tickerPriceRetries = 20
+        this.tickerPriceRetries = 40
 
         this.orders = []
     }
@@ -234,7 +234,7 @@ module.exports = class OrderExecutor {
         return new Promise(async resolve => {
             let price = await this.getCurrentPrice(exchangeName, order.symbol, order.side)
             if(!price) {
-                this.logger.error('Stop creating order; can not find up to date ticker price' + JSON.stringify([exchangeName, order.symbol, order.side]))
+                this.logger.error('Stop creating order; can not find up to date ticker price: ' + JSON.stringify([exchangeName, order.symbol, order.side]))
                 resolve()
                 return
             }
