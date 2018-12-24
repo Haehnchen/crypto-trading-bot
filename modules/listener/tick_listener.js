@@ -5,7 +5,7 @@ const StrategyContext = require('../../dict/strategy_context')
 let _ = require('lodash')
 
 module.exports = class TickListener {
-    constructor(tickers, instances, notifier, signalLogger, strategyManager, exchangeManager, pairStateManager) {
+    constructor(tickers, instances, notifier, signalLogger, strategyManager, exchangeManager, pairStateManager, logger) {
         this.tickers = tickers
         this.instances = instances
         this.notifier = notifier
@@ -13,6 +13,7 @@ module.exports = class TickListener {
         this.strategyManager = strategyManager
         this.exchangeManager = exchangeManager
         this.pairStateManager = pairStateManager
+        this.logger = logger
 
         this.notified = {}
     }
@@ -85,7 +86,7 @@ module.exports = class TickListener {
         }
 
         // log signal
-        console.log(new Date().toISOString(), signal.signal, strategyKey, symbol.exchange, symbol.symbol, ticker.ask)
+        this.logger.info([new Date().toISOString(), signal.signal, strategyKey, symbol.exchange, symbol.symbol, ticker.ask].join(' '))
         this.notifier.send('[' + signal.signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
         this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyKey, 'raw': signal}, signal.signal, strategyKey)
         this.notified[noteKey] = new Date()

@@ -174,6 +174,7 @@ module.exports = {
             this.getStrategyManager(),
             this.getExchangeManager(),
             this.getPairStateManager(),
+            this.getLogger(),
         )
     },
 
