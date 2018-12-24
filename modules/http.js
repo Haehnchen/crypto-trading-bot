@@ -3,7 +3,8 @@
 let express = require('express')
 let twig = require("twig")
 let auth = require('basic-auth');
-var cookieParser = require('cookie-parser')
+let cookieParser = require('cookie-parser')
+let crypto = require('crypto');
 
 module.exports = class Http {
     constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp, logsHttp) {
@@ -25,6 +26,11 @@ module.exports = class Http {
             }
 
             return Intl.NumberFormat('en-US', {useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2}).format(value)
+        });
+
+        var assetVersion = crypto.createHash('md5').update(String(Math.floor(Date.now() / 1000))).digest('hex').substring(0, 8);
+        twig.extendFunction('asset_version', function() {
+            return assetVersion
         });
 
         const app = express();

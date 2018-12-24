@@ -339,7 +339,10 @@ module.exports = {
                             optInSignalMAType: getMaTypeFromString(types['signal_ma_type']),
                         }, function (err, result) {
                             if (err) {
-                                resolve({})
+                                let values = {}
+                                values[indicatorKey] = []
+
+                                resolve(values)
                                 return
                             }
                             // Result format: (note: outReal  can have multiple items in the array)

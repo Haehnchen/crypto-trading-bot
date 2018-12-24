@@ -28,7 +28,7 @@ module.exports = class AwesomeOscillatorCrossZero {
 
     macd(price, sma200Full, aoFull, lastSignal) {
         return new Promise(async (resolve) => {
-            if (aoFull.length <= 0) {
+            if (aoFull.length <= 2 || sma200Full.length < 2) {
                 resolve()
                 return
             }

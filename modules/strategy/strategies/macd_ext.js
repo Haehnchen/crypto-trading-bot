@@ -28,7 +28,7 @@ module.exports = class MacdExt {
 
     macd(price, sma200Full, macdFull, lastSignal) {
         return new Promise(async (resolve) => {
-            if (macdFull.length <= 0) {
+            if (macdFull.length < 2 || sma200Full.length < 2) {
                 resolve()
                 return
             }

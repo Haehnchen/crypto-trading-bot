@@ -1,7 +1,17 @@
 {% extends './layout.html.twig' %}
 
+{% block javascript %}
+<script src="http://d3js.org/d3.v4.min.js"></script>
+<script src="http://techanjs.org/techan.min.js"></script>
+<script src="/backtest.js?v={{ asset_version() }}"></script>
+{% endblock %}
+
+{% block stylesheet %}
+    <link rel="stylesheet" href="/backtest.css?v={{ asset_version() }}">
+{% endblock %}
+
 {% block content %}
-    <div class="container-fluid">
+    {% macro render_rows(rows) %}
         <table class="table">
             <thead>
             <tr>
@@ -28,10 +38,24 @@
                             {% endif %}
                         {% endif %}
                     </td>
-                    <td>{{ row.result|json_encode }}</td>
+                    <td class="text-muted">{{ row.result|json_encode }}</td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
+    {% endmacro %}
+
+    {% import _self as macros %}
+
+    <div class="container">
+        <div class="chart" data-candles="{{ candles|e('html') }}"></div>
+    </div>
+
+    <div class="container">
+        <h2>Signals</h2>
+        {{ macros.render_rows(signals) }}
+
+        <h2>Times</h2>
+        {{ macros.render_rows(rows) }}
     </div>
 {% endblock %}

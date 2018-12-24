@@ -64,6 +64,11 @@ module.exports = class Backtest{
                 let backtestResult = await strategyManager.executeStrategyBacktest(strategy, exchange, pair, options, lastSignal)
                 item['result'] = backtestResult
 
+                // so change in signal
+                if (backtestResult.signal === lastSignal) {
+                    delete backtestResult.signal
+                }
+
                 if(['long', 'short'].includes(backtestResult.signal)) {
                     lastSignal = backtestResult.signal
                 } else if(backtestResult.signal === 'close') {
@@ -75,7 +80,22 @@ module.exports = class Backtest{
                 current += tickInterval;
             }
 
-            resolve({'rows': rows.slice().reverse()})
+            let candles = (await this.candlestickRepository.getLookbacksForPair(exchange, pair, options['period'])).map(candle => {
+                return {
+                    date: new Date(candle.time * 1000),
+                    open: candle.open,
+                    high: candle.high,
+                    low: candle.low,
+                    close: candle.close,
+                    volume: candle.volume,
+                }
+            })
+
+            resolve({
+                'rows': rows.slice().reverse(),
+                'signals': rows.slice().filter(r => 'signal' in r.result).reverse(),
+                'candles': JSON.stringify(candles),
+            })
         })
     }
 };
