@@ -3,6 +3,7 @@
 let express = require('express')
 let twig = require("twig")
 let auth = require('basic-auth');
+var cookieParser = require('cookie-parser')
 
 module.exports = class Http {
     constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp, logsHttp) {
@@ -34,6 +35,7 @@ module.exports = class Http {
         });
 
         app.use(express.urlencoded())
+        app.use(cookieParser())
         app.use(express.static(__dirname + '/../web/static'))
 
         let username = this.systemUtil.getConfig('webserver.username')
@@ -99,7 +101,7 @@ module.exports = class Http {
         })
 
         app.get('/logs', async (req, res) => {
-            res.render('../templates/logs.html.twig', await this.logsHttp.getLogsPageVariables())
+            res.render('../templates/logs.html.twig', await this.logsHttp.getLogsPageVariables(req, res))
         })
 
         app.post('/pairs/:pair', async (req, res) => {

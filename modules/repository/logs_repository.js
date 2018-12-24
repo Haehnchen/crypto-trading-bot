@@ -7,11 +7,19 @@ module.exports = class LogsRepository {
         this.db = db
     }
 
-    getLatestLogs(limit = 200) {
+    getLatestLogs(excludes = ['debug'], limit = 200) {
         return new Promise((resolve) => {
             let sql = 'SELECT * from logs order by created_at DESC LIMIT ' + limit
 
-            this.db.all(sql, [], (err, rows) => {
+            let parameters = {}
+
+            if (excludes.length > 0) {
+                sql = 'SELECT * from logs WHERE level NOT IN (' + excludes.map((exclude, index) => '$level_' + index).join(', ') + ') order by created_at DESC LIMIT ' + limit
+
+                excludes.forEach((exclude, index) => { parameters['$level_' + index] = exclude })
+            }
+
+            this.db.all(sql, parameters, (err, rows) => {
                 if (err) {
                     console.log(err)
                     resolve()
@@ -20,10 +28,30 @@ module.exports = class LogsRepository {
 
                 if(rows.length === 0) {
                     resolve([])
+                    return
                 }
 
                 resolve(rows)
             });
+        })
+    }
+
+    getLevels() {
+        return new Promise((resolve) => {
+            this.db.all('SELECT level from logs GROUP BY level', [], (err, rows) => {
+                if (err) {
+                    console.log(err)
+                    resolve()
+                    return
+                }
+
+                if(rows.length === 0) {
+                    resolve([])
+                    return
+                }
+
+                resolve(rows.map(r => r.level))
+            })
         })
     }
 

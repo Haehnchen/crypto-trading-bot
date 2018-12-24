@@ -8,6 +8,7 @@
     "bitmex-realtime-api": "^0.4.0",
     "colors": "^1.3.2",
     "commander": "^2.19.0",
+    "cookie-parser": "^1.4.3",
     "express": "^4.16.4",
     "gdax": "^0.8.0",
     "http": "0.0.0",

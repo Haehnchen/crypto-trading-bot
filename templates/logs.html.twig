@@ -2,6 +2,23 @@
 
 {% block content %}
     <div class="container">
+
+        <strong>Filters</strong>
+        <form method="get">
+
+            <ul class="list-inline">
+                <li class="list-inline-item">Exclude:</li>
+                {% for key,level in levels %}
+                    <li class="list-inline-item">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="exclude_levels[]" value="{{ level }}" id="level_{{ index }}" onChange="this.form.submit()" {% if level in form.excludeLevels %}checked{% endif %}>
+                            <label class="form-check-label" for="level_{{ index }}">{{ level }}</label>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </form>
+
         <table class="table">
             <thead>
             <tr>
@@ -19,7 +36,7 @@
                         {% elseif log.level == 'info' %}
                             <span class="text-info">{{ log.level }}</span>
                         {% elseif log.level == 'error' %}
-                            <span class="text-danger">{{ log.level }}</span>
+                            <span class="text-danger"><strong>{{ log.level }}</strong></span>
                         {% endif %}
                     </td>
                     <td>{{ log.message }}</td>
