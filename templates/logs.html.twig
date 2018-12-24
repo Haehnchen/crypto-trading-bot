@@ -40,7 +40,7 @@
                         {% endif %}
                     </td>
                     <td>{{ log.message|escape('html') }}</td>
-                    <td>{{ log.created_at|date('Y-m-d H:i:s') }}</td>
+                    <td style="white-space: nowrap">{{ log.created_at|date('Y-m-d H:i:s') }}</td>
                 </tr>
             {% endfor %}
             </tbody>
