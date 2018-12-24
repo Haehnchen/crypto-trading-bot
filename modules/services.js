@@ -90,8 +90,21 @@ let logsRepository = undefined
 
 module.exports = {
     boot: function() {
-        instances = require('../instance')
-        config = JSON.parse(fs.readFileSync('./conf.json', 'utf8'))
+        try {
+            instances = require('../instance')
+        } catch (e) {
+            throw 'Invalid instance.js file. Please check' + String(e)
+            process.exit()
+            return
+        }
+
+        try {
+            config = JSON.parse(fs.readFileSync('./conf.json', 'utf8'))
+        } catch (e) {
+            throw 'Invalid conf.json file. Please check: ' + String(e)
+            process.exit()
+            return
+        }
 
         this.getDatabase()
         this.getExchangeManager().init()
