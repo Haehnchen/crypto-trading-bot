@@ -204,8 +204,7 @@ $(function() {
             .attr("class", "tradearrow")
             .attr("clip-path", "url(#ohlcClip)");
 
-        var accessor = candlestick.accessor(),
-            indicatorPreRoll = 33;  // Don't show where indicators don't have data
+        var accessor = candlestick.accessor();
 
 
         var trades = []
@@ -232,8 +231,8 @@ $(function() {
         }).sort(function(a, b) { return d3.ascending(accessor.d(a), accessor.d(b)); });
 
         x.domain(techan.scale.plot.time(data).domain());
-        y.domain(techan.scale.plot.ohlc(data.slice(indicatorPreRoll)).domain());
-        yPercent.domain(techan.scale.plot.percent(y, accessor(data[indicatorPreRoll])).domain());
+        y.domain(techan.scale.plot.ohlc(data.slice()).domain());
+        yPercent.domain(techan.scale.plot.percent(y, accessor(data[0])).domain());
         yVolume.domain(techan.scale.plot.volume(data).domain());
 
         svg.select("g.candlestick").datum(data).call(candlestick);
@@ -245,7 +244,7 @@ $(function() {
         svg.select("g.tradearrow").datum(trades).call(tradearrow);
 
         // Stash for zooming
-        zoomableInit = x.zoomable().domain([indicatorPreRoll, data.length]).copy(); // Zoom in a little to hide indicator preroll
+        zoomableInit = x.zoomable().domain([0, data.length]).copy(); // Zoom in a little to hide indicator preroll
         yInit = y.copy();
         yPercentInit = yPercent.copy();
 
