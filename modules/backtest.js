@@ -92,7 +92,7 @@ module.exports = class Backtest{
                 dates[signal.time].push(signal)
             })
 
-            let candles = (await this.candlestickRepository.getLookbacksForPair(exchange, pair, options['period'])).map(candle => {
+            let candles = (await this.candlestickRepository.getLookbacksSince(exchange, pair, options['period'], start)).map(candle => {
                 let signals = undefined
 
                 for (let time in JSON.parse(JSON.stringify(dates))) {
