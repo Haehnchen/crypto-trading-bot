@@ -18,6 +18,7 @@ path.candle.down {
 
 path.tradearrow {
     stroke: none;
+    opacity: 1;
 }
 
 path.volume {
@@ -51,4 +52,29 @@ path.tradearrow.close {
 
 .tradearrow path.highlight.close {
     fill: black;
+}
+
+.crosshair {
+    cursor: crosshair;
+}
+
+.crosshair path.wire {
+    stroke: #DDDDDD;
+    stroke-dasharray: 1, 1;
+}
+
+.crosshair .axisannotation path {
+    fill: #DDDDDD;
+}
+
+.close.annotation {
+    font-size: 0.8em;
+    color: black;
+    text-shadow: none;
+    opacity: 1;
+    font-weight: normal;
+}
+
+.close.annotation.up path {
+    fill: #00AA00;
 }
