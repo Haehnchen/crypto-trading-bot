@@ -1,16 +1,16 @@
 {
     "exchanges": {
         "bitfinex": {
-            "key": "xxx",
-            "secret": "xxx"
+            "key": null,
+            "secret": null
         },
         "bitmex": {
-            "key": "xxx",
-            "secret": "xxx"
+            "key": null,
+            "secret": null
         },
         "binance": {
-            "key": "xxx",
-            "secret": "xxx"
+            "key": null,
+            "secret": null
         }
     },
     "notify": {

@@ -52,15 +52,20 @@ module.exports = class Bitmex {
         this.orders = {}
         this.leverageUpdated = {}
 
-        let client = new BitMEXClient({
-            'apiKeyID': this.apiKey = config.key,
-            'apiKeySecret': this.apiSecret = config.secret,
+        let opts = {
             'testnet': this.getBaseUrl().includes('testnet'),
-        })
+        };
+
+        if (config['key'] && config['secret'] && config['key'].length > 0 && config['secret'].length > 0) {
+            opts['apiKeyID'] = this.apiKey = config['key']
+            opts['apiKeySecret'] = this.apiSecret = config['secret']
+        }
+
+        let client = new BitMEXClient(opts)
 
         client.on('error', (error) => {
             console.error(error)
-            logger.error('Bitmex: error' + JSON.stringify(error))
+            logger.error('Bitmex: error ' + String(error))
         })
 
         client.on('open', () => {
@@ -84,16 +89,6 @@ module.exports = class Bitmex {
             }, 10000);
         })
 
-        // in addition to websocket also try to catch positions via API; run in directly and in interval
-        let apiOrderInterval = _.get(config, 'extra.bitmex_rest_order_sync', 45000);
-        if (apiOrderInterval > 5000) {
-            setInterval(function f() {
-                me.syncPositionViaRestApi()
-                me.syncOrdersViaRestApi()
-                return f
-            }(), apiOrderInterval);
-        }
-
         symbols.forEach(symbol => {
             symbol['periods'].forEach(time => {
 
@@ -108,14 +103,14 @@ module.exports = class Bitmex {
 
                 request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + wantPeriod + '&partial=false&symbol=' + symbol['symbol'] + '&count=500&reverse=true', { json: true }, (err, res, body) => {
                     if (err) {
-                        console.log('Bitmex candle backfill error: ' + JSON.stringify(err))
-                        logger.error('Bitmex candle backfill error: ' + err)
+                        console.log('Bitmex: Candle backfill error: ' + String(err))
+                        logger.error('Bitmex: Candle backfill error: ' + String(err))
                         return
                     }
 
                     if(!Array.isArray(body)) {
-                        console.log('Bitmex candle backfill error: ' + JSON.stringify(body));
-                        logger.error('Bitmex candle backfill error: ' + JSON.stringify(body))
+                        console.log('Bitmex: Candle backfill error: ' + JSON.stringify(body));
+                        logger.error('Bitmex Candle backfill error: ' + JSON.stringify(body))
                         return
                     }
 
@@ -211,16 +206,30 @@ module.exports = class Bitmex {
 
         })
 
-        client.addStream('*', 'order', (orders) => {
-            for (let order of Bitmex.createOrders(orders)) {
-                this.orders[order.id] = order
+        if (this.apiKey && this.apiSecret) {
+            // in addition to websocket also try to catch positions via API; run in directly and in interval
+            let apiOrderInterval = _.get(config, 'extra.bitmex_rest_order_sync', 45000);
+            if (apiOrderInterval > 5000) {
+                setInterval(function f() {
+                    me.syncPositionViaRestApi()
+                    me.syncOrdersViaRestApi()
+                    return f
+                }(), apiOrderInterval);
             }
-        })
 
-        // open position listener; provides only per position updates; no overall update
-        client.addStream('*', 'position', (positions) => {
-            me.deltaPositionsUpdate(positions)
-        })
+            client.addStream('*', 'order', (orders) => {
+                for (let order of Bitmex.createOrders(orders)) {
+                    this.orders[order.id] = order
+                }
+            })
+
+            // open position listener; provides only per position updates; no overall update
+            client.addStream('*', 'position', (positions) => {
+                me.deltaPositionsUpdate(positions)
+            })
+        } else {
+            this.logger.info('Bitmex: Starting as anonymous; no trading possible')
+        }
     }
 
     /**

@@ -21,13 +21,22 @@ module.exports = class Bitfinex {
     start(config, symbols) {
         let eventEmitter = this.eventEmitter
 
-        const ws = this.client = new BFX({
+        let opts = {
             apiKey: config['key'],
             apiSecret: config['secret'],
             version: 2,
             transform: true,
             autoOpen: true,
-        }).ws()
+        };
+
+        if (config['key'] && config['secret'] && config['key'].length > 0 && config['secret'].length > 0) {
+            opts['apiKey'] = config['key']
+            opts['apiSecret'] = config['secret']
+        } else {
+            this.logger.info('Bitfinex: Starting as anonymous; no trading possible')
+        }
+
+        const ws = this.client = new BFX(opts).ws()
 
         //var ws = this.client = bfx.ws
         let myLogger = this.logger
@@ -65,7 +74,9 @@ module.exports = class Bitfinex {
             })
 
             // authenticate
-            ws.auth()
+            if (opts['apiKey'] && opts['apiSecret']) {
+                ws.auth()
+            }
         })
 
 
