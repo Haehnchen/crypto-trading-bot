@@ -15,3 +15,40 @@ path.candle.down {
     fill: #FF0000;
     stroke: #FF0000;
 }
+
+path.tradearrow {
+    stroke: none;
+}
+
+path.volume {
+    fill: #cccccc;
+}
+
+path.tradearrow.long {
+    fill: #00AA00;
+}
+
+path.tradearrow.short {
+    fill: #FF0000;
+}
+
+path.tradearrow.close {
+    fill: black;
+}
+
+.tradearrow path.highlight {
+    fill: none;
+    stroke-width: 2;
+}
+
+.tradearrow path.highlight.long {
+    stroke: #01f015;
+}
+
+.tradearrow path.highlight.short {
+    stroke: #ff0121;
+}
+
+.tradearrow path.highlight.close {
+    fill: black;
+}

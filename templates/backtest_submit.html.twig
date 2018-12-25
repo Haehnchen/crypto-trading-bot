@@ -25,7 +25,7 @@
             <tbody>
             {% for row in rows %}
                 <tr>
-                    <td>{{ row.time|date('Y-m-d H:i:s') }}</td>
+                    <td style="white-space: nowrap">{{ row.time|date('y-m-d H:i:s') }}</td>
                     <td>{{ row.result.price|default }}</td>
                     <td>
                         {% if row.result.signal is defined %}

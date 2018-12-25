@@ -80,7 +80,28 @@ module.exports = class Backtest{
                 current += tickInterval;
             }
 
+            let signals = rows.slice().filter(r => 'signal' in r.result)
+
+            let dates = {}
+
+            signals.forEach(signal => {
+                if(!dates[signal.time]) {
+                    dates[signal.time] = []
+                }
+
+                dates[signal.time].push(signal)
+            })
+
             let candles = (await this.candlestickRepository.getLookbacksForPair(exchange, pair, options['period'])).map(candle => {
+                let signals = undefined
+
+                for (let time in JSON.parse(JSON.stringify(dates))) {
+                    if (time >= candle.time) {
+                        signals = dates[time]
+                        delete dates[time]
+                    }
+                }
+
                 return {
                     date: new Date(candle.time * 1000),
                     open: candle.open,
@@ -88,12 +109,13 @@ module.exports = class Backtest{
                     low: candle.low,
                     close: candle.close,
                     volume: candle.volume,
+                    signals: signals,
                 }
             })
 
             resolve({
                 'rows': rows.slice().reverse(),
-                'signals': rows.slice().filter(r => 'signal' in r.result).reverse(),
+                'signals': signals.slice().reverse(),
                 'candles': JSON.stringify(candles),
             })
         })
