@@ -1,3 +1,5 @@
+PRAGMA auto_vacuum = INCREMENTAL;
+
 CREATE TABLE IF NOT EXISTS candlesticks (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   exchange   VARCHAR(255) NULL,

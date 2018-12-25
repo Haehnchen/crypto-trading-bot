@@ -23,6 +23,7 @@ module.exports = class Trade {
         pairStateExecution,
         systemUtil,
         logsRepository,
+        tickerLogRepository,
     ) {
         this.eventEmitter = eventEmitter
         this.instances = instances
@@ -41,6 +42,7 @@ module.exports = class Trade {
         this.pairStateExecution = pairStateExecution
         this.systemUtil = systemUtil
         this.logsRepository = logsRepository
+        this.tickerLogRepository = tickerLogRepository
     }
 
     start() {
@@ -98,6 +100,8 @@ module.exports = class Trade {
         // cronjob like tasks
         setInterval(async () => {
             await me.logsRepository.cleanOldLogEntries()
+            await me.tickerLogRepository.cleanOldLogEntries()
+
             me.logger.debug('Logs: Cleanup old entries')
         }, 86455000)
 
@@ -106,7 +110,9 @@ module.exports = class Trade {
         eventEmitter.on('ticker', async function(tickerEvent) {
             tickers.set(tickerEvent.ticker)
             me.tickerDatabaseListener.onTicker(tickerEvent)
-            me.tickerLogListener.onTicker(tickerEvent)
+
+            // dont save for now; too many data
+            // me.tickerLogListener.onTicker(tickerEvent)
         });
 
         eventEmitter.on('orderbook', function(orderbookEvent) {

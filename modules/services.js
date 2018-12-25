@@ -44,6 +44,7 @@ let TechnicalAnalysisValidator = require('../utils/technical_analysis_validator'
 let WinstonSqliteTransport = require('../utils/winston_sqlite_transport')
 let LogsHttp = require('./system/logs_http')
 let LogsRepository = require('../modules/repository/logs_repository')
+let TickerLogRepository = require('../modules/repository/ticker_log_repository')
 
 var _ = require('lodash');
 
@@ -87,6 +88,7 @@ let systemUtil = undefined
 let technicalAnalysisValidator = undefined
 let logsHttp = undefined
 let logsRepository = undefined
+let tickerLogRepository = undefined
 
 module.exports = {
     boot: function() {
@@ -469,6 +471,14 @@ module.exports = {
         return logsHttp = new LogsHttp(this.getLogsRepository())
     },
 
+    getTickerLogRepository: function() {
+        if (tickerLogRepository) {
+            return tickerLogRepository;
+        }
+
+        return tickerLogRepository = new TickerLogRepository(this.getDatabase())
+    },
+
     createTradeInstance: function() {
         return new Trade(
             this.getEventEmitter(),
@@ -487,7 +497,8 @@ module.exports = {
             this.getOrderExecutor(),
             this.getPairStateExecution(),
             this.getSystemUtil(),
-            this.getLogsRepository()
+            this.getLogsRepository(),
+            this.getTickerLogRepository(),
         )
     },
 
