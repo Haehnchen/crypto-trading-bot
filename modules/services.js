@@ -31,6 +31,7 @@ let ExchangeManager = require('./exchange/exchange_manager')
 let Trade = require('../modules/trade')
 let Http = require('../modules/http')
 let Backtest = require('../modules/backtest')
+let Backfill = require('../modules/backfill')
 
 let StopLossCalculator = require('../modules/order/stop_loss_calculator')
 let RiskRewardRatioCalculator = require('../modules/order/risk_reward_ratio_calculator')
@@ -121,7 +122,6 @@ module.exports = {
         }
 
         this.getDatabase()
-        this.getExchangeManager().init()
     },
 
     getDatabase: () => {
@@ -377,6 +377,12 @@ module.exports = {
         )
     },
 
+    createBackfillInstance: function() {
+        return new Backfill(
+            this.getExchangeManager(),
+        )
+    },
+
     getExchangeManager: function() {
         if (exchangeManager) {
             return exchangeManager;
@@ -538,6 +544,8 @@ module.exports = {
     },
 
     createTradeInstance: function() {
+        this.getExchangeManager().init()
+
         return new Trade(
             this.getEventEmitter(),
             this.getInstances(),
@@ -557,6 +565,13 @@ module.exports = {
             this.getSystemUtil(),
             this.getLogsRepository(),
             this.getTickerLogRepository(),
+        )
+    },
+
+    getBackfill: function() {
+        return new Backfill(
+            this.getExchangeManager(),
+            this.getCandleStickListener(),
         )
     },
 

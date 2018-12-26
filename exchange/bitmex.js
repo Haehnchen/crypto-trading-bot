@@ -42,6 +42,44 @@ module.exports = class Bitmex {
         this.symbols = []
     }
 
+    backfill(symbol, period, start) {
+        return new Promise((resolve, reject) => {
+            let query = querystring.stringify({
+                'binSize': period,
+                'partial': false,
+                'symbol': symbol,
+                'count': 500,
+                'reverse': false,
+                'startTime': moment(start).format(),
+            });
+
+            request(this.getBaseUrl() + '/api/v1/trade/bucketed?' + query, { json: true }, (err, res, body) => {
+                if (err) {
+                    console.log('Bitmex: Candle backfill error: ' + String(err))
+                    reject()
+                    return
+                }
+
+                if(!Array.isArray(body)) {
+                    console.log('Bitmex: Candle backfill error: ' + JSON.stringify(body))
+                    reject()
+                    return
+                }
+
+                resolve(body.map(candle => {
+                    return new Candlestick(
+                        moment(candle['timestamp']).format('X'),
+                        candle['open'],
+                        candle['high'],
+                        candle['low'],
+                        candle['close'],
+                        candle['volume'],
+                    )
+                }))
+            })
+        })
+    }
+
     start(config, symbols) {
         let eventEmitter = this.eventEmitter
         let logger = this.logger
