@@ -97,7 +97,7 @@ module.exports = class Backtest{
                 dates[signal.time].push(signal)
             })
 
-            let candles = periodCache[chartCandlePeriod].map(candle => {
+            let candles = periodCache[chartCandlePeriod].filter(c => c.time > start).map(candle => {
                 let signals = undefined
 
                 for (let time in JSON.parse(JSON.stringify(dates))) {
@@ -122,6 +122,11 @@ module.exports = class Backtest{
                 'rows': rows.slice().reverse(),
                 'signals': signals.slice().reverse(),
                 'candles': JSON.stringify(candles),
+                'configuration': {
+                    'exchange': exchange,
+                    'symbol': pair,
+                    'period': chartCandlePeriod,
+                }
             })
         })
     }

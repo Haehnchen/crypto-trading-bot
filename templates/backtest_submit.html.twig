@@ -48,7 +48,7 @@
     {% import _self as macros %}
 
     <div class="container">
-        <div class="chart" data-candles="{{ candles|e('html') }}"></div>
+        <div class="chart" data-candles="{{ candles|e('html') }}" data-title="{{ configuration.exchange }} - {{ configuration.symbol }} - {{ configuration.period }} - espend.de"></div>
     </div>
 
     <div class="container">
