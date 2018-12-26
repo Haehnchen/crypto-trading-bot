@@ -53,7 +53,7 @@ module.exports = {
             const group = moment(start).add(mod, "minutes").format('YYYY-MM-DDTHH:mm:00.000Z');
 
             merge.push({
-                'time': moment(group).format('X'),
+                'time': parseInt(moment(group).format('X')),
                 'open': candles[candles.length - 1]['open'],
                 'high': Math.max(...x['high']),
                 'low': Math.min(...x['low']),
@@ -64,7 +64,10 @@ module.exports = {
             })
         }
 
-        return merge;
+        // sort items and remove oldest item which can be incomplete
+        return merge
+            .sort((a, b) => b.time - a.time)
+            .splice(0, merge.length - 1);
     },
 
     /**
