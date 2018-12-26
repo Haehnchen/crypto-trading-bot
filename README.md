@@ -110,6 +110,12 @@ webserver.ip: 127.0.0.1
 
 Currently there is only the UI for backtesting
 
+### Fill data
+
+```
+node index.js backfill -e bitmex -p 1m -s XRPZ18
+```
+
 ## Strategies
 
 For custom strategies use [var/strategies](var/strategies) folder.

@@ -5,13 +5,13 @@ let CandlestickEvent = require('../event/candlestick_event')
 var _ = require('lodash')
 
 module.exports = class Backfill {
-    constructor(exchangeManager, candleStickListener) {
-        this.exchangeManager = exchangeManager
+    constructor(exchangesIterator, candleStickListener) {
+        this.exchangesIterator = exchangesIterator
         this.candleStickListener = candleStickListener
     }
 
     async backfill(exchangeName, symbol, period, date) {
-        let exchange = this.exchangeManager.createExchanges().find(e => e.getName() === exchangeName)
+        let exchange = this.exchangesIterator.find(e => e.getName() === exchangeName)
         if (!exchange) {
             throw 'Exchange not found: ' + exchangeName
         }

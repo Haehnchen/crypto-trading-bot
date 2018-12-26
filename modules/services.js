@@ -570,7 +570,7 @@ module.exports = {
 
     getBackfill: function() {
         return new Backfill(
-            this.getExchangeManager(),
+            this.getExchanges(),
             this.getCandleStickListener(),
         )
     },
