@@ -1,6 +1,6 @@
 let assert = require('assert');
 let ExchangeManager = require('../../../modules/exchange/exchange_manager');
-let fs = require('fs');
+let Noop = require('../../../exchange/noop');
 
 describe('#exchange manager', () => {
     it('test that exchanges are initialized', () => {
@@ -26,7 +26,7 @@ describe('#exchange manager', () => {
             },
         }
 
-        let exchangeManager = new ExchangeManager({}, {}, {'symbols': symbols}, {'exchanges': config})
+        let exchangeManager = new ExchangeManager([new Noop()], {}, {'symbols': symbols}, {'exchanges': config})
 
         exchangeManager.init()
 

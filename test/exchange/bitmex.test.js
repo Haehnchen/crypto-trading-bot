@@ -201,15 +201,7 @@ describe('#bitmex exchange implementation', function() {
     })
 
     it('test update of order', async () => {
-        let bitmex = new Bitmex(undefined, {'info': () => {}})
-
-        bitmex.apiKey = 'my_key'
-        bitmex.apiSecret = 'my_secret'
-        bitmex.retryOverloadMs = 10
-
-        let myOptions = undefined
-
-        bitmex.requestClient = {
+        let requestClient = {
             'executeRequestRetry': (options) => {
                 return new Promise((resolve) => {
                     myOptions = options
@@ -222,6 +214,14 @@ describe('#bitmex exchange implementation', function() {
                 })
             }
         }
+
+        let bitmex = new Bitmex(undefined, requestClient, undefined, {'info': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
 
         let order = await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
 
@@ -241,13 +241,7 @@ describe('#bitmex exchange implementation', function() {
     })
 
     it('test update of order with retry limit reached', async () => {
-        let bitmex = new Bitmex(undefined, {'info': () => {}, 'error': () => {}})
-
-        bitmex.apiKey = 'my_key'
-        bitmex.apiSecret = 'my_secret'
-        bitmex.retryOverloadMs = 10
-
-        bitmex.requestClient = {
+        let requestClient = {
             'executeRequestRetry': () => {
                 return new Promise((resolve) => {
                     resolve({
@@ -261,6 +255,12 @@ describe('#bitmex exchange implementation', function() {
             }
         }
 
+        let bitmex = new Bitmex(undefined, requestClient, undefined, {'info': () => {}, 'error': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
         let err = 'foobar'
         try {
             await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
@@ -272,15 +272,7 @@ describe('#bitmex exchange implementation', function() {
     })
 
     it('test update of order with retry limit reached with status code 503', async () => {
-        let bitmex = new Bitmex(undefined, {'info': () => {}, 'error': () => {}})
-
-        bitmex.apiKey = 'my_key'
-        bitmex.apiSecret = 'my_secret'
-        bitmex.retryOverloadMs = 10
-
-        let responses = []
-
-        bitmex.requestClient = {
+        let requestClient = {
             'executeRequestRetry': () => {
                 return new Promise((resolve) => {
                     resolve({
@@ -291,6 +283,12 @@ describe('#bitmex exchange implementation', function() {
                 })
             }
         }
+
+        let bitmex = new Bitmex(undefined, requestClient, undefined, {'info': () => {}, 'error': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
 
         let err = 'foobar'
         try {
@@ -303,15 +301,7 @@ describe('#bitmex exchange implementation', function() {
     })
 
     it('test cancel of order', async () => {
-        let bitmex = new Bitmex(undefined, {'info': () => {}})
-
-        bitmex.apiKey = 'my_key'
-        bitmex.apiSecret = 'my_secret'
-        bitmex.retryOverloadMs = 10
-
-        let myOptions = undefined
-
-        bitmex.requestClient = {
+        let requestClient = {
             'executeRequestRetry': (options) => {
                 return new Promise((resolve) => {
                     myOptions = options
@@ -324,6 +314,14 @@ describe('#bitmex exchange implementation', function() {
                 })
             }
         }
+
+        let bitmex = new Bitmex(undefined, requestClient, undefined, {'info': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
 
         let order = await bitmex.cancelOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
 
@@ -343,15 +341,7 @@ describe('#bitmex exchange implementation', function() {
     })
 
     it('test cancel of all orders', async () => {
-        let bitmex = new Bitmex(undefined, {'info': () => {}})
-
-        bitmex.apiKey = 'my_key'
-        bitmex.apiSecret = 'my_secret'
-        bitmex.retryOverloadMs = 10
-
-        let myOptions = undefined
-
-        bitmex.requestClient = {
+        let requestClient = {
             'executeRequestRetry': (options) => {
                 return new Promise((resolve) => {
                     myOptions = options
@@ -364,6 +354,14 @@ describe('#bitmex exchange implementation', function() {
                 })
             }
         }
+
+        let bitmex = new Bitmex(undefined, requestClient, undefined, {'info': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
 
         let orders = await bitmex.cancelAll('BTCUSD')
 
@@ -385,15 +383,7 @@ describe('#bitmex exchange implementation', function() {
     })
 
     it('test order creation fails', async () => {
-        let bitmex = new Bitmex(undefined, {'info': () => {}, 'error': () => {}})
-
-        bitmex.apiKey = 'my_key'
-        bitmex.apiSecret = 'my_secret'
-        bitmex.retryOverloadMs = 10
-
-        let myOptions = undefined
-
-        bitmex.requestClient = {
+        let requestClient = {
             'executeRequestRetry': (options) => {
                 return new Promise((resolve) => {
                     myOptions = options
@@ -406,6 +396,14 @@ describe('#bitmex exchange implementation', function() {
                 })
             }
         }
+
+        let bitmex = new Bitmex(undefined, requestClient, undefined, {'info': () => {}, 'error': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
 
         let result = undefined
         try {
@@ -433,15 +431,7 @@ describe('#bitmex exchange implementation', function() {
     })
 
     it('test that order response is provide', async () => {
-        let bitmex = new Bitmex(undefined, {'info': () => {}, 'error': () => {}})
-
-        bitmex.apiKey = 'my_key'
-        bitmex.apiSecret = 'my_secret'
-        bitmex.retryOverloadMs = 10
-
-        let myOptions = undefined
-
-        bitmex.requestClient = {
+        let requestClient = {
             'executeRequestRetry': (options) => {
                 return new Promise((resolve) => {
                     myOptions = options
@@ -454,6 +444,14 @@ describe('#bitmex exchange implementation', function() {
                 })
             }
         }
+
+        let bitmex = new Bitmex(undefined, requestClient, undefined, {'info': () => {}, 'error': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
 
         let order = await bitmex.order(Order.createMarketOrder('BTCUSD', 12))
 
@@ -481,15 +479,7 @@ describe('#bitmex exchange implementation', function() {
     })
 
     it('test full order update via api', async () => {
-        let bitmex = new Bitmex(undefined, {'debug': () => {}})
-
-        bitmex.apiKey = 'my_key'
-        bitmex.apiSecret = 'my_secret'
-        bitmex.retryOverloadMs = 10
-
-        let myOptions = undefined
-
-        bitmex.requestClient = {
+        let requestClient = {
             'executeRequestRetry': (options) => {
                 return new Promise((resolve) => {
                     myOptions = options
@@ -502,6 +492,14 @@ describe('#bitmex exchange implementation', function() {
                 })
             }
         }
+
+        let bitmex = new Bitmex(undefined, requestClient, undefined, {'debug': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
 
         await bitmex.syncOrdersViaRestApi('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
 
@@ -528,15 +526,7 @@ describe('#bitmex exchange implementation', function() {
     })
 
     it('test full position update via api', async () => {
-        let bitmex = new Bitmex(undefined, {'debug': () => {}})
-
-        bitmex.apiKey = 'my_key'
-        bitmex.apiSecret = 'my_secret'
-        bitmex.retryOverloadMs = 10
-
-        let myOptions = undefined
-
-        bitmex.requestClient = {
+        let requestClient = {
             'executeRequestRetry': (options) => {
                 return new Promise((resolve) => {
                     myOptions = options
@@ -549,6 +539,14 @@ describe('#bitmex exchange implementation', function() {
                 })
             }
         }
+
+        let bitmex = new Bitmex(undefined, requestClient, undefined, {'debug': () => {}})
+
+        bitmex.apiKey = 'my_key'
+        bitmex.apiSecret = 'my_secret'
+        bitmex.retryOverloadMs = 10
+
+        let myOptions = undefined
 
         await bitmex.syncPositionViaRestApi('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'))
 

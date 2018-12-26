@@ -45,6 +45,15 @@ let WinstonSqliteTransport = require('../utils/winston_sqlite_transport')
 let LogsHttp = require('./system/logs_http')
 let LogsRepository = require('../modules/repository/logs_repository')
 let TickerLogRepository = require('../modules/repository/ticker_log_repository')
+let CandlestickResample = require('../modules/system/candlestick_resample')
+let RequestClient = require('../utils/request_client')
+
+let Bitmex = require('../exchange/bitmex')
+let BitmexTestnet = require('../exchange/bitmex_testnet')
+let Binance = require('../exchange/binance')
+let Bitfinex = require('../exchange/bitfinex')
+let CoinbasePro = require('../exchange/coinbase_pro')
+let Noop = require('../exchange/noop')
 
 var _ = require('lodash');
 
@@ -89,6 +98,9 @@ let technicalAnalysisValidator = undefined
 let logsHttp = undefined
 let logsRepository = undefined
 let tickerLogRepository = undefined
+let candlestickResample = undefined
+let exchanges = undefined
+let requestClient = undefined
 
 module.exports = {
     boot: function() {
@@ -371,7 +383,7 @@ module.exports = {
         }
 
         return exchangeManager = new ExchangeManager(
-            this.getEventEmitter(),
+            this.getExchanges(),
             this.getLogger(),
             this.getInstances(),
             this.getConfig(),
@@ -477,6 +489,52 @@ module.exports = {
         }
 
         return tickerLogRepository = new TickerLogRepository(this.getDatabase())
+    },
+
+    getCandlestickResample: function() {
+        if (candlestickResample) {
+            return candlestickResample;
+        }
+
+        return candlestickResample = new CandlestickResample(
+            this.getCandlestickRepository(),
+            this.getEventEmitter(),
+        )
+    },
+
+    getRequestClient: function() {
+        if (requestClient) {
+            return requestClient;
+        }
+
+        return requestClient = new RequestClient(
+            this.getLogger(),
+        )
+    },
+
+    getExchanges: function() {
+        if (exchanges) {
+            return exchanges;
+        }
+
+        return exchanges = [
+            new Bitmex(
+                this.getEventEmitter(),
+                this.getRequestClient(),
+                this.getCandlestickResample(),
+                this.getLogger()
+            ),
+            new BitmexTestnet(
+                this.getEventEmitter(),
+                this.getRequestClient(),
+                this.getCandlestickResample(),
+                this.getLogger()
+            ),
+            new Binance(this.getEventEmitter(), this.getLogger()),
+            new CoinbasePro(this.getEventEmitter(), this.getLogger()),
+            new Bitfinex(this.getEventEmitter(), this.getLogger()),
+            new Noop(),
+        ]
     },
 
     createTradeInstance: function() {

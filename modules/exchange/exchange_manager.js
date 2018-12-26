@@ -1,20 +1,19 @@
 'use strict';
 
-let fs = require('fs')
 var _ = require('lodash')
 
 module.exports = class ExchangeManager {
-    constructor(eventEmitter, logger, instances, config) {
-        this.eventEmitter = eventEmitter
+    constructor(exchangesIterator, logger, instances, config) {
         this.logger = logger
         this.instances = instances
         this.config = config
+        this.exchangesIterator = exchangesIterator
 
         this.exchanges = []
     }
 
     init() {
-        let exchanges = this.createExchanges()
+        let exchanges = this.exchangesIterator
 
         let symbols = {}
 
@@ -70,29 +69,5 @@ module.exports = class ExchangeManager {
 
             resolve(await exchange.getOrdersForSymbol(symbol))
         })
-    }
-
-    createExchanges() {
-        let exchanges = []
-
-        let dir = __dirname + '/../../exchange'
-
-        if (!fs.existsSync(dir)) {
-            return
-        }
-
-        let eventEmitter = this.eventEmitter
-        let logger = this.logger
-
-        fs.readdirSync(dir).forEach(file => {
-            if (file.endsWith('.js')) {
-                exchanges.push(new (require(dir + '/' + file.substr(0, file.length - 3)))(
-                    eventEmitter,
-                    logger
-                ))
-            }
-        })
-
-        return exchanges
     }
 }

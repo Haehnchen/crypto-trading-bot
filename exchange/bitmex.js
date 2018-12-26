@@ -12,27 +12,28 @@ let resample = require('./../utils/resample')
 
 let moment = require('moment')
 let request = require('request');
-var crypto = require('crypto')
+let crypto = require('crypto')
 
 let BitMEXClient = require('bitmex-realtime-api');
 let Position = require('../dict/position');
 let ExchangeOrder = require('../dict/exchange_order');
 
 let orderUtil = require('../utils/order_util')
-let RequestClient = require('../utils/request_client')
-var _ = require('lodash')
+let _ = require('lodash')
 const querystring = require('querystring');
 
 module.exports = class Bitmex {
-    constructor(eventEmitter, logger) {
+    constructor(eventEmitter, requestClient, candlestickResample, logger) {
         this.eventEmitter = eventEmitter
+        this.requestClient = requestClient
+        this.candlestickResample = candlestickResample
         this.logger = logger
+
         this.apiKey = undefined
         this.apiSecret = undefined
         this.tickSizes = {}
         this.lotSizes = {}
         this.leverageUpdated = {}
-        this.requestClient = new RequestClient(this.logger)
         this.retryOverloadMs = 944 // Overload: API docs says use 500ms we give us more space
         this.retryOverloadLimit = 5 // Overload: Retry until fail finally
 
@@ -90,18 +91,32 @@ module.exports = class Bitmex {
         })
 
         symbols.forEach(symbol => {
-            symbol['periods'].forEach(time => {
+            let resamples = {};
+            let myPeriods = []
 
-                let wantPeriod = time
-                let resamplePeriod = undefined
-
-                // TODO: provide a period minutes time converter
-                if (time === '15m') {
-                    wantPeriod = '5m'
-                    resamplePeriod = 15
+            symbol['periods'].forEach(period => {
+                if(period !== '15m') {
+                    myPeriods.push(period)
+                    return
                 }
 
-                request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + wantPeriod + '&partial=false&symbol=' + symbol['symbol'] + '&count=500&reverse=true', { json: true }, (err, res, body) => {
+                myPeriods.push('5m')
+
+                if (!resamples[symbol.symbol]) {
+                    resamples[symbol.symbol] = {}
+                }
+
+                if (!resamples[symbol.symbol]['5m']) {
+                    resamples[symbol.symbol]['5m'] = []
+                }
+
+                resamples[symbol.symbol]['5m'].push('15m')
+            })
+
+            myPeriods = Array.from(new Set(myPeriods))
+
+            myPeriods.forEach(period => {
+                request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + period + '&partial=false&symbol=' + symbol['symbol'] + '&count=500&reverse=true', { json: true }, (err, res, body) => {
                     if (err) {
                         console.log('Bitmex: Candle backfill error: ' + String(err))
                         logger.error('Bitmex: Candle backfill error: ' + String(err))
@@ -125,14 +140,24 @@ module.exports = class Bitmex {
                         )
                     })
 
-                    if (resamplePeriod) {
-                        sticks = resample.resampleMinutes(sticks, resamplePeriod)
-                    }
+                    eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], period, sticks))
 
-                    eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], time, sticks));
-                });
+                    // lets wait for settle down of database insert: per design we dont know when is was inserted to database
+                    setTimeout(() => {
+                        if (resamples[symbol['symbol']] && resamples[symbol['symbol']][period] && resamples[symbol['symbol']][period].length > 0) {
+                            for (let periodTo of resamples[symbol['symbol']][period]) {
+                                let resampledCandles = resample.resampleMinutes(
+                                    sticks.slice(),
+                                    resample.convertPeriodToMinute(periodTo) // 15m > 15
+                                )
 
-                client.addStream(symbol['symbol'], 'tradeBin' + wantPeriod, (candles) => {
+                                eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], periodTo, resampledCandles))
+                            }
+                        }
+                    }, 1000);
+                })
+
+                client.addStream(symbol['symbol'], 'tradeBin' + period, candles => {
                     // we need a force reset; candles are like queue
                     let myCandles = candles.slice();
                     candles.length = 0
@@ -148,11 +173,16 @@ module.exports = class Bitmex {
                         );
                     });
 
-                    if (resamplePeriod) {
-                        sticks = resample.resampleMinutes(sticks, resamplePeriod)
-                    }
+                    eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], period, sticks));
 
-                    eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], time, sticks));
+                    // lets wait for settle down of database insert: per design we dont know when is was inserted to database
+                    setTimeout(async () => {
+                        if (resamples[symbol['symbol']] && resamples[symbol['symbol']][period] && resamples[symbol['symbol']][period].length > 0) {
+                            for (let periodTo of resamples[symbol['symbol']][period]) {
+                                await me.candlestickResample.resample(this.getName(), symbol['symbol'], period, periodTo)
+                            }
+                        }
+                    }, 1000);
                 })
             })
 
