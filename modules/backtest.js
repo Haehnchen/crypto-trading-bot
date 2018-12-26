@@ -2,6 +2,7 @@
 
 const moment = require('moment');
 const StrategyManager = require('./strategy/strategy_manager')
+const Resample = require('../utils/resample')
 
 module.exports = class Backtest{
     constructor(candlestickRepository, instances, strategyManager) {
@@ -26,17 +27,21 @@ module.exports = class Backtest{
 
     getBacktestResult(tickInterval, hours, strategy, exchange, pair, options) {
         return new Promise(async (resolve) => {
-            let start = Math.floor(moment().startOf('hour').subtract(hours, 'hours').toDate() / 1000) + 1
-            let end = Math.floor(moment().toDate() / 1000)
+            let start = moment()
+                .startOf('hour')
+                .subtract(hours * 60, 'minutes')
+                .unix()
+
+            // collect candles for cart and allow a prefill of eg 200 candles for our indicators starts
+            let chartCandlePeriod = options['period'] || '15m';
+            let prefillWindow = start - (Resample.convertPeriodToMinute(chartCandlePeriod) * 200 * 60)
 
             let rows = []
-
             let periodCache = {}
-
             let current = start
-
             let lastSignal = undefined
 
+            let end = moment().unix()
             while (current < end) {
                 let item = {
                     'time': current
@@ -47,7 +52,7 @@ module.exports = class Backtest{
                     getLookbacksForPair: async (exchange, symbol, period) => {
                         return new Promise(async (resolve) => {
                             if (!periodCache[period]) {
-                                periodCache[period] = await this.candlestickRepository.getLookbacksSince(exchange, symbol, period, start)
+                                periodCache[period] = await this.candlestickRepository.getLookbacksSince(exchange, symbol, period, prefillWindow)
                             }
 
                             let filter = periodCache[period].slice().filter((candle) => {
@@ -92,7 +97,7 @@ module.exports = class Backtest{
                 dates[signal.time].push(signal)
             })
 
-            let candles = (await this.candlestickRepository.getLookbacksSince(exchange, pair, options['period'], start)).map(candle => {
+            let candles = periodCache[chartCandlePeriod].map(candle => {
                 let signals = undefined
 
                 for (let time in JSON.parse(JSON.stringify(dates))) {
