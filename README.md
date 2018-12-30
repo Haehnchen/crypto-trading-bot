@@ -108,7 +108,12 @@ webserver.ip: 127.0.0.1
 
 ## Backtesting
 
-Currently there is only the UI for backtesting
+Currently there is a the UI for backtesting
+
+### Result Page
+
+![Webserver UI](documentation/backtest_result.png "Backtest Result")
+
 
 ### Fill data
 
