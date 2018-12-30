@@ -67,6 +67,14 @@ describe('#technical_analysis for candles', () => {
                     'signal_period': 9,
                 },
             },
+            {
+                'indicator': 'bb',
+                'key': 'bb',
+            },
+            {
+                'indicator': 'bb_talib',
+                'key': 'bb_talib',
+            },
         ]);
 
         assert.equal(result['ema_55'].length, 490)
@@ -85,6 +93,18 @@ describe('#technical_analysis for candles', () => {
 
         assert.equal(2.50, parseFloat(result['macd_ext_dema'][result['macd_ext_dema'].length - 1]['histogram']).toFixed(2))
         assert.equal(1.12, parseFloat(result['macd_ext_dema_slow'][result['macd_ext_dema_slow'].length - 1]['histogram']).toFixed(2))
+
+        assert.equal(result['bb'].length > 0, true)
+        assert.equal(result['bb'][0]['lower'] <  result['bb'][0]['middle'], true)
+        assert.equal(result['bb'][0]['middle'] <  result['bb'][0]['upper'], true)
+        assert.equal(result['bb'][0]['lower'] <  result['bb'][0]['upper'], true)
+        assert.equal(result['bb'][0]['width'] > 0, true)
+
+        assert.equal(result['bb_talib'].length > 0, true)
+        assert.equal(result['bb_talib'][0]['lower'] <  result['bb'][0]['middle'], true)
+        assert.equal(result['bb_talib'][0]['middle'] <  result['bb'][0]['upper'], true)
+        assert.equal(result['bb_talib'][0]['lower'] <  result['bb'][0]['upper'], true)
+        assert.equal(result['bb_talib'][0]['width'] > 0, true)
     })
 
     it('technical_analysis for bollinger percent', () => {

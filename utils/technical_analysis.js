@@ -385,6 +385,70 @@ module.exports = {
                             resolve(values)
                         })
                     }))
+                } else if (indicatorName === 'bb') {
+                    let length = options['length'] || 20
+                    let stddev = options['stddev'] || 2
+
+                    calculations.push(new Promise((resolve) => {
+                        tulind.indicators.bbands.indicator([marketData.close], [length, stddev], (err, results) => {
+                            let result = [];
+
+                            for (let i = 0; i < results[0].length; i++) {
+                                result.push({
+                                    'lower': results[0][i],
+                                    'middle': results[1][i],
+                                    'upper': results[2][i],
+                                    'width': (results[2][i] - results[0][i]) / results[1][i], // https://www.tradingview.com/wiki/Bollinger_Bands_Width_(BBW)
+                                })
+                            }
+
+                            let values = {}
+                            values[indicatorKey] = result
+
+                            resolve(values)
+                        })
+                    }))
+                } else if (indicatorName === 'bb_talib') {
+                    let talib = require('talib')
+
+                    let length = options['length'] || 20
+                    let stddev = options['stddev'] || 2
+
+                    calculations.push(new Promise((resolve) => {
+                        talib.execute({
+                            name: 'BBANDS',
+                            startIdx: 0,
+                            endIdx: marketData.close.length -1,
+                            inReal: marketData.close.slice(),
+                            optInTimePeriod: length,
+                            optInNbDevUp: stddev,
+                            optInNbDevDn: stddev,
+                            optInMAType: 0, // simple moving average here
+                        }, function (err, result) {
+                            if (err) {
+                                let values = {}
+                                values[indicatorKey] = []
+
+                                resolve(values)
+                                return
+                            }
+
+                            let resultHistory = [];
+                            for (let i = 0; i < result.nbElement; i++) {
+                                resultHistory.push({
+                                    'upper': result.result.outRealUpperBand[i],
+                                    'middle': result.result.outRealMiddleBand[i],
+                                    'lower': result.result.outRealLowerBand[i],
+                                    'width': (result.result.outRealUpperBand[i] - result.result.outRealLowerBand[i]) / result.result.outRealMiddleBand[i], // https://www.tradingview.com/wiki/Bollinger_Bands_Width_(BBW)
+                                })
+                            }
+
+                            let values = {}
+                            values[indicatorKey] = resultHistory
+
+                            resolve(values)
+                        })
+                    }))
                 }
             })
 
