@@ -75,10 +75,24 @@ describe('#technical_analysis for candles', () => {
                 'indicator': 'bb_talib',
                 'key': 'bb_talib',
             },
+            {
+                'indicator': 'mfi',
+                'key': 'mfi',
+            },
+            {
+                'indicator': 'rsi',
+                'key': 'rsi',
+            },
         ]);
 
         assert.equal(result['ema_55'].length, 490)
         assert.equal(result['sma_200'].length, 291)
+
+        assert.equal(result['rsi'].length > 0, true)
+        assert.equal(result['mfi'].length > 0, true)
+
+        assert.equal(typeof result['rsi'][0], 'number')
+        assert.equal(typeof result['mfi'][0], 'number')
 
         assert.equal(8145, Math.round(result['ema_55'][0]))
         assert.equal(7994, Math.round(result['sma_200'][0]))
@@ -108,10 +122,10 @@ describe('#technical_analysis for candles', () => {
     })
 
     it('technical_analysis for bollinger percent', () => {
-        assert.equal(-20, ta.getBollingerBandPrice(80, 200, 100))
-        assert.equal(120, ta.getBollingerBandPrice(220, 200, 100))
-        assert.equal(50, ta.getBollingerBandPrice(150, 200, 100))
-        assert.equal(-25, ta.getBollingerBandPrice(75, 200, 100))
+        assert.equal(-0.2, ta.getBollingerBandPercent(80, 200, 100))
+        assert.equal(1.20, ta.getBollingerBandPercent(220, 200, 100))
+        assert.equal(0.50, ta.getBollingerBandPercent(150, 200, 100))
+        assert.equal(-0.25, ta.getBollingerBandPercent(75, 200, 100))
     });
 
     var createCandleFixtures = function() {

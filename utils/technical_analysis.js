@@ -10,8 +10,8 @@ module.exports = {
      * @param lower
      * @returns {number} percent value in integer
      */
-    getBollingerBandPrice: function (currentPrice, upper, lower) {
-        return ((currentPrice - lower) / (upper - lower)) * 100
+    getBollingerBandPercent: function (currentPrice, upper, lower) {
+        return (currentPrice - lower) / (upper - lower)
     },
 
     /**
@@ -379,6 +379,28 @@ module.exports = {
                 } else if (indicatorName === 'ao') {
                     calculations.push(new Promise((resolve) => {
                         tulind.indicators.ao.indicator([marketData.high, marketData.low], [], (err, results) => {
+                            let values = {}
+                            values[indicatorKey] = results[0]
+
+                            resolve(values)
+                        })
+                    }))
+                } else if (indicatorName === 'mfi') {
+                    calculations.push(new Promise((resolve) => {
+                        let length = options['length'] || 14
+
+                        tulind.indicators.mfi.indicator([marketData.high, marketData.low, marketData.close, marketData.volume], [14], (err, results) => {
+                            let values = {}
+                            values[indicatorKey] = results[0]
+
+                            resolve(values)
+                        })
+                    }))
+                } else if (indicatorName === 'rsi') {
+                    calculations.push(new Promise((resolve) => {
+                        let length = options['length'] || 14
+
+                        tulind.indicators.rsi.indicator([marketData.close], [length], (err, results) => {
                             let values = {}
                             values[indicatorKey] = results[0]
 
