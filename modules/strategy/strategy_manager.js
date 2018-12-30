@@ -3,7 +3,8 @@
 let IndicatorBuilder = require('./dict/indicator_builder')
 let IndicatorPeriod = require('./dict/indicator_period')
 let ta = require('../../utils/technical_analysis')
-let fs = require('fs');
+let fs = require('fs')
+let _ = require('lodash')
 const StrategyContext = require('../../dict/strategy_context')
 const Ticker = require('../../dict/ticker')
 
@@ -164,12 +165,56 @@ module.exports = class StrategyManager {
             trigger = trigger || {}
 
             trigger['price'] = price
+            trigger['columns'] = this.getCustomTableColumnsForRow(strategyName, trigger.debug)
 
             resolve(trigger)
         })
     }
 
+    getCustomTableColumnsForRow(strategyName, row) {
+        return this.getBacktestColumns(strategyName).map((cfg) => {
+            let value = _.get(row, cfg['value'])
+
+            let result = {
+                'value': new Intl.NumberFormat('en-US', { minimumSignificantDigits: 3, maximumSignificantDigits: 4}).format(value),
+                'type': cfg.type || 'default'
+            }
+
+            switch (cfg.type || 'default') {
+                case 'cross':
+                    result.state = value > _.get(row, cfg['cross']) ? 'over' : 'below'
+                    break
+                case 'histogram':
+                    result.state = value > 0 ? 'over' : 'below'
+                    break
+                case 'oscillator':
+                    if (value > (cfg.range && cfg.range.length > 0 ? cfg.range[0] : 80)) {
+                        result.state = 'over'
+                    } else if(value < (cfg.range && cfg.range.length > 1 ? cfg.range[1] : 20)) {
+                        result.state = 'below'
+                    }
+                    break
+            }
+
+            return result
+        })
+    }
+
     getStrategyNames() {
         return this.getStrategies().map(strategy => strategy.getName())
+    }
+
+    getBacktestColumns(strategyName) {
+        let strategy = this.getStrategies().find((strategy) => {
+            return strategy.getName() === strategyName
+        })
+
+        if (!strategy) {
+            return []
+        }
+
+        return typeof strategy.getBacktestColumns !== "undefined"
+            ? strategy.getBacktestColumns()
+            : []
     }
 }

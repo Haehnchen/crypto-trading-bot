@@ -3,6 +3,7 @@
 const moment = require('moment');
 const StrategyManager = require('./strategy/strategy_manager')
 const Resample = require('../utils/resample')
+const _ = require('lodash')
 
 module.exports = class Backtest{
     constructor(candlestickRepository, instances, strategyManager) {
@@ -122,6 +123,7 @@ module.exports = class Backtest{
                 'rows': rows.slice().reverse(),
                 'signals': signals.slice().reverse(),
                 'candles': JSON.stringify(candles),
+                'extra_fields': this.strategyManager.getBacktestColumns(strategy),
                 'configuration': {
                     'exchange': exchange,
                     'symbol': pair,

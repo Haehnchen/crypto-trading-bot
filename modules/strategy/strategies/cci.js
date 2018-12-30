@@ -124,4 +124,15 @@ module.exports = class CCI {
 
         })
     }
+
+    getBacktestColumns() {
+        return [
+            {
+                'label': 'cci',
+                'value': 'cci',
+                'type': 'oscillator',
+                'range': [100, -100],
+            },
+        ]
+    }
 }

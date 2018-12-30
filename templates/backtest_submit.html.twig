@@ -11,13 +11,18 @@
 {% endblock %}
 
 {% block content %}
-    {% macro render_rows(rows) %}
+    {% macro render_rows(rows, extra_fields) %}
         <table class="table">
             <thead>
             <tr>
                 <th scope="col">Time</th>
                 <th scope="col">Price</th>
                 <th scope="col">Signal</th>
+
+                {% for key, fields in extra_fields %}
+                    <th scope="col">{{ fields.label|default(key) }}</th>
+                {% endfor %}
+
                 <th scope="col">Debug</th>
             </tr>
 
@@ -38,7 +43,34 @@
                             {% endif %}
                         {% endif %}
                     </td>
-                    <td class="text-muted">{{ row.result|json_encode }}</td>
+
+                    {% for column in row.result.columns|default([]) %}
+                        {% if column.type == 'cross' or column.type == 'histogram' %}
+                            {% set color = '' %}
+
+                            {% if column.state == 'over' %}
+                                {% set color = 'text-success' %}
+                            {% elseif column.state == 'below' %}
+                                {% set color = 'text-danger' %}
+                            {% endif %}
+
+                            <td class="{{ color|default }}">{{ column.value }}</td>
+                        {% elseif column.type == 'oscillator' %}
+                            {% set color = '' %}
+
+                            {% if column.state == 'over' %}
+                                {% set color = 'text-danger' %}
+                            {% elseif column.state == 'below' %}
+                                {% set color = 'text-success' %}
+                            {% endif %}
+
+                            <td class="{{ color|default }}">{{ column.value }}</td>
+                        {% else %}
+                            <td>{{ column.value }}</td>
+                        {% endif %}
+                    {% endfor %}
+
+                    <td class="text-muted" style="word-break: break-all;">{{ row.result|json_encode }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -53,9 +85,9 @@
 
     <div class="container">
         <h2>Signals</h2>
-        {{ macros.render_rows(signals) }}
+        {{ macros.render_rows(signals, extra_fields) }}
 
-        <h2>Times</h2>
-        {{ macros.render_rows(rows) }}
+        <h2>Ticks</h2>
+        {{ macros.render_rows(rows, extra_fields) }}
     </div>
 {% endblock %}
