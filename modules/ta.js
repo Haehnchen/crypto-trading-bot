@@ -111,7 +111,7 @@ module.exports = class Ta {
                                 values[key]['crossed_index'] = number
                             }
                         } else if (key == 'bollinger_bands') {
-                            values[key]['percent'] = ta.getBollingerBandPrice((v.ticker.ask + v.ticker.bid) / 2, values[key].value.upper, values[key].value.lower)
+                            values[key]['percent'] = ta.getBollingerBandPercent((v.ticker.ask + v.ticker.bid) / 2, values[key].value.upper, values[key].value.lower) * 100
                         } else if (key == 'ema_200' || key == 'ema_55' || key == 'cci' || key == 'rsi' || key == 'ao' || key == 'mfi') {
                             values[key]['trend'] = ta.getTrendingDirection(taResult.slice().reverse().slice(-5))
                         }
