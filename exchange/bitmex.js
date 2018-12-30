@@ -217,7 +217,7 @@ module.exports = class Bitmex {
                     setTimeout(async () => {
                         if (resamples[symbol['symbol']] && resamples[symbol['symbol']][period] && resamples[symbol['symbol']][period].length > 0) {
                             for (let periodTo of resamples[symbol['symbol']][period]) {
-                                await me.candlestickResample.resample(this.getName(), symbol['symbol'], period, periodTo)
+                                await me.candlestickResample.resample(this.getName(), symbol['symbol'], period, periodTo, true)
                             }
                         }
                     }, 1000);

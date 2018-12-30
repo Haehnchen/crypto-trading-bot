@@ -7,9 +7,9 @@ module.exports = class CandlestickRepository {
         this.db = db
     }
 
-    getLookbacksForPair(exchange, symbol, period) {
+    getLookbacksForPair(exchange, symbol, period, limit = 750) {
         return new Promise((resolve) => {
-            let sql = 'SELECT * from candlesticks where exchange = ? AND symbol = ? and period = ? order by time DESC LIMIT 750'
+            let sql = 'SELECT * from candlesticks where exchange = ? AND symbol = ? and period = ? order by time DESC LIMIT ' + limit
 
             this.db.all(sql, [exchange, symbol, period], (err, rows) => {
                 if (err) {
