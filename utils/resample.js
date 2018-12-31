@@ -1,5 +1,3 @@
-let moment = require('moment')
-
 module.exports = {
     /**
      * Resample eg 5m candle sticks into 15m or other minutes
@@ -17,25 +15,23 @@ module.exports = {
             throw 'Invalid candle stick order'
         }
 
-        let grouped = []
+        let group = []
 
+        let secs = minutes * 60
         lookbackNewestFirst.forEach((candle) => {
-            const start = moment(candle['time'] * 1000).subtract();
-            const remainder = minutes - (start.minute() % minutes);
+            const nextWindow = candle['time'] - (candle['time'] % secs) + secs;
 
-            const group = moment(start).add(remainder, "minutes").format('YYYY-MM-DD:HH:mm:00.000Z');
-
-            if (!grouped[group])  {
-                grouped[group] = [];
+            if (!group[nextWindow])  {
+                group[nextWindow] = [];
             }
 
-            grouped[group].push(candle)
+            group[nextWindow].push(candle)
         })
 
         let merge = []
 
-        for(let key in grouped) {
-            let candles = grouped[key]
+        for(let time in group) {
+            let candles = group[time]
 
             let x = {'open': [], 'high': [], 'low': [], 'close': [], 'volume': []}
 
@@ -47,20 +43,20 @@ module.exports = {
                 x['volume'].push(candle['volume'])
             })
 
-            const start = moment(candles[candles.length - 1]['time'] * 1000).add({'minutes': 1});
-            const mod = minutes - (start.minute() % minutes);
-
-            const group = moment(start).add(mod, "minutes").format('YYYY-MM-DDTHH:mm:00.000Z');
+            let sorted = candles.slice().sort((a, b) => {
+                return b.time - a.time;
+            });
 
             merge.push({
-                'time': parseInt(moment(group).format('X')),
-                'open': candles[candles.length - 1]['open'],
+                'time': time,
+                'open': sorted[sorted.length - 1]['open'],
                 'high': Math.max(...x['high']),
                 'low': Math.min(...x['low']),
-                'close': candles[0]['close'],
+                'close': sorted[0]['close'],
                 'volume': x['volume'].reduce((sum, a) => { return sum + Number(a) }, 0),
-                '_time': group,
+                '_time': new Date(time * 1000),
                 '_candle_count': candles.length,
+                '_candles': sorted,
             })
         }
 
