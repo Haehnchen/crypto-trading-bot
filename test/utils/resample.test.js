@@ -12,11 +12,11 @@ describe('#resample of candles', () => {
         assert.equal(12, firstFullCandle['_candle_count'])
 
         assert.equal(firstFullCandle['time'], 1533142800)
-        assert.equal(firstFullCandle['open'], 7598.5)
+        assert.equal(firstFullCandle['open'], 7600)
         assert.equal(firstFullCandle['high'], 7609.5)
         assert.equal(firstFullCandle['low'], 7530)
-        assert.equal(firstFullCandle['close'], 7557)
-        assert.equal(firstFullCandle['volume'], 170512826)
+        assert.equal(firstFullCandle['close'], 7561.5)
+        assert.equal(firstFullCandle['volume'], 174464214)
 
         assert.equal(candles[2]['time'], 1533139200)
     });
@@ -29,11 +29,11 @@ describe('#resample of candles', () => {
         assert.equal(3, firstFullCandle['_candle_count'])
 
         assert.equal(firstFullCandle['time'], 1533142800)
-        assert.equal(firstFullCandle['open'], 7545.5)
-        assert.equal(firstFullCandle['high'], 7557)
+        assert.equal(firstFullCandle['open'], 7547.5)
+        assert.equal(firstFullCandle['high'], 7562)
         assert.equal(firstFullCandle['low'], 7530)
-        assert.equal(firstFullCandle['close'], 7557)
-        assert.equal(firstFullCandle['volume'], 57004287)
+        assert.equal(firstFullCandle['close'], 7561.5)
+        assert.equal(firstFullCandle['volume'], 45596804)
 
         assert.equal(candles[2]['time'], 1533141900)
     });
@@ -52,10 +52,10 @@ describe('#resample of candles', () => {
         let candles = []
 
         for (let i = 1; i < 23; i++) {
-            let start = moment("2014-02-27T10:23:00")
+            let start = moment("2014-02-27T10:43:00")
             let time = start
                 .minute(Math.floor(start.minute() / 15) * 15)
-                .second(33)
+                .second(0)
                 .subtract(15 * i, 'minutes');
 
             candles.push({
@@ -65,7 +65,7 @@ describe('#resample of candles', () => {
                 'close': i * 2.1,
                 'high': i * 1.1,
                 'low': i * 0.9,
-                '_time': time,
+                '_time': time.toDate(),
             })
         }
 
