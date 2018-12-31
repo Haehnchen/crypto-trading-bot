@@ -12,7 +12,7 @@
 
 {% block content %}
     {% macro render_rows(rows, extra_fields) %}
-        <table class="table">
+        <table class="table backtest-table">
             <thead>
             <tr>
                 <th scope="col">Time</th>
@@ -23,7 +23,7 @@
                     <th scope="col">{{ fields.label|default(key) }}</th>
                 {% endfor %}
 
-                <th scope="col">Debug</th>
+                <th scope="col"><a href="#" class="button-debug-toggle-all">Debug <i class="fa fa-eye"></i></a></th>
             </tr>
 
             </thead>
@@ -70,7 +70,11 @@
                         {% endif %}
                     {% endfor %}
 
-                    <td class="text-muted" style="word-break: break-all;">{{ row.result|json_encode }}</td>
+                    <td style="word-break: break-all;">
+                        <span class="debug-toggle hide">
+                            <a href="#" class="button-debug-toggle"><i class="fa fa-eye"></i></a><span class="debug-text text-muted">{{ row.result|json_encode }}</span>
+                        </span>
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>

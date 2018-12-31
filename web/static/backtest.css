@@ -78,3 +78,21 @@ path.tradearrow.close {
 .close.annotation.up path {
     fill: #00AA00;
 }
+
+.backtest-table .debug-toggle a.button-debug-toggle {
+    display:none;
+}
+
+.backtest-table .debug-toggle.hide a.button-debug-toggle {
+    display:inline;
+}
+
+
+.backtest-table .debug-toggle .debug-text {
+    display:inline;
+}
+
+.backtest-table .debug-toggle.hide .debug-text {
+    display:none;
+}
+

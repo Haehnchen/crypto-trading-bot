@@ -1,4 +1,16 @@
 $(function() {
+
+    $('table.backtest-table').on('click', 'a.button-debug-toggle', function(e) {
+        e.preventDefault();
+        $(this).closest('.debug-toggle').toggleClass('hide');
+    });
+
+    $('table.backtest-table').on('click', 'a.button-debug-toggle-all', function(e) {
+        e.preventDefault();
+
+        $(this).closest('table.backtest-table').find('td .debug-toggle').removeClass('hide');
+    });
+
     var chart = $('.chart');
 
     if (chart.length > 0) {
