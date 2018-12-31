@@ -66,7 +66,7 @@ describe('#resample of candles', () => {
 
         let resampleCandles = Resample.resampleMinutes(candles, 60)
 
-        assert.equal(new Date(resampleCandles[0]['time'] * 1000).getHours(), 11)
+        assert.equal(new Date(resampleCandles[0]['time'] * 1000).getUTCHours(), 10)
 
         let firstFullCandle = resampleCandles[1]
         assert.equal(firstFullCandle['_candle_count'], 4)
