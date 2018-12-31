@@ -1,6 +1,5 @@
 let assert = require('assert');
 let Resample = require('../../utils/resample');
-let moment = require('moment')
 let fs = require('fs');
 
 describe('#resample of candles', () => {
@@ -51,28 +50,22 @@ describe('#resample of candles', () => {
     it('test that resample starting time is matching given candle lookback', () => {
         let candles = []
 
-        for (let i = 1; i < 23; i++) {
-            let start = moment("2014-02-27T10:43:00")
-            let time = start
-                .minute(Math.floor(start.minute() / 15) * 15)
-                .second(0)
-                .subtract(15 * i, 'minutes');
+        // 2014-02-27T09:30:00.000Z
+        let start = 1393493400
 
+        for (let i = 1; i < 23; i++) {
             candles.push({
-                'time': time.unix(),
+                'time': start - (15 * i * 60),
                 'volume': i * 100,
                 'open': i * 2,
                 'close': i * 2.1,
                 'high': i * 1.1,
                 'low': i * 0.9,
-                '_time': time.toDate(),
             })
         }
 
         let resampleCandles = Resample.resampleMinutes(candles, 60)
 
-        // this must not be in the future? (at least for Bitmex it does not match)
-        // check how changes provide this: candles are in future unto close or when the start
         assert.equal(new Date(resampleCandles[0]['time'] * 1000).getHours(), 11)
 
         let firstFullCandle = resampleCandles[1]
