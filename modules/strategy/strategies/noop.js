@@ -13,6 +13,11 @@ module.exports = class {
         indicatorBuilder.add('rsi', 'rsi', '15m')
         indicatorBuilder.add('mfi', 'mfi', '15m')
 
+        indicatorBuilder.add('pivot_points_high_low', 'pivot_points_high_low', '15m', {
+            'left': 14,
+            'right': 14,
+        })
+
         indicatorBuilder.add('sma200', 'sma', '15m', {
             'length': 200,
         })
@@ -34,6 +39,8 @@ module.exports = class {
             debug['mfi'] = indicatorPeriod.getIndicator('mfi').slice(-1)[0]
             debug['sma200'] = indicatorPeriod.getIndicator('sma200').slice(-1)[0]
             debug['sma50'] = indicatorPeriod.getIndicator('sma50').slice(-1)[0]
+
+            debug['pivot_points_high_low'] = indicatorPeriod.getIndicator('pivot_points_high_low').slice(-1)[0]
 
             let standardDeviation = SD.calculate({
                 period : 150,
@@ -76,6 +83,10 @@ module.exports = class {
                 'value': 'sma50',
                 'type': 'cross',
                 'cross': 'sma200',
+            },
+            {
+                'label': 'Pivot Points',
+                'value': 'pivot_points_high_low',
             },
         ]
     }

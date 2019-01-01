@@ -175,8 +175,20 @@ module.exports = class StrategyManager {
         return this.getBacktestColumns(strategyName).map((cfg) => {
             let value = _.get(row, cfg['value'])
 
+            switch (typeof value) {
+                case 'object':
+                    value = Object.keys(value).length === 0
+                        ? ''
+                        : JSON.stringify(value)
+
+                    break
+                default:
+                    value = new Intl.NumberFormat('en-US', { minimumSignificantDigits: 3, maximumSignificantDigits: 4}).format(value)
+                    break
+            }
+
             let result = {
-                'value': new Intl.NumberFormat('en-US', { minimumSignificantDigits: 3, maximumSignificantDigits: 4}).format(value),
+                'value': value,
                 'type': cfg.type || 'default'
             }
 

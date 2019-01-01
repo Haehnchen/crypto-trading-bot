@@ -15,7 +15,9 @@ describe('#technical_analysis for candles', () => {
     })
 
     it('technical_analysis for options are created', async () => {
-        const result = await ta.createIndicatorsLookback(createCandleFixtures().reverse(), [
+        let lookbacks = createCandleFixtures().reverse()
+
+        const result = await ta.createIndicatorsLookback(lookbacks, [
             {
                 'indicator': 'ema',
                 'key': 'ema_55',
@@ -83,6 +85,22 @@ describe('#technical_analysis for candles', () => {
                 'indicator': 'rsi',
                 'key': 'rsi',
             },
+            {
+                'indicator': 'pivot_points_high_low',
+                'key': 'pivot_points_high_low',
+            },
+            {
+                'indicator': 'pivot_points_high_low',
+                'key': 'pivot_points_high_low_2',
+                'options': {
+                    'left': 20,
+                    'right': 20,
+                },
+            },
+            {
+                'indicator': 'candles',
+                'key': 'candles',
+            },
         ]);
 
         assert.equal(result['ema_55'].length, 490)
@@ -119,6 +137,16 @@ describe('#technical_analysis for candles', () => {
         assert.equal(result['bb_talib'][0]['middle'] <  result['bb'][0]['upper'], true)
         assert.equal(result['bb_talib'][0]['lower'] <  result['bb'][0]['upper'], true)
         assert.equal(result['bb_talib'][0]['width'] > 0, true)
+
+        assert.equal(result['pivot_points_high_low'].filter(v => 'high' in v && 'close' in v['high']).length > 2, true);
+        assert.equal(result['pivot_points_high_low'].filter(v => 'low' in v && 'close' in v['low']).length > 2, true);
+
+        assert.equal(result['pivot_points_high_low'].filter(v => 'high' in v&& 'close' in v['high']).length > result['pivot_points_high_low_2'].filter(v => 'high' in v&& 'close' in v['high']).length, true);
+
+        assert.equal(result['candles'].length, lookbacks.length);
+        assert.equal(result['candles'][0].time, lookbacks[0].time);
+        assert.equal(result['candles'][0].time < lookbacks[1].time, true);
+        assert.equal(result['candles'][result['candles'].length - 1].time, lookbacks[result['candles'].length - 1].time);
     })
 
     it('technical_analysis for bollinger percent', () => {
@@ -126,6 +154,27 @@ describe('#technical_analysis for candles', () => {
         assert.equal(1.20, ta.getBollingerBandPercent(220, 200, 100))
         assert.equal(0.50, ta.getBollingerBandPercent(150, 200, 100))
         assert.equal(-0.25, ta.getBollingerBandPercent(75, 200, 100))
+    });
+
+    it('technical_analysis for pivot points', () => {
+        assert.deepEqual(ta.getPivotPoints([1, 2, 1], 2, 1), {})
+        assert.deepEqual(ta.getPivotPoints([1], 0, 0), {})
+
+        assert.deepEqual(ta.getPivotPoints([1, 2, 3, 4, 5, 4, 3, 2, 1], 4, 4), {'high': 5})
+        assert.deepEqual(ta.getPivotPoints([1, 6, 3, 4, 5, 4, 3, 2, 1], 4, 4), {})
+        assert.deepEqual(ta.getPivotPoints([1, 2, 3, 4, 5, 4, 3, 2, 6], 4, 4), {})
+
+        assert.deepEqual(ta.getPivotPoints([5, 4, 3, 2, 1, 2, 3, 4, 5], 4, 4), {'low': 1})
+        assert.deepEqual(ta.getPivotPoints([5, 4, 3, 2, 1, 2, 3, 0, 5], 4, 4), {})
+        assert.deepEqual(ta.getPivotPoints([5, 0, 3, 2, 1, 2, 3, 4, 5], 4, 4), {})
+    });
+
+    it('technical_analysis for pivot points with wicks for a range', () => {
+        let highs = [1, 2, 3, 4, 5, 4, 3, 2, 1].map(v => {return {'close': v, 'high': v * 1.2, 'low': v * 0.8}})
+        assert.deepEqual(ta.getPivotPointsWithWicks(highs, 4, 4), {high: { close: 5, high: 6 }})
+
+        let lows = [5, 4, 3, 2, 1, 2, 3, 4, 5].map(v => {return {'close': v, 'high': v * 1.2, 'low': v * 0.8}})
+        assert.deepEqual(ta.getPivotPointsWithWicks(lows, 4, 4), {low: { close: 1, low: 0.8 }})
     });
 
     var createCandleFixtures = function() {

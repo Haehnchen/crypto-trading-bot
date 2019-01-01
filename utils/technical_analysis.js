@@ -205,7 +205,7 @@ module.exports = {
                 throw 'Invalid candlestick order'
             }
 
-            lookbacks.slice(-1000).forEach(function (lookback) {
+            lookbacks.slice(-1000).forEach(lookback => {
                 marketData.open.push(lookback.open)
                 marketData.high.push(lookback.high)
                 marketData.low.push(lookback.low)
@@ -235,6 +235,13 @@ module.exports = {
 
                             resolve(values)
                         })
+                    }))
+                } else if (indicatorName === 'candles') {
+                    calculations.push(new Promise((resolve) => {
+                        let values = {}
+                        values[indicatorKey] = lookbacks.slice()
+
+                        resolve(values)
                     }))
                 } else if (indicatorName === 'cci') {
                     let length = options['length']
@@ -471,6 +478,27 @@ module.exports = {
                             resolve(values)
                         })
                     }))
+                } else if (indicatorName === 'pivot_points_high_low') {
+                    let left = options['left'] || 5
+                    let right = options['right'] || 5
+
+                    calculations.push(new Promise((resolve) => {
+                        let result = []
+
+                        for (let i = 0; i < lookbacks.length; i++) {
+                            let start = i - left - right
+                            if (start < 0) {
+                                result.push({})
+                                continue;
+                            }
+
+                            result.push(this.getPivotPointsWithWicks(lookbacks.slice(start, i + 1), left, right))
+                        }
+
+                        result[indicatorKey] = result
+
+                        resolve(result)
+                    }))
                 }
             })
 
@@ -520,7 +548,81 @@ module.exports = {
         }
 
         return undefined
-    }
+    },
+
+    /**
+     * Find the pivot points on the given window with "left" and "right". If "right" or "left" values are higher this point is invalidated
+     *
+     * https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/pivot-points-high-low
+     */
+    getPivotPoints: function (prices, left, right) {
+        if (left + right + 1 > prices.length || left <= 1 || right <= 1) {
+            return {}
+        }
+
+        // get range from end
+        let range = prices.slice(-(left + right + 1))
+
+        let middleValue = range[left];
+
+        let result = {}
+
+        let leftRange = range.slice(0, left)
+        let rightRange = range.slice(-right)
+
+        if (typeof leftRange.find(c => c > middleValue) === 'undefined' && typeof rightRange.find(c => c > middleValue) === 'undefined') {
+            result['high'] = middleValue
+        }
+
+        if (typeof leftRange.find(c => c < middleValue) === 'undefined' && typeof rightRange.find(c => c < middleValue) === 'undefined') {
+            result['low'] = middleValue
+        }
+
+        return result
+    },
+
+    /**
+     * Get the pivot points high and low with the candle wicks to get a range
+     *
+     * { high: { close: 5, high: 6 } }
+     * { low: { close: 5, low: 4 } }
+     *
+     * https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/pivot-points-high-low
+     */
+    getPivotPointsWithWicks: function (candles, left, right) {
+        if (left + right + 1 > candles.length || left <= 1 || right <= 1) {
+            return {}
+        }
+
+        // get range from end
+        let range = candles.slice(-(left + right + 1))
+
+        let result = {}
+        for (let source of ['close', 'high', 'low']) {
+            let middleValue = range[left][source]
+
+            let leftRange = range.slice(0, left)
+            let rightRange = range.slice(-right)
+
+            if (['close', 'high'].includes(source) && typeof leftRange.find(c => c[source] > middleValue) === 'undefined' && typeof rightRange.find(c => c[source] > middleValue) === 'undefined') {
+                if (!result['high']) {
+                    result['high'] = {}
+                }
+
+                result['high'][source] = middleValue
+            }
+
+            if (['close', 'low'].includes(source) && typeof leftRange.find(c => c[source] < middleValue) === 'undefined' && typeof rightRange.find(c => c[source] < middleValue) === 'undefined') {
+                if (!result['low']) {
+                    result['low'] = {}
+                }
+
+                result['low'][source] = middleValue
+            }
+        }
+
+        return result
+    },
 }
 
 
