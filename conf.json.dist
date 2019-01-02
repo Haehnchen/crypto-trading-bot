@@ -20,6 +20,7 @@
             "icon_emoji": ":ghost:"
         },
         "mail": {
+            "to": "example@example.de",
             "username": "foo@foo.de",
             "password": "bar",
             "server": "mail.foo.de",

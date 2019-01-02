@@ -339,7 +339,11 @@ module.exports = {
         }
 
         if (_.has(config, 'notify.mail.username')) {
-            notifiers.push(new Mail(this.createMailer(), this.getLogger()))
+            notifiers.push(new Mail(
+                this.createMailer(),
+                this.getSystemUtil(),
+                this.getLogger(),
+            ))
         }
 
         return notify = new Notify(notifiers)

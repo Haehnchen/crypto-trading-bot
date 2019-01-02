@@ -1,21 +1,28 @@
 'use strict';
 
 module.exports = class Mail {
-    constructor(mailer, logger) {
+    constructor(mailer, systemUtil, logger) {
         this.mailer = mailer
+        this.systemUtil = systemUtil
         this.logger = logger
-
     }
 
     send(message){
+        let to = this.systemUtil.getConfig('notify.mail.to');
+        if (!to) {
+            this.logger.error('No mail "to" address given')
+
+            return
+        }
+
         this.mailer.sendMail({
-                to: "espendiller@gmx.de",
-                subject: message,
-                text: message
-            }, (err) => {
-                if(err){
-                    this.logger.error('Mailer: ' + JSON.stringify(err))
-                }
-            });
+            to: to,
+            subject: message,
+            text: message
+        }, err => {
+            if (err){
+                this.logger.error('Mailer: ' + JSON.stringify(err))
+            }
+        })
     }
 }
