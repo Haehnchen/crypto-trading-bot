@@ -500,6 +500,39 @@ module.exports = {
                             resolve(values)
                         })
                     }))
+                } else if (indicatorName === 'stoch_rsi') {
+                    calculations.push(new Promise((resolve) => {
+                        let rsiLength = options['rsi_length'] || 14
+                        let stochLength = options['stoch_length'] || 14
+                        let k = options['k'] || 3
+                        let d = options['d'] || 3
+
+                        // only "technicalindicators" working fluently here
+                        const StochasticRSI = require('technicalindicators').StochasticRSI;
+
+                        let f = new StochasticRSI({
+                            values: marketData.close,
+                            rsiPeriod: rsiLength,
+                            stochasticPeriod: stochLength,
+                            kPeriod: k,
+                            dPeriod: d,
+                        })
+
+                        let result = [];
+
+                        let results = f.getResult()
+
+                        for (let i = 0; i < results.length; i++) {
+                            result.push({
+                                'stoch_k': results[i]['k'],
+                                'stoch_d': results[i]['d'],
+                            })
+                        }
+
+                        resolve({
+                            [indicatorKey]: result
+                        })
+                    }))
                 } else if (indicatorName === 'pivot_points_high_low') {
                     let left = options['left'] || 5
                     let right = options['right'] || 5

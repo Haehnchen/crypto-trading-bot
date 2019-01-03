@@ -105,6 +105,10 @@ describe('#technical_analysis for candles', () => {
                 'indicator': 'stoch',
                 'key': 'stoch',
             },
+            {
+                'indicator': 'stoch_rsi',
+                'key': 'stoch_rsi',
+            },
         ]);
 
         assert.equal(result['ema_55'].length, 490)
@@ -144,6 +148,9 @@ describe('#technical_analysis for candles', () => {
 
         assert.equal(result['stoch'][0]['stoch_k'] > 0, true)
         assert.equal(result['stoch'][0]['stoch_d'] > 0, true)
+
+        assert.equal(result['stoch_rsi'][5]['stoch_k'] > 0, true)
+        assert.equal(result['stoch_rsi'][5]['stoch_d'] > 0, true)
 
         assert.equal(result['pivot_points_high_low'].filter(v => 'high' in v && 'close' in v['high']).length > 2, true);
         assert.equal(result['pivot_points_high_low'].filter(v => 'low' in v && 'close' in v['low']).length > 2, true);
