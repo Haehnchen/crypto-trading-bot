@@ -437,6 +437,28 @@ module.exports = {
                             resolve(values)
                         })
                     }))
+                } else if (indicatorName === 'stoch') {
+                    calculations.push(new Promise((resolve) => {
+                        let length = options['length'] || 14
+                        let k = options['k'] || 3
+                        let d = options['d'] || 3
+
+                        tulind.indicators.stoch.indicator([marketData.high, marketData.low, marketData.close], [length, k, d], (err, results) => {
+                            let result = [];
+
+                            for (let i = 0; i < results[0].length; i++) {
+                                result.push({
+                                    'stoch_k': results[0][i],
+                                    'stoch_d': results[1][i],
+                                })
+                            }
+
+                            let values = {}
+                            values[indicatorKey] = result
+
+                            resolve(values)
+                        })
+                    }))
                 } else if (indicatorName === 'bb_talib') {
                     let talib = require('talib')
 
