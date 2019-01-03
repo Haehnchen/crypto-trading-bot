@@ -95,7 +95,7 @@ module.exports = class TickListener {
     }
 
     onTick() {
-        this.instances.symbols.filter((symbol) => symbol.trade && symbol.trade.strategies.length > 0).forEach(async symbol => {
+        this.instances.symbols.filter(symbol => symbol.trade && symbol.trade.strategies && symbol.trade.strategies.length > 0).forEach(async symbol => {
             symbol.trade.strategies.forEach(async (strategy) => {
                 await this.visitTradeStrategy(strategy, symbol)
             })

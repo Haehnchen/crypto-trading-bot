@@ -18,7 +18,7 @@ module.exports = class StrategyManager {
     }
 
     getStrategies() {
-        if (this.strategies !== undefined) {
+        if (typeof this.strategies !== 'undefined') {
             return this.strategies
         }
 
