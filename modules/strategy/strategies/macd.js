@@ -96,4 +96,10 @@ module.exports = class MACD {
             resolve({'debug': debug})
         })
     }
+
+    getOptions() {
+        return {
+            'period': '15m',
+        }
+    }
 }

@@ -84,4 +84,10 @@ module.exports = class MacdExt {
             resolve({'debug': debug})
         })
     }
+
+    getOptions() {
+        return {
+            'period': '15m',
+        }
+    }
 }

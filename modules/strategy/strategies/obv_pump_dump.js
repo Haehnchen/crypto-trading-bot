@@ -72,4 +72,12 @@ module.exports = class {
             resolve(result)
         })
     }
+
+    getOptions() {
+        return {
+            'period': '15m',
+            'trigger_multiplier': 2,
+            'trigger_time_windows': 3,
+        }
+    }
 }

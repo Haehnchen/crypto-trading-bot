@@ -33,6 +33,10 @@ module.exports = class Http {
             return assetVersion
         });
 
+        twig.extendFilter('format_json', function(value) {
+            return JSON.stringify(value,null,'\t')
+        });
+
         const app = express();
 
         app.set('twig options', {
@@ -82,6 +86,7 @@ module.exports = class Http {
                 parseInt(req.body['ticker_interval']),
                 req.body.hours,
                 req.body.strategy,
+                req.body.candle_period,
                 pair[0],
                 pair[1],
                 req.body.options ? JSON.parse(req.body.options) : {}

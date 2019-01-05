@@ -84,4 +84,10 @@ module.exports = class AwesomeOscillatorCrossZero {
             resolve({'debug': debug})
         })
     }
+
+    getOptions() {
+        return {
+            'period': '15m',
+        }
+    }
 }

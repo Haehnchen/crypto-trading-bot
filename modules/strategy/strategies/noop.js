@@ -100,4 +100,10 @@ module.exports = class {
             },
         ]
     }
+
+    getOptions() {
+        return {
+            'period': '15m',
+        }
+    }
 }

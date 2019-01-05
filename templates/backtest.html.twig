@@ -1,15 +1,18 @@
 {% extends './layout.html.twig' %}
 
+{% block javascript %}
+    <script src="/backtest-form.js?v={{ asset_version() }}"></script>
+{% endblock %}
+
 {% block content %}
-    <form action="/backtest/submit" method="post">
+    <form action="/backtest/submit" method="post" class="backtest-form">
 
         <div class="container">
             <div class="row">
                 <div class="col-sm">
-
                     <div class="form-group">
                         <label for="form-pair">Pair</label>
-                        <select class="form-control" id="form-pair" name="pair">
+                        <select class="form-control" id="form-pair" name="pair" required>
                             {% for pair in pairs %}
                                 <option>{{ pair }}</option>
                             {% endfor %}
@@ -18,30 +21,39 @@
 
                     <div class="form-group">
                         <label for="form-strategies">Strategy</label>
-                        <select class="form-control" id="form-strategies" name="strategy">
+                        <select class="form-control" id="form-strategies" name="strategy" required>
+                            <option disabled selected value> -- select an option -- </option>
                             {% for strategy in strategies %}
-                                <option>{{ strategy }}</option>
+                                <option data-options="{% if strategy.options %}{{ strategy.options|format_json|escape('html') }}{% endif %}">{{ strategy.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="form-candle-period">Candle Period</label>
+                        <select class="form-control" id="form-candle-period" name="candle_period" required>
+                            {% for period in ['1m', '5m', '15m', '1h', '4h'] %}
+                                <option value="{{ period }}" {% if period == '15m' %}selected{% endif %}>{{ period }}</option>
                             {% endfor %}
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label for="form-hours">Last Hours</label>
-                        <input class="form-control" id="form-hours" name="hours" value="168">
+                        <input class="form-control" id="form-hours" name="hours" value="168" required>
                     </div>
                 </div>
 
                 <div class="col-sm">
                     <div class="form-group">
                         <label for="form-tick-interval">Signal Tick Interval (in seconds)</label>
-                        <input class="form-control" id="form-tick-interval" name="ticker_interval" value="180">
+                        <input class="form-control" id="form-tick-interval" name="ticker_interval" value="900" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="form-options">Options</label>
-                        <textarea class="form-control" id="form-options" rows="3" name="options">{"period": "15m"}</textarea>
+                        <label for="form-options">Strategy Options</label>
+                        <textarea class="form-control" id="form-options" rows="6" name="options"></textarea>
                     </div>
-
                 </div>
             </div>
 

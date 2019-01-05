@@ -23,10 +23,13 @@ module.exports = class Backtest {
     }
 
     getBacktestStrategies() {
-        return this.strategyManager.getStrategyNames()
+        return this.strategyManager.getStrategies().map(strategy => { return {
+            'name': strategy.getName(),
+            'options': typeof strategy.getOptions !== "undefined" ? strategy.getOptions() : undefined,
+        }})
     }
 
-    getBacktestResult(tickInterval, hours, strategy, exchange, pair, options) {
+    getBacktestResult(tickInterval, hours, strategy, candlePeriod, exchange, pair, options) {
         return new Promise(async (resolve) => {
             let start = moment()
                 .startOf('hour')
@@ -34,37 +37,34 @@ module.exports = class Backtest {
                 .unix()
 
             // collect candles for cart and allow a prefill of eg 200 candles for our indicators starts
-            let chartCandlePeriod = options['period'] || '15m';
-            let prefillWindow = start - (Resample.convertPeriodToMinute(chartCandlePeriod) * 200 * 60)
 
             let rows = []
-            let periodCache = {}
             let current = start
             let lastSignal = undefined
+
+            // mock repository for window selection of candles
+            let periodCache = {}
+            let prefillWindow = start - (Resample.convertPeriodToMinute(candlePeriod) * 200 * 60)
+            let mockedRepository = {
+                fetchCombinedCandles: async (mainExchange, symbol, period, exchanges = []) => {
+                    if (!periodCache[period]) {
+                        periodCache[period] = await this.exchangeCandleCombine.fetchCombinedCandlesSince(mainExchange, symbol, period, exchanges, prefillWindow)
+                    }
+
+                    let filter = {}
+                    for (let ex in periodCache[period]) {
+                        filter[ex] = periodCache[period][ex].slice().filter(candle => candle.time < current)
+                    }
+
+                    return filter
+                }
+            }
 
             let end = moment().unix()
             while (current < end) {
                 let item = {
                     'time': current
                 };
-
-                // mock repository for window selection of candles
-                let mockedRepository = {
-                    fetchCombinedCandles: async (mainExchange, symbol, period, exchanges = []) => {
-                        return new Promise(async (resolve) => {
-                            if (!periodCache[period]) {
-                                periodCache[period] = await this.exchangeCandleCombine.fetchCombinedCandlesSince(mainExchange, symbol, period, exchanges, prefillWindow)
-                            }
-
-                            let filter = {}
-                            for (let ex in periodCache[period]) {
-                                filter[ex] = periodCache[period][ex].slice().filter(candle => candle.time < current)
-                            }
-
-                            resolve(filter)
-                        })
-                    }
-                }
 
                 let strategyManager = new StrategyManager({}, mockedRepository)
 
@@ -99,7 +99,8 @@ module.exports = class Backtest {
                 dates[signal.time].push(signal)
             })
 
-            let candles = periodCache[chartCandlePeriod][exchange].filter(c => c.time > start).map(candle => {
+            let exchangeCandles = await mockedRepository.fetchCombinedCandles(exchange, pair, candlePeriod)
+            let candles = exchangeCandles[exchange].filter(c => c.time > start).map(candle => {
                 let signals = undefined
 
                 for (let time in JSON.parse(JSON.stringify(dates))) {
@@ -128,7 +129,7 @@ module.exports = class Backtest {
                 'configuration': {
                     'exchange': exchange,
                     'symbol': pair,
-                    'period': chartCandlePeriod,
+                    'period': candlePeriod,
                 }
             })
         })

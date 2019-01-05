@@ -135,4 +135,10 @@ module.exports = class CCI {
             },
         ]
     }
+
+    getOptions() {
+        return {
+            'period': '15m',
+        }
+    }
 }
