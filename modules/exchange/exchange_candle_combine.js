@@ -1,0 +1,72 @@
+'use strict';
+
+let Candlestick = require('../../dict/candlestick')
+
+module.exports = class ExchangeCandleCombine {
+    constructor(candlestickRepository) {
+        this.candlestickRepository = candlestickRepository
+    }
+
+    async fetchCombinedCandles(mainExchange, symbol, period, exchanges = []) {
+        let candles = await this.candlestickRepository.getLookbacksForPair(mainExchange, symbol, period)
+
+        let result = {
+            [mainExchange]: candles,
+        }
+
+        // no need for overhead
+        if (exchanges.length === 0) {
+            return result
+        }
+
+        let c = {
+            [mainExchange]: {},
+        }
+
+        candles.forEach(candle => {
+            c[mainExchange][candle.time] = candle
+        })
+
+        let start = candles[candles.length - 1].time
+
+        await Promise.all(exchanges.map(exchange => {
+            return new Promise(async resolve => {
+
+                let candles = {}
+                let databaseCandles = await this.candlestickRepository.getLookbacksSince(exchange.name, exchange.symbol, period, start);
+                databaseCandles.forEach(c => {
+                    candles[c.time] = c
+                })
+
+                let myCandles = []
+
+                let timeMatchedOnce = false
+                for (let time of Object.keys(c[mainExchange])) {
+                    // time was matched
+                    if (candles[time]) {
+                        myCandles.push(candles[time])
+                        timeMatchedOnce = true
+                        continue
+                    }
+
+                    // pipe the close prices from last known candle
+                    let previousCandle = myCandles[myCandles.length - 1]
+
+                    let candle = previousCandle
+                        ? new Candlestick(parseInt(time), previousCandle.close, previousCandle.close, previousCandle.close, previousCandle.close, 0)
+                        : new Candlestick(parseInt(time))
+
+                    myCandles.push(candle)
+                }
+
+                if (timeMatchedOnce) {
+                    result[exchange.name] = myCandles.reverse()
+                }
+
+                resolve()
+            })
+        }))
+
+        return result
+    }
+}
