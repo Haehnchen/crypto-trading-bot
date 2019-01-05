@@ -147,7 +147,7 @@ module.exports = class StrategyManager {
             }
 
             for (let foreignExchange of foreignExchanges) {
-                if (lookbacks[foreignExchange.name] || lookbacks[foreignExchange.name].length === 0) {
+                if (!lookbacks[foreignExchange.name] || !lookbacks[foreignExchange.name].length === 0) {
                     continue
                 }
 
