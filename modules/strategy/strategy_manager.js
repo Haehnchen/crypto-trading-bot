@@ -63,7 +63,7 @@ module.exports = class StrategyManager {
     async executeStrategyBacktest(strategyName, exchange, symbol, options, lastSignal) {
         let results = await this.getTaResult(strategyName, exchange, symbol, options)
 
-        let price = results['_candle'].close ? results['_candle'].close : undefined
+        let price = results['_candle'] ? results['_candle'].close : undefined
         let context = StrategyContext.create(new Ticker(exchange, symbol, undefined, price, price))
         context.lastSignal = lastSignal
 
