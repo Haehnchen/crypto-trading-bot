@@ -5,11 +5,11 @@ const StrategyManager = require('./strategy/strategy_manager')
 const Resample = require('../utils/resample')
 const _ = require('lodash')
 
-module.exports = class Backtest{
-    constructor(candlestickRepository, instances, strategyManager) {
-        this.candlestickRepository = candlestickRepository
+module.exports = class Backtest {
+    constructor(instances, strategyManager, exchangeCandleCombine) {
         this.instances = instances
         this.strategyManager = strategyManager
+        this.exchangeCandleCombine = exchangeCandleCombine
     }
 
     getBacktestPairs() {
@@ -50,22 +50,23 @@ module.exports = class Backtest{
 
                 // mock repository for window selection of candles
                 let mockedRepository = {
-                    getLookbacksForPair: async (exchange, symbol, period) => {
+                    fetchCombinedCandles: async (mainExchange, symbol, period, exchanges = []) => {
                         return new Promise(async (resolve) => {
                             if (!periodCache[period]) {
-                                periodCache[period] = await this.candlestickRepository.getLookbacksSince(exchange, symbol, period, prefillWindow)
+                                periodCache[period] = await this.exchangeCandleCombine.fetchCombinedCandlesSince(mainExchange, symbol, period, exchanges, prefillWindow)
                             }
 
-                            let filter = periodCache[period].slice().filter((candle) => {
-                                return candle.time < current
-                            });
+                            let filter = {}
+                            for (let ex in periodCache[period]) {
+                                filter[ex] = periodCache[period][ex].slice().filter(candle => candle.time < current)
+                            }
 
                             resolve(filter)
                         })
                     }
                 }
 
-                let strategyManager = new StrategyManager(mockedRepository)
+                let strategyManager = new StrategyManager({}, mockedRepository)
 
                 let backtestResult = await strategyManager.executeStrategyBacktest(strategy, exchange, pair, options, lastSignal)
                 item['result'] = backtestResult
@@ -98,7 +99,7 @@ module.exports = class Backtest{
                 dates[signal.time].push(signal)
             })
 
-            let candles = periodCache[chartCandlePeriod].filter(c => c.time > start).map(candle => {
+            let candles = periodCache[chartCandlePeriod][exchange].filter(c => c.time > start).map(candle => {
                 let signals = undefined
 
                 for (let time in JSON.parse(JSON.stringify(dates))) {

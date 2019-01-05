@@ -8,14 +8,34 @@ module.exports = class ExchangeCandleCombine {
     }
 
     async fetchCombinedCandles(mainExchange, symbol, period, exchanges = []) {
-        let candles = await this.candlestickRepository.getLookbacksForPair(mainExchange, symbol, period)
+        return this.combinedCandles(
+            this.candlestickRepository.getLookbacksForPair(mainExchange, symbol, period),
+            mainExchange,
+            symbol,
+            period,
+            exchanges
+        )
+    }
+
+    async fetchCombinedCandlesSince(mainExchange, symbol, period, exchanges = [], start) {
+        return this.combinedCandles(
+            this.candlestickRepository.getLookbacksSince(mainExchange, symbol, period, start),
+            mainExchange,
+            symbol,
+            period,
+            exchanges
+        )
+    }
+
+    async combinedCandles(candlesAwait, mainExchange, symbol, period, exchanges = []) {
+        let candles = await candlesAwait
 
         let result = {
             [mainExchange]: candles,
         }
 
         // no need for overhead
-        if (exchanges.length === 0) {
+        if (exchanges.length === 0 || candles.length === 0) {
             return result
         }
 

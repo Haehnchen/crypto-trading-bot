@@ -7,14 +7,14 @@ let fs = require('fs');
 
 describe('#strategy manager', () => {
     it('strategy cci', async () => {
-        let strategyManager = new StrategyManager(createCandlestickRepository(), createTechnicalAnalysisValidator())
+        let strategyManager = new StrategyManager(createTechnicalAnalysisValidator(), createCandlestickRepository())
 
         let result = await strategyManager.executeStrategy('cci', createStrategyContext(), 'foobar', 'BTCUSD', {'period': '15m'})
         assert.equal(undefined, result['signal'])
     });
 
     it('strategy macd', async () => {
-        let strategyManager = new StrategyManager(createCandlestickRepository(), createTechnicalAnalysisValidator())
+        let strategyManager = new StrategyManager(createTechnicalAnalysisValidator(), createCandlestickRepository())
 
         let result = await strategyManager.executeStrategy('macd', createStrategyContext(), 'foobar', 'BTCUSD', {'period': '15m'})
         assert.equal(undefined, result['signal'])
@@ -22,8 +22,10 @@ describe('#strategy manager', () => {
 
     let createCandlestickRepository = () => {
         return {
-            getLookbacksForPair: () => {
-                return new Promise((resolve) => { resolve(createCandleFixtures()) })
+            fetchCombinedCandles: async (exchange) => {
+                return {
+                    [exchange]: createCandleFixtures()
+                }
             }
         }
     }

@@ -9,9 +9,9 @@ const StrategyContext = require('../../dict/strategy_context')
 const Ticker = require('../../dict/ticker')
 
 module.exports = class StrategyManager {
-    constructor(candlestickRepository, technicalAnalysisValidator, logger) {
-        this.candlestickRepository = candlestickRepository
+    constructor(technicalAnalysisValidator, exchangeCandleCombine, logger) {
         this.technicalAnalysisValidator = technicalAnalysisValidator
+        this.exchangeCandleCombine = exchangeCandleCombine
 
         this.logger = logger
         this.strategies = undefined
@@ -44,7 +44,42 @@ module.exports = class StrategyManager {
         return this.strategies = strategies
     }
 
-    executeStrategy(strategyName, context, exchange, symbol, options) {
+    async executeStrategy(strategyName, context, exchange, symbol, options) {
+        let results = await this.getTaResult(strategyName, exchange, symbol, options, true)
+        if(!results || Object.keys(results).length === 0) {
+            return {}
+        }
+
+        // remove candle pipe
+        delete(results['_candle'])
+
+        let indicatorPeriod = new IndicatorPeriod(context, results)
+
+        let strategy = this.getStrategies().find(strategy => strategy.getName() === strategyName)
+
+        return await strategy.period(indicatorPeriod, options)
+    }
+
+    async executeStrategyBacktest(strategyName, exchange, symbol, options, lastSignal) {
+        let results = await this.getTaResult(strategyName, exchange, symbol, options)
+
+        let context = StrategyContext.create(new Ticker(exchange, symbol, undefined, results['_candle'].close, results['_candle'].close))
+        context.lastSignal = lastSignal
+
+        let indicatorPeriod = new IndicatorPeriod(context, results)
+
+        let strategy = this.getStrategies().find(strategy => strategy.getName() === strategyName)
+        let trigger = await strategy.period(indicatorPeriod, options)
+
+        trigger = trigger || {}
+
+        trigger['price'] = results['_candle'].close
+        trigger['columns'] = this.getCustomTableColumnsForRow(strategyName, trigger.debug)
+
+        return trigger
+    }
+
+    async getTaResult(strategyName, exchange, symbol, options, validateLookbacks = false) {
         options = options || {}
 
         let strategy = this.getStrategies().find((strategy) => {
@@ -55,41 +90,74 @@ module.exports = class StrategyManager {
             throw 'invalid strategy: ' + strategy
         }
 
-        return new Promise(async (resolve) => {
-            let indicatorBuilder = new IndicatorBuilder()
-            strategy.buildIndicator(indicatorBuilder, options)
+        let indicatorBuilder = new IndicatorBuilder()
+        strategy.buildIndicator(indicatorBuilder, options)
 
-            let periodGroups = {}
+        let periodGroups = {}
 
-            indicatorBuilder.all().forEach((indicator) => {
-                if (!periodGroups[indicator.period]) {
-                    periodGroups[indicator.period] = []
+        indicatorBuilder.all().forEach((indicator) => {
+            if (!periodGroups[indicator.period]) {
+                periodGroups[indicator.period] = []
+            }
+
+            periodGroups[indicator.period].push(indicator)
+        });
+
+        let results = {}
+
+        for (let period in periodGroups) {
+            let periodGroup = periodGroups[period]
+
+            let foreignExchanges = [...new Set(periodGroup.filter(group => group.options.exchange && group.options.symbol).map(group => {
+                return group.options.exchange + '#' + group.options.symbol
+            }))].map(exchange => {
+                let e = exchange.split('#')
+
+                return {
+                    'name': e[0],
+                    'symbol': e[1],
                 }
+            })
 
-                periodGroups[indicator.period].push(indicator)
-            });
-
-            var results = {};
-
-            for (let period in periodGroups) {
-                let periodGroup = periodGroups[period];
-
-                let lookbackNewestFirst = (await this.candlestickRepository.getLookbacksForPair(exchange, symbol, period)).slice()
-                let lookbacks = lookbackNewestFirst.slice().reverse()
-
+            let lookbacks = (await this.exchangeCandleCombine.fetchCombinedCandles(exchange, symbol, period, foreignExchanges))
+            if (lookbacks[exchange].length > 0) {
                 // check if candle to close time is outside our allow time window
-                if (!this.technicalAnalysisValidator.isValidCandleStickLookback(lookbackNewestFirst, period)) {
+                if (validateLookbacks && !this.technicalAnalysisValidator.isValidCandleStickLookback(lookbacks[exchange].slice(), period)) {
                     // too noisy for now; @TODO provide a logging throttle
                     // this.logger.error('Outdated candle stick period detected: ' + JSON.stringify([period, strategyName, exchange, symbol]))
 
                     // stop current run
-                    resolve()
-                    return
+                    return {}
+                }
+
+                let indicators = periodGroup.filter(group => !group.options.exchange && !group.options.symbol)
+
+                let result = await ta.createIndicatorsLookback(
+                    lookbacks[exchange].slice().reverse(),
+                    indicators
+                )
+
+                // array merge
+                for (let x in result) {
+                    results[x] = result[x]
+                }
+
+                results['_candle'] = lookbacks[exchange][0]
+            }
+
+            for (let foreignExchange of foreignExchanges) {
+                if (lookbacks[foreignExchange.name] && lookbacks[foreignExchange.name].length === 0) {
+                    continue
+                }
+
+                let indicators = periodGroup.filter(group => group.options.exchange === foreignExchange.name)
+                if (indicators.length === 0) {
+                    continue
                 }
 
                 let result = await ta.createIndicatorsLookback(
-                    lookbacks,
-                    periodGroup
+                    lookbacks[foreignExchange.name].slice().reverse(),
+                    indicators
                 )
 
                 // array merge
@@ -97,78 +165,9 @@ module.exports = class StrategyManager {
                     results[x] = result[x]
                 }
             }
-
-            let indicatorPeriod = new IndicatorPeriod(context, results)
-
-            let trigger = await strategy.period(indicatorPeriod, options)
-
-            resolve(trigger)
-        })
-    }
-
-    executeStrategyBacktest(strategyName, exchange, symbol, options, lastSignal) {
-        options = options || {}
-
-        let strategy = this.getStrategies().find((strategy) => {
-            return strategy.getName() === strategyName
-        })
-
-        if (!strategy) {
-            throw 'invalid strategy: ' + strategy
         }
 
-        return new Promise(async (resolve) => {
-            let indicatorBuilder = new IndicatorBuilder()
-            strategy.buildIndicator(indicatorBuilder, options)
-
-            let periodGroups = {}
-
-            indicatorBuilder.all().forEach((indicator) => {
-                if (!periodGroups[indicator.period]) {
-                    periodGroups[indicator.period] = []
-                }
-
-                periodGroups[indicator.period].push(indicator)
-            });
-
-            var results = {};
-
-            var price = undefined
-
-            for (let k in periodGroups) {
-                let periodGroup = periodGroups[k];
-
-                let lookbacks = (await this.candlestickRepository.getLookbacksForPair(exchange, symbol, k)).slice().reverse()
-
-                if (lookbacks.length > 0) {
-                    price = lookbacks[lookbacks.length - 1].close
-                }
-
-                let result = await ta.createIndicatorsLookback(
-                    lookbacks,
-                    periodGroup
-                )
-
-                // array merge
-                for (let x in result) {
-                    results[x] = result[x]
-                }
-            }
-
-            let context = StrategyContext.create(new Ticker(exchange, symbol, undefined, price, price))
-            context.lastSignal = lastSignal
-
-            let indicatorPeriod = new IndicatorPeriod(context, results)
-
-            let trigger = await strategy.period(indicatorPeriod, options)
-
-            trigger = trigger || {}
-
-            trigger['price'] = price
-            trigger['columns'] = this.getCustomTableColumnsForRow(strategyName, trigger.debug)
-
-            resolve(trigger)
-        })
+        return results
     }
 
     getCustomTableColumnsForRow(strategyName, row) {

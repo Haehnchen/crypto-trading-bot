@@ -55,6 +55,7 @@ let Binance = require('../exchange/binance')
 let Bitfinex = require('../exchange/bitfinex')
 let CoinbasePro = require('../exchange/coinbase_pro')
 let Noop = require('../exchange/noop')
+let ExchangeCandleCombine = require('../modules/exchange/exchange_candle_combine')
 
 var _ = require('lodash');
 
@@ -102,6 +103,7 @@ let tickerLogRepository = undefined
 let candlestickResample = undefined
 let exchanges = undefined
 let requestClient = undefined
+let exchangeCandleCombine = undefined
 
 module.exports = {
     boot: function() {
@@ -150,9 +152,9 @@ module.exports = {
         }
 
         return backtest = new Backtest(
-            this.getCandlestickRepository(),
             this.getInstances(),
             this.getStrategyManager(),
+            this.getExchangeCandleCombine(),
         )
     },
 
@@ -363,8 +365,8 @@ module.exports = {
         }
 
         return strategyManager = new StrategyManager(
-            this.getCandlestickRepository(),
             this.getTechnicalAnalysisValidator(),
+            this.getExchangeCandleCombine(),
             this.getLogger(),
         )
     },
@@ -519,6 +521,16 @@ module.exports = {
 
         return requestClient = new RequestClient(
             this.getLogger(),
+        )
+    },
+
+    getExchangeCandleCombine: function() {
+        if (exchangeCandleCombine) {
+            return exchangeCandleCombine
+        }
+
+        return exchangeCandleCombine = new ExchangeCandleCombine(
+            this.getCandlestickRepository(),
         )
     },
 
