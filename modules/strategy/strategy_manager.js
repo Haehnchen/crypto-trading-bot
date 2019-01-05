@@ -63,7 +63,8 @@ module.exports = class StrategyManager {
     async executeStrategyBacktest(strategyName, exchange, symbol, options, lastSignal) {
         let results = await this.getTaResult(strategyName, exchange, symbol, options)
 
-        let context = StrategyContext.create(new Ticker(exchange, symbol, undefined, results['_candle'].close, results['_candle'].close))
+        let price = results['_candle'].close ? results['_candle'].close : undefined
+        let context = StrategyContext.create(new Ticker(exchange, symbol, undefined, price, price))
         context.lastSignal = lastSignal
 
         let indicatorPeriod = new IndicatorPeriod(context, results)
@@ -73,7 +74,7 @@ module.exports = class StrategyManager {
 
         trigger = trigger || {}
 
-        trigger['price'] = results['_candle'].close
+        trigger['price'] = price
         trigger['columns'] = this.getCustomTableColumnsForRow(strategyName, trigger.debug)
 
         return trigger
