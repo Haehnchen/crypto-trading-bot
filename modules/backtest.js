@@ -29,7 +29,7 @@ module.exports = class Backtest {
         }})
     }
 
-    getBacktestResult(tickInterval, hours, strategy, candlePeriod, exchange, pair, options) {
+    getBacktestResult(tickIntervalInMinutes, hours, strategy, candlePeriod, exchange, pair, options) {
         return new Promise(async (resolve) => {
             let start = moment()
                 .startOf('hour')
@@ -84,7 +84,7 @@ module.exports = class Backtest {
 
                 rows.push(item)
 
-                current += tickInterval;
+                current += tickIntervalInMinutes * 60;
             }
 
             let signals = rows.slice().filter(r => 'signal' in r.result)
