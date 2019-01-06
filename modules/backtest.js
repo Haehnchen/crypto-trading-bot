@@ -84,7 +84,7 @@ module.exports = class Backtest {
 
                 rows.push(item)
 
-                current += tickIntervalInMinutes * 60;
+                current += (tickIntervalInMinutes * 60);
             }
 
             let signals = rows.slice().filter(r => 'signal' in r.result)
