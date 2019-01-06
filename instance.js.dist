@@ -124,7 +124,7 @@ l.forEach((pair) => {
 })
 
 let z = [
-    'XLMUSDT', 'BNBBTC', 'BNBUSDT'
+    'BTCUSDT', 'XLMUSDT', 'BNBBTC', 'BNBUSDT'
 ]
 
 z.forEach((pair) => {
