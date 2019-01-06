@@ -44,7 +44,12 @@ module.exports = class {
             debug['mfi'] = indicatorPeriod.getIndicator('mfi').slice(-1)[0]
             debug['sma200'] = indicatorPeriod.getIndicator('sma200').slice(-1)[0]
             debug['sma50'] = indicatorPeriod.getIndicator('sma50').slice(-1)[0]
-            debug['binance_candle'] = indicatorPeriod.getIndicator('binance_candle').slice(-1)[0]
+
+
+            let binance = indicatorPeriod.getIndicator('binance_candle')
+            if (binance.length > 0) {
+                debug['binance_candle'] = binance.slice(-1)[0]
+            }
 
             debug['pivot_points_high_low'] = indicatorPeriod.getIndicator('pivot_points_high_low').slice(-1)[0]
 
