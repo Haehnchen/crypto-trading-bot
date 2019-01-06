@@ -47,7 +47,7 @@ module.exports = class {
 
 
             let binance = indicatorPeriod.getIndicator('binance_candle')
-            if (binance.length > 0) {
+            if (binance && binance.length > 0) {
                 debug['binance_candle'] = binance.slice(-1)[0]
             }
 
