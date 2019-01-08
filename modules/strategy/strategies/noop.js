@@ -34,34 +34,27 @@ module.exports = class {
 
     period(indicatorPeriod, options) {
         return new Promise((resolve) => {
-            let debug = {}
+            let currentValues = indicatorPeriod.getLatestIndicators()
 
-            let bb = indicatorPeriod.getIndicator('bb')
-            let currentBB = bb.slice(-1)[0]
+            let bollinger = indicatorPeriod.getIndicator('bb')
 
-            debug['bb'] = currentBB
-            debug['rsi'] = indicatorPeriod.getIndicator('rsi').slice(-1)[0]
-            debug['mfi'] = indicatorPeriod.getIndicator('mfi').slice(-1)[0]
-            debug['sma200'] = indicatorPeriod.getIndicator('sma200').slice(-1)[0]
-            debug['sma50'] = indicatorPeriod.getIndicator('sma50').slice(-1)[0]
+            if (bollinger && currentValues.bb) {
+                let standardDeviation = SD.calculate({
+                    period : 150,
+                    values : bollinger.slice(-200).map(b => b.width),
+                })
 
-
-            let binance = indicatorPeriod.getIndicator('binance_candle')
-            if (binance && binance.length > 0) {
-                debug['binance_candle'] = binance.slice(-1)[0]
+                currentValues.bb.sd = standardDeviation.slice(-1)[0]
             }
 
-            debug['pivot_points_high_low'] = indicatorPeriod.getIndicator('pivot_points_high_low').slice(-1)[0]
+            let currentBB = indicatorPeriod.getLatestIndicator('bb')
+            if (currentBB && currentValues.bb) {
+                currentValues.bb.percent = TA.getBollingerBandPercent(indicatorPeriod.getPrice(), currentBB.upper, currentBB.lower)
+            }
 
-            let standardDeviation = SD.calculate({
-                period : 150,
-                values : bb.slice(-200).map(b => b.width),
+            resolve({
+                'debug': currentValues,
             })
-
-            debug.bb.sd = standardDeviation.slice(-1)[0]
-            debug.bb.percent = TA.getBollingerBandPercent(indicatorPeriod.getPrice(), currentBB.upper, currentBB.lower)
-
-            resolve({'debug': debug})
         })
     }
 
