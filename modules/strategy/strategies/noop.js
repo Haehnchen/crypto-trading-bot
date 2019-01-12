@@ -26,9 +26,9 @@ module.exports = class {
             'length': 50,
         })
 
-        indicatorBuilder.add('binance_candle', 'candles', '15m', {
-            'exchange': 'binance',
-            'symbol': 'BTCUSDT',
+        indicatorBuilder.add('foreign_candle', 'candles', options['foreign_pair_period'] || '15m', {
+            'exchange': options['foreign_pair_exchange'] || 'binance',
+            'symbol': options['foreign_pair_symbol'] || 'BTCUSDT',
         })
     }
 
@@ -93,8 +93,8 @@ module.exports = class {
                 'value': 'pivot_points_high_low',
             },
             {
-                'label': 'Binance',
-                'value': 'binance_candle.close',
+                'label': 'Foreign',
+                'value': 'foreign_candle.close',
             },
         ]
     }
@@ -102,6 +102,9 @@ module.exports = class {
     getOptions() {
         return {
             'period': '15m',
+            'foreign_pair_exchange': 'binance',
+            'foreign_pair_symbol': 'BTCUSDT',
+            'foreign_pair_period': '15m',
         }
     }
 }

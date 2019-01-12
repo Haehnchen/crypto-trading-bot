@@ -147,7 +147,7 @@ module.exports = class StrategyManager {
             }
 
             for (let foreignExchange of foreignExchanges) {
-                if (!lookbacks[foreignExchange.name] || !lookbacks[foreignExchange.name].length === 0) {
+                if (!lookbacks[foreignExchange.name + foreignExchange.symbol] || lookbacks[foreignExchange.name + foreignExchange.symbol].length === 0) {
                     continue
                 }
 
@@ -157,7 +157,7 @@ module.exports = class StrategyManager {
                 }
 
                 let result = await ta.createIndicatorsLookback(
-                    lookbacks[foreignExchange.name].slice().reverse(),
+                    lookbacks[foreignExchange.name + foreignExchange.symbol].slice().reverse(),
                     indicators
                 )
 

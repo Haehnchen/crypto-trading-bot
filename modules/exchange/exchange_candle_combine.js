@@ -80,7 +80,7 @@ module.exports = class ExchangeCandleCombine {
                 }
 
                 if (timeMatchedOnce) {
-                    result[exchange.name] = myCandles.reverse()
+                    result[exchange.name + exchange.symbol] = myCandles.reverse()
                 }
 
                 resolve()

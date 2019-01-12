@@ -47,13 +47,14 @@ module.exports = class Backtest {
             let prefillWindow = start - (Resample.convertPeriodToMinute(candlePeriod) * 200 * 60)
             let mockedRepository = {
                 fetchCombinedCandles: async (mainExchange, symbol, period, exchanges = []) => {
-                    if (!periodCache[period]) {
-                        periodCache[period] = await this.exchangeCandleCombine.fetchCombinedCandlesSince(mainExchange, symbol, period, exchanges, prefillWindow)
+                    let key = mainExchange + symbol + period;
+                    if (!periodCache[key]) {
+                        periodCache[key] = await this.exchangeCandleCombine.fetchCombinedCandlesSince(mainExchange, symbol, period, exchanges, prefillWindow)
                     }
 
                     let filter = {}
-                    for (let ex in periodCache[period]) {
-                        filter[ex] = periodCache[period][ex].slice().filter(candle => candle.time < current)
+                    for (let ex in periodCache[key]) {
+                        filter[ex] = periodCache[key][ex].slice().filter(candle => candle.time < current)
                     }
 
                     return filter

@@ -42,25 +42,25 @@ describe('#exchange candle combine', () => {
         ])
 
         assert.equal(result.bitmex.length, 22)
-        assert.equal(result.binance.length, 22)
+        assert.equal(result['binance' + 'BTCUSD'].length, 22)
 
         assert.equal(result.bitmex[0].open, 2)
-        assert.equal(result.binance[0].open, 2)
+        assert.equal(result['binance' + 'BTCUSD'][0].open, 2)
 
         assert.equal(result.bitmex[0].close, 2.1)
-        assert.equal(result.binance[0].close, 2.1)
+        assert.equal(result['binance' + 'BTCUSD'][0].close, 2.1)
 
         assert.equal(result.bitmex[0].time > result.bitmex[1].time, true)
-        assert.equal(result.binance[0].time > result.binance[1].time, true)
-        assert.equal(result.gap[0].time > result.gap[1].time, true)
+        assert.equal(result['binance' + 'BTCUSD'][0].time > result['binance' + 'BTCUSD'][1].time, true)
+        assert.equal(result['gap' + 'FOOUSD'][0].time > result['gap' + 'FOOUSD'][1].time, true)
 
         assert.equal(result.bitmex[result.bitmex.length - 1].close, 46.2)
-        assert.equal(result.binance[result.binance.length - 1].close, 46.2)
+        assert.equal(result['binance' + 'BTCUSD'][result['binance' + 'BTCUSD'].length - 1].close, 46.2)
 
-        assert.equal(result.gap.length, 22)
+        assert.equal(result['gap' + 'FOOUSD'].length, 22)
         assert.equal(calls.filter(c => c[3] === 1393473600).length, 3)
 
-        assert.equal('foobar' in result.gap, false)
+        assert.equal('foobar' in result['gap' + 'FOOUSD'], false)
     })
 
     it('test that only main exchagne is given', async () => {
@@ -76,7 +76,7 @@ describe('#exchange candle combine', () => {
         let result = await exchangeCandleCombine.fetchCombinedCandles('bitmex', 'XTBUSD', '15m')
 
         assert.equal(result.bitmex.length, 22)
-         assert.equal(result.bitmex[0].close, 2.1)
+        assert.equal(result.bitmex[0].close, 2.1)
 
         assert.equal(result.bitmex[0].time > result.bitmex[1].time, true)
 
