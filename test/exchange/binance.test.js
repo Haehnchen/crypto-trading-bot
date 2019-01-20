@@ -123,6 +123,8 @@ describe('#binance exchange implementation', function() {
         assert.equal('open', order.status)
         assert.equal('sell', order.side)
         assert.equal('stop', order.type)
+        assert.equal(true, order.createdAt instanceof Date)
+        assert.equal(true, order.updatedAt instanceof Date)
     })
 
     it('order cancel order', async () => {
