@@ -11,6 +11,11 @@
         "binance": {
             "key": null,
             "secret": null
+        },
+        "coinbase_pro": {
+            "key": null,
+            "secret": null,
+            "passphrase": null
         }
     },
     "notify": {
