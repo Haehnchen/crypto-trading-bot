@@ -99,7 +99,7 @@ describe('#pair state execution', function() {
                 },
             },
             {'calculateOrderSize': () => { return 1337 }},
-            {'executeOrder': (exchange, order) => { myOrder = order; return undefined}},
+            {'executeOrder': async (exchange, order) => { myOrder = order; return undefined}},
             undefined,
         )
 
