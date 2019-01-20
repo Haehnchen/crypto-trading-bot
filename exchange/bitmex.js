@@ -1014,7 +1014,7 @@ module.exports = class Bitmex {
                 orderType,
                 new Date(order['transactTime']),
                 new Date(),
-                JSON.stringify(orders)
+                JSON.parse(JSON.stringify(order))
             )
         })
     }

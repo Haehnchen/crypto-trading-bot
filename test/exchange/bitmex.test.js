@@ -471,8 +471,9 @@ describe('#bitmex exchange implementation', function() {
         assert.equal(Object.keys(myOptions.headers).includes('api-key'), true)
         assert.equal(Object.keys(myOptions.headers).includes('api-signature'), true)
 
-        assert.equal(order.type, 'limit')
-        assert.equal(order.side, 'sell')
+        assert.equal('limit', order.type)
+        assert.equal('sell', order.side)
+        assert.equal('fb7972c4-b4fa-080f-c0b1-1919db50bc63', order.raw.orderID)
 
         assert.equal((await bitmex.getOrders()).length, 1)
         assert.equal((await bitmex.findOrderById('fb7972c4-b4fa-080f-c0b1-1919db50bc63')).id, 'fb7972c4-b4fa-080f-c0b1-1919db50bc63')

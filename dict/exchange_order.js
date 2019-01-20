@@ -35,4 +35,21 @@ module.exports = class ExchangeOrder {
             new Date(),
         )
     }
+
+    static createCanceled(order) {
+        return new ExchangeOrder(
+            order.id,
+            order.symbol,
+            'canceled',
+            order.price,
+            order.amount,
+            false,
+            order.ourId,
+            order.side,
+            order.type,
+            order.createdAt,
+            order.updatedAt,
+            order.raw,
+        )
+    }
 }
