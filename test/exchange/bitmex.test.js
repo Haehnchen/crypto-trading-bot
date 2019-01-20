@@ -58,11 +58,11 @@ describe('#bitmex exchange implementation', function() {
             'LTC': 0.00001,
         }
 
-        assert.equal(bitmex.calculatePrice(0.0085696, 'LTC'), 0.00857)
-        assert.equal(bitmex.calculateAmount(0.85, 'LTC'), 1)
+        assert.equal(bitmex.calculatePrice(0.0085696, 'LTC'), 0.00856)
+        assert.equal(bitmex.calculateAmount(0.85, 'LTC'), 0)
 
-        assert.equal(bitmex.calculatePrice(-0.0085696, 'LTC'), -0.00857)
-        assert.equal(bitmex.calculateAmount(-0.85, 'LTC'), -1)
+        assert.equal(bitmex.calculatePrice(-0.0085696, 'LTC'), -0.00856)
+        assert.equal(bitmex.calculateAmount(-0.85, 'LTC'), 0)
     })
 
     it('test that request body for order is created (limit order)', () => {

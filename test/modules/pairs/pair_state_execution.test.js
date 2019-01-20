@@ -93,7 +93,11 @@ describe('#pair state execution', function() {
 
         let executor = new PairStateExecution(
             undefined,
-            undefined,
+            {
+                'get': () => {
+                    return {'calculateAmount': v => v }
+                },
+            },
             {'calculateOrderSize': () => { return 1337 }},
             {'executeOrder': (exchange, order) => { myOrder = order; return undefined}},
             undefined,
@@ -115,7 +119,11 @@ describe('#pair state execution', function() {
 
         let executor = new PairStateExecution(
             undefined,
-            undefined,
+            {
+                'get': () => {
+                    return {'calculateAmount': v => v }
+                },
+            },
             {'calculateOrderSize': () => { return 1337 }},
             {'executeOrder': (exchange, order) => { myOrder = order; return undefined}},
             undefined,
@@ -136,7 +144,11 @@ describe('#pair state execution', function() {
 
         let executor = new PairStateExecution(
             undefined,
-            undefined,
+            {
+                'get': () => {
+                    return {'calculateAmount': v => v }
+                },
+            },
             {'calculateOrderSize': () => { return 1337 }},
             {'executeOrder': (exchange, order) => { myOrder = order; return undefined}},
             undefined,

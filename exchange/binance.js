@@ -10,6 +10,7 @@ let ExchangeOrder = require('../dict/exchange_order')
 let moment = require('moment')
 let OrderUtil = require('../utils/order_util')
 let Position = require('../dict/position')
+let Order = require('../dict/order')
 
 module.exports = class Binance {
     constructor(eventEmitter, logger) {
@@ -342,6 +343,22 @@ module.exports = class Binance {
         })
     }
 
+    async updateOrder(id, order) {
+        if (!order.amount && !order.price) {
+            throw 'Invalid amount / price for update'
+        }
+
+        let currentOrder = await this.findOrderById(id);
+        if (!currentOrder) {
+            return
+        }
+
+        // cancel order; mostly it can already be canceled
+        await this.cancelOrder(id)
+
+        return await this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount))
+    }
+
     getName() {
         return 'binance'
     }
@@ -415,7 +432,7 @@ module.exports = class Binance {
 
         let orders = {}
         myOrders.forEach(o => {
-            orders[o.symbol] = o
+            orders[o.id] = o
         })
 
         this.orders = orders

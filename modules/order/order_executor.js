@@ -99,7 +99,7 @@ module.exports = class OrderExecutor {
                     this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify(order))
                 }
             } catch(err) {
-                this.logger.error('OrderAdjust: adjusted failed: ' + JSON.stringify([order, err]))
+                this.logger.error('OrderAdjust: adjusted failed: ' + JSON.stringify([String(err), order]))
             }
 
             delete this.runningOrders[order.id]

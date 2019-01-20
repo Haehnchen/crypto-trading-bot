@@ -134,4 +134,16 @@ module.exports = class Order {
             {'close': true},
         )
     }
+
+    static createUpdateOrderOnCurrent(order, price = undefined, amount = undefined) {
+        return new Order(
+            Math.round(((new Date()).getTime()).toString() * Math.random()),
+            order.symbol,
+            order.side,
+            typeof price === 'undefined' ? order.price : price,
+            typeof amount === 'undefined' ? order.amount : amount,
+            order.type,
+            order.options,
+        )
+    }
 };
