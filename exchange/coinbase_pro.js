@@ -8,7 +8,7 @@ let CandlestickEvent = require('./../event/candlestick_event')
 let TickerEvent = require('./../event/ticker_event')
 let OrderUtil = require('../utils/order_util')
 let ExchangeOrder = require('../dict/exchange_order')
-
+let Position = require('../dict/position.js')
 let moment = require('moment')
 
 module.exports = class CoinbasePro {
@@ -23,6 +23,8 @@ module.exports = class CoinbasePro {
     }
 
     start(config, symbols) {
+        this.symbols = symbols
+
         let eventEmitter = this.eventEmitter
         let logger = this.logger
 
@@ -95,6 +97,11 @@ module.exports = class CoinbasePro {
         let me = this
         setInterval(function f() {
             me.syncOrders()
+            return f
+        }(), 1000 * 30)
+
+        setInterval(function f() {
+            me.syncBalances()
             return f
         }(), 1000 * 30)
 
@@ -284,6 +291,41 @@ module.exports = class CoinbasePro {
         })
 
         this.orders = orders
+    }
+
+    async syncBalances() {
+        let accounts = await this.client.getAccounts()
+        if (!accounts) {
+            return
+        }
+
+        let capitals = {}
+        this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).forEach(s => {
+            capitals[s.symbol] = s.trade.capital
+        })
+
+        this.logger.debug('Coinbase Pro: Sync balances: ' + Object.keys(capitals).length)
+
+        let positions = [];
+
+        let balances = accounts.filter(b => parseFloat(b.balance) > 0)
+        for (let balance of balances) {
+            let asset = balance.currency
+
+            for (let pair in capitals) {
+                if (pair.startsWith(asset)) {
+                    let capital = capitals[pair];
+                    let balanceUsed = parseFloat(balance.balance)
+
+                    // 1% balance left indicate open position
+                    if (Math.abs(balanceUsed / capital) > 0.1) {
+                        positions.push(new Position(pair, 'long', balanceUsed, undefined, new Date(), undefined, new Date()))
+                    }
+                }
+            }
+        }
+
+        this.positions = positions
     }
 
     static createOrders(...orders) {
