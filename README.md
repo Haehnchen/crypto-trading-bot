@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/Haehnchen/crypto-trading-bot.svg?branch=master)](https://travis-ci.org/Haehnchen/crypto-trading-bot)
 
-A **work in progress** Cryptocurrency for common exchanges like Bitfinex and Bitmex.
+A **work in progress** Cryptocurrency for common exchanges like Bitfinex, Bitmex and Binance.
 As most trading bots just provide basic buy and sell signals they provide many stuff to get profitable eg exchange orders like stop-losses or stop-limits are not supported by main bots. Also the limitation of fixed timeframe and technical indicators must be broken  
 
 **Not production ready** only basic functionality 
@@ -16,6 +16,8 @@ As most trading bots just provide basic buy and sell signals they provide many s
  * Support for going "Short" and "Long"
  * Signal browser dashboard for pairs
  * Slack and email notification
+ * Join foreign exchange candles (eg. Trade on Bitmex with the faster moving Binace trades / candles)
+ * TODO: Show possible arbitrage trades   
 
 ### Exchanges
 
