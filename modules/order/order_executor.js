@@ -129,7 +129,7 @@ module.exports = class OrderExecutor {
             try {
                 resolve(await exchange.cancelOrder(orderId))
             } catch(err) {
-                this.logger.error('Order cancel error: ' + orderId + err)
+                this.logger.error('Order cancel error: ' + orderId + ' ' + err)
                 console.log('Order error: ' + orderId + err)
 
                 resolve()
@@ -273,7 +273,12 @@ module.exports = class OrderExecutor {
                 await wait(this.tickerPriceInterval)
             }
 
-            if(!ticker) {
+            // fallback
+            if (!ticker) {
+                ticker = this.tickers.get(exchangeName, symbol)
+            }
+
+            if (!ticker) {
                 this.logger.error('OrderExecutor: ticker price not found: ' + JSON.stringify([exchangeName, symbol, side]))
                 resolve()
                 return

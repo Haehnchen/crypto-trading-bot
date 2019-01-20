@@ -8,7 +8,8 @@ let CandlestickEvent = require('./../event/candlestick_event')
 let TickerEvent = require('./../event/ticker_event')
 let OrderUtil = require('../utils/order_util')
 let ExchangeOrder = require('../dict/exchange_order')
-let Position = require('../dict/position.js')
+let Position = require('../dict/position')
+let Order = require('../dict/order')
 let moment = require('moment')
 
 module.exports = class CoinbasePro {
@@ -105,13 +106,42 @@ module.exports = class CoinbasePro {
             return f
         }(), 1000 * 30)
 
-        websocket.on('message', data => {
+        setInterval(function f() {
+            me.syncPairInfo()
+            return f
+        }(), 60 * 60 * 15 * 1000);
+
+        websocket.on('message', async data => {
             if (data.type && data.type === 'ticker') {
                 eventEmitter.emit('ticker', new TickerEvent(
                     this.getName(),
                     data['product_id'],
-                    new Ticker(this.getName(), data['product_id'], moment().format('X'), data['best_ask'], data['best_bid'])
+                    new Ticker(this.getName(), data['product_id'], moment().format('X'), data['best_bid'], data['best_ask'])
                 ))
+            }
+
+            // order events trigger reload of all open orders
+            if (data.type && data.type.includes('open', 'done', 'match')) {
+                /*
+                    { type: 'open',
+                      side: 'sell',
+                      price: '3.93000000',
+                      order_id: '7ebcd292-78d5-4ec3-9b81-f58754aba806',
+                      remaining_size: '1.00000000',
+                      product_id: 'ETC-EUR',
+                      sequence: 42219912,
+                      user_id: '5a2ae60e76531100d3af2ee5',
+                      profile_id: 'e6dd97c2-f4e8-4e9a-b44e-7f6594e330bd',
+                      time: '2019-01-20T19:24:33.609000Z'
+                    }
+                 */
+
+                await this.syncOrders()
+            }
+
+            // "match" order filled: reload balances
+            if (data.type && data.type.includes('match')) {
+                await this.syncBalances()
             }
         })
 
@@ -328,6 +358,110 @@ module.exports = class CoinbasePro {
         this.positions = positions
     }
 
+    /**
+     * Force an order update only if order is "not closed" for any reason already by exchange
+     *
+     * @param order
+     */
+    triggerOrder(order) {
+        if (!(order instanceof ExchangeOrder)) {
+            throw 'Invalid order given'
+        }
+
+        // dont overwrite state closed order
+        if (order.id in this.orders && ['done', 'canceled'].includes(this.orders[order.id].status)) {
+            return
+        }
+
+        this.orders[order.id] = order
+    }
+
+    order(order) {
+        return new Promise(async (resolve, reject) => {
+            let payload = CoinbasePro.createOrderBody(order)
+            let result = undefined
+
+            try {
+                result = await this.client.placeOrder(payload)
+            } catch (e) {
+                this.logger.error("Coinbase Pro: order create error:" + e.message)
+                reject()
+                return
+            }
+
+            let exchangeOrder = CoinbasePro.createOrders(result)[0]
+
+            this.triggerOrder(exchangeOrder)
+            resolve(exchangeOrder)
+        })
+    }
+
+    async cancelOrder(id) {
+        let orderId
+
+        try {
+            orderId = await this.client.cancelOrder(id)
+        } catch (e) {
+            this.logger.error('Coinbase Pro: cancel order error: ' + e)
+            return
+        }
+
+        delete this.orders[orderId]
+    }
+
+    async cancelAll(symbol) {
+        let orderIds
+        try {
+            orderIds = await this.client.cancelAllOrders({product_id: symbol})
+        } catch (e) {
+            this.logger.error('Coinbase Pro: cancel all order error: ' + String(e))
+            return
+        }
+
+        for (let id of orderIds) {
+            delete this.orders[id]
+        }
+    }
+
+    static createOrderBody(order) {
+        if (!order.amount && !order.price && !order.symbol) {
+            throw 'Invalid amount for update'
+        }
+
+        const myOrder = {
+            side: order.price < 0 ? 'sell' : 'buy',
+            price: Math.abs(order.price),
+            size: Math.abs(order.amount),
+            product_id: order.symbol,
+        }
+
+        let orderType = undefined
+        if (!order.type || order.type === 'limit') {
+            orderType = 'limit'
+        } else if(order.type === 'stop') {
+            orderType = 'stop'
+        } else if(order.type === 'market') {
+            orderType = 'market'
+        }
+
+        if (!orderType) {
+            throw 'Invalid order type'
+        }
+
+        if (order.options && order.options.post_only === true) {
+            myOrder['post_only'] = true
+        }
+
+        myOrder['type'] = orderType
+
+        if (order.id) {
+            // format issue
+            // myOrder['client_oid'] = order.id
+        }
+
+        return myOrder
+    }
+
     static createOrders(...orders) {
         return orders.map(order => {
             let retry = false
@@ -374,6 +508,44 @@ module.exports = class CoinbasePro {
                 order
             )
         })
+    }
+
+    async updateOrder(id, order) {
+        if (!order.amount && !order.price) {
+            throw 'Invalid amount / price for update'
+        }
+
+        let currentOrder = await this.findOrderById(id);
+        if (!currentOrder) {
+            return
+        }
+
+        // cancel order; mostly it can already be canceled
+        await this.cancelOrder(id)
+
+        return await this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount))
+    }
+
+    async syncPairInfo() {
+        let pairs
+        try {
+            pairs = await this.client.getProducts()
+        } catch (e) {
+            this.logger.error('Coinbase Pro: pair sync error: ' + e)
+
+            return
+        }
+
+        let exchangePairs = {}
+        pairs.forEach(pair => {
+            exchangePairs[pair['id']] = {
+                'tick_size': parseFloat(pair['quote_increment']),
+                'lot_size': parseFloat(pair['quote_increment']),
+            }
+        })
+
+        this.logger.info('Coinbase Pro: pairs synced: ' + pairs.length)
+        this.exchangePairs = exchangePairs
     }
 
     getName() {
