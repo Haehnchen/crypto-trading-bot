@@ -50,10 +50,12 @@ describe('#order util', function() {
     })
 
     it('calculate increment size', () => {
-        assert.equal(0.00857, orderUtil.calculateNearestSize(0.0085696, 0.00001))
-        assert.equal(50, orderUtil.calculateNearestSize(50.55, 2.5))
+        assert.equal(orderUtil.calculateNearestSize(0.0085696, 0.00001), 0.00856)
+        assert.equal(orderUtil.calculateNearestSize(50.55, 2.5), 50)
 
-        assert.equal(50, orderUtil.calculateNearestSize(50.22, 1))
-        assert.equal(51, orderUtil.calculateNearestSize(50.88, 1))
+        assert.equal(orderUtil.calculateNearestSize(50.22, 1), 50)
+        assert.equal(orderUtil.calculateNearestSize(50.88, 1), 50)
+
+        assert.equal(orderUtil.calculateNearestSize(-149.87974, 0.01), -149.87)
     })
 })

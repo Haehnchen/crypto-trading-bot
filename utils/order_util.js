@@ -36,7 +36,7 @@ module.exports = {
      * @returns {*}
      */
     calculateNearestSize: (num, tickSize) => {
-        let number = Math.round(num / tickSize) * tickSize
+        let number = Math.trunc(num / tickSize) * tickSize
 
         // fix float issues:
         // 0.0085696 => 0.00001 = 0.00857000...001
