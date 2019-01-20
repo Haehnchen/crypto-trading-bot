@@ -210,7 +210,7 @@ module.exports = class PairStateExecution {
         // round to nearest exchange amount size
         let exchangeOrderSize = this.exchangeManager.get(exchangeName).calculateAmount(orderSize, symbol)
         if (!exchangeOrderSize) {
-            this.logger.error('Exchange order amount issues' + JSON.stringify([exchangeName, symbol, side]))
+            this.logger.error('Exchange order amount issues' + JSON.stringify([exchangeName, symbol, orderSize]))
             return
         }
 

@@ -119,7 +119,11 @@ module.exports = class Http {
             let pair = req.params.pair.split('-')
             let body = req.body;
 
-            await this.pairsHttp.triggerOrder(pair[0], pair[1], body.action)
+            // exchange-ETC-FOO
+            // exchange-ETCFOO
+            let symbol = req.params.pair.substring(pair[0].length + 1);
+
+            await this.pairsHttp.triggerOrder(pair[0], symbol, body.action)
 
             // simple sleep for async ui blocking for exchange communication
             setTimeout(() => {
