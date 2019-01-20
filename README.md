@@ -17,6 +17,18 @@ As most trading bots just provide basic buy and sell signals they provide many s
  * Signal browser dashboard for pairs
  * Slack and email notification
 
+### Exchanges
+
+ * [Bitmex](https://www.bitmex.com/register/jS4mLN) with leverage configuration
+ * [Bitmex Testnet](https://www.bitmex.com/register/jS4mLN)
+ * [Binance](https://www.binance.com/?ref=17569916)
+ * [Coinbase Pro](https://www.coinbase.com/join/5a2ae60e76531100d3af2ee5)
+
+TODOS:
+
+ * [Bitfinex](https://www.bitfinex.com) (margin wallet) missing order workflow
+ * [Huobi Global](https://www.hbg.com/) (margin) 
+ 
 ## Technical stuff and packages
 
  * node.js
@@ -28,7 +40,6 @@ As most trading bots just provide basic buy and sell signals they provide many s
  * express
  * Bootstrap v4
  * Tradingview widgets
- 
  
 ## How to use
 
@@ -126,12 +137,6 @@ node index.js backfill -e bitmex -p 1m -s XRPZ18
 For custom strategies use [var/strategies](var/strategies) folder.
 
 Find some example strategies inside [modules/strategy/strategies](modules/strategy/strategies)
-
-## Exchanges
-
- * Bitmex with leverage configuration (+testnet)
- * Binance
- * Bitfinex (margin wallet)
  
 ## Tools / Watchdog
  
