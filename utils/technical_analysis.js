@@ -554,6 +554,26 @@ module.exports = {
 
                         resolve(result)
                     }))
+                } else if (indicatorName === 'hma') {
+                    let length = options['length'] || 9
+
+                    calculations.push(new Promise((resolve) => {
+                        tulind.indicators.hma.indicator([marketData.close], [length], function(err, results) {
+                            resolve({
+                                [indicatorKey]: results[0]
+                            })
+                        })
+                    }))
+                } else if (indicatorName === 'vwma') {
+                    let length = options['length'] || 20
+
+                    calculations.push(new Promise((resolve) => {
+                        tulind.indicators.vwma.indicator([marketData.close, marketData.volume], [length], function(err, results) {
+                            resolve({
+                                [indicatorKey]: results[0]
+                            })
+                        })
+                    }))
                 }
             })
 

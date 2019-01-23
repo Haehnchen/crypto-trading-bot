@@ -109,6 +109,14 @@ describe('#technical_analysis for candles', () => {
                 'indicator': 'stoch_rsi',
                 'key': 'stoch_rsi',
             },
+            {
+                'indicator': 'hma',
+                'key': 'hma',
+            },
+            {
+                'indicator': 'vwma',
+                'key': 'vwma',
+            },
         ]);
 
         assert.equal(result['ema_55'].length, 490)
@@ -161,6 +169,12 @@ describe('#technical_analysis for candles', () => {
         assert.equal(result['candles'][0].time, lookbacks[0].time);
         assert.equal(result['candles'][0].time < lookbacks[1].time, true);
         assert.equal(result['candles'][result['candles'].length - 1].time, lookbacks[result['candles'].length - 1].time);
+
+        assert.equal(result['hma'].length > 0, true)
+        assert.equal(result['hma'][0] > 0, true)
+
+        assert.equal(result['vwma'].length > 0, true)
+        assert.equal(result['vwma'][0] > 0, true)
     })
 
     it('technical_analysis for bollinger percent', () => {
