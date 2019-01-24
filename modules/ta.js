@@ -15,7 +15,7 @@ module.exports = class Ta {
             let promises = [];
 
             this.instances['symbols'].forEach((symbol) => {
-                periods.forEach((period) => {
+                periods.forEach(period => {
                     promises.push(new Promise((resolve) => {
                         let sql = 'SELECT * from candlesticks where exchange = ? AND symbol = ? and period = ? order by time DESC LIMIT 200';
 
@@ -35,7 +35,7 @@ module.exports = class Ta {
                                 return;
                             }
 
-                            ta.getIndicatorsLookbacks(candles.slice().reverse()).then((result) => {
+                            ta.getIndicatorsLookbacks(candles.slice().reverse()).then(result => {
                                 resolve({
                                     'symbol': symbol.symbol,
                                     'period': period,

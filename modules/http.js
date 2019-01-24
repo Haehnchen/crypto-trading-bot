@@ -18,8 +18,6 @@ module.exports = class Http {
     }
 
     start() {
-        let periods = ['15m', '1h'];
-
         twig.extendFilter('price_format', function(value) {
             if (parseFloat(value) < 1) {
                 return Intl.NumberFormat('en-US', {useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 6}).format(value)
@@ -66,10 +64,8 @@ module.exports = class Http {
 
         let ta = this.ta
 
-        app.get('/', (req, res) => {
-            ta.getTaForPeriods(periods).then((result) => {
-                res.render('../templates/base.html.twig', result);
-            })
+        app.get('/', async (req, res) => {
+            res.render('../templates/base.html.twig', await ta.getTaForPeriods(['15m', '1h']));
         })
 
         app.get('/backtest', async (req, res) => {
