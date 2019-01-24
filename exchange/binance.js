@@ -461,7 +461,7 @@ module.exports = class Binance {
             exchangePairs[pair['symbol']] = pairInfo
         })
 
-        this.logger.info('Binance: pairs synced: ' + pairs.length)
+        this.logger.info('Binance: pairs synced: ' + pairs.symbols)
         this.exchangePairs = exchangePairs
     }
 }
