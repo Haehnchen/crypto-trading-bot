@@ -33,7 +33,7 @@ module.exports = class CCI {
 
     cci(price, sma200Full, ema200Full, cciFull, lastSignal) {
         return new Promise(async (resolve) => {
-            if (cciFull.length <= 0 || sma200Full.length < 2  || ema200Full.length < 2) {
+            if (cciFull && sma200Full && ema200Full && cciFull.length <= 0 || sma200Full.length < 2  || ema200Full.length < 2) {
                 resolve()
                 return
             }
