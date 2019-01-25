@@ -574,6 +574,16 @@ module.exports = {
                             })
                         })
                     }))
+                } else if (indicatorName === 'atr') {
+                    let length = options['length'] || 14
+
+                    calculations.push(new Promise((resolve) => {
+                        tulind.indicators.atr.indicator([marketData.high, marketData.low, marketData.close], [length], function(err, results) {
+                            resolve({
+                                [indicatorKey]: results[0]
+                            })
+                        })
+                    }))
                 }
             })
 

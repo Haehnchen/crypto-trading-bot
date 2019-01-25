@@ -117,6 +117,10 @@ describe('#technical_analysis for candles', () => {
                 'indicator': 'vwma',
                 'key': 'vwma',
             },
+            {
+                'indicator': 'atr',
+                'key': 'atr',
+            },
         ]);
 
         assert.equal(result['ema_55'].length, 490)
@@ -175,6 +179,8 @@ describe('#technical_analysis for candles', () => {
 
         assert.equal(result['vwma'].length > 0, true)
         assert.equal(result['vwma'][0] > 0, true)
+
+        assert.equal(result['atr'][0] > 0, true)
     })
 
     it('technical_analysis for bollinger percent', () => {
