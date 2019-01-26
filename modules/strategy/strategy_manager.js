@@ -72,12 +72,16 @@ module.exports = class StrategyManager {
         let strategy = this.getStrategies().find(strategy => strategy.getName() === strategyName)
         let trigger = await strategy.period(indicatorPeriod, options)
 
-        trigger = trigger || {}
+        let result = {
+            'price': price,
+            'columns': this.getCustomTableColumnsForRow(strategyName, trigger ? trigger.getDebug() : {}),
+        }
 
-        trigger['price'] = price
-        trigger['columns'] = this.getCustomTableColumnsForRow(strategyName, trigger.debug)
+        if (trigger) {
+            result.result = trigger
+        }
 
-        return trigger
+        return result
     }
 
     async getTaResult(strategyName, exchange, symbol, options, validateLookbacks = false) {

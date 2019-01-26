@@ -1,5 +1,7 @@
 'use strict';
 
+let SignalResult = require('../dict/signal_result')
+
 module.exports = class MACD {
     getName() {
         return 'macd'
@@ -31,70 +33,56 @@ module.exports = class MACD {
         )
     }
 
-    macd(price, sma200Full, ema200Full, macdFull, lastSignal) {
-        return new Promise(async (resolve) => {
-            if (!macdFull || !ema200Full || macdFull.length < 2 || sma200Full.length < 2 || ema200Full.length < 2) {
-                resolve()
-                return
+    async macd(price, sma200Full, ema200Full, macdFull, lastSignal) {
+        if (!macdFull || !ema200Full || macdFull.length < 2 || sma200Full.length < 2 || ema200Full.length < 2) {
+            return
+        }
+
+        // remove incomplete candle
+        let sma200 = sma200Full.slice(0, -1)
+        let ema200 = ema200Full.slice(0, -1)
+        let macd = macdFull.slice(0, -1)
+
+        let debug = {
+            'sma200': sma200.slice(-1)[0],
+            'ema200': ema200.slice(-1)[0],
+            'histogram': macd.slice(-1)[0].histogram,
+            'last_signal': lastSignal,
+        }
+
+        let before = macd.slice(-2)[0].histogram
+        let last = macd.slice(-1)[0].histogram
+
+        // trend change
+        if (
+            (lastSignal === 'long' && before > 0 && last < 0)
+            || (lastSignal === 'short' && before < 0 && last > 0)
+        ) {
+            return SignalResult.createSignal('close', 'debug')
+        }
+
+        // sma long
+        let long = price >= sma200.slice(-1)[0]
+
+        // ema long
+        if (!long) {
+            long = price >= ema200.slice(-1)[0]
+        }
+
+        if (long) {
+            // long
+            if(before < 0 && last > 0) {
+                return SignalResult.createSignal('long', 'debug')
             }
+        } else {
+            // short
 
-            // remove incomplete candle
-            let sma200 = sma200Full.slice(0, -1)
-            let ema200 = ema200Full.slice(0, -1)
-            let macd = macdFull.slice(0, -1)
-
-            let debug = {
-                'sma200': sma200.slice(-1)[0],
-                'ema200': ema200.slice(-1)[0],
-                'histogram': macd.slice(-1)[0].histogram,
-                'last_signal': lastSignal,
+            if(before > 0 && last < 0) {
+                return SignalResult.createSignal('short', 'debug')
             }
+        }
 
-            let before = macd.slice(-2)[0].histogram
-            let last = macd.slice(-1)[0].histogram
-
-            // trend change
-            if (
-                (lastSignal === 'long' && before > 0 && last < 0)
-                || (lastSignal === 'short' && before < 0 && last > 0)
-            ) {
-                resolve({
-                    'signal': 'close',
-                    'debug': debug,
-                })
-
-                return
-            }
-
-            // sma long
-            let long = price >= sma200.slice(-1)[0]
-
-            // ema long
-            if (!long) {
-                long = price >= ema200.slice(-1)[0]
-            }
-
-            if (long) {
-                // long
-                if(before < 0 && last > 0) {
-                    resolve({
-                        'signal': 'long',
-                        'debug': debug,
-                    })
-                }
-            } else {
-                // short
-
-                if(before > 0 && last < 0) {
-                    resolve({
-                        'signal': 'short',
-                        'debug': debug
-                    })
-                }
-            }
-
-            resolve({'debug': debug})
-        })
+        return SignalResult.createEmptySignal(debug)
     }
 
     getOptions() {

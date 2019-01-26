@@ -63,23 +63,20 @@ module.exports = class Backtest {
 
             let end = moment().unix()
             while (current < end) {
-                let item = {
-                    'time': current
-                };
-
                 let strategyManager = new StrategyManager({}, mockedRepository)
 
-                let backtestResult = await strategyManager.executeStrategyBacktest(strategy, exchange, pair, options, lastSignal)
-                item['result'] = backtestResult
+                let item = await strategyManager.executeStrategyBacktest(strategy, exchange, pair, options, lastSignal)
+                item['time'] = current
 
                 // so change in signal
-                if (backtestResult.signal === lastSignal) {
-                    delete backtestResult.signal
+                let currentSignal = item.result ? item.result.getSignal() : undefined
+                if (currentSignal === lastSignal) {
+                    currentSignal = undefined
                 }
 
-                if(['long', 'short'].includes(backtestResult.signal)) {
-                    lastSignal = backtestResult.signal
-                } else if(backtestResult.signal === 'close') {
+                if (['long', 'short'].includes(currentSignal)) {
+                    lastSignal = currentSignal
+                } else if(currentSignal === 'close') {
                     lastSignal = undefined
                 }
 
@@ -88,7 +85,7 @@ module.exports = class Backtest {
                 current += (tickIntervalInMinutes * 60);
             }
 
-            let signals = rows.slice().filter(r => 'signal' in r.result)
+            let signals = rows.slice().filter(r => r.result && r.result.getSignal())
 
             let dates = {}
 
@@ -106,7 +103,11 @@ module.exports = class Backtest {
 
                 for (let time in JSON.parse(JSON.stringify(dates))) {
                     if (time >= candle.time) {
-                        signals = dates[time]
+                        signals = dates[time].map(i => {
+                            return {
+                                'signal': i.result.getSignal(),
+                            }
+                        })
                         delete dates[time]
                     }
                 }

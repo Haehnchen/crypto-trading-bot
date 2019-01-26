@@ -22,8 +22,8 @@ describe('#strategy obv_pump_dump', () => {
             'obv': [-2358, -2395, -2395, -2395, -2385, -2165, -1987, -1987, -1990, -1990, -1990, -1990, -1990, -1948, -1808, -1601, -1394, -1394, -1147, 988, 3627, 6607, 11467],
         }), {})
 
-        assert.equal('long', result['signal'])
-        assert.equal('up', result['debug']['trend'])
+        assert.equal('long', result.getSignal())
+        assert.equal('up', result.getDebug()['trend'])
     })
 
     it('obv_pump_dump strategy long options', async() => {
@@ -34,8 +34,8 @@ describe('#strategy obv_pump_dump', () => {
             'obv': [-2358, -2395, -2395, -2395, -2385, -2165, -1987, -1987, -1990, -1990, -1990, -1990, -1990, -1948, -1808, -1601, -1394, -1394, -1147, 988, 3627, 6607, 11467],
         }), {'trigger_multiplier': 1000})
 
-        assert.equal(undefined, result['signal'])
-        assert.equal('up', result['debug']['trend'])
+        assert.equal(undefined, result.getSignal())
+        assert.equal('up', result.getDebug()['trend'])
     })
 
     let createStrategyContext = () => {

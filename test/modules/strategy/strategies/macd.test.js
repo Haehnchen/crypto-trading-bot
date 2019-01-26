@@ -21,19 +21,19 @@ describe('#strategy macd', () => {
             'sma200': [500, 400, 388],
             'ema200': [500, 400, 388],
             'macd': [{'histogram': -1}, {'histogram': 0.1}, {'histogram': 0.3}],
-        })))['signal'])
+        }))).getSignal())
 
         assert.equal(undefined, (await macd.period(new IndicatorPeriod(createStrategyContext(404), {
             'sma200': [500, 400, 388],
             'ema200': [500, 400, 388],
             'macd': [{'histogram': -2}, {'histogram': -1}, {'histogram': -0.3}],
-        })))['signal'])
+        }))).getSignal())
 
         assert.equal(undefined, (await macd.period(new IndicatorPeriod(createStrategyContext(404), {
             'sma200': [500, 400, 388],
             'ema200': [500, 400, 388],
             'macd': [{'histogram': 2}, {'histogram': -1}, {'histogram': -0.3}],
-        })))['signal'])
+        }))).getSignal())
     })
 
     it('macd long (close)', async () => {
@@ -46,7 +46,7 @@ describe('#strategy macd', () => {
             'sma200': [500, 400, 388],
             'ema200': [500, 400, 388],
             'macd': [{'histogram': 0.1}, {'histogram': -1}, {'histogram': 0.3}],
-        })))['signal'])
+        }))).getSignal())
 
 
         context = new StrategyContext(new Ticker('goo', 'goo', 'goo', 404))
@@ -56,7 +56,7 @@ describe('#strategy macd', () => {
             'sma200': [500, 400, 388],
             'ema200': [500, 400, 388],
             'macd': [{'histogram': 0.1}, {'histogram': -1}, {'histogram': 0.3}],
-        })))['signal'])
+        }))).getSignal())
     })
 
     it('macd short', async () => {
@@ -66,13 +66,13 @@ describe('#strategy macd', () => {
             'sma200': [500, 400, 399],
             'ema200': [500, 400, 399],
             'macd': [{'histogram': 1}, {'histogram': -0.1}, {'histogram': -0.2}],
-        })))['signal'])
+        }))).getSignal())
 
-        assert.equal(undefined, (await macd.period(new IndicatorPeriod(403, {
+        assert.equal(undefined, (await macd.period(new IndicatorPeriod(createStrategyContext(403), {
             'sma200': [500, 400, 399],
             'ema200': [500, 400, 399],
             'macd': [{'histogram': 1}, {'histogram': -0.1}, {'histogram': -0.2}],
-        }))['signal']))
+        }))).getSignal())
     })
 
     it('macd short (close)', async () => {
@@ -85,7 +85,7 @@ describe('#strategy macd', () => {
             'sma200': [500, 400, 399],
             'ema200': [500, 400, 399],
             'macd': [{'histogram': -0.1}, {'histogram': 1}, {'histogram': -0.2}],
-        })))['signal'])
+        }))).getSignal())
     })
 
     let createStrategyContext = (price) => {

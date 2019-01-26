@@ -1,5 +1,7 @@
 'use strict';
 
+let SignalResult = require('../dict/signal_result')
+
 module.exports = class CCI {
     getName() {
         return 'cci'
@@ -31,98 +33,83 @@ module.exports = class CCI {
         )
     }
 
-    cci(price, sma200Full, ema200Full, cciFull, lastSignal) {
-        return new Promise(async (resolve) => {
-            if (!cciFull || !sma200Full || !ema200Full || cciFull.length <= 0 || sma200Full.length < 2  || ema200Full.length < 2) {
-                resolve()
-                return
-            }
+    async cci(price, sma200Full, ema200Full, cciFull, lastSignal) {
+        if (!cciFull || !sma200Full || !ema200Full || cciFull.length <= 0 || sma200Full.length < 2  || ema200Full.length < 2) {
+            return
+        }
 
-            // remove incomplete candle
-            let sma200 = sma200Full.slice(0, -1)
-            let ema200 = ema200Full.slice(0, -1)
-            let cci = cciFull.slice(0, -1)
+        // remove incomplete candle
+        let sma200 = sma200Full.slice(0, -1)
+        let ema200 = ema200Full.slice(0, -1)
+        let cci = cciFull.slice(0, -1)
 
-            let debug = {
-                'sma200': sma200.slice(-1)[0],
-                'ema200': ema200.slice(-1)[0],
-                'cci': cci.slice(-1)[0],
-            }
+        let debug = {
+            'sma200': sma200.slice(-1)[0],
+            'ema200': ema200.slice(-1)[0],
+            'cci': cci.slice(-1)[0],
+        }
 
-            let before = cci.slice(-2)[0]
-            let last = cci.slice(-1)[0]
+        let before = cci.slice(-2)[0]
+        let last = cci.slice(-1)[0]
 
-            // trend change
-            if (
-                (lastSignal === 'long' && before > 100 && last < 100)
-                || (lastSignal === 'short' && before < -100 && last > -100)
-            ) {
-                resolve({
-                    'signal': 'close',
-                    'debug': debug,
-                })
+        // trend change
+        if (
+            (lastSignal === 'long' && before > 100 && last < 100)
+            || (lastSignal === 'short' && before < -100 && last > -100)
+        ) {
+            return SignalResult.createSignal('close', debug)
+        }
 
-                return
-            }
+        let long = price >= sma200.slice(-1)[0]
 
-            let long = price >= sma200.slice(-1)[0]
+        // ema long
+        if (!long) {
+            long = price >= ema200.slice(-1)[0]
+        }
 
-            // ema long
-            if (!long) {
-                long = price >= ema200.slice(-1)[0]
-            }
+        let count = cci.length - 1
 
-            let count = cci.length - 1
+        if (long) {
+            // long
 
-            if (long) {
-                // long
+            if(before <= -100 && last >= -100) {
+                let rangeValues = []
 
-                if(before <= -100 && last >= -100) {
-                    let rangeValues = []
-
-                    for (let i = count - 1; i >= 0; i--) {
-                        if (cci[i] >= -100){
-                            rangeValues = cci.slice(i, count)
-                            break;
-                        }
-                    }
-
-                    let min = Math.min(...rangeValues);
-                    if(min <= -200) {
-                        resolve({
-                            'signal': 'long',
-                            '_trigger': min,
-                            'debug': debug
-                        })
+                for (let i = count - 1; i >= 0; i--) {
+                    if (cci[i] >= -100){
+                        rangeValues = cci.slice(i, count)
+                        break;
                     }
                 }
 
-            } else {
-                if(before >= 100 && last <= 100) {
-                    let count = cci.length - 1
-                    let rangeValues = []
-
-                    for (let i = count - 1; i >= 0; i--) {
-                        if (cci[i] <= 100){
-                            rangeValues = cci.slice(i, count)
-                            break;
-                        }
-                    }
-
-                    let max = Math.max(...rangeValues);
-                    if(max >= 200) {
-                        resolve({
-                            'signal': 'short',
-                            '_trigger': max,
-                            'debug': debug
-                        })
-                    }
+                let min = Math.min(...rangeValues);
+                if(min <= -200) {
+                    debug['_trigger'] = min
+                    return SignalResult.createSignal('long', debug)
                 }
             }
 
-            resolve({'debug': debug})
+        } else {
+            if(before >= 100 && last <= 100) {
+                let count = cci.length - 1
+                let rangeValues = []
 
-        })
+                for (let i = count - 1; i >= 0; i--) {
+                    if (cci[i] <= 100){
+                        rangeValues = cci.slice(i, count)
+                        break;
+                    }
+                }
+
+                let max = Math.max(...rangeValues);
+                if(max >= 200) {
+                    debug['_trigger'] = max
+                    return SignalResult.createSignal('short', debug)
+                }
+            }
+        }
+
+        return SignalResult.createEmptySignal(debug)
     }
 
     getBacktestColumns() {

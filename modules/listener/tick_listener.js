@@ -34,10 +34,18 @@ module.exports = class TickListener {
             context = StrategyContext.createFromPosition(ticker, position)
         }
 
-        let signal = await this.strategyManager.executeStrategy(strategyKey, context, symbol.exchange, symbol.symbol, strategy['options'] || {})
-
-        if (!signal || !signal.signal) {
+        let result = await this.strategyManager.executeStrategy(strategyKey, context, symbol.exchange, symbol.symbol, strategy['options'] || {})
+        if (!result) {
             return
+        }
+
+        let signal = result.getSignal()
+        if (!signal) {
+            return
+        }
+
+        if (!['close', 'short', 'long'].includes(signal)) {
+            throw 'Invalid signal: ' + signal
         }
 
         let signalWindow = moment().subtract(30, 'minutes').toDate();
@@ -46,10 +54,10 @@ module.exports = class TickListener {
             // console.log('blocked')
         } else {
             this.notified[symbol.exchange + symbol.symbol + strategyKey] = new Date()
-            this.notifier.send('[' + signal.signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
+            this.notifier.send('[' + signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
 
             // log signal
-            this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyKey, 'raw': signal}, signal.signal, strategyKey)
+            this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyKey, 'raw': JSON.stringify(result)}, signal, strategyKey)
         }
     }
 
@@ -69,13 +77,18 @@ module.exports = class TickListener {
             context = StrategyContext.createFromPosition(ticker, position)
         }
 
-        let signal = await this.strategyManager.executeStrategy(strategyKey, context, symbol.exchange, symbol.symbol, strategy['options'] || {})
-        if (!signal || !signal.signal) {
+        let result = await this.strategyManager.executeStrategy(strategyKey, context, symbol.exchange, symbol.symbol, strategy['options'] || {})
+        if (!result) {
             return
         }
 
-        if (!['close', 'short', 'long'].includes(signal.signal)) {
-            throw 'Invalid signal: ' + signal.signal
+        let signal = result.getSignal()
+        if (!signal) {
+            return
+        }
+        
+        if (!['close', 'short', 'long'].includes(signal)) {
+            throw 'Invalid signal: ' + signal
         }
 
         let signalWindow = moment().subtract(_.get(symbol, 'trade.signal_slowdown_minutes', 15), 'minutes').toDate();
@@ -86,12 +99,12 @@ module.exports = class TickListener {
         }
 
         // log signal
-        this.logger.info([new Date().toISOString(), signal.signal, strategyKey, symbol.exchange, symbol.symbol, ticker.ask].join(' '))
-        this.notifier.send('[' + signal.signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
-        this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyKey, 'raw': signal}, signal.signal, strategyKey)
+        this.logger.info([new Date().toISOString(), signal, strategyKey, symbol.exchange, symbol.symbol, ticker.ask].join(' '))
+        this.notifier.send('[' + signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
+        this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyKey, 'raw': JSON.stringify(result)}, signal, strategyKey)
         this.notified[noteKey] = new Date()
 
-        await this.pairStateManager.update(symbol.exchange, symbol.symbol, signal.signal)
+        await this.pairStateManager.update(symbol.exchange, symbol.symbol, signal)
     }
 
     onTick() {

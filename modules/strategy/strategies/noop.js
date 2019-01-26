@@ -3,6 +3,8 @@
 const SD = require('technicalindicators').SD
 const TA = require('../../../utils/technical_analysis')
 
+let SignalResult = require('../dict/signal_result')
+
 module.exports = class {
     getName() {
         return 'noop'
@@ -32,30 +34,27 @@ module.exports = class {
         })
     }
 
-    period(indicatorPeriod, options) {
-        return new Promise((resolve) => {
-            let currentValues = indicatorPeriod.getLatestIndicators()
+    async period(indicatorPeriod, options) {
 
-            let bollinger = indicatorPeriod.getIndicator('bb')
+        let currentValues = indicatorPeriod.getLatestIndicators()
 
-            if (bollinger && currentValues.bb) {
-                let standardDeviation = SD.calculate({
-                    period : 150,
-                    values : bollinger.slice(-200).map(b => b.width),
-                })
+        let bollinger = indicatorPeriod.getIndicator('bb')
 
-                currentValues.bb.sd = standardDeviation.slice(-1)[0]
-            }
-
-            let currentBB = indicatorPeriod.getLatestIndicator('bb')
-            if (currentBB && currentValues.bb) {
-                currentValues.bb.percent = TA.getBollingerBandPercent(indicatorPeriod.getPrice(), currentBB.upper, currentBB.lower)
-            }
-
-            resolve({
-                'debug': currentValues,
+        if (bollinger && currentValues.bb) {
+            let standardDeviation = SD.calculate({
+                period : 150,
+                values : bollinger.slice(-200).map(b => b.width),
             })
-        })
+
+            currentValues.bb.sd = standardDeviation.slice(-1)[0]
+        }
+
+        let currentBB = indicatorPeriod.getLatestIndicator('bb')
+        if (currentBB && currentValues.bb) {
+            currentValues.bb.percent = TA.getBollingerBandPercent(indicatorPeriod.getPrice(), currentBB.upper, currentBB.lower)
+        }
+
+        return SignalResult.createEmptySignal(currentValues)
     }
 
     getBacktestColumns() {

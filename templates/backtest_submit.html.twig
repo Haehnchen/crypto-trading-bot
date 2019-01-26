@@ -31,9 +31,9 @@
             {% for row in rows %}
                 <tr>
                     <td style="white-space: nowrap">{{ row.time|date('y-m-d H:i:s') }}</td>
-                    <td>{{ row.result.price|default }}</td>
+                    <td>{{ row.price|default }}</td>
                     <td>
-                        {% if row.result.signal is defined %}
+                        {% if row.result is defined %}
                             {% if row.result.signal == 'long' %}
                                 <i class="fas fa-chevron-circle-up text-success"></i>
                             {% elseif row.result.signal == 'short' %}
@@ -44,7 +44,7 @@
                         {% endif %}
                     </td>
 
-                    {% for column in row.result.columns|default([]) %}
+                    {% for column in row.columns|default([]) %}
                         {% if column.type == 'cross' or column.type == 'histogram' %}
                             {% set color = '' %}
 
@@ -72,7 +72,7 @@
 
                     <td style="word-break: break-all;">
                         <span class="debug-toggle hide">
-                            <a href="#" class="button-debug-toggle"><i class="fa fa-eye"></i></a><span class="debug-text text-muted">{{ row.result|json_encode }}</span>
+                            <a href="#" class="button-debug-toggle"><i class="fa fa-eye"></i></a><span class="debug-text text-muted">{{ row|json_encode }}</span>
                         </span>
                     </td>
                 </tr>

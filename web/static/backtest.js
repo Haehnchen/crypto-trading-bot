@@ -226,7 +226,7 @@ $(function() {
                 d.signals.forEach(function(trade) {
                     trades.push({
                         date: new Date(d.date),
-                        type: trade.result.signal,
+                        type: trade.signal,
                         price: d.close,
                     })
                 })

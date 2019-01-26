@@ -20,17 +20,17 @@ describe('#strategy AwesomeOscillatorCrossZero', () => {
         assert.equal('long', (await aoCross.period(new IndicatorPeriod(createStrategyContext(404), {
             'sma200': [500, 400, 388],
             'ao': [-1, 0.1, 0.3],
-        })))['signal'])
+        }))).getSignal())
 
         assert.equal(undefined, (await aoCross.period(new IndicatorPeriod(createStrategyContext(404), {
             'sma200': [500, 400, 388],
             'ao': [-2, -1, -0.3],
-        })))['signal'])
+        }))).getSignal())
 
         assert.equal(undefined, (await aoCross.period(new IndicatorPeriod(createStrategyContext(404), {
             'sma200': [500, 400, 388],
             'ao': [2, -1, -0.3],
-        })))['signal'])
+        }))).getSignal())
     })
 
     it('AwesomeOscillatorCrossZero long (close)', async () => {
@@ -42,7 +42,7 @@ describe('#strategy AwesomeOscillatorCrossZero', () => {
         assert.equal('close', (await aoCross.period(new IndicatorPeriod(context, {
             'sma200': [500, 400, 388],
             'ao': [0.1, -1, 0.3],
-        })))['signal'])
+        }))).getSignal())
 
         context = new StrategyContext(new Ticker('goo', 'goo', 'goo', 404))
         context.lastSignal = 'short'
@@ -50,7 +50,7 @@ describe('#strategy AwesomeOscillatorCrossZero', () => {
         assert.equal(undefined, (await aoCross.period(new IndicatorPeriod(context, {
             'sma200': [500, 400, 388],
             'ao': [ 0.1, -1, 0.3],
-        })))['signal'])
+        }))).getSignal())
     })
 
     it('AwesomeOscillatorCrossZero short', async () => {
@@ -59,12 +59,12 @@ describe('#strategy AwesomeOscillatorCrossZero', () => {
         assert.equal('short', (await aoCross.period(new IndicatorPeriod(createStrategyContext(394), {
             'sma200': [500, 400, 399],
             'ao': [1, -0.1, -0.2],
-        })))['signal'])
+        }))).getSignal())
 
-        assert.equal(undefined, (await aoCross.period(new IndicatorPeriod(403, {
+        assert.equal(undefined, (await aoCross.period(new IndicatorPeriod(createStrategyContext(403), {
             'sma200': [500, 400, 399],
             'ao': [1, -0.1, -0.2],
-        }))['signal']))
+        }))).getSignal())
     })
 
     it('AwesomeOscillatorCrossZero short (close)', async () => {
@@ -76,7 +76,7 @@ describe('#strategy AwesomeOscillatorCrossZero', () => {
         assert.equal('close', (await aoCross.period(new IndicatorPeriod(context, {
             'sma200': [500, 400, 399],
             'ao': [-0.1, 1, -0.2],
-        })))['signal'])
+        }))).getSignal())
     })
 
     let createStrategyContext = (price) => {

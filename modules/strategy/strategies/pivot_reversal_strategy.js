@@ -1,5 +1,7 @@
 'use strict';
 
+let SignalResult = require('../dict/signal_result')
+
 module.exports = class PivotReversalStrategy {
     getName() {
         return 'pivot_reversal_strategy'

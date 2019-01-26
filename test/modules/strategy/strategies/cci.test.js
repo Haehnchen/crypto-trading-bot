@@ -23,8 +23,8 @@ describe('#strategy cci', () => {
             'cci': [90, 100, 110, 130, 150, 180, 200, 220, 280, 220, 200, 180, 150, 130, 90, 80],
         }))
 
-        assert.equal('short', result['signal'])
-        assert.equal(280, result['_trigger'])
+        assert.equal('short', result.getSignal())
+        assert.equal(280, result.getDebug()['_trigger'])
 
         let result2 = await cci.period(new IndicatorPeriod(createStrategyContext(394), {
             'sma200': [500, 400],
@@ -32,7 +32,7 @@ describe('#strategy cci', () => {
             'cci': [80, 90, 100, 110, 130, 150, 180, 190, 199, 180, 150, 130, 90, 80],
         }))
 
-        assert.equal(undefined, result2['signal'])
+        assert.equal(undefined, result2.getSignal())
     })
 
     it('strategy cci long', async () => {
@@ -44,8 +44,8 @@ describe('#strategy cci', () => {
             'cci': [-80, -90, -100, -110, -130, -150, -180, -200, -220, -280, -220, -200, -180, -150, -130, -90, -80],
         }))
 
-        assert.equal('long', result['signal'])
-        assert.equal(-280, result['_trigger'])
+        assert.equal('long', result.getSignal())
+        assert.equal(-280, result.getDebug()['_trigger'])
 
         let result2 = await cci.period(new IndicatorPeriod(createStrategyContext(404), {
             'sma200': [500, 400, 388],
@@ -53,7 +53,7 @@ describe('#strategy cci', () => {
             'cci': [-80, -90, -100, -110, -130, -150, -180, -190, -199, -180, -150, -130, -90, -80],
         }))
 
-        assert.equal(undefined, result2['signal'])
+        assert.equal(undefined, result2.getSignal())
 
         let result3 = await cci.period(new IndicatorPeriod(createStrategyContext(404), {
             'sma200': [900, 900, 900],
@@ -61,8 +61,8 @@ describe('#strategy cci', () => {
             'cci': [-80, -90, -100, -110, -130, -150, -180, -200, -220, -280, -220, -200, -180, -150, -130, -90, -80],
         }))
 
-        assert.equal('long', result3['signal'])
-        assert.equal(-280, result3['_trigger'])
+        assert.equal('long', result3.getSignal())
+        assert.equal(-280, result3.getDebug()['_trigger'])
     })
 
     it('strategy cci long [close]', async () => {
@@ -77,7 +77,7 @@ describe('#strategy cci', () => {
             'cci': [120, 80, -1],
         }))
 
-        assert.equal('close', result['signal'])
+        assert.equal('close', result.getSignal())
 
         let result2 = await cci.period(new IndicatorPeriod(strategyContext, {
             'sma200': [550, 400, 388],
@@ -85,7 +85,7 @@ describe('#strategy cci', () => {
             'cci': [120, 150, -1],
         }))
 
-        assert.equal(undefined, result2['signal'])
+        assert.equal(undefined, result2.getSignal())
     })
 
     it('strategy cci short [close]', async () => {
@@ -100,7 +100,7 @@ describe('#strategy cci', () => {
             'cci': [-120, -80, 1],
         }))
 
-        assert.equal('close', result['signal'])
+        assert.equal('close', result.getSignal())
 
         let result2 = await cci.period(new IndicatorPeriod(strategyContext, {
             'sma200': [550, 400, 388],
@@ -108,7 +108,7 @@ describe('#strategy cci', () => {
             'cci': [-120, -150, -1],
         }))
 
-        assert.equal(undefined, result2['signal'])
+        assert.equal(undefined, result2.getSignal())
     })
 
     let createStrategyContext = (price) => {
