@@ -1,9 +1,5 @@
 {% extends './layout.html.twig' %}
 
-{% block javascript %}
-    <script src="/backtest-form.js?v={{ asset_version() }}"></script>
-{% endblock %}
-
 {% block content %}
     <form action="/backtest/submit" method="post" class="backtest-form">
 
@@ -61,4 +57,8 @@
         </div>
 
     </form>
+{% endblock %}
+
+{% block javascript %}
+<script src="/backtest-form.js?v={{ asset_version() }}"></script>
 {% endblock %}
