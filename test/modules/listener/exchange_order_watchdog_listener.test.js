@@ -26,6 +26,27 @@ describe('#watchdogs are working', () => {
         assert.deepEqual(calls, ['foobar', 'FOOUSD', 'close'])
     })
 
+    it('watchdog for stoploss is working (long) but valid', async () => {
+        let calls = []
+
+        let listener = new ExchangeOrderWatchdogListener(
+            {},
+            {},
+            {},
+            {},
+            {},
+            {'update': async (exchange, symbol, state) => { calls.push(exchange, symbol, state) }},
+            {'info': () => {}},
+            {'get': () => new Ticker('foobar', 'BTCUSD', undefined, 99, 101)},
+        )
+
+        let exchange = {'getName': () => 'foobar'}
+
+        await listener.stoplossWatch(exchange, new Position('FOOUSD', 'long', 1, undefined, undefined, 100), {'stop': 1.9})
+
+        assert.deepEqual(calls, [])
+    })
+
     it('watchdog for stoploss is working (long) profitable', async () => {
         let calls = []
 
@@ -66,6 +87,27 @@ describe('#watchdogs are working', () => {
         await listener.stoplossWatch(exchange, new Position('FOOUSD', 'short', -1, undefined, undefined, 100), {'stop': 0.9})
 
         assert.deepEqual(calls, ['foobar', 'FOOUSD', 'close'])
+    })
+
+    it('watchdog for stoploss is working (short) but valid', async () => {
+        let calls = []
+
+        let listener = new ExchangeOrderWatchdogListener(
+            {},
+            {},
+            {},
+            {},
+            {},
+            {'update': async (exchange, symbol, state) => { calls.push(exchange, symbol, state) }},
+            {'info': () => {}},
+            {'get': () => new Ticker('foobar', 'BTCUSD', undefined, 99, 101)},
+        )
+
+        let exchange = {'getName': () => 'foobar'}
+
+        await listener.stoplossWatch(exchange, new Position('FOOUSD', 'short', -1, undefined, undefined, 100), {'stop': 1.1})
+
+        assert.deepEqual(calls, [])
     })
 
     it('watchdog for stoploss is working (short) profitable', async () => {

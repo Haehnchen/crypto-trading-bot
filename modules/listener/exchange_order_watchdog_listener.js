@@ -174,13 +174,13 @@ module.exports = class ExchangeOrderWatchdogListener {
             throw 'Invalid side'
         }
 
-        if (typeof profit === 'undefined') {
+        if (typeof profit === 'undefined' || profit > 0) {
             return
         }
 
         // TODO: provide cancel if price recovered !?
 
-        if (profit < stopProfit) {
+        if (profit < Math.abs(stopProfit) * -1) {
             this.logger.info('Stoploss Watcher: stop triggered: ' + JSON.stringify([exchange.getName(), position.symbol, profit]))
             this.pairStateManager.update(exchange.getName(), position.symbol, 'close')
         }
