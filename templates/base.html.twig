@@ -38,12 +38,6 @@
             padding: .5rem;
         }
     </style>
-
-    <script>
-        $(function () {
-            $('[data-toggle="tooltip"]').tooltip()
-        })
-    </script>
 {% endblock head %}
 
 {% block content %}
@@ -142,3 +136,10 @@
         </table>
     </div>
 {% endblock content %}
+
+<script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    })
+</script>
+{% block javascript %}{% endblock javascript %}
