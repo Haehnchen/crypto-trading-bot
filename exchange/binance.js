@@ -170,15 +170,16 @@ module.exports = class Binance {
         let myOrder = {
             symbol: order.symbol,
             side: order.price < 0 ? 'SELL' : 'BUY',
-            price: Math.abs(order.price),
             quantity: Math.abs(order.amount),
         }
 
         let orderType = undefined
         if (!order.type || order.type === 'limit') {
             orderType = 'LIMIT'
+            myOrder.price = Math.abs(order.price)
         } else if(order.type === 'stop') {
             orderType = 'STOP_LOSS'
+            myOrder.stopPrice = Math.abs(order.price)
         } else if(order.type === 'market') {
             orderType = 'MARKET'
         }

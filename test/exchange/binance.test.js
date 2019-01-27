@@ -31,7 +31,6 @@ describe('#binance exchange implementation', function() {
 
         assert.deepEqual(
             {
-                'price': 0.000001,
                 'quantity': 1337,
                 'side': 'SELL',
                 'symbol': 'BTCUSD',
@@ -48,7 +47,7 @@ describe('#binance exchange implementation', function() {
 
         assert.deepEqual(
             {
-                'price': 1337,
+                'stopPrice': 1337,
                 'quantity': 12,
                 'side': 'SELL',
                 'symbol': 'BTCUSD',
