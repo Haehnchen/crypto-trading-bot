@@ -40,7 +40,7 @@ module.exports = class TickListener {
         }
 
         let signal = result.getSignal()
-        if (!signal) {
+        if (!signal || typeof signal === 'undefined') {
             return
         }
 
@@ -83,7 +83,7 @@ module.exports = class TickListener {
         }
 
         let signal = result.getSignal()
-        if (!signal) {
+        if (!signal || typeof signal === 'undefined') {
             return
         }
         
