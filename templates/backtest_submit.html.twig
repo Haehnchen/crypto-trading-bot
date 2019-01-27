@@ -1,11 +1,5 @@
 {% extends './layout.html.twig' %}
 
-{% block javascript %}
-<script src="https://d3js.org/d3.v4.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/techan.js/0.8.0/techan.min.js"></script>
-<script src="/backtest.js?v={{ asset_version() }}"></script>
-{% endblock %}
-
 {% block stylesheet %}
     <link rel="stylesheet" href="/backtest.css?v={{ asset_version() }}">
 {% endblock %}
@@ -94,4 +88,10 @@
         <h2>Ticks</h2>
         {{ macros.render_rows(rows, extra_fields) }}
     </div>
+{% endblock %}
+
+{% block javascript %}
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/techan.js/0.8.0/techan.min.js"></script>
+<script src="/backtest.js?v={{ asset_version() }}"></script>
 {% endblock %}
