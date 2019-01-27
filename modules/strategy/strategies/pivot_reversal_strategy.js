@@ -52,9 +52,13 @@ module.exports = class PivotReversalStrategy {
         }
 
         let long = indicatorPeriod.getPrice() > currentValues['sma200']
-        let signal = this.getPivotSignal(long, indicatorPeriod)
 
-        return SignalResult.createSignal(signal, debug)
+        let signal = this.getPivotSignal(long, indicatorPeriod)
+        if (signal) {
+            return SignalResult.createSignal(signal, debug)
+        }
+
+        return SignalResult.createEmptySignal(debug)
     }
 
     getPivotSignal(long, indicatorPeriod) {
@@ -87,7 +91,7 @@ module.exports = class PivotReversalStrategy {
             }
         }
 
-        return undefined
+        return
     }
 
     getBacktestColumns() {

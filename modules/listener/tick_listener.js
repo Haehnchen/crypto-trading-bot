@@ -45,7 +45,7 @@ module.exports = class TickListener {
         }
 
         if (!['close', 'short', 'long'].includes(signal)) {
-            throw 'Invalid signal: ' + signal
+            throw 'Invalid signal: ' + JSON.stringify(signal, strategy)
         }
 
         let signalWindow = moment().subtract(30, 'minutes').toDate();
@@ -88,7 +88,7 @@ module.exports = class TickListener {
         }
         
         if (!['close', 'short', 'long'].includes(signal)) {
-            throw 'Invalid signal: ' + signal
+            throw 'Invalid signal: ' + JSON.stringify(signal, strategy)
         }
 
         let signalWindow = moment().subtract(_.get(symbol, 'trade.signal_slowdown_minutes', 15), 'minutes').toDate();
