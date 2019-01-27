@@ -7,6 +7,7 @@ let fs = require('fs')
 let _ = require('lodash')
 const StrategyContext = require('../../dict/strategy_context')
 const Ticker = require('../../dict/ticker')
+const SignalResult = require('./dict/signal_result')
 
 module.exports = class StrategyManager {
     constructor(technicalAnalysisValidator, exchangeCandleCombine, logger) {
@@ -57,7 +58,12 @@ module.exports = class StrategyManager {
 
         let strategy = this.getStrategies().find(strategy => strategy.getName() === strategyName)
 
-        return await strategy.period(indicatorPeriod, options)
+        let strategyResult = await strategy.period(indicatorPeriod, options);
+        if (typeof strategyResult !== 'undefined' && !(strategyResult instanceof SignalResult)) {
+            throw 'Invalid strategy return:' + strategyName
+        }
+
+        return strategyResult
     }
 
     async executeStrategyBacktest(strategyName, exchange, symbol, options, lastSignal) {
@@ -73,15 +79,19 @@ module.exports = class StrategyManager {
         let indicatorPeriod = new IndicatorPeriod(context, results)
 
         let strategy = this.getStrategies().find(strategy => strategy.getName() === strategyName)
-        let trigger = await strategy.period(indicatorPeriod, options)
+        let strategyResult = await strategy.period(indicatorPeriod, options)
+
+        if (typeof strategyResult !== 'undefined' && !(strategyResult instanceof SignalResult)) {
+            throw 'Invalid strategy return:' + strategyName
+        }
 
         let result = {
             'price': price,
-            'columns': this.getCustomTableColumnsForRow(strategyName, trigger ? trigger.getDebug() : {}),
+            'columns': this.getCustomTableColumnsForRow(strategyName, strategyResult ? strategyResult.getDebug() : {}),
         }
 
-        if (trigger) {
-            result.result = trigger
+        if (strategyResult) {
+            result.result = strategyResult
         }
 
         return result
