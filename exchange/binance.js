@@ -447,7 +447,7 @@ module.exports = class Binance {
                 let symbolOrders
 
                 try {
-                    symbolOrders = (await this.client.allOrders({symbol: symbol}));
+                    symbolOrders = (await this.client.allOrders({symbol: symbol, limit: 150}));
                 } catch (e) {
                     this.logger.error('Binance: ' + String(e))
                     return resolve(undefined)
