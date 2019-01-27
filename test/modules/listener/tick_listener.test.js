@@ -37,7 +37,6 @@ describe('#tick listener for order', function() {
 
         assert.deepEqual(['FOOBAR', 'FOOUSD', 'short'], updates)
 
-
         // reset; block for time window
         updates = []
         await listener.visitTradeStrategy('foobar', {

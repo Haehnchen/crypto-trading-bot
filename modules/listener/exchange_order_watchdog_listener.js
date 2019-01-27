@@ -4,7 +4,7 @@ let orderUtil = require('../../utils/order_util')
 let Order = require('../../dict/order')
 
 module.exports = class ExchangeOrderWatchdogListener {
-    constructor(exchangeManager, instances, stopLossCalculator, riskRewardRatioCalculator, orderExecutor, pairStateManager, logger) {
+    constructor(exchangeManager, instances, stopLossCalculator, riskRewardRatioCalculator, orderExecutor, pairStateManager, logger, tickers) {
         this.exchangeManager = exchangeManager
         this.instances = instances
         this.stopLossCalculator = stopLossCalculator
@@ -12,6 +12,7 @@ module.exports = class ExchangeOrderWatchdogListener {
         this.orderExecutor = orderExecutor
         this.pairStateManager = pairStateManager
         this.logger = logger
+        this.tickers = tickers
     }
 
     onTick() {
@@ -50,6 +51,11 @@ module.exports = class ExchangeOrderWatchdogListener {
                 let riskRewardRatio = pair.watchdogs.find(watchdog => watchdog.name === 'risk_reward_ratio')
                 if (riskRewardRatio) {
                     await this.riskRewardRatioWatchdog(exchange, position, riskRewardRatio)
+                }
+
+                let stoplossWatch = pair.watchdogs.find(watchdog => watchdog.name === 'stoploss_watch')
+                if(stoplossWatch) {
+                    await this.stoplossWatch(exchange, position, stoplossWatch)
                 }
             })
         })
@@ -135,5 +141,48 @@ module.exports = class ExchangeOrderWatchdogListener {
 
             await this.orderExecutor.executeOrder(exchange.getName(), order)
         })
+    }
+
+    async stoplossWatch(exchange, position, config) {
+        if (!config['stop'] || config['stop'] < 0.1 || config['stop'] > 50) {
+            this.logger.error('Stoploss Watcher: invalid stop configuration need "0.1" - "50"')
+            return
+        }
+
+        if (typeof position.entry === 'undefined') {
+            this.logger.error('Stoploss Watcher: no entry for position: ' + JSON.stringify(position))
+            return
+        }
+
+        let ticker = this.tickers.get(exchange.getName(), position.symbol)
+        if (!ticker) {
+            this.logger.error('Stoploss Watcher: no ticker found ' + JSON.stringify([exchange.getName(), position.symbol]))
+            return
+        }
+
+        let profit
+        let stopProfit = parseFloat(config['stop']);
+        if (position.side === 'long') {
+            if (ticker.bid < position.entry) {
+                profit = ((ticker.bid / position.entry) - 1) * 100
+            }
+        } else if (position.side === 'short') {
+            if (ticker.ask > position.entry) {
+                profit = ((position.entry / ticker.ask) - 1) * 100
+            }
+        } else {
+            throw 'Invalid side'
+        }
+
+        if (typeof profit === 'undefined') {
+            return
+        }
+
+        // TODO: provide cancel if price recovered !?
+
+        if (profit < stopProfit) {
+            this.logger.info('Stoploss Watcher: stop triggered: ' + JSON.stringify([exchange.getName(), position.symbol, profit]))
+            this.pairStateManager.update(exchange.getName(), position.symbol, 'close')
+        }
     }
 }

@@ -11,16 +11,16 @@ module.exports = class Position {
      * @param createdAt
      */
     constructor(symbol, side, amount, profit, updatedAt, entry, createdAt) {
-        if (side !== 'long' && side !== 'short') {
+        if (!['long', 'short'].includes(side)) {
             throw 'Invalid position direction given:' + side
         }
 
         if (amount < 0 && side === 'long') {
-            throw 'Invalid direction:' + side
+            throw 'Invalid direction amount:' + side
         }
 
         if (amount > 0 && side === 'short') {
-            throw 'Invalid direction:' + side
+            throw 'Invalid direction amount:' + side
         }
 
         this.symbol = symbol

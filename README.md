@@ -148,6 +148,7 @@ Find some example strategies inside [modules/strategy/strategies](modules/strate
 
  * `stoploss` provide general stoploss order in percent of entry price (Exchange Order)
  * `risk_reward_ratio` Creates Risk Reward order for take profit and stoploss (Exchange Order Limit+Stop) 
+ * `stoploss_watch` Close open position if ticker price falls below the percent lose; use this for exchange that dont support stop_loss order liek Binance 
 
 ```
     'watchdogs': [
@@ -159,7 +160,11 @@ Find some example strategies inside [modules/strategy/strategies](modules/strate
             'name': 'risk_reward_ratio',
             'target_percent': 6,
             'stop_percent': 3,
-        }
+        },
+        {
+            'name': 'stoploss_watch',
+            'stop': 1.2,
+        }        
     ],
 ```
  
