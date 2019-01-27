@@ -180,8 +180,9 @@ module.exports = class ExchangeOrderWatchdogListener {
 
         // TODO: provide cancel if price recovered !?
 
-        if (profit < Math.abs(stopProfit) * -1) {
-            this.logger.info('Stoploss Watcher: stop triggered: ' + JSON.stringify([exchange.getName(), position.symbol, profit]))
+        let maxLoss = Math.abs(stopProfit) * -1;
+        if (profit < maxLoss) {
+            this.logger.info('Stoploss Watcher: stop triggered: ' + JSON.stringify([exchange.getName(), position.symbol, maxLoss.toFixed(2), profit.toFixed(2)]))
             this.pairStateManager.update(exchange.getName(), position.symbol, 'close')
         }
     }
