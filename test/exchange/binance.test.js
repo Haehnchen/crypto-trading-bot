@@ -214,6 +214,6 @@ describe('#binance exchange implementation', function() {
 
         let position = await binance.getPositionForSymbol('BTCUSD')
 
-        assert.equal(position.profit, 50)
+        assert.equal(Math.trunc(position.profit), 16)
     })
 })

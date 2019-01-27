@@ -39,6 +39,7 @@ module.exports = class Bitmex {
 
         this.positions = {}
         this.orders = {}
+        this.tickers = {}
         this.symbols = []
     }
 
@@ -232,7 +233,7 @@ module.exports = class Bitmex {
                     eventEmitter.emit('ticker', new TickerEvent(
                         this.getName(),
                         symbol['symbol'],
-                        new Ticker(this.getName(), symbol['symbol'], moment().format('X'), instrument['bidPrice'], instrument['askPrice'])
+                        this.tickers[symbol['symbol']] = new Ticker(this.getName(), symbol['symbol'], moment().format('X'), instrument['bidPrice'], instrument['askPrice'])
                     ))
                 })
             })
@@ -390,16 +391,23 @@ module.exports = class Bitmex {
         })
     }
 
-    getPositions() {
-        return new Promise(async resolve => {
-            let results = []
+    async getPositions() {
+        let results = []
 
-            for (let x in this.positions) {
-                results.push(this.positions[x])
+        for (let x in this.positions) {
+            let position = this.positions[x]
+            if (position.entry && this.tickers[position.symbol]) {
+                if (position.side === 'long') {
+                    position = Position.createProfitUpdate(position, ((this.tickers[position.symbol].bid / position.entry) - 1) * 100)
+                } else if (position.side === 'short') {
+                    position = Position.createProfitUpdate(position, ((position.entry / this.tickers[position.symbol].ask ) - 1) * 100)
+                }
             }
 
-            resolve(results)
-        })
+            results.push(position)
+        }
+
+        return results
     }
 
     getPositionForSymbol(symbol) {

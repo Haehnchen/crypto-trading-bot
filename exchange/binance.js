@@ -326,7 +326,7 @@ module.exports = class Binance {
 
         for (let position of this.positions) {
             if (!position.profit && position.entry && this.tickers[position.symbol]) {
-                position = Position.createProfitUpdate(position, ((this.tickers[position.symbol].ask / position.entry) - 1) * 100)
+                position = Position.createProfitUpdate(position, ((this.tickers[position.symbol].bid / position.entry) - 1) * 100)
             }
 
             results.push(position)
