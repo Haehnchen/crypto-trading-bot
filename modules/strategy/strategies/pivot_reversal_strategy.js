@@ -38,7 +38,7 @@ module.exports = class PivotReversalStrategy {
         // close; use watchdog!
         let lastSignal = indicatorPeriod.getLastSignal();
         if (lastSignal) {
-            return SignalResult.createEmptySignal()
+            return SignalResult.createEmptySignal(debug)
 
             if (lastSignal === 'long' && !this.getPivotSignal(false, indicatorPeriod)) {
                 return SignalResult.createSignal('close', debug)
