@@ -24,41 +24,37 @@ module.exports = class PivotReversalStrategy {
     }
 
     async period(indicatorPeriod) {
-        let result = {}
-
-        let currentValues = result.debug = indicatorPeriod.getLatestIndicators()
+        let debug
+        let currentValues = debug = indicatorPeriod.getLatestIndicators()
         if (!currentValues['sma200'] || currentValues['sma200'].length < 10) {
-            return result
+            return
         }
 
         let candles1m = indicatorPeriod.getIndicator('candles_1m')
         if (candles1m){
-            result.debug.candles = candles1m.slice(-3).map(c => c.close).join(', ')
+            debug.candles = candles1m.slice(-3).map(c => c.close).join(', ')
         }
 
-        // close
+        // close; use watchdog!
         let lastSignal = indicatorPeriod.getLastSignal();
         if (lastSignal) {
-            return result
+            return SignalResult.createEmptySignal()
 
             if (lastSignal === 'long' && !this.getPivotSignal(false, indicatorPeriod)) {
-                result.signal = 'close'
+                return SignalResult.createSignal('close', debug)
             }
 
             if (lastSignal === 'short' && !this.getPivotSignal(true, indicatorPeriod)) {
-                result.signal = 'close'
+                return SignalResult.createSignal('close', debug)
             }
 
-            return result
+            return SignalResult.createEmptySignal(debug)
         }
 
         let long = indicatorPeriod.getPrice() > currentValues['sma200']
         let signal = this.getPivotSignal(long, indicatorPeriod)
-        if (signal) {
-            result.signal = signal
-        }
 
-        return result
+        return SignalResult.createSignal(signal, debug)
     }
 
     getPivotSignal(long, indicatorPeriod) {
