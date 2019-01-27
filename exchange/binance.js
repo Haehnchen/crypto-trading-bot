@@ -20,7 +20,9 @@ module.exports = class Binance {
         this.orders = {}
         this.exchangePairs = {}
         this.symbols = {}
-        this.positions = {}
+        this.positions = []
+        this.trades = {}
+        this.tickers = {}
     }
 
     start(config, symbols) {
@@ -102,7 +104,7 @@ module.exports = class Binance {
                     eventEmitter.emit('ticker', new TickerEvent(
                         'binance',
                         symbol['symbol'],
-                        new Ticker('binance', symbol['symbol'], moment().format('X'), ticker['bestBid'], ticker['bestAsk'])
+                        this.tickers[symbol['symbol']] = new Ticker('binance', symbol['symbol'], moment().format('X'), ticker['bestBid'], ticker['bestAsk'])
                     ))
                 })
             })
@@ -318,29 +320,28 @@ module.exports = class Binance {
         return OrderUtil.calculateNearestSize(amount, this.exchangePairs[symbol].lot_size)
     }
 
-    getPositions() {
-        return new Promise(async resolve => {
-            let results = []
+    async getPositions() {
+        let results = []
 
-            for (let x in this.positions) {
-                results.push(this.positions[x])
+        for (let position of this.positions) {
+            if (!position.profit && position.entry && this.tickers[position.symbol]) {
+                position.profit = ((this.tickers[position.symbol].ask / position.entry) - 1) * 100
             }
 
-            resolve(results)
-        })
+            results.push(position)
+        }
+
+        return results
     }
 
-    getPositionForSymbol(symbol) {
-        return new Promise(async resolve => {
-            for (let position of (await this.getPositions())) {
-                if(position.symbol === symbol) {
-                    resolve(position)
-                    return
-                }
+    async getPositionForSymbol(symbol) {
+        for (let position of (await this.getPositions())) {
+            if(position.symbol === symbol) {
+                return position
             }
+        }
 
-            resolve()
-        })
+        return undefined
     }
 
     async updateOrder(id, order) {
@@ -380,6 +381,8 @@ module.exports = class Binance {
             return
         }
 
+        await this.syncTradesForEntries()
+
         let capitals = {}
         this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).forEach(s => {
             capitals[s.symbol] = s.trade.capital
@@ -400,7 +403,15 @@ module.exports = class Binance {
 
                     // 1% balance left indicate open position
                     if (Math.abs(balanceUsed / capital) > 0.1) {
-                        positions.push(new Position(pair, 'long', balanceUsed, undefined, new Date(), undefined, new Date()))
+                        let entry
+                        let createdAt = new Date();
+
+                        if (this.trades[pair] && this.trades[pair].side === 'buy') {
+                            entry = parseFloat(this.trades[pair].price)
+                            createdAt = this.trades[pair].time
+                        }
+
+                        positions.push(new Position(pair, 'long', balanceUsed, undefined, new Date(), entry, createdAt))
                     }
                 }
             }
@@ -413,22 +424,8 @@ module.exports = class Binance {
         let symbols = this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).map(s => s.symbol)
         this.logger.debug('Binance: Sync orders for symbols: ' + symbols.length)
 
-        let promies = []
-
-        for (let symbol of symbols) {
-            promies.push(new Promise(async resolve => {
-                let orders = await this.client.openOrders({
-                    symbol: symbol,
-                })
-
-                resolve(Binance.createOrders(...orders))
-            }))
-        }
-
-        let myOrders = []
-        for (let orders of (await Promise.all(promies))) {
-            myOrders.push(...orders)
-        }
+        let openOrders = await this.client.openOrders(false)
+        let myOrders = Binance.createOrders(...openOrders)
 
         let orders = {}
         myOrders.forEach(o => {
@@ -436,6 +433,53 @@ module.exports = class Binance {
         })
 
         this.orders = orders
+    }
+
+    async syncTradesForEntries() {
+        let symbols = this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).map(s => s.symbol)
+        this.logger.debug('Binance: Sync trades for entries: ' + symbols.length)
+
+        let promises = []
+
+        for (let symbol of symbols) {
+            promises.push(new Promise(async resolve => {
+                let symbolOrders
+
+                try {
+                    symbolOrders = (await this.client.allOrders({symbol: symbol}));
+                } catch (e) {
+                    this.logger.error('Binance: ' + String(e))
+                    return resolve(undefined)
+                }
+
+                let orders = symbolOrders.filter(
+                    order => order.status.toLowerCase() === 'filled'
+                ).sort(
+                    (a, b) => b.time - a.time
+                ).map(
+                    order => {
+                        return {
+                            'side': order.side.toLowerCase(),
+                            'price': order.price,
+                            'symbol': order.symbol,
+                            'time': new Date(order.time)
+                        }
+                    }
+                )
+
+                return resolve(orders.length > 0 ? orders[0] : undefined)
+            }))
+        }
+
+        let trades = {}
+        let items = await Promise.all(promises);
+        items.forEach(o => {
+            if (o) {
+                trades[o.symbol] = o
+            }
+        })
+
+        this.trades = trades
     }
 
     async syncPairInfo() {
@@ -461,7 +505,7 @@ module.exports = class Binance {
             exchangePairs[pair['symbol']] = pairInfo
         })
 
-        this.logger.info('Binance: pairs synced: ' + pairs.symbols)
+        this.logger.info('Binance: pairs synced: ' + pairs.symbols.length)
         this.exchangePairs = exchangePairs
     }
 }

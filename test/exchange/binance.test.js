@@ -1,6 +1,8 @@
 let assert = require('assert');
 let Binance = require('../../exchange/binance');
 let Order = require('../../dict/order');
+let Position = require('../../dict/position');
+let Ticker = require('../../dict/ticker');
 
 let fs = require('fs');
 
@@ -203,5 +205,16 @@ describe('#binance exchange implementation', function() {
 
         assert.equal(0, (await binance.getOrders()).length)
         assert.equal(0, (await binance.getOrdersForSymbol('BTCUSD')).length)
+    })
+
+    it('positions with profit', async () => {
+        let binance = new Binance()
+
+        binance.positions.push(new Position('BTCUSD', 'long', 12, undefined, undefined, 12))
+        binance.tickers['BTCUSD'] = new Ticker('foobar', 'BTCUSD', undefined, 14, 18)
+
+        let position = await binance.getPositionForSymbol('BTCUSD')
+
+        assert.equal(position.profit, 50)
     })
 })
