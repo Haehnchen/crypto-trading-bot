@@ -47,7 +47,7 @@ module.exports = class StrategyManager {
     async executeStrategy(strategyName, context, exchange, symbol, options) {
         let results = await this.getTaResult(strategyName, exchange, symbol, options, true)
         if(!results || Object.keys(results).length === 0) {
-            return {}
+            return
         }
 
         // remove candle pipe
@@ -62,6 +62,9 @@ module.exports = class StrategyManager {
 
     async executeStrategyBacktest(strategyName, exchange, symbol, options, lastSignal) {
         let results = await this.getTaResult(strategyName, exchange, symbol, options)
+        if(!results || Object.keys(results).length === 0) {
+            return
+        }
 
         let price = results['_candle'] ? results['_candle'].close : undefined
         let context = StrategyContext.create(new Ticker(exchange, symbol, undefined, price, price))
