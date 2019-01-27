@@ -31,4 +31,16 @@ module.exports = class Position {
         this.entry = entry
         this.createdAt = createdAt
     }
+
+    static createProfitUpdate(position, profit) {
+        return new Position(
+            position.symbol,
+            position.side,
+            position.amount,
+            profit,
+            position.updatedAt,
+            position.entry,
+            position.createdAt
+        )
+    }
 };
