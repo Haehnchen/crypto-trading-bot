@@ -292,6 +292,26 @@ describe('#binance exchange implementation', function() {
         assert.equal(Object.keys(binance.orders).length, 1)
     })
 
+    it('test init of balances via account info', async () => {
+        let binance = new Binance(
+            undefined,
+            {'debug': () => {}}
+        )
+
+        binance.client = {
+            'accountInfo': async () => JSON.parse(fs.readFileSync(__dirname + '/binance/account-info.json', 'utf8')),
+        }
+
+        await binance.syncBalances()
+
+        let balances = binance.balances
+
+        assert.equal(balances.length, 3)
+
+        assert.equal(balances.find(balance => balance.asset === 'TNT').available > 0.1, true)
+        assert.equal(balances.find(balance => balance.asset === 'TNT').locked > 1, true)
+    })
+
     let getEvent = function(find) {
         return JSON.parse(fs.readFileSync(__dirname + '/binance/events.json', 'utf8')).find(find)
     }

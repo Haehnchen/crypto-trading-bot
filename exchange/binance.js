@@ -47,6 +47,13 @@ module.exports = class Binance {
                 await this.onWebSocketEvent(event)
             })
 
+            // we need balance init; websocket sending only on change
+            // also sync by time
+            setInterval(function f() {
+                me.syncBalances()
+                return f
+            }(), 60 * 60 * 1 * 1000)
+
             setInterval(function f() {
                 me.syncTradesForEntries()
                 return f
@@ -445,6 +452,30 @@ module.exports = class Binance {
         })
 
         this.orders = orders
+    }
+
+    async syncBalances() {
+        let accountInfo
+        try {
+            accountInfo = await this.client.accountInfo()
+        } catch (e) {
+            this.logger.error('Binance: error sync balances: ' + String(e))
+            return
+        }
+
+        if (!accountInfo || !accountInfo.balances) {
+            return
+        }
+
+        this.logger.debug('Binance: Sync balances')
+
+        this.balances = accountInfo.balances
+            .filter(b => parseFloat(b.free) + parseFloat(b.locked) > 0)
+            .map(balance => { return {
+                'available': parseFloat(balance.free),
+                'locked': parseFloat(balance.locked),
+                'asset': balance.asset,
+            }})
     }
 
     async syncTradesForEntries() {
