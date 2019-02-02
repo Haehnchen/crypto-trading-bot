@@ -19,17 +19,17 @@ module.exports = class Binance {
         this.client = undefined
         this.orders = {}
         this.exchangePairs = {}
-        this.symbols = {}
+        this.symbols = []
         this.positions = []
         this.trades = {}
         this.tickers = {}
+        this.balances = []
     }
 
     start(config, symbols) {
         this.symbols = symbols
 
         const eventEmitter = this.eventEmitter
-        const logger = this.logger
 
         let opts = {}
 
@@ -43,12 +43,12 @@ module.exports = class Binance {
         let me = this
 
         if (config['key'] && config['secret']) {
-            setTimeout(() => {
-                me.onWebSocketMessage()
-            }, 500);
+            this.client.ws.user(async event => {
+                await this.onWebSocketEvent(event)
+            })
 
             setInterval(function f() {
-                me.syncBalances()
+                me.syncTradesForEntries()
                 return f
             }(), 60 * 60 * 1 * 1000)
 
@@ -322,27 +322,54 @@ module.exports = class Binance {
     }
 
     async getPositions() {
-        let results = []
+        let positions = []
 
-        for (let position of this.positions) {
-            if (!position.profit && position.entry && this.tickers[position.symbol]) {
-                position = Position.createProfitUpdate(position, ((this.tickers[position.symbol].bid / position.entry) - 1) * 100)
+        // get pairs with capital to fake open positions
+        let capitals = {}
+        this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).forEach(s => {
+            capitals[s.symbol] = s.trade.capital
+        })
+
+        for (let balance of this.balances) {
+            let asset = balance.asset
+
+            for (let pair in capitals) {
+                // just a hack to get matching pairs with capital eg: "BTCUSDT" needs a capital of "BTC"
+                if (!pair.startsWith(asset)) {
+                    continue
+                }
+
+                // 1% balance left indicate open position
+                let pairCapital = capitals[pair];
+                let balanceUsed = parseFloat(balance.available) + parseFloat(balance.locked)
+                if (Math.abs(balanceUsed / pairCapital) < 0.1) {
+                    continue
+                }
+
+                let entry
+                let createdAt = new Date();
+
+                // try to find a entry price, based on trade history
+                if (this.trades[pair] && this.trades[pair].side === 'buy') {
+                    entry = parseFloat(this.trades[pair].price)
+                    createdAt = this.trades[pair].time
+                }
+
+                // calulcate profit based on the ticket price
+                let profit
+                if (entry && this.tickers[pair]) {
+                    profit = ((this.tickers[pair].bid / entry) - 1) * 100
+                }
+
+                positions.push(new Position(pair, 'long', balanceUsed, profit, new Date(), entry, createdAt))
             }
-
-            results.push(position)
         }
 
-        return results
+        return positions
     }
 
     async getPositionForSymbol(symbol) {
-        for (let position of (await this.getPositions())) {
-            if(position.symbol === symbol) {
-                return position
-            }
-        }
-
-        return undefined
+        return ((await this.getPositions()).find(position => position.symbol === symbol))
     }
 
     async updateOrder(id, order) {
@@ -365,67 +392,51 @@ module.exports = class Binance {
         return 'binance'
     }
 
-    async onWebSocketMessage() {
-        await this.client.ws.user(async event => {
-            if (event.eventType && event.eventType === 'executionReport' && ('orderStatus' in event || 'orderId' in event)) {
-                this.logger.debug('Binance: Got executionReport order event: ' + JSON.stringify(event))
+    async onWebSocketEvent(event) {
+        if (event.eventType && event.eventType === 'executionReport' && ('orderStatus' in event || 'orderId' in event)) {
+            this.logger.debug('Binance: Got executionReport order event: ' + JSON.stringify(event))
 
-                await this.syncBalances()
-                await this.syncOrders()
+            // clean orders
+            if (['canceled', 'filled'].includes(event.orderStatus.toLowerCase()) && event.orderId && this.orders[event.orderId]) {
+                delete this.orders[event.orderId]
             }
-        })
-    }
 
-    async syncBalances() {
-        let account = await this.client.accountInfo()
-        if (!account || !account.balances) {
-            return
+            await this.syncOrders()
+            await this.syncTradesForEntries()
         }
 
-        await this.syncTradesForEntries()
+        if (event.eventType && event.eventType === 'account' && ('balances' in event)) {
+            let balances = []
 
-        let capitals = {}
-        this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).forEach(s => {
-            capitals[s.symbol] = s.trade.capital
-        })
+            for(let asset in event.balances) {
+                let balance = event.balances[asset]
 
-        this.logger.debug('Binance: Sync balances: ' + Object.keys(capitals).length)
-
-        let positions = [];
-
-        let balances = account.balances.filter(b => parseFloat(b.free) + parseFloat(b.locked) > 0)
-        for (let balance of balances) {
-            let asset = balance.asset
-
-            for (let pair in capitals) {
-                if (pair.startsWith(asset)) {
-                    let capital = capitals[pair];
-                    let balanceUsed = parseFloat(balance.free) + parseFloat(balance.locked)
-
-                    // 1% balance left indicate open position
-                    if (Math.abs(balanceUsed / capital) > 0.1) {
-                        let entry
-                        let createdAt = new Date();
-
-                        if (this.trades[pair] && this.trades[pair].side === 'buy') {
-                            entry = parseFloat(this.trades[pair].price)
-                            createdAt = this.trades[pair].time
-                        }
-
-                        positions.push(new Position(pair, 'long', balanceUsed, undefined, new Date(), entry, createdAt))
-                    }
+                if (parseFloat(balance.available) + parseFloat(balance.locked) > 0) {
+                    balances.push({
+                        'available': parseFloat(balance.available),
+                        'locked': parseFloat(balance.locked),
+                        'asset': asset,
+                    })
                 }
             }
-        }
 
-        this.positions = positions
+            this.balances = balances
+        }
     }
 
     async syncOrders() {
         let symbols = this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).map(s => s.symbol)
         this.logger.debug('Binance: Sync orders for symbols: ' + symbols.length)
 
-        let openOrders = await this.client.openOrders(false)
+        // false equal to all symbols
+        let openOrders = []
+        try {
+            openOrders = await this.client.openOrders(false)
+        } catch (e) {
+            this.logger.error('Binance: error sync orders: ' + String(e))
+            return
+        }
+
         let myOrders = Binance.createOrders(...openOrders)
 
         let orders = {}
@@ -454,7 +465,7 @@ module.exports = class Binance {
                 }
 
                 let orders = symbolOrders.filter(
-                    order => order.status.toLowerCase() === 'filled'
+                    order => ['filled', 'partially_filled'].includes(order.status.toLowerCase())
                 ).sort(
                     (a, b) => b.time - a.time
                 ).map(

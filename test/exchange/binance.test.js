@@ -3,6 +3,7 @@ let Binance = require('../../exchange/binance');
 let Order = require('../../dict/order');
 let Position = require('../../dict/position');
 let Ticker = require('../../dict/ticker');
+let ExchangeOrder = require('../../dict/exchange_order');
 
 let fs = require('fs');
 
@@ -206,14 +207,92 @@ describe('#binance exchange implementation', function() {
         assert.equal(0, (await binance.getOrdersForSymbol('BTCUSD')).length)
     })
 
-    it('positions with profit', async () => {
-        let binance = new Binance()
+    it('test that positions are open based on websocket balances', async () => {
+        let binance = new Binance(
+            undefined,
+            {'debug': () => {}}
+        )
 
-        binance.positions.push(new Position('BTCUSD', 'long', 12, undefined, undefined, 12))
-        binance.tickers['BTCUSD'] = new Ticker('foobar', 'BTCUSD', undefined, 14, 18)
+        binance.symbols = [
+            {
+                'symbol': 'BTCUSDT',
+                'trade': {
+                    'capital': 0.008,
+                },
+            }
+        ]
 
-        let position = await binance.getPositionForSymbol('BTCUSD')
+        binance.tickers['BTCUSDT'] = new Ticker('foobar', 'BTCUSD', undefined, 1331, 1332)
 
-        assert.equal(Math.trunc(position.profit), 16)
+        binance.client = {
+            'allOrders': async () => {
+                return [
+                    {
+                        symbol: 'BTCUSDT',
+                        orderId: 1740797,
+                        clientOrderId: '1XZTVBTGS4K1e',
+                        transactTime: 1514418413947,
+                        price: '1337.123',
+                        origQty: '1337.123',
+                        executedQty: '0.00000000',
+                        status: 'FILLED',
+                        timeInForce: 'GTC',
+                        type: 'LIMIT',
+                        side: 'BUY'
+                    }
+                ]
+            }
+        }
+
+        await binance.onWebSocketEvent(getEvent(event => event.eventType === 'account'))
+
+        let balances = binance.balances
+
+        assert.equal(balances.length, 23)
+        assert.equal(balances.find(balance => balance.asset === 'USDT').available > 1, true)
+
+        await binance.syncTradesForEntries()
+
+        let positions = await binance.getPositions()
+
+        let BTCUSDT = await binance.getPositionForSymbol('BTCUSDT')
+
+        assert.equal(BTCUSDT.amount > 0.008, true)
+        assert.equal(BTCUSDT.profit < 1, true)
     })
+
+    it('test websocket order events', async () => {
+        let binance = new Binance(
+            undefined,
+            {'debug': () => {}, 'error': () => {}}
+        )
+
+        binance.symbols = [
+            {
+                'symbol': 'BTCUSDT',
+                'trade': {
+                    'capital': 0.008,
+                },
+            }
+        ]
+
+        binance.client = {
+            'allOrders': async () => [],
+            'openOrders': async () => { throw 'Connection issue' }
+        }
+
+        binance.triggerOrder(new ExchangeOrder('25035356', 'BTCUSDT', 'open', undefined, undefined, undefined, undefined, 'buy'))
+        binance.triggerOrder(new ExchangeOrder('foobar', 'ADAUSDT', 'open', undefined, undefined, undefined, undefined, 'buy'))
+
+        assert.equal(Object.keys(binance.orders).length, 2)
+        assert.equal(binance.orders[25035356].symbol, 'BTCUSDT')
+
+        await binance.onWebSocketEvent(getEvent(event => event.orderId === 25035356))
+        assert.equal(binance.orders[25035356], undefined)
+        assert.equal(Object.keys(binance.orders).length, 1)
+    })
+
+    let getEvent = function(find) {
+        return JSON.parse(fs.readFileSync(__dirname + '/binance/events.json', 'utf8')).find(find)
+    }
 })
