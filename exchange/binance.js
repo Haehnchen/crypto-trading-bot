@@ -403,19 +403,39 @@ module.exports = class Binance {
         if (event.eventType && event.eventType === 'executionReport' && ('orderStatus' in event || 'orderId' in event)) {
             this.logger.debug('Binance: Got executionReport order event: ' + JSON.stringify(event))
 
-            // clean orders
-            if (['canceled', 'filled'].includes(event.orderStatus.toLowerCase()) && event.orderId && this.orders[event.orderId]) {
+            // clean orders with state is switching from open to close
+            let orderStatus = event.orderStatus.toLowerCase();
+            if (['canceled', 'filled', 'rejected'].includes(orderStatus) && event.orderId && this.orders[event.orderId]) {
                 delete this.orders[event.orderId]
             }
 
-            await this.syncOrders()
-            await this.syncTradesForEntries()
+            // set last order price to our trades. so we have directly profit and entry prices
+            if (orderStatus === 'filled' && event.symbol && event.price && event.side && event.side.toLowerCase() === 'buy') {
+                this.trades[event.symbol] = {
+                    'side': event.side.toLowerCase(),
+                    'price': parseFloat(event.price),
+                    'symbol': event.symbol,
+                    'time': event.orderTime ? new Date(event.orderTime) : new Date()
+                }
+            }
+
+            // sync all open orders and get entry based fire them in parallel
+            let promises = []
+            promises.push(this.syncOrders())
+
+            if (event.symbol) {
+                promises.push(this.syncTradesForEntries([event.symbol]))
+            }
+
+            await Promise.all(promises)
         }
 
+        // get balances and same them internally; allows to take open positions
+        // Format we get: balances: {'EOS': {"available": 12, "locked": 8}}
         if (event.eventType && event.eventType === 'account' && ('balances' in event)) {
             let balances = []
 
-            for(let asset in event.balances) {
+            for (let asset in event.balances) {
                 let balance = event.balances[asset]
 
                 if (parseFloat(balance.available) + parseFloat(balance.locked) > 0) {
@@ -478,8 +498,18 @@ module.exports = class Binance {
             }})
     }
 
-    async syncTradesForEntries() {
-        let symbols = this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).map(s => s.symbol)
+    /**
+     * Binance does not have position trading, but we need entry price so fetch them from filled order history
+     *
+     * @param symbols
+     * @returns {Promise<void>}
+     */
+    async syncTradesForEntries(symbols = []) {
+        // fetch all based on our allowed symbol capital
+        if (symbols.length === 0) {
+            symbols = this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).map(s => s.symbol)
+        }
+
         this.logger.debug('Binance: Sync trades for entries: ' + symbols.length)
 
         let promises = []
@@ -491,19 +521,21 @@ module.exports = class Binance {
                 try {
                     symbolOrders = (await this.client.allOrders({symbol: symbol, limit: 150}));
                 } catch (e) {
-                    this.logger.error('Binance: ' + String(e))
+                    this.logger.error('Binance: Error on symbol order fetch: ' + String(e))
                     return resolve(undefined)
                 }
 
                 let orders = symbolOrders.filter(
+                    // filled order and fully closed but be have also partially_filled ones if ordering was no fully done
                     order => ['filled', 'partially_filled'].includes(order.status.toLowerCase())
                 ).sort(
+                    // order by latest
                     (a, b) => b.time - a.time
                 ).map(
                     order => {
                         return {
                             'side': order.side.toLowerCase(),
-                            'price': order.price,
+                            'price': parseFloat(order.price),
                             'symbol': order.symbol,
                             'time': new Date(order.time)
                         }
@@ -514,15 +546,11 @@ module.exports = class Binance {
             }))
         }
 
-        let trades = {}
-        let items = await Promise.all(promises);
-        items.forEach(o => {
+        (await Promise.all(promises)).forEach(o => {
             if (o) {
-                trades[o.symbol] = o
+                this.trades[o.symbol] = o
             }
         })
-
-        this.trades = trades
     }
 
     async syncPairInfo() {

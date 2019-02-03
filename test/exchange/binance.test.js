@@ -253,15 +253,13 @@ describe('#binance exchange implementation', function() {
 
         await binance.syncTradesForEntries()
 
-        let positions = await binance.getPositions()
-
         let BTCUSDT = await binance.getPositionForSymbol('BTCUSDT')
 
         assert.equal(BTCUSDT.amount > 0.008, true)
         assert.equal(BTCUSDT.profit < 1, true)
     })
 
-    it('test websocket order events', async () => {
+    it('test websocket order events with cancel state', async () => {
         let binance = new Binance(
             undefined,
             {'debug': () => {}, 'error': () => {}}
@@ -276,8 +274,9 @@ describe('#binance exchange implementation', function() {
             }
         ]
 
+        let calls = []
         binance.client = {
-            'allOrders': async () => [],
+            'allOrders': async (arg) => { calls.push(arg); return []},
             'openOrders': async () => { throw 'Connection issue' }
         }
 
@@ -290,6 +289,50 @@ describe('#binance exchange implementation', function() {
         await binance.onWebSocketEvent(getEvent(event => event.orderId === 25035356))
         assert.equal(binance.orders[25035356], undefined)
         assert.equal(Object.keys(binance.orders).length, 1)
+
+        assert.deepEqual(calls, [{
+            "symbol": "ONTUSDT",
+            "limit": 150
+        }])
+    })
+
+    it('test websocket order events with filled state', async () => {
+        let binance = new Binance(
+            undefined,
+            {'debug': () => {}, 'error': () => {}}
+        )
+
+        binance.symbols = [
+            {
+                'symbol': 'BTCUSDT',
+                'trade': {
+                    'capital': 0.008,
+                },
+            }
+        ]
+
+        let calls = []
+        binance.client = {
+            'allOrders': async (arg) => { calls.push(arg); return []},
+            'openOrders': async () => { throw 'Connection issue' }
+        }
+
+        binance.triggerOrder(new ExchangeOrder('25035356', 'BTCUSDT', 'open', undefined, undefined, undefined, undefined, 'buy'))
+        binance.triggerOrder(new ExchangeOrder('foobar', 'ADAUSDT', 'open', undefined, undefined, undefined, undefined, 'buy'))
+
+        assert.equal(Object.keys(binance.orders).length, 2)
+        assert.equal(binance.orders[25035356].symbol, 'BTCUSDT')
+
+        await binance.onWebSocketEvent(getEvent(event => event.orderId === 25035368))
+
+        assert.equal(binance.trades['ONTUSDT'].side, 'buy')
+        assert.strictEqual(binance.trades['ONTUSDT'].price, 0.5448)
+        assert.equal(binance.trades['ONTUSDT'].symbol, 'ONTUSDT')
+
+        assert.deepEqual(calls, [{
+            "symbol": "ONTUSDT",
+            "limit": 150
+        }])
     })
 
     it('test init of balances via account info', async () => {
