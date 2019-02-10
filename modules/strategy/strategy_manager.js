@@ -66,10 +66,18 @@ module.exports = class StrategyManager {
         return strategyResult
     }
 
+    /**
+     * @param strategyName
+     * @param exchange
+     * @param symbol
+     * @param options
+     * @param lastSignal
+     * @returns {Promise<array>}
+     */
     async executeStrategyBacktest(strategyName, exchange, symbol, options, lastSignal) {
         let results = await this.getTaResult(strategyName, exchange, symbol, options)
-        if(!results || Object.keys(results).length === 0) {
-            return
+        if (!results || Object.keys(results).length === 0) {
+            return {}
         }
 
         let price = results['_candle'] ? results['_candle'].close : undefined
