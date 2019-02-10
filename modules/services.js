@@ -554,7 +554,11 @@ module.exports = {
                 this.getLogger()
             ),
             new Binance(this.getEventEmitter(), this.getLogger()),
-            new CoinbasePro(this.getEventEmitter(), this.getLogger()),
+            new CoinbasePro(
+                this.getEventEmitter(),
+                this.getLogger(),
+                this.getCandlestickResample(),
+            ),
             new Bitfinex(
                 this.getEventEmitter(),
                 this.getLogger(),
