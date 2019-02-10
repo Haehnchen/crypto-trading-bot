@@ -246,7 +246,7 @@ module.exports = class Binance {
                 order['clientOrderId'],
                 order['side'].toLowerCase() === 'buy' ? 'buy' : 'sell', // secure the value,
                 orderType,
-                new Date(order['transactTime']),
+                new Date(order['transactTime'] ? order['transactTime'] : order['time']),
                 new Date(),
                 order
             )
