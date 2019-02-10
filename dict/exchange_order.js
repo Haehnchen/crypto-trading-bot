@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = class ExchangeOrder {
-    constructor(id, symbol, status, price, amount, retry, ourId, side, type, createdAt, updatedAt, raw = undefined) {
+    constructor(id, symbol, status, price, amount, retry, ourId, side, type, createdAt, updatedAt, raw = undefined, options = {}) {
         if (side !== 'buy' && side !== 'sell') {
             throw 'Invalid order direction given:' + side
         }
@@ -18,6 +18,15 @@ module.exports = class ExchangeOrder {
         this.createdAt = createdAt
         this.updatedAt = updatedAt
         this.raw = raw
+        this.options = options
+    }
+
+    isReduceOnly() {
+        return this.options.reduce_only && this.options.reduce_only === true
+    }
+
+    isPostOnly() {
+        return this.options.post_only && this.options.post_only === true
     }
 
     static createBlankRetryOrder(side) {

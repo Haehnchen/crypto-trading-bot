@@ -25,10 +25,10 @@ As most trading bots just provide basic buy and sell signals they provide many s
  * [Bitmex Testnet](https://www.bitmex.com/register/jS4mLN)
  * [Binance](https://www.binance.com/?ref=17569916)
  * [Coinbase Pro](https://www.coinbase.com/join/5a2ae60e76531100d3af2ee5)
-
+ * [Bitfinex](https://www.bitfinex.com) (margin wallet)
+ 
 TODOS:
 
- * [Bitfinex](https://www.bitfinex.com) (margin wallet) missing order workflow
  * [Huobi Global](https://www.hbg.com/) (margin) 
  
 ## Technical stuff and packages

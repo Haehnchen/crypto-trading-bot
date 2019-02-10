@@ -9,13 +9,20 @@ let Position = require('../dict/position.js');
 let CandlestickEvent = require('./../event/candlestick_event.js');
 let TickerEvent = require('./../event/ticker_event.js');
 let ExchangeOrder = require('../dict/exchange_order');
+let OrderUtil = require('../utils/order_util')
+const { Order } = require('bfx-api-node-models')
 
 let moment = require('moment')
 
 module.exports = class Bitfinex {
-    constructor(eventEmitter, logger) {
+    constructor(eventEmitter, logger, requestClient) {
         this.eventEmitter = eventEmitter
         this.logger = logger
+        this.positions = {}
+        this.orders = []
+        this.requestClient = requestClient
+        this.exchangePairs = {}
+        this.tickers = {}
     }
 
     start(config, symbols) {
@@ -29,7 +36,8 @@ module.exports = class Bitfinex {
             autoOpen: true,
         };
 
-        if (config['key'] && config['secret'] && config['key'].length > 0 && config['secret'].length > 0) {
+        let isAuthed = config['key'] && config['secret'] && config['key'].length > 0 && config['secret'].length > 0;
+        if (isAuthed) {
             opts['apiKey'] = config['key']
             opts['apiSecret'] = config['secret']
         } else {
@@ -38,11 +46,12 @@ module.exports = class Bitfinex {
 
         const ws = this.client = new BFX(opts).ws()
 
-        //var ws = this.client = bfx.ws
         let myLogger = this.logger
 
+        this.tickers = {}
         this.orders = {}
-        this.positions = []
+        this.positions = {}
+        this.exchangePairs = {}
 
         ws.on('error', err => {
             myLogger.error('Bitfinex: error: ' + String(err))
@@ -79,18 +88,13 @@ module.exports = class Bitfinex {
             }
         })
 
-
         ws.on('ticker', (pair, ticker) => {
-            let myPair = pair;
-
-            if (myPair.substring(0, 1) === 't') {
-                myPair = myPair.substring(1)
-            }
+            let symbol = Bitfinex.formatSymbol(pair)
 
             eventEmitter.emit('ticker', new TickerEvent(
                 'bitfinex',
-                myPair,
-                new Ticker('bitfinex', myPair, moment().format('X'), ticker['bid'], ticker['ask'])
+                symbol,
+                me.tickers[symbol] = new Ticker('bitfinex', symbol, moment().format('X'), ticker['bid'], ticker['ask'])
             ));
         })
 
@@ -135,42 +139,25 @@ module.exports = class Bitfinex {
             eventEmitter.emit('candlestick', new CandlestickEvent('bitfinex', mySymbol, period.toLowerCase(), sticks));
         })
 
-        var me = this
+        let me = this
 
-        ws.onOrderUpdate({}, (orderUpdate) => {
-            if (orderUpdate.type.toLowerCase().includes('exchange')) {
-                return
-            }
+        if (isAuthed) {
+            setInterval(function f() {
+                me.syncSymbolDetails()
+                return f
+            }(), 60 * 60 * 30 * 1000)
+        }
 
-            let order = Bitfinex.createExchangeOrder(orderUpdate)
-
-            me.logger.info('Bitfinex: order cancel: ' + JSON.stringify(order))
-
-            me.orders[order.id] = order
+        ws.onOrderUpdate({}, order => {
+            me.onOrderUpdate(order)
         })
 
-        ws.onOrderNew({}, (orderUpdate) => {
-            if (orderUpdate.type.toLowerCase().includes('exchange')) {
-                return
-            }
-
-            let order = Bitfinex.createExchangeOrder(orderUpdate)
-
-            me.logger.info('Bitfinex: order cancel: ' + JSON.stringify(order))
-
-            me.orders[order.id] = order
+        ws.onOrderNew({}, order => {
+            me.onOrderUpdate(order)
         })
 
-        ws.onOrderClose({}, (orderCancel) => {
-            if (orderCancel.type.toLowerCase().includes('exchange')) {
-                return
-            }
-
-            let order = Bitfinex.createExchangeOrder(orderCancel)
-
-            me.logger.info('Bitfinex: order cancel: ' + JSON.stringify(order))
-
-            me.orders[order.id] = order
+        ws.onOrderClose({}, order => {
+            me.onOrderUpdate(order)
         })
 
         ws.onOrderSnapshot({}, orders => {
@@ -183,14 +170,20 @@ module.exports = class Bitfinex {
             })
         })
 
-        ws.on('ps', (positions) => {
-            myLogger.debug('Bitfinex: positions:' + JSON.stringify(positions))
-
-            me.positions = Bitfinex.createPositions(positions)
+        ws.onPositionSnapshot({}, positions => {
+            me.onPositions(positions)
         })
 
-        ws.on('pu', (positions) => {
-            myLogger.debug('Bitfinex: positions update:' + JSON.stringify(positions))
+        ws.onPositionUpdate({}, position => {
+            me.onPositionUpdate(position)
+        })
+
+        ws.onPositionNew({}, position => {
+            me.onPositionUpdate(position)
+        })
+
+        ws.onPositionClose({}, position => {
+            me.onPositionUpdate(position)
         })
 
         ws.open()
@@ -200,133 +193,154 @@ module.exports = class Bitfinex {
         return 'bitfinex'
     }
 
-    order(order) {
-        var me = this
+    /**
+     * Position events from websocket: New, Update, Delete
+     */
+    onPositionUpdate(position) {
+        if (position.status && position.status.toLowerCase() === 'closed') {
+            delete this.positions[Bitfinex.formatSymbol(position.symbol)]
+            return
+        }
 
-        var amount = order.side === 'buy' ? order.amount : order.amount * -1
+        let myPositions = Bitfinex.createPositions([position])
 
-        const o = new BFX.Models.Order({
-            cid: order.id,
-            symbol: 't' + order.symbol,
-            price: order.price,
-            amount: amount,
-            type: 'LIMIT',
-            postonly: true
-        }, this.client)
-
-        // find current order
-        return new Promise((resolve, reject) => {
-            var x = 0;
-
-            o.submit().then(() => {
-                console.log('order deployed')
-            }).catch((e) => {
-                console.log(e)
-            })
-
-            var intervalID = setInterval(() => {
-                let myOrders = []
-
-                for(let key in me.orders){
-                    let order1 = me.orders[key];
-
-                    if(order1.ourId = order.id) {
-                        myOrders.push(order1)
-                    }
-                }
-
-                if(myOrders.length > 0) {
-                    resolve(myOrders[0])
-
-                    clearInterval(intervalID)
-                    return
-                }
-
-                if (++x > 100) {
-                    clearInterval(intervalID)
-                    console.log('order timeout')
-                    reject()
-                }
-            }, 100);
-        });
+        if (myPositions.length > 0) {
+            this.positions[myPositions[0].symbol] = myPositions[0]
+        }
     }
 
-    updateOrder(id, order) {
-        var amount = order.side === 'buy' ? order.amount : order.amount * -1
+    onPositions(positions) {
+        let myPositions = {}
 
-        this.client.updateOrder({
+        Bitfinex.createPositions(positions).forEach(position => {
+            myPositions[position.symbol] = position
+        })
+
+        this.positions = myPositions
+    }
+
+    /**
+     * Order events from websocket: New, Update, Delete
+     */
+    onOrderUpdate(orderUpdate) {
+        if (orderUpdate.type.toLowerCase().includes('exchange')) {
+            return
+        }
+
+        let order = Bitfinex.createExchangeOrder(orderUpdate)
+
+        this.logger.info('Bitfinex: order update: ' + JSON.stringify(order))
+        this.orders[order.id] = order
+    }
+
+    async order(order) {
+        let result = await new Order(Bitfinex.createOrder(order)).submit(this.client)
+
+        let executedOrder = Bitfinex.createExchangeOrder(result)
+        this.triggerOrder(executedOrder)
+
+        return executedOrder
+    }
+
+    async updateOrder(id, order) {
+        let amount = order.side === 'buy' ? order.amount : order.amount * -1
+
+        let changes = {
             'id': id,
-            'amount': String(amount),
-            'price': String(order.price),
-        })
+        }
 
-        var me = this
+        if (order.amount) {
+            changes['amount'] = String(amount)
+        }
 
-        // find current order
-        return new Promise((resolve, reject) => {
-            var x = 0;
+        if (order.price) {
+            changes['price'] = String(order.price)
+        }
 
-            var intervalID = setInterval(() => {
-                let myOrders = []
+        let result = await this.client.updateOrder(changes)
 
-                for(let key in me.orders){
-                    let order1 = me.orders[key];
+        let unseralized = Order.unserialize(result)
 
-                    if(order1.id = id) {
-                        myOrders.push(order1)
-                    }
-                }
+        let executedOrder = Bitfinex.createExchangeOrder(unseralized)
+        this.triggerOrder(executedOrder)
 
-                if(myOrders.length > 0) {
-                    resolve(myOrders[0])
-
-                    clearInterval(intervalID)
-                    return
-                }
-
-                if (++x > 10) {
-                    clearInterval(intervalID)
-                    console.log('order timeout')
-                    reject()
-                }
-            }, 500);
-        });
+        return executedOrder
     }
 
-    getOrders() {
-        return new Promise(resolve => {
-            let orders = []
+    async getOrders() {
+        let orders = []
 
-            for (let key in this.orders){
-                if (this.orders[key].status === 'open') {
-                    orders.push(this.orders[key])
+        for (let key in this.orders){
+            if (this.orders[key].status === 'open') {
+                orders.push(this.orders[key])
+            }
+        }
+
+        return orders
+    }
+
+    async getOrdersForSymbol(symbol) {
+        let orders = []
+
+        for (let key in this.orders){
+            let order = this.orders[key];
+
+            if(order.status === 'open' && order.symbol === symbol) {
+                orders.push(order)
+            }
+        }
+
+        return orders
+    }
+
+    /**
+     * LTC: 0.008195 => 0.00820
+     *
+     * @param price
+     * @param symbol
+     * @returns {*}
+     */
+    calculatePrice(price, symbol) {
+        let size = (!(symbol in this.exchangePairs) || !this.exchangePairs[symbol].tick_size)
+            ? '0.001'
+            : this.exchangePairs[symbol].tick_size
+
+        return OrderUtil.calculateNearestSize(price, size)
+    }
+
+    /**
+     * LTC: 0.65 => 1
+     *
+     * @param amount
+     * @param symbol
+     * @returns {*}
+     */
+    calculateAmount(amount, symbol) {
+        let size = (!(symbol in this.exchangePairs) || !this.exchangePairs[symbol].lot_size)
+            ? '0.001'
+            : this.exchangePairs[symbol].lot_size
+
+        return OrderUtil.calculateNearestSize(amount, size)
+    }
+
+    async getPositions() {
+        let positions = []
+
+        for (let symbol in this.positions) {
+            let position = this.positions[symbol]
+
+            if (position.entry && this.tickers[position.symbol]) {
+                if (position.side === 'long') {
+                    position = Position.createProfitUpdate(position, ((this.tickers[position.symbol].bid / position.entry) - 1) * 100)
+                } else if (position.side === 'short') {
+                    position = Position.createProfitUpdate(position, ((position.entry / this.tickers[position.symbol].ask ) - 1) * 100)
                 }
             }
 
-            resolve(orders)
-        })
-    }
+            positions.push(position)
+        }
 
-    getOrdersForSymbol(symbol) {
-        return new Promise(resolve => {
-            let orders = []
-
-            for(let key in this.orders){
-                let order = this.orders[key];
-
-                if(order.status === 'open' && order.symbol === symbol) {
-                    orders.push(order)
-                }
-            }
-
-            resolve(orders)
-        })
-    }
-
-    getPositions() {
-        return new Promise(resolve => {
-            resolve(this.positions)
-        })
+        return positions
     }
 
     getPositionForSymbol(symbol) {
@@ -342,6 +356,101 @@ module.exports = class Bitfinex {
 
             return resolve()
         })
+    }
+
+    async cancelOrder(id) {
+        let order = await this.findOrderById(id)
+        if (!order) {
+            return
+        }
+
+        let result
+        try {
+            result = await this.client.cancelOrder(id)
+        } catch (e) {
+            this.logger.error('Bitfinex: cancel order error: ' + e)
+            return
+        }
+
+        delete this.orders[id]
+
+        return ExchangeOrder.createCanceled(order)
+    }
+
+    findOrderById(id) {
+        return new Promise(async resolve => {
+            resolve((await this.getOrders()).find(order =>
+                order.id === id
+            ))
+        })
+    }
+
+    async cancelAll(symbol) {
+        let orders = []
+
+        for (let order of (await this.getOrdersForSymbol(symbol))) {
+            orders.push(await this.cancelOrder(order.id))
+        }
+
+        return orders
+    }
+
+    async syncSymbolDetails() {
+        this.logger.debug('Bitfinex: Sync symbol details')
+
+        let result = await this.requestClient.executeRequestRetry({
+            url: 'https://api.bitfinex.com/v1/symbols_details',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Accept': 'application/json',
+            },
+        }, result => {
+            return result.response.statusCode >= 500
+        })
+
+        let exchangePairs = {}
+
+        JSON.parse(result.body).filter(product => product.margin === true).forEach(product => {
+            let min_size = parseFloat(product.minimum_order_size)
+            let prec = 0
+
+            if (min_size > 130 ) {
+                prec = 4
+            } else if (min_size > 30) {
+                prec = 3
+            } else if (min_size > 1) {
+                prec = 2
+            } else if (min_size > 0.1) {
+                prec = 1
+            }
+
+            let increment = '0.' + '0'.repeat(prec + product.price_precision - (product.pair.substring(3, 6).toUpperCase() == 'USD' ? 3 : 0)) + '1'
+
+            exchangePairs[product.pair.substring(0, 3).toUpperCase()] = {
+                lot_size: increment,
+                tick_size: increment,
+            }
+        })
+
+        this.exchangePairs = exchangePairs
+    }
+
+    /**
+     * Force an order update only if order is "not closed" for any reason already by exchange
+     *
+     * @param order
+     */
+    triggerOrder(order) {
+        if (!(order instanceof ExchangeOrder)) {
+            throw 'Invalid order given'
+        }
+
+        // dont overwrite state closed order
+        if (order.id in this.orders && ['done', 'canceled'].includes(this.orders[order.id].status)) {
+            return
+        }
+
+        this.orders[order.id] = order
     }
 
     static createExchangeOrder(order) {
@@ -367,11 +476,6 @@ module.exports = class Bitfinex {
         let price = order['price']
         let price_avg = order['price_avg']
 
-        let symbol = order['symbol']
-        if (symbol.substring(0, 1) === 't') {
-            symbol = symbol.substring(1)
-        }
-
         let orderType = undefined
         switch (order.type.toLowerCase()) {
             case 'limit':
@@ -384,7 +488,7 @@ module.exports = class Bitfinex {
 
         return new ExchangeOrder(
             bitfinex_id,
-            symbol,
+            Bitfinex.formatSymbol(order['symbol']),
             status,
             price,
             order['amount'],
@@ -393,7 +497,7 @@ module.exports = class Bitfinex {
             order['amount'] < 0 ? 'sell' : 'buy',
             orderType,
             new Date(order['mtsUpdate']),
-            new Date()
+            new Date(),
         )
     }
 
@@ -401,24 +505,58 @@ module.exports = class Bitfinex {
         return orders.map(Bitfinex.createExchangeOrder)
     }
 
-    static createPositions(positions) {
-        return positions.filter((position) => {
-            return position[1].toLowerCase() === 'active'
-        }).map((position) => {
-            let pair = position[0]
-            if (pair.substring(0, 1) === 't') {
-                pair = pair.substring(1)
-            }
+    static createOrder(order) {
+        let amount = Math.abs(order.amount);
 
+        let orderOptions = {
+            cid: order.id,
+            symbol: 't' + order.symbol,
+            amount: order.price < 0 ? amount * -1 : amount,
+        }
+
+        if (!order.type || order.type === 'limit') {
+            orderOptions['type'] = Order.type.LIMIT
+            orderOptions['price'] = String(Math.abs(order.price))
+        } else if(order.type === 'stop') {
+            orderOptions['type'] = Order.type.STOP
+            orderOptions['price'] = String(Math.abs(order.price))
+        } else if(order.type === 'market') {
+            orderOptions['type'] = Order.type.MARKET
+        }
+
+        let myOrder = new Order(orderOptions)
+
+        if (order.options && order.options.post_only === true) {
+            myOrder.setPostOnly(true)
+        }
+
+        if (order.options && order.options.close === true && orderOptions['type'] && orderOptions['type'] === Order.type.STOP) {
+            myOrder.setReduceOnly(true)
+        }
+
+        return myOrder
+    }
+
+    static createPositions(positions) {
+        return positions.filter(position => {
+            return position.status.toLowerCase() === 'active'
+        }).map(position => {
             return new Position(
-                pair,
-                position[2] < 0 ? 'short' : 'long',
-                position[2],
+                Bitfinex.formatSymbol(position.symbol),
+                position.amount < 0 ? 'short' : 'long',
+                position.amount,
                 undefined,
                 new Date(),
-                undefined,
+                position.basePrice,
                 new Date(),
             )
         })
     }
+
+    static formatSymbol(symbol) {
+        return symbol.substring(0, 1) === 't'
+            ? symbol.substring(1)
+            : symbol
+    }
+
 }
