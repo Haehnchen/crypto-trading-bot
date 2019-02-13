@@ -13,9 +13,11 @@ let Position = require('../dict/position')
 let Order = require('../dict/order')
 
 module.exports = class Binance {
-    constructor(eventEmitter, logger) {
+    constructor(eventEmitter, queue, logger) {
         this.eventEmitter = eventEmitter
         this.logger = logger
+        this.queue = queue
+
         this.client = undefined
         this.orders = {}
         this.exchangePairs = {}
@@ -74,7 +76,7 @@ module.exports = class Binance {
         }
 
         symbols.forEach(symbol => {
-            symbol['periods'].forEach(interval => {
+            symbol['periods'].forEach(interval => this.queue.add(async () => {
                 // backfill
                 client.candles({'symbol': symbol['symbol'], 'limit': 500, 'interval': interval}).then((candles) => {
                     let ourCandles = candles.map(candle => {
@@ -114,7 +116,7 @@ module.exports = class Binance {
                         this.tickers[symbol['symbol']] = new Ticker('binance', symbol['symbol'], moment().format('X'), ticker['bestBid'], ticker['bestAsk'])
                     ))
                 })
-            })
+            }))
         })
     }
 

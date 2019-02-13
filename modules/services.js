@@ -563,7 +563,11 @@ module.exports = {
                 this.getCandlestickResample(),
                 this.getLogger()
             ),
-            new Binance(this.getEventEmitter(), this.getLogger()),
+            new Binance(
+                this.getEventEmitter(),
+                this.getQueue(),
+                this.getLogger(),
+            ),
             new CoinbasePro(
                 this.getEventEmitter(),
                 this.getLogger(),
