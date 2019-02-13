@@ -353,7 +353,7 @@ module.exports = class CoinbasePro {
         try {
             ordersRaw = await this.client.getOrders({status: 'open'})
         } catch (e) {
-            this.logger.error('Coinbase Pro:' + String(e))
+            this.logger.error('Coinbase Pro: orders ' + String(e))
             return
         }
 
@@ -366,7 +366,14 @@ module.exports = class CoinbasePro {
     }
 
     async syncBalances() {
-        let accounts = await this.client.getAccounts()
+        let accounts = undefined
+        try {
+            await this.client.getAccounts()
+        } catch (e) {
+            this.logger.error('Coinbase Pro: balances ' + String(e))
+            return
+        }
+
         if (!accounts) {
             return
         }
