@@ -38,7 +38,12 @@ module.exports = class CoinbasePro {
 
         let wsAuth = {}
 
+        let channels = ['ticker', 'matches'];
+
         if (config['key'] && config['secret'] && config['passphrase'] && config['key'].length > 0 && config['secret'].length > 0 && config['passphrase'].length > 0) {
+            // for user related websocket actions
+            channels.push('user')
+
             this.client = this.client = new Gdax.AuthenticatedClient(
                 config['key'],
                 config['secret'],
@@ -61,7 +66,7 @@ module.exports = class CoinbasePro {
             symbols.map(s => s.symbol),
             undefined,
             wsAuth,
-            { 'channels': ['ticker', 'user', 'matches']},
+            { 'channels': channels},
         )
 
         let resamples = []
