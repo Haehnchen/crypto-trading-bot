@@ -48,6 +48,7 @@ let LogsRepository = require('../modules/repository/logs_repository')
 let TickerLogRepository = require('../modules/repository/ticker_log_repository')
 let CandlestickResample = require('../modules/system/candlestick_resample')
 let RequestClient = require('../utils/request_client')
+let Queue = require('../utils/queue')
 
 let Bitmex = require('../exchange/bitmex')
 let BitmexTestnet = require('../exchange/bitmex_testnet')
@@ -57,7 +58,7 @@ let CoinbasePro = require('../exchange/coinbase_pro')
 let Noop = require('../exchange/noop')
 let ExchangeCandleCombine = require('../modules/exchange/exchange_candle_combine')
 
-var _ = require('lodash');
+let _ = require('lodash');
 
 let db = undefined
 let instances = undefined
@@ -67,6 +68,7 @@ let eventEmitter = undefined
 let logger = undefined
 let notify = undefined
 let tickers = undefined
+let queue = undefined
 
 let candleStickListener = undefined
 let candleStickLogListener = undefined
@@ -525,6 +527,14 @@ module.exports = {
         )
     },
 
+    getQueue: function() {
+        if (queue) {
+            return queue;
+        }
+
+        return queue = new Queue()
+    },
+
     getExchangeCandleCombine: function() {
         if (exchangeCandleCombine) {
             return exchangeCandleCombine
@@ -558,6 +568,7 @@ module.exports = {
                 this.getEventEmitter(),
                 this.getLogger(),
                 this.getCandlestickResample(),
+                this.getQueue(),
             ),
             new Bitfinex(
                 this.getEventEmitter(),

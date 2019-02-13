@@ -14,8 +14,9 @@ let Order = require('../dict/order')
 let moment = require('moment')
 
 module.exports = class CoinbasePro {
-    constructor(eventEmitter, logger, candlestickResample) {
+    constructor(eventEmitter, logger, candlestickResample, queue) {
         this.eventEmitter = eventEmitter
+        this.queue = queue
         this.logger = logger
         this.candlestickResample = candlestickResample
 
@@ -69,15 +70,8 @@ module.exports = class CoinbasePro {
             { 'channels': channels},
         )
 
-        let resamples = []
-
         symbols.forEach(symbol => {
-            symbol['periods'].forEach(async interval => {
-                // resample 1 minute for websocket trades
-                if (!resamples.includes(interval)) {
-                    resamples.push(interval)
-                }
-
+            symbol['periods'].forEach(interval => this.queue.add(async () => {
                 // backfill
                 let granularity = Resample.convertPeriodToMinute(interval) * 60
 
@@ -101,7 +95,7 @@ module.exports = class CoinbasePro {
                 )
 
                 eventEmitter.emit('candlestick', new CandlestickEvent('coinbase_pro', symbol['symbol'], interval, ourCandles));
-            })
+            }))
         })
 
         let me = this
@@ -157,6 +151,13 @@ module.exports = class CoinbasePro {
 
             // we ignore "last_match". its not in our range
             if (data.type && ['match'].includes(data.type)) {
+                let resamples = []
+
+                let symbolCfg = symbols.find(symbol => symbol.symbol === data.product_id)
+                if (symbolCfg) {
+                    resamples = symbolCfg['periods']
+                }
+
                 me.onTrade(data, '1m', resamples)
             }
         })
