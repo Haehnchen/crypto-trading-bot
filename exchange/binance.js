@@ -76,23 +76,24 @@ module.exports = class Binance {
         }
 
         symbols.forEach(symbol => {
-            symbol['periods'].forEach(interval => this.queue.add(async () => {
+            symbol['periods'].forEach(interval => {
                 // backfill
-                client.candles({'symbol': symbol['symbol'], 'limit': 500, 'interval': interval}).then((candles) => {
-                    let ourCandles = candles.map(candle => {
-                        return new Candlestick(
-                            Math.round(candle['openTime'] / 1000),
-                            candle['open'],
-                            candle['high'],
-                            candle['low'],
-                            candle['close'],
-                            candle['volume'],
-                        )
+                this.queue.add(() => {
+                    client.candles({'symbol': symbol['symbol'], 'limit': 500, 'interval': interval}).then((candles) => {
+                        let ourCandles = candles.map(candle => {
+                            return new Candlestick(
+                                Math.round(candle['openTime'] / 1000),
+                                candle['open'],
+                                candle['high'],
+                                candle['low'],
+                                candle['close'],
+                                candle['volume'],
+                            )
+                        })
+
+                        eventEmitter.emit('candlestick', new CandlestickEvent('binance', symbol['symbol'], interval, ourCandles));
                     })
-
-                    eventEmitter.emit('candlestick', new CandlestickEvent('binance', symbol['symbol'], interval, ourCandles));
                 })
-
 
                 // live candles
                 client.ws.candles(symbol['symbol'], interval, candle => {
@@ -116,7 +117,7 @@ module.exports = class Binance {
                         this.tickers[symbol['symbol']] = new Ticker('binance', symbol['symbol'], moment().format('X'), ticker['bestBid'], ticker['bestAsk'])
                     ))
                 })
-            }))
+            })
         })
     }
 
