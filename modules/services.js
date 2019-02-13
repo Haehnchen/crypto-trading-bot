@@ -565,8 +565,8 @@ module.exports = {
             ),
             new Binance(
                 this.getEventEmitter(),
-                this.getQueue(),
                 this.getLogger(),
+                this.getQueue(),
             ),
             new CoinbasePro(
                 this.getEventEmitter(),

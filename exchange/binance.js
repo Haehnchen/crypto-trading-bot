@@ -13,7 +13,7 @@ let Position = require('../dict/position')
 let Order = require('../dict/order')
 
 module.exports = class Binance {
-    constructor(eventEmitter, queue, logger) {
+    constructor(eventEmitter, logger, queue) {
         this.eventEmitter = eventEmitter
         this.logger = logger
         this.queue = queue
