@@ -57,6 +57,7 @@ let Bitfinex = require('../exchange/bitfinex')
 let CoinbasePro = require('../exchange/coinbase_pro')
 let Noop = require('../exchange/noop')
 let ExchangeCandleCombine = require('../modules/exchange/exchange_candle_combine')
+let CandleExportHttp = require('../modules/system/candle_export_http')
 
 let _ = require('lodash');
 
@@ -106,6 +107,7 @@ let candlestickResample = undefined
 let exchanges = undefined
 let requestClient = undefined
 let exchangeCandleCombine = undefined
+let candleExportHttp = undefined
 
 module.exports = {
     boot: function() {
@@ -383,6 +385,7 @@ module.exports = {
             this.getExchangeManager(),
             this.getHttpPairs(),
             this.getLogsHttp(),
+            this.getCandleExportHttp(),
         )
     },
 
@@ -533,6 +536,16 @@ module.exports = {
         }
 
         return queue = new Queue()
+    },
+
+    getCandleExportHttp: function() {
+        if (candleExportHttp) {
+            return candleExportHttp;
+        }
+
+        return candleExportHttp = new CandleExportHttp(
+            this.getCandlestickRepository(),
+        )
     },
 
     getExchangeCandleCombine: function() {

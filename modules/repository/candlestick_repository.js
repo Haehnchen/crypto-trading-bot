@@ -40,4 +40,36 @@ module.exports = class CandlestickRepository {
             })
         })
     }
+
+    getCandlesInWindow(exchange, symbol, period, start, end) {
+        return new Promise((resolve) => {
+            let sql = 'SELECT * from candlesticks where exchange = ? AND symbol = ? and period = ? and time > ?  and time < ? order by time DESC LIMIT 1000'
+
+            this.db.all(sql, [exchange, symbol, period, Math.round(start.getTime() / 1000), Math.round(end.getTime() / 1000)], (err, rows) => {
+                if (err) {
+                    console.log(err);
+                    return resolve();
+                }
+
+                resolve(rows.map((row) => {
+                    return new Candlestick(row.time, row.open, row.high, row.low, row.close, row.volume)
+                }))
+            })
+        })
+    }
+
+    getExchangePairs() {
+        return new Promise((resolve) => {
+            let sql = 'select exchange, symbol from candlesticks group by exchange, symbol order by exchange, symbol'
+
+            this.db.all(sql, [], (err, rows) => {
+                if (err) {
+                    console.log(err);
+                    return resolve();
+                }
+
+                resolve(rows)
+            })
+        })
+    }
 }

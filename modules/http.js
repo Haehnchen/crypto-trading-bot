@@ -5,9 +5,10 @@ let twig = require("twig")
 let auth = require('basic-auth');
 let cookieParser = require('cookie-parser')
 let crypto = require('crypto');
+let moment = require('moment');
 
 module.exports = class Http {
-    constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp, logsHttp) {
+    constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp, logsHttp, candleExportHttp) {
         this.systemUtil = systemUtil
         this.ta = ta
         this.signalHttp = signalHttp
@@ -15,6 +16,7 @@ module.exports = class Http {
         this.exchangeManager = exchangeManager
         this.pairsHttp = pairsHttp
         this.logsHttp = logsHttp
+        this.candleExportHttp = candleExportHttp
     }
 
     start() {
@@ -109,6 +111,36 @@ module.exports = class Http {
 
         app.get('/logs', async (req, res) => {
             res.render('../templates/logs.html.twig', await this.logsHttp.getLogsPageVariables(req, res))
+        })
+
+        app.get('/tools/candles', async (req, res) => {
+            let options = {
+                'pairs': await this.candleExportHttp.getPairs(),
+                'start': moment().subtract(7, 'days').toDate(),
+                'end': new Date(),
+            }
+
+            if (req.query.pair && req.query.period && req.query.period && req.query.start && req.query.end) {
+                let [exchange, symbol] = req.query.pair.split('.')
+                let candles = await this.candleExportHttp.getCandles(
+                    exchange,
+                    symbol,
+                    req.query.period,
+                    new Date(req.query.start),
+                    new Date(req.query.end),
+                );
+
+                options.start = new Date(req.query.start)
+                options.end = new Date(req.query.end)
+
+                options.exchange = exchange
+                options.symbol = symbol
+                options.period = req.query.period
+                options.candles = candles
+                options.candles_json = JSON.stringify(candles,null,2)
+            }
+
+            res.render('../templates/candle_stick_export.html.twig', options)
         })
 
         app.post('/pairs/:pair', async (req, res) => {
