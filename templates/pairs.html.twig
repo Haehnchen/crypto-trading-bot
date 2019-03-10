@@ -19,9 +19,9 @@
             <tbody>
             {% for pair in pairs %}
                 <tr>
-                    <td style="white-space: nowrap">>{{ pair.exchange }}</td>
-                    <td style="white-space: nowrap">>{{ pair.symbol }}</td>
-                    <td style="white-space: nowrap">>{{ pair.state }}</td>
+                    <td style="white-space: nowrap">{{ pair.exchange }}</td>
+                    <td style="white-space: nowrap">{{ pair.symbol }}</td>
+                    <td>{{ pair.state }}</td>
                     <td><strong>{{ pair.capital }}</strong></td>
                     <td class="text-muted" style="word-break: break-all;">{{ pair.strategies|json_encode }}</td>
                     <td class="text-muted" style="word-break: break-all;">
@@ -29,8 +29,8 @@
                             {{ pair.watchdogs|json_encode }}
                         {% endif %}
                     </td>
-                    <td style="white-space: nowrap">>{{ pair.process }}</td>
-                    <td class="text-right"  style="white-space: nowrap">>
+                    <td style="white-space: nowrap">{{ pair.process }}</td>
+                    <td class="text-right"  style="white-space: nowrap">
                         <form action="/pairs/{{ pair.exchange }}-{{ pair.symbol }}" method="post" style="margin:0; padding:0">
                             <div class="btn-group btn-group-sm">
                                 {% if pair.has_position|default(false) == false and not pair.process %}
