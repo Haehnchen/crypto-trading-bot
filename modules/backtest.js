@@ -19,7 +19,7 @@ module.exports = class Backtest {
             pairs.push(symbol.exchange + '.' + symbol.symbol)
         })
 
-        return pairs
+        return pairs.sort()
     }
 
     getBacktestStrategies() {
