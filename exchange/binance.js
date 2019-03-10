@@ -336,8 +336,14 @@ module.exports = class Binance {
 
         // get pairs with capital to fake open positions
         let capitals = {}
-        this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).forEach(s => {
-            capitals[s.symbol] = s.trade.capital
+        this.symbols
+            .filter(s => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
+            .forEach(s => {
+                if (s.trade.capital > 0) {
+                    capitals[s.symbol] = s.trade.capital
+                } else if (s.trade.currency_capital > 0 && this.tickers[s.symbol] && this.tickers[s.symbol].bid) {
+                    capitals[s.symbol] = s.trade.currency_capital / this.tickers[s.symbol].bid
+                }
         })
 
         for (let balance of this.balances) {
@@ -455,7 +461,10 @@ module.exports = class Binance {
     }
 
     async syncOrders() {
-        let symbols = this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).map(s => s.symbol)
+        let symbols = this.symbols
+            .filter(s => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
+            .map(s => s.symbol)
+
         this.logger.debug('Binance: Sync orders for symbols: ' + symbols.length)
 
         // false equal to all symbols
@@ -510,7 +519,9 @@ module.exports = class Binance {
     async syncTradesForEntries(symbols = []) {
         // fetch all based on our allowed symbol capital
         if (symbols.length === 0) {
-            symbols = this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).map(s => s.symbol)
+            symbols = this.symbols
+                .filter(s => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
+                .map(s => s.symbol)
         }
 
         this.logger.debug('Binance: Sync trades for entries: ' + symbols.length)

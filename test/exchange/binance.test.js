@@ -259,6 +259,58 @@ describe('#binance exchange implementation', function() {
         assert.equal(BTCUSDT.profit < 1, true)
     })
 
+    it('test that positions are open based on websocket balances with currency capital', async () => {
+        let binance = new Binance(
+            undefined,
+            {'debug': () => {}}
+        )
+
+        binance.symbols = [
+            {
+                'symbol': 'BTCUSDT',
+                'trade': {
+                    'currency_capital': 50,
+                },
+            }
+        ]
+
+        binance.tickers['BTCUSDT'] = new Ticker('foobar', 'BTCUSD', undefined, 1331, 1332)
+
+        binance.client = {
+            'allOrders': async () => {
+                return [
+                    {
+                        symbol: 'BTCUSDT',
+                        orderId: 1740797,
+                        clientOrderId: '1XZTVBTGS4K1e',
+                        transactTime: 1514418413947,
+                        price: '1337.123',
+                        origQty: '1337.123',
+                        executedQty: '0.00000000',
+                        status: 'FILLED',
+                        timeInForce: 'GTC',
+                        type: 'LIMIT',
+                        side: 'BUY'
+                    }
+                ]
+            }
+        }
+
+        await binance.onWebSocketEvent(getEvent(event => event.eventType === 'account'))
+
+        let balances = binance.balances
+
+        assert.equal(balances.length, 23)
+        assert.equal(balances.find(balance => balance.asset === 'USDT').available > 1, true)
+
+        await binance.syncTradesForEntries()
+
+        let BTCUSDT = await binance.getPositionForSymbol('BTCUSDT')
+
+        assert.equal(BTCUSDT.amount > 0.008, true)
+        assert.equal(BTCUSDT.profit < 1, true)
+    })
+
     it('test websocket order events with cancel state', async () => {
         let binance = new Binance(
             undefined,

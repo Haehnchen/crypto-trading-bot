@@ -25,6 +25,7 @@ module.exports = class CoinbasePro {
         this.exchangePairs = {}
         this.symbols = {}
         this.positions = {}
+        this.tickers = {}
 
         this.candles = {}
         this.lastCandleMap = {}
@@ -34,6 +35,7 @@ module.exports = class CoinbasePro {
         this.symbols = symbols
         this.candles = {}
         this.lastCandleMap = {}
+        this.tickers = {}
 
         let eventEmitter = this.eventEmitter
 
@@ -99,27 +101,33 @@ module.exports = class CoinbasePro {
         })
 
         let me = this
-        setInterval(function f() {
-            me.syncOrders()
-            return f
-        }(), 1000 * 30)
 
-        setInterval(function f() {
-            me.syncBalances()
-            return f
-        }(), 1000 * 30)
+        // let websocket bootup
+        setTimeout(() => {
+            setInterval(function f() {
+                me.syncOrders()
+                return f
+            }(), 1000 * 30)
 
-        setInterval(function f() {
-            me.syncPairInfo()
-            return f
-        }(), 60 * 60 * 15 * 1000);
+            setInterval(function f() {
+                me.syncBalances()
+                return f
+            }(), 1000 * 30)
+
+            setInterval(function f() {
+                me.syncPairInfo()
+                return f
+            }(), 60 * 60 * 15 * 1000);
+        }, 5000);
 
         websocket.on('message', async data => {
             if (data.type && data.type === 'ticker') {
+                let ticker = this.tickers[data['product_id']] = new Ticker(this.getName(), data['product_id'], moment().format('X'), data['best_bid'], data['best_ask']);
+
                 eventEmitter.emit('ticker', new TickerEvent(
                     this.getName(),
                     data['product_id'],
-                    new Ticker(this.getName(), data['product_id'], moment().format('X'), data['best_bid'], data['best_ask'])
+                    ticker
                 ))
             }
 
@@ -368,7 +376,7 @@ module.exports = class CoinbasePro {
     async syncBalances() {
         let accounts = undefined
         try {
-            await this.client.getAccounts()
+            accounts = await this.client.getAccounts()
         } catch (e) {
             this.logger.error('Coinbase Pro: balances ' + String(e))
             return
@@ -379,9 +387,15 @@ module.exports = class CoinbasePro {
         }
 
         let capitals = {}
-        this.symbols.filter(s => s.trade && s.trade.capital && s.trade.capital > 0).forEach(s => {
-            capitals[s.symbol] = s.trade.capital
-        })
+        this.symbols
+            .filter(s => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
+            .forEach(s => {
+                if (s.trade.capital > 0) {
+                    capitals[s.symbol] = s.trade.capital
+                } else if (s.trade.currency_capital > 0 && this.tickers[s.symbol]  && this.tickers[s.symbol].bid) {
+                    capitals[s.symbol] = s.trade.currency_capital / this.tickers[s.symbol].bid
+                }
+            })
 
         this.logger.debug('Coinbase Pro: Sync balances: ' + Object.keys(capitals).length)
 
