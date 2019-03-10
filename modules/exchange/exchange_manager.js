@@ -1,6 +1,6 @@
 'use strict';
 
-var _ = require('lodash')
+let _ = require('lodash')
 
 module.exports = class ExchangeManager {
     constructor(exchangesIterator, logger, instances, config) {

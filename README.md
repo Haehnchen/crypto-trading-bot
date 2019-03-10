@@ -167,7 +167,25 @@ Find some example strategies inside [modules/strategy/strategies](modules/strate
         }        
     ],
 ```
- 
+
+## Trading
+
+### Capital
+
+To allow the bot to trade you need to give some "playing capital". You can allow to by via asset or currency amount, see examples below.
+You should only provide one of them, first wins.
+
+```
+    c.symbols.push({
+        'symbol': 'BTC-EUR',
+        'exchange': 'coinbase_pro',
+        'trade': {
+            'capital': 0.015, // this will buy 0.015 BTC
+            'currency_capital': 50,  // this will use 50 EUR and buys the equal amount of BTC (example: BTC price 3000 use 50 EUR. will result in 0.016 BTC)
+        },
+    })
+```
+
 ## Signals
 
 ### Slack

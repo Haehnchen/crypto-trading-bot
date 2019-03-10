@@ -30,7 +30,7 @@ describe('#pair state execution', function() {
         let executor = new PairStateExecution(
             undefined,
             undefined,
-            {'calculateOrderSize': () => { return 1337 }},
+            {'calculateOrderSize': async () => { return 1337 }},
             {'executeOrder': (exchange, order) => { myOrder = order; return undefined}},
             undefined,
         )
@@ -51,7 +51,7 @@ describe('#pair state execution', function() {
         let executor = new PairStateExecution(
             undefined,
             undefined,
-            {'calculateOrderSize': () => { return 1337 }},
+            {'calculateOrderSize': async () => { return 1337 }},
             {'executeOrder': (exchange, order) => { myOrder = order; return undefined}},
             undefined,
         )
@@ -73,7 +73,7 @@ describe('#pair state execution', function() {
         let executor = new PairStateExecution(
             undefined,
             undefined,
-            {'calculateOrderSize': () => { return 1337 }},
+            {'calculateOrderSize': async () => { return 1337 }},
             {'executeOrder': (exchange, order) => { myOrder = order; return undefined}},
             undefined,
         )
@@ -98,7 +98,7 @@ describe('#pair state execution', function() {
                     return {'calculateAmount': v => v }
                 },
             },
-            {'calculateOrderSize': () => { return 1337 }},
+            {'calculateOrderSize': async () => { return 1337 }},
             {'executeOrder': async (exchange, order) => { myOrder = order; return undefined}},
             undefined,
         )
@@ -124,7 +124,7 @@ describe('#pair state execution', function() {
                     return {'calculateAmount': v => v }
                 },
             },
-            {'calculateOrderSize': () => { return 1337 }},
+            {'calculateOrderSize': async () => { return 1337 }},
             {'executeOrder': (exchange, order) => { myOrder = order; return undefined}},
             undefined,
         )
@@ -149,7 +149,7 @@ describe('#pair state execution', function() {
                     return {'calculateAmount': v => v }
                 },
             },
-            {'calculateOrderSize': () => { return 1337 }},
+            {'calculateOrderSize': async () => { return 1337 }},
             {'executeOrder': (exchange, order) => { myOrder = order; return undefined}},
             undefined,
         )

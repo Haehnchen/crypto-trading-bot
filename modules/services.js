@@ -428,6 +428,9 @@ module.exports = {
 
         return orderCalculator = new OrderCalculator(
             this.getInstances(),
+            this.getTickers(),
+            this.getLogger(),
+            this.getExchangeManager(),
         )
     },
 

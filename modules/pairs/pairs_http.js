@@ -1,5 +1,7 @@
 'use strict';
 
+let _ = require('lodash');
+
 module.exports = class PairsHttp {
     constructor(instances, exchangeManager, pairStateManager) {
         this.instances = instances
@@ -12,7 +14,7 @@ module.exports = class PairsHttp {
             let pairs = []
 
             for (const symbol of this.instances.symbols) {
-                if (!symbol.trade || !symbol.trade.capital || symbol.trade.capital <= 0) {
+                if (_.get(symbol, 'trade.capital', 0) <= 0 && _.get(symbol, 'trade.currency_capital', 0) <= 0) {
                     continue
                 }
 
@@ -25,7 +27,7 @@ module.exports = class PairsHttp {
                     'watchdogs': symbol.watchdogs,
                     'state': symbol.state,
                     'has_position': position !== undefined,
-                    'capital': symbol.trade.capital,
+                    'capital': _.get(symbol, 'trade.capital', 0) + ' / ' + _.get(symbol, 'trade.currency_capital', 0),
                     'strategies': symbol.trade.strategies || [],
                 }
 

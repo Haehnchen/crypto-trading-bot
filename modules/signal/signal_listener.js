@@ -15,7 +15,7 @@ module.exports = class SignalListener {
 
     async onSignalTick() {
         this.instances.symbols.filter(instance =>
-            _.get(instance, 'trade.capital', 0) > 0
+            _.get(instance, 'trade.capital', 0) > 0 || _.get(instance, 'trade.currency_capital', 0) > 0
         ).forEach(async (instance) => {
             let signal = await this.repository.getValidSignals(instance.exchange, instance.symbol)
 

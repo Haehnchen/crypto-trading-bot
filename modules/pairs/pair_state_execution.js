@@ -182,7 +182,7 @@ module.exports = class PairStateExecution {
 
     async executeOrder(exchangeName, symbol, side, options) {
         return new Promise(async resolve => {
-            let orderSize = this.orderCalculator.calculateOrderSize(exchangeName, symbol)
+            let orderSize = await this.orderCalculator.calculateOrderSize(exchangeName, symbol)
             if (!orderSize) {
                 console.error('Invalid order size: ' + JSON.stringify([exchangeName, symbol, side]))
                 this.logger.error('Invalid order size: ' + JSON.stringify([exchangeName, symbol, side]))
@@ -210,7 +210,7 @@ module.exports = class PairStateExecution {
         // round to nearest exchange amount size
         let exchangeOrderSize = this.exchangeManager.get(exchangeName).calculateAmount(orderSize, symbol)
         if (!exchangeOrderSize) {
-            this.logger.error('Exchange order amount issues' + JSON.stringify([exchangeName, symbol, orderSize]))
+            this.logger.error('Exchange order amount issues: ' + JSON.stringify([exchangeName, symbol, orderSize]))
             return
         }
 
