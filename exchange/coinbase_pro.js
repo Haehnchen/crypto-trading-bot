@@ -163,7 +163,7 @@ module.exports = class CoinbasePro {
         })
 
         websocket.on('error', err => {
-            this.logger.error('Coinbase Pro: Error ' + String(err))
+            this.logger.error('Coinbase Pro: Error ' + JSON.stringify(err))
         })
 
         websocket.on('close', () => {
