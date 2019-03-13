@@ -27,7 +27,7 @@ module.exports = class CoinbasePro {
         this.positions = {}
         this.tickers = {}
         this.fills = {}
-        this.balances = {}
+        this.balances = []
 
         this.candles = {}
         this.lastCandleMap = {}
@@ -39,7 +39,7 @@ module.exports = class CoinbasePro {
         this.lastCandleMap = {}
         this.tickers = {}
         this.fills = {}
-        this.balances = {}
+        this.balances = []
 
         let eventEmitter = this.eventEmitter
 
