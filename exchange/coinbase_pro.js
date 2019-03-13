@@ -26,6 +26,8 @@ module.exports = class CoinbasePro {
         this.symbols = {}
         this.positions = {}
         this.tickers = {}
+        this.fills = {}
+        this.balances = {}
 
         this.candles = {}
         this.lastCandleMap = {}
@@ -36,6 +38,8 @@ module.exports = class CoinbasePro {
         this.candles = {}
         this.lastCandleMap = {}
         this.tickers = {}
+        this.fills = {}
+        this.balances = {}
 
         let eventEmitter = this.eventEmitter
 
@@ -107,12 +111,17 @@ module.exports = class CoinbasePro {
             setInterval(function f() {
                 me.syncOrders()
                 return f
-            }(), 1000 * 30)
+            }(), 1000 * 29)
+
+            setInterval(function f() {
+                me.syncFills()
+                return f
+            }(), 1000 * 31)
 
             setInterval(function f() {
                 me.syncBalances()
                 return f
-            }(), 1000 * 30)
+            }(), 1000 * 32)
 
             setInterval(function f() {
                 me.syncPairInfo()
@@ -154,7 +163,10 @@ module.exports = class CoinbasePro {
             // "match" order = filled: reload balances for our positions
             // "match" is also used in public endpoint, but only our order are holding user information
             if (data.type && data.type === 'match' && data.user_id) {
-                await this.syncBalances()
+                await Promise.all([
+                    this.syncOrders(),
+                    this.syncFills(data.product_id)
+                ])
             }
 
             // we ignore "last_match". its not in our range
@@ -330,28 +342,60 @@ module.exports = class CoinbasePro {
         return OrderUtil.calculateNearestSize(amount, this.exchangePairs[symbol].lot_size)
     }
 
-    getPositions() {
-        return new Promise(async resolve => {
-            let results = []
+    async getPositions() {
+        let capitals = {}
+        this.symbols
+            .filter(s => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
+            .forEach(s => {
+                if (s.trade.capital > 0) {
+                    capitals[s.symbol] = s.trade.capital
+                } else if (s.trade.currency_capital > 0 && this.tickers[s.symbol]  && this.tickers[s.symbol].bid) {
+                    capitals[s.symbol] = s.trade.currency_capital / this.tickers[s.symbol].bid
+                }
+            })
 
-            for (let x in this.positions) {
-                results.push(this.positions[x])
+        let positions = []
+        for (let balance of this.balances) {
+            let asset = balance.currency
+
+            for (let pair in capitals) {
+                if (!pair.startsWith(asset)) {
+                    continue
+                }
+
+                let capital = capitals[pair];
+                let balanceUsed = parseFloat(balance.balance)
+
+                // 1% balance left indicate open position
+                if (Math.abs(balanceUsed / capital) <= 0.1) {
+                    continue
+                }
+
+                let entry
+                let createdAt = new Date();
+                let profit
+
+                // try to find a entry price, based on trade history
+                if (this.fills[pair] && this.fills[pair][0] && this.fills[pair][0].side === 'buy') {
+                    entry = parseFloat(this.fills[pair][0].price)
+                    createdAt = new Date(this.fills[pair][0].created_at)
+
+                    // calculate profit based on the ticket price
+                    if (entry && this.tickers[pair]) {
+                        profit = ((this.tickers[pair].bid / entry) - 1) * 100
+                    }
+                }
+
+                positions.push(new Position(pair, 'long', balanceUsed, profit, new Date(), entry, createdAt))
             }
+        }
 
-            resolve(results)
-        })
+        return positions
     }
 
-    getPositionForSymbol(symbol) {
-        return new Promise(async resolve => {
-            for (let position of (await this.getPositions())) {
-                if(position.symbol === symbol) {
-                    resolve(position)
-                    return
-                }
-            }
-
-            resolve()
+    async getPositionForSymbol(symbol) {
+        return (await this.getPositions()).find(position => {
+            return position.symbol === symbol
         })
     }
 
@@ -386,39 +430,32 @@ module.exports = class CoinbasePro {
             return
         }
 
-        let capitals = {}
-        this.symbols
-            .filter(s => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
-            .forEach(s => {
-                if (s.trade.capital > 0) {
-                    capitals[s.symbol] = s.trade.capital
-                } else if (s.trade.currency_capital > 0 && this.tickers[s.symbol]  && this.tickers[s.symbol].bid) {
-                    capitals[s.symbol] = s.trade.currency_capital / this.tickers[s.symbol].bid
-                }
-            })
+        this.balances = accounts.filter(b => parseFloat(b.balance) > 0)
+        this.logger.debug('Coinbase Pro: Sync balances ' + this.balances.length)
+    }
 
-        this.logger.debug('Coinbase Pro: Sync balances: ' + Object.keys(capitals).length)
+    async syncFills(productId = undefined) {
+        let symbols = []
 
-        let positions = [];
-
-        let balances = accounts.filter(b => parseFloat(b.balance) > 0)
-        for (let balance of balances) {
-            let asset = balance.currency
-
-            for (let pair in capitals) {
-                if (pair.startsWith(asset)) {
-                    let capital = capitals[pair];
-                    let balanceUsed = parseFloat(balance.balance)
-
-                    // 1% balance left indicate open position
-                    if (Math.abs(balanceUsed / capital) > 0.1) {
-                        positions.push(new Position(pair, 'long', balanceUsed, undefined, new Date(), undefined, new Date()))
-                    }
-                }
-            }
+        if (productId) {
+            symbols.push(productId)
+        } else {
+            symbols = this.symbols
+                .filter(s => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
+                .map(x => {
+                    return x.symbol
+                })
         }
 
-        this.positions = positions
+        this.logger.debug('Coinbase Pro: Syncing fills: ' +  JSON.stringify([symbols]))
+
+        for (let symbol of symbols) {
+            try {
+                this.fills[symbol] = (await this.client.getFills({'product_id': symbol})).slice(0, 15)
+            } catch (e) {
+                this.logger.error('Coinbase Pro: fill sync error:' + JSON.stringify([symbol, e.message]))
+            }
+        }
     }
 
     /**
