@@ -75,6 +75,21 @@ module.exports = class Binance {
             this.logger.info('Binace: Starting as anonymous; no trading possible')
         }
 
+
+        // Binance is sending a new candle on each trade
+        // which is good for interacting its bad for locking the database too often using pairs
+        // just update candles every 5 seconds
+        let throttle = {}
+        setInterval(() => {
+            let myThrottle = throttle
+            throttle = {}
+
+            for (let key in myThrottle) {
+                let element = myThrottle[key]
+                eventEmitter.emit('candlestick', new CandlestickEvent('binance', element['symbol'], element['period'], [element['candle']]))
+            }
+        }, 1000 * 5)
+
         symbols.forEach(symbol => {
             symbol['periods'].forEach(interval => {
                 // backfill
@@ -106,7 +121,11 @@ module.exports = class Binance {
                         candle['volume'],
                     )
 
-                    eventEmitter.emit('candlestick', new CandlestickEvent('binance', symbol['symbol'], interval, [ourCandle]));
+                    throttle[symbol['symbol'] + interval + ourCandle + ourCandle.time] = {
+                        'symbol': symbol['symbol'],
+                        'period': interval,
+                        'candle': ourCandle,
+                    }
                 })
 
                 // live prices
