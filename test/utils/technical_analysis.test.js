@@ -121,6 +121,10 @@ describe('#technical_analysis for candles', () => {
                 'indicator': 'atr',
                 'key': 'atr',
             },
+            {
+                'indicator': 'roc',
+                'key': 'roc',
+            },
         ]);
 
         assert.equal(result['ema_55'].length, 490)
@@ -181,6 +185,7 @@ describe('#technical_analysis for candles', () => {
         assert.equal(result['vwma'][0] > 0, true)
 
         assert.equal(result['atr'][0] > 0, true)
+        assert.equal(result['roc'][0] < 0, true)
     })
 
     it('technical_analysis for bollinger percent', () => {

@@ -584,6 +584,16 @@ module.exports = {
                             })
                         })
                     }))
+                } else if (indicatorName === 'roc') {
+                    let length = options['length'] || 6
+
+                    calculations.push(new Promise((resolve) => {
+                        tulind.indicators.roc.indicator([marketData.close], [length], function(err, results) {
+                            resolve({
+                                [indicatorKey]: results[0]
+                            })
+                        })
+                    }))
                 }
             })
 
