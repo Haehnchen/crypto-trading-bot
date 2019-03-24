@@ -201,20 +201,22 @@ module.exports = class StrategyManager {
             let value = _.get(row, cfg['value'])
             let valueOutput = value
 
-            switch (typeof value) {
-                case 'object':
-                    valueOutput = Object.keys(value).length === 0
-                        ? ''
-                        : JSON.stringify(value)
+            if (typeof value !== 'undefined') {
+                switch (typeof value) {
+                    case 'object':
+                        valueOutput = Object.keys(value).length === 0
+                            ? ''
+                            : JSON.stringify(value)
 
-                    break
-                case 'string':
-                    valueOutput = value
+                        break
+                    case 'string':
+                        valueOutput = value
 
-                    break
-                default:
-                    valueOutput = new Intl.NumberFormat('en-US', { minimumSignificantDigits: 3, maximumSignificantDigits: 4}).format(value)
-                    break
+                        break
+                    default:
+                        valueOutput = new Intl.NumberFormat('en-US', { minimumSignificantDigits: 3, maximumSignificantDigits: 4}).format(value)
+                        break
+                }
             }
 
             let result = {

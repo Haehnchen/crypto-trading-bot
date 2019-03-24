@@ -59,6 +59,8 @@
                             {% endif %}
 
                             <td class="{{ color|default }}">{{ column.value }}</td>
+                        {% elseif column.type == 'icon' %}
+                            <td class="text-{{ column.value }}">{% if column.value is defined %}<i class="fas fa-circle"></i>{% endif %}</td>
                         {% else %}
                             <td>{{ column.value }}</td>
                         {% endif %}
