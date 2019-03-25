@@ -36,7 +36,7 @@ x.forEach((pair) => {
 
 // bitmex
 let y = [
-    'ADAH19', 'TRXH19', 'XRPH19'
+    'ADAH19', 'TRXM19', 'XRPM19'
 ]
 
 y.forEach((pair) => {
