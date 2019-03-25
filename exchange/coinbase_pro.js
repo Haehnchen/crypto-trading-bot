@@ -21,10 +21,10 @@ module.exports = class CoinbasePro {
         this.candlestickResample = candlestickResample
 
         this.client = undefined
+
         this.orders = {}
         this.exchangePairs = {}
         this.symbols = {}
-        this.positions = {}
         this.tickers = {}
         this.fills = {}
         this.balances = []
@@ -36,6 +36,8 @@ module.exports = class CoinbasePro {
     start(config, symbols) {
         this.symbols = symbols
         this.candles = {}
+        this.orders = {}
+        this.exchangePairs = {}
         this.lastCandleMap = {}
         this.tickers = {}
         this.fills = {}
@@ -187,7 +189,14 @@ module.exports = class CoinbasePro {
         })
 
         websocket.on('close', () => {
-            this.logger.info('Coinbase Pro: Connected')
+            this.logger.error('Coinbase Pro: closed')
+
+            // reconnect after close, after some waiting time
+            setTimeout(() => {
+                this.logger.info('Coinbase Pro: reconnect')
+
+                me.start(config, symbols)
+            }, 1000 * 30)
         })
     }
 
