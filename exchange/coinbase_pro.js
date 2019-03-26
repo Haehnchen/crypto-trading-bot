@@ -31,6 +31,7 @@ module.exports = class CoinbasePro {
 
         this.candles = {}
         this.lastCandleMap = {}
+        this.intervals = []
     }
 
     start(config, symbols) {
@@ -42,6 +43,7 @@ module.exports = class CoinbasePro {
         this.tickers = {}
         this.fills = {}
         this.balances = []
+        this.intervals = []
 
         let eventEmitter = this.eventEmitter
 
@@ -49,7 +51,10 @@ module.exports = class CoinbasePro {
 
         let channels = ['ticker', 'matches'];
 
+        let isAuth = false
+
         if (config['key'] && config['secret'] && config['passphrase'] && config['key'].length > 0 && config['secret'].length > 0 && config['passphrase'].length > 0) {
+            isAuth = true
             // for user related websocket actions
             channels.push('user')
 
@@ -110,25 +115,28 @@ module.exports = class CoinbasePro {
 
         // let websocket bootup
         setTimeout(() => {
-            setInterval(function f() {
-                me.syncOrders()
-                return f
-            }(), 1000 * 29)
-
-            setInterval(function f() {
-                me.syncFills()
-                return f
-            }(), 1000 * 31)
-
-            setInterval(function f() {
-                me.syncBalances()
-                return f
-            }(), 1000 * 32)
-
-            setInterval(function f() {
+            this.intervals.push(setInterval(function f() {
                 me.syncPairInfo()
                 return f
-            }(), 60 * 60 * 15 * 1000);
+            }(), 60 * 60 * 15 * 1000));
+
+            // user endpoints
+            if (isAuth) {
+                this.intervals.push(setInterval(function f() {
+                    me.syncOrders()
+                    return f
+                }(), 1000 * 29))
+
+                this.intervals.push(setInterval(function f() {
+                    me.syncFills()
+                    return f
+                }(), 1000 * 31))
+
+                this.intervals.push(setInterval(function f() {
+                    me.syncBalances()
+                    return f
+                }(), 1000 * 32))
+            }
         }, 5000);
 
         websocket.on('message', async data => {
@@ -190,6 +198,12 @@ module.exports = class CoinbasePro {
 
         websocket.on('close', () => {
             this.logger.error('Coinbase Pro: closed')
+
+            for (let interval of this.intervals) {
+                clearInterval(interval)
+            }
+
+            this.intervals = []
 
             // reconnect after close, after some waiting time
             setTimeout(() => {
