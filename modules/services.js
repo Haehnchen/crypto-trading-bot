@@ -222,6 +222,7 @@ module.exports = {
             this.getExchangeManager(),
             this.getPairStateManager(),
             this.getLogger(),
+            this.getSystemUtil(),
         )
     },
 

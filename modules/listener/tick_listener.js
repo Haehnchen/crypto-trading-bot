@@ -3,9 +3,10 @@
 const moment = require('moment')
 const StrategyContext = require('../../dict/strategy_context')
 let _ = require('lodash')
+const PQueue = require('p-queue')
 
 module.exports = class TickListener {
-    constructor(tickers, instances, notifier, signalLogger, strategyManager, exchangeManager, pairStateManager, logger) {
+    constructor(tickers, instances, notifier, signalLogger, strategyManager, exchangeManager, pairStateManager, logger, systemUtil) {
         this.tickers = tickers
         this.instances = instances
         this.notifier = notifier
@@ -14,6 +15,7 @@ module.exports = class TickListener {
         this.exchangeManager = exchangeManager
         this.pairStateManager = pairStateManager
         this.logger = logger
+        this.systemUtil = systemUtil
 
         this.notified = {}
     }
@@ -107,17 +109,31 @@ module.exports = class TickListener {
         await this.pairStateManager.update(symbol.exchange, symbol.symbol, signal)
     }
 
-    onTick() {
-        this.instances.symbols.filter(symbol => symbol.trade && symbol.trade.strategies && symbol.trade.strategies.length > 0).forEach(async symbol => {
-            symbol.trade.strategies.forEach(async (strategy) => {
-                await this.visitTradeStrategy(strategy, symbol)
-            })
-        })
+    async onTick() {
+        let promises = []
 
-        this.instances.symbols.filter((symbol) => symbol.strategies && symbol.strategies.length > 0).forEach(async symbol => {
-            symbol.strategies.forEach(async (strategy) => {
-                await this.visitStrategy(strategy, symbol)
-            })
-        })
+        const queue = new PQueue({concurrency: this.systemUtil.getConfig('tick.pair_signal_concurrency', 10)});
+
+        this.instances.symbols
+            .filter(symbol => symbol.trade && symbol.trade.strategies && symbol.trade.strategies.length > 0)
+            .forEach(symbol => {
+                symbol.trade.strategies.forEach(strategy => {
+                        promises.push(async () => { await this.visitStrategy(strategy, symbol)})
+                    }
+                )}
+            )
+
+        this.instances.symbols
+            .filter((symbol) => symbol.strategies && symbol.strategies.length > 0)
+            .forEach(symbol => {
+                symbol.strategies.forEach(strategy => {
+                        promises.push(async () => { await this.visitStrategy(strategy, symbol)})
+                    }
+                )}
+            )
+
+        await queue.addAll(promises)
+
+        queue.clear()
     }
 }
