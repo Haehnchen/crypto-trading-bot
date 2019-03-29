@@ -43,7 +43,8 @@
         "warmup": null,
         "signal": null,
         "watchdog": null,
-        "ordering": null
+        "ordering": null,
+        "pair_signal_concurrency": null
     },
     "order": {
         "retry": null,
