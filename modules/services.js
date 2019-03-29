@@ -58,6 +58,7 @@ let CoinbasePro = require('../exchange/coinbase_pro')
 let Noop = require('../exchange/noop')
 let ExchangeCandleCombine = require('../modules/exchange/exchange_candle_combine')
 let CandleExportHttp = require('../modules/system/candle_export_http')
+let CandleImporter = require('../modules/system/candle_importer')
 
 let _ = require('lodash');
 
@@ -72,6 +73,7 @@ let tickers = undefined
 let queue = undefined
 
 let candleStickListener = undefined
+let candleStickImporter = undefined
 let candleStickLogListener = undefined
 let tickerDatabaseListener = undefined
 let tickerLogListener = undefined
@@ -183,7 +185,19 @@ module.exports = {
             return candleStickListener;
         }
 
-        return candleStickListener = new CandleStickListener(this.getDatabase())
+        return candleStickListener = new CandleStickListener(
+            this.getCandleImporter(),
+        )
+    },
+
+    getCandleImporter: function() {
+        if (candleStickImporter) {
+            return candleStickImporter;
+        }
+
+        return candleStickImporter = new CandleImporter(
+            this.getCandlestickRepository(),
+        )
     },
 
     getCreateOrderListener: function() {
@@ -583,6 +597,7 @@ module.exports = {
                 this.getEventEmitter(),
                 this.getLogger(),
                 this.getQueue(),
+                this.getCandleImporter(),
             ),
             new CoinbasePro(
                 this.getEventEmitter(),

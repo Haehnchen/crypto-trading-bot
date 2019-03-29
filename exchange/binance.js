@@ -2,7 +2,7 @@
 
 const BinanceClient = require('binance-api-node').default
 
-let Candlestick = require('./../dict/candlestick')
+let ExchangeCandlestick = require('./../dict/exchange_candlestick')
 let Ticker = require('./../dict/ticker')
 let CandlestickEvent = require('./../event/candlestick_event')
 let TickerEvent = require('./../event/ticker_event')
@@ -13,10 +13,11 @@ let Position = require('../dict/position')
 let Order = require('../dict/order')
 
 module.exports = class Binance {
-    constructor(eventEmitter, logger, queue) {
+    constructor(eventEmitter, logger, queue, candleImport) {
         this.eventEmitter = eventEmitter
         this.logger = logger
         this.queue = queue
+        this.candleImport = candleImport
 
         this.client = undefined
         this.orders = {}
@@ -75,28 +76,16 @@ module.exports = class Binance {
             this.logger.info('Binace: Starting as anonymous; no trading possible')
         }
 
-
-        // Binance is sending a new candle on each trade
-        // which is good for interacting its bad for locking the database too often using pairs
-        // just update candles every 5 seconds
-        let throttle = {}
-        setInterval(() => {
-            let myThrottle = throttle
-            throttle = {}
-
-            for (let key in myThrottle) {
-                let element = myThrottle[key]
-                eventEmitter.emit('candlestick', new CandlestickEvent('binance', element['symbol'], element['period'], [element['candle']]))
-            }
-        }, 1000 * 5)
-
         symbols.forEach(symbol => {
             symbol['periods'].forEach(interval => {
                 // backfill
                 this.queue.add(() => {
-                    client.candles({'symbol': symbol['symbol'], 'limit': 500, 'interval': interval}).then((candles) => {
+                    client.candles({'symbol': symbol['symbol'], 'limit': 500, 'interval': interval}).then(async candles => {
                         let ourCandles = candles.map(candle => {
-                            return new Candlestick(
+                            return new ExchangeCandlestick(
+                                'binance',
+                                symbol['symbol'],
+                                interval,
                                 Math.round(candle['openTime'] / 1000),
                                 candle['open'],
                                 candle['high'],
@@ -106,13 +95,16 @@ module.exports = class Binance {
                             )
                         })
 
-                        eventEmitter.emit('candlestick', new CandlestickEvent('binance', symbol['symbol'], interval, ourCandles));
+                        await this.candleImport.insertThrottledCandles(ourCandles)
                     })
                 })
 
                 // live candles
-                client.ws.candles(symbol['symbol'], interval, candle => {
-                    let ourCandle = new Candlestick(
+                client.ws.candles(symbol['symbol'], interval, async candle => {
+                    let ourCandle = new ExchangeCandlestick(
+                        'binance',
+                        symbol['symbol'],
+                        interval,
                         Math.round(candle['startTime'] / 1000),
                         candle['open'],
                         candle['high'],
@@ -121,11 +113,7 @@ module.exports = class Binance {
                         candle['volume'],
                     )
 
-                    throttle[symbol['symbol'] + interval + ourCandle + ourCandle.time] = {
-                        'symbol': symbol['symbol'],
-                        'period': interval,
-                        'candle': ourCandle,
-                    }
+                    await this.candleImport.insertThrottledCandles([ourCandle])
                 })
 
                 // live prices

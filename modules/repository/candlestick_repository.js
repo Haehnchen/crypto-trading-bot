@@ -72,4 +72,43 @@ module.exports = class CandlestickRepository {
             })
         })
     }
+
+    insertCandles(exchangeCandlesticks) {
+        return new Promise(resolve => {
+            this.db.beginTransaction((err, transaction) => {
+                exchangeCandlesticks.forEach(exchangeCandlestick => {
+                    // Try to update any existing row
+                    let update = '' +
+                        'UPDATE candlesticks SET exchange=$exchange, symbol=$symbol, period=$period, time=$time, open=$open, high=$high, low=$low, close=$close, volume=$volume\n' +
+                        'WHERE exchange=$exchange AND symbol=$symbol AND period=$period AND time=$time'
+
+                    let insert = '' +
+                        'INSERT OR IGNORE INTO candlesticks(exchange, symbol, period, time, open, high, low, close, volume) VALUES ($exchange, $symbol, $period, $time, $open, $high, $low, $close, $volume)'
+
+                    let parameters = {
+                        '$exchange': exchangeCandlestick.exchange,
+                        '$symbol': exchangeCandlestick.symbol,
+                        '$period': exchangeCandlestick.period,
+                        '$time': exchangeCandlestick.time,
+                        '$open': exchangeCandlestick.open,
+                        '$high': exchangeCandlestick.high,
+                        '$low': exchangeCandlestick.low,
+                        '$close': exchangeCandlestick.close,
+                        '$volume': exchangeCandlestick.volume
+                    };
+
+                    transaction.run(update, parameters);
+                    transaction.run(insert, parameters);
+                })
+
+                transaction.commit((err) => {
+                    if (err) {
+                        return console.log("Sad panda :-( commit() failed.", err);
+                    }
+
+                    resolve()
+                });
+            });
+        })
+    }
 }
