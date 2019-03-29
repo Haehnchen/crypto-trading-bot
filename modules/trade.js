@@ -81,20 +81,20 @@ module.exports = class Trade {
 
             setInterval(() => {
                 eventEmitter.emit('tick', {})
-            }, this.systemUtil.getConfig('tick.default', 5500))
+            }, this.systemUtil.getConfig('tick.default', 20100))
 
             // order create tick
             setInterval(() => {
                 eventEmitter.emit('signal_tick', {})
-            }, this.systemUtil.getConfig('tick.signal', 3100))
+            }, this.systemUtil.getConfig('tick.signal', 10600))
 
             setInterval(() => {
                 eventEmitter.emit('watchdog', {})
-            }, this.systemUtil.getConfig('tick.watchdog', 5100))
+            }, this.systemUtil.getConfig('tick.watchdog', 30800))
 
             setInterval(() => {
                 eventEmitter.emit('tick_ordering', {})
-            }, this.systemUtil.getConfig('tick.ordering', 5300))
+            }, this.systemUtil.getConfig('tick.ordering', 10800))
         }, this.systemUtil.getConfig('tick.warmup', 30000));
 
         // cronjob like tasks
