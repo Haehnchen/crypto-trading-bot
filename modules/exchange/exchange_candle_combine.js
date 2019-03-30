@@ -28,7 +28,10 @@ module.exports = class ExchangeCandleCombine {
     }
 
     async combinedCandles(candlesAwait, mainExchange, symbol, period, exchanges = []) {
-        let candles = await candlesAwait
+        let currentTime = Math.round((new Date()).getTime() / 1000)
+
+        // we filter the current candle, be to able to use it later
+        let candles = (await candlesAwait).filter(c => c.time <= currentTime)
 
         let result = {
             [mainExchange]: candles,
@@ -51,8 +54,8 @@ module.exports = class ExchangeCandleCombine {
 
         await Promise.all(exchanges.map(exchange => {
             return new Promise(async resolve => {
-
                 let candles = {}
+
                 let databaseCandles = await this.candlestickRepository.getLookbacksSince(exchange.name, exchange.symbol, period, start);
                 databaseCandles.forEach(c => {
                     candles[c.time] = c
