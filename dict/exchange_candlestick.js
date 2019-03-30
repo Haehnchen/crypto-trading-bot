@@ -1,7 +1,17 @@
 'use strict';
 
 module.exports = class ExchangeCandlestick {
-    constructor(exchange, period, symbol, time, open, high, low, close, volume) {
+    constructor(exchange, symbol, period, time, open, high, low, close, volume) {
+        if (!['m', 'h', 'd', 'y'].includes(period.slice(-1))) {
+            throw 'Invalid candlestick period: ' + period + " - " + JSON.stringify(Object.values(arguments))
+        }
+
+        // simple time validation
+        time = parseInt(time)
+        if (time <= 631148400) {
+            throw 'Invalid candlestick time given: ' + time + " - " + JSON.stringify(Object.values(arguments))
+        }
+
         this.exchange = exchange;
         this.period = period;
         this.symbol = symbol;
@@ -16,8 +26,8 @@ module.exports = class ExchangeCandlestick {
     static createFromCandle(exchange, symbol, period, candle) {
         return new ExchangeCandlestick(
             exchange,
-            period,
             symbol,
+            period,
             candle.time,
             candle.open,
             candle.high,

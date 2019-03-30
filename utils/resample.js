@@ -54,7 +54,7 @@ module.exports = {
             });
 
             merge.push({
-                'time': candleCloseTime,
+                'time': parseInt(candleCloseTime),
                 'open': sortHighToLow[sortHighToLow.length - 1]['open'],
                 'high': Math.max(...x['high']),
                 'low': Math.min(...x['low']),
