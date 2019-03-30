@@ -125,6 +125,10 @@ describe('#technical_analysis for candles', () => {
                 'indicator': 'roc',
                 'key': 'roc',
             },
+            {
+                'indicator': 'volume_by_price',
+                'key': 'volume_by_price',
+            },
         ]);
 
         assert.equal(result['ema_55'].length, 490)
@@ -186,6 +190,13 @@ describe('#technical_analysis for candles', () => {
 
         assert.equal(result['atr'][0] > 0, true)
         assert.equal(result['roc'][0] < 0, true)
+
+        let volumeByPrice = result['volume_by_price'][0]
+
+        assert.equal(volumeByPrice.low > 0, true)
+        assert.equal(volumeByPrice.high > 0, true)
+        assert.equal(volumeByPrice.volume > 0, true)
+        assert.equal(result['volume_by_price'].length, 12)
     })
 
     it('technical_analysis for bollinger percent', () => {
