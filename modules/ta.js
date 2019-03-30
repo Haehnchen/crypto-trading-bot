@@ -111,7 +111,7 @@ module.exports = class Ta {
                                 values[key]['crossed_index'] = number
                             }
                         } else if (key == 'bollinger_bands') {
-                            values[key]['percent'] = values[key].value.upper && values[key].value.lower
+                            values[key]['percent'] = values[key].value && values[key].value.upper && values[key].value.lower
                                 ? ta.getBollingerBandPercent((v.ticker.ask + v.ticker.bid) / 2, values[key].value.upper, values[key].value.lower) * 100
                                 : null
 
