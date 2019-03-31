@@ -615,21 +615,23 @@ module.exports = {
 
                         let current = minMax[0]
                         for (let i = 0; i < ranges; i++) {
+                            // summarize volume per range
+                            let map = lookbackRange
+                                .filter(c => c.close >= current && c.close < current + rangeSize)
+                                .map(c => c.volume);
+
                             // prevent float / rounding issues on first and last item
                             rangeBlocks.push({
                                 'low': i === 0 ? current * 0.9999 : current,
                                 'high': i === ranges - 1 ? minMax[1] * 1.0001 : current + rangeSize,
-                                'volume': lookbackRange
-                                    .filter(c => c.close >= current && c.close < current + rangeSize)
-                                    .map(c => c.volume)
-                                    .reduce((x, y) => x + y)
+                                'volume': map.length > 0 ? map.reduce((x, y) => x + y) : 0
                             })
 
                             current += rangeSize
                         }
 
                         resolve({
-                            [indicatorKey]: rangeBlocks.reverse(), // sort by price; low to high
+                            [indicatorKey]: [rangeBlocks.reverse()], // sort by price; low to high
                         })
                     }))
                 }
