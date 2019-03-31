@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS candlesticks (
 CREATE UNIQUE INDEX unique_candle
   ON candlesticks (exchange, symbol, period, time);
 
-CREATE INDEX time_idx ON candlesticks  (time);
-
+CREATE INDEX time_idx ON candlesticks (time);
+CREATE INDEX exchange_symbol_idx ON candlesticks (exchange, symbol);
 
 CREATE TABLE IF NOT EXISTS candlesticks_log (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS ticker_log (
   income_at  BIGINT       NULL
 );
 CREATE INDEX ticker_log_idx ON ticker_log (exchange, symbol);
+CREATE INDEX ticker_log_time_idx ON ticker_log (exchange, symbol, income_at);
 
 CREATE TABLE IF NOT EXISTS signals (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,

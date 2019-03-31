@@ -118,7 +118,7 @@ module.exports = class TickListener {
             .filter(symbol => symbol.trade && symbol.trade.strategies && symbol.trade.strategies.length > 0)
             .forEach(symbol => {
                 symbol.trade.strategies.forEach(strategy => {
-                        promises.push(async () => { await this.visitStrategy(strategy, symbol)})
+                        promises.push(async () => { await this.visitTradeStrategy(strategy, symbol)})
                     }
                 )}
             )
