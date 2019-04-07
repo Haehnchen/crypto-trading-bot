@@ -29,6 +29,10 @@ module.exports = class ExchangeOrder {
         return this.options.post_only && this.options.post_only === true
     }
 
+    shouldCancelOrderProcess() {
+        return ['canceled', 'rejected'].includes(this.status) && this.retry === false
+    }
+
     static createBlankRetryOrder(side) {
         return new ExchangeOrder(
             Math.round(((new Date()).getTime()).toString() * Math.random()),

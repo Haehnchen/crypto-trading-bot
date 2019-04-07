@@ -16,7 +16,7 @@ module.exports = class PairStateExecution {
         this.orderCalculator = orderCalculator
         this.orderExecutor = orderExecutor
         this.logger = logger
-        this.running = false
+        this.lastRunAt = undefined
 
         this.managedOrders = []
     }
@@ -59,9 +59,9 @@ module.exports = class PairStateExecution {
             )
 
             if (order) {
-                if (order.status === 'canceled' && order.retry === false) {
+                if (order.shouldCancelOrderProcess()) {
                     // order was canceled by exchange eg no balance or invalid amount
-                    this.pairStateManager.clear(pair.exchange, pair.symbol)
+                    //this.pairStateManager.clear(pair.exchange, pair.symbol)
                     this.logger.info('Pair State: Signal canceld for invalid order: ' + JSON.stringify(pair.exchange))
                 } else {
                     // add order to know it for later usage
@@ -143,14 +143,14 @@ module.exports = class PairStateExecution {
 
     async onPairStateExecutionTick() {
         // block ui running
-        if (this.running) {
+        if (typeof this.lastRunAt !== 'undefined' && this.lastRunAt < moment().subtract(2, 'minutes')) {
             this.logger.debug('onPairStateExecutionTick blocked for running')
             console.log('onPairStateExecutionTick blocked for running')
 
-           return
+            return
         }
 
-        this.running = true
+        this.lastRunAt = new Date()
 
         let promises = []
 
@@ -180,7 +180,7 @@ module.exports = class PairStateExecution {
             console.error(e)
         }
 
-        this.running = false
+        this.lastRunAt = undefined
     }
 
     isManagedOrder(orderId) {
