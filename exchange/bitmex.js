@@ -520,6 +520,13 @@ module.exports = class Bitmex {
                 return
             }
 
+            if (result.response && (result.response.statusCode >= 400 && result.response.statusCode < 500)) {
+                logger.error('Bitmex: Invalid order created request cancel ordering:' + JSON.stringify({'body': body}))
+
+                resolve(ExchangeOrder.createCanceledFromOrder(order))
+                return
+            }
+
             let orderResponse = JSON.parse(body)
             if (orderResponse.error) {
                 logger.error('Bitmex: Invalid order created request:' + JSON.stringify({'body': body}))

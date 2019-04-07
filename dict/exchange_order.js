@@ -61,4 +61,25 @@ module.exports = class ExchangeOrder {
             order.raw,
         )
     }
+
+    static createCanceledFromOrder(order) {
+        let side = order.side
+        if (order.side === 'long') {
+            side = 'buy'
+        } else if(order.side === 'short') {
+            side = 'sell'
+        }
+
+        return new ExchangeOrder(
+            order.id,
+            order.symbol,
+            'canceled',
+            order.price,
+            order.amount,
+            false,
+            order.ourId,
+            side,
+            order.type,
+        )
+    }
 }

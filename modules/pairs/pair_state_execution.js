@@ -59,7 +59,14 @@ module.exports = class PairStateExecution {
             )
 
             if (order) {
-                this.managedOrders.push(order)
+                if (order.status === 'canceled' && order.retry === false) {
+                    // order was canceled by exchange eg no balance or invalid amount
+                    this.pairStateManager.clear(pair.exchange, pair.symbol)
+                    this.logger.info('Pair State: Signal canceld for invalid order: ' + JSON.stringify(pair.exchange))
+                } else {
+                    // add order to know it for later usage
+                    this.managedOrders.push(order)
+                }
             }
         }
 
@@ -181,29 +188,24 @@ module.exports = class PairStateExecution {
     }
 
     async executeOrder(exchangeName, symbol, side, options) {
-        return new Promise(async resolve => {
-            let orderSize = await this.orderCalculator.calculateOrderSize(exchangeName, symbol)
-            if (!orderSize) {
-                console.error('Invalid order size: ' + JSON.stringify([exchangeName, symbol, side]))
-                this.logger.error('Invalid order size: ' + JSON.stringify([exchangeName, symbol, side]))
+        let orderSize = await this.orderCalculator.calculateOrderSize(exchangeName, symbol)
+        if (!orderSize) {
+            console.error('Invalid order size: ' + JSON.stringify([exchangeName, symbol, side]))
+            this.logger.error('Invalid order size: ' + JSON.stringify([exchangeName, symbol, side]))
 
-                resolve()
-                return
-            }
+            return
+        }
 
-            // inverse price for short
-            if (side === 'short') {
-                orderSize = orderSize * -1
-            }
+        // inverse price for short
+        if (side === 'short') {
+            orderSize = orderSize * -1
+        }
 
-            let myOrder = options['market'] === true
-                ? Order.createMarketOrder(symbol, orderSize)
-                : Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, orderSize)
+        let myOrder = options['market'] === true
+            ? Order.createMarketOrder(symbol, orderSize)
+            : Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, orderSize)
 
-            let order = await this.orderExecutor.executeOrder(exchangeName, myOrder)
-
-            resolve(order)
-        })
+        return await this.orderExecutor.executeOrder(exchangeName, myOrder)
     }
 
     async executeCloseOrder(exchangeName, symbol, orderSize, options) {
