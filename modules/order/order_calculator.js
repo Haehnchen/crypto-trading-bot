@@ -17,7 +17,7 @@ module.exports = class OrderCalculator {
         }
 
         // normalize the size to allowed size
-        let orderSize = this.exchangeManager.get(exchangeName).calculatePrice(orderSizeCalculated, symbol)
+        let orderSize = this.exchangeManager.get(exchangeName).calculateAmount(orderSizeCalculated, symbol)
         if (!orderSize) {
             this.logger.error('Can no normalize buy price: ' + JSON.stringify([exchangeName, symbol, orderSize]))
 

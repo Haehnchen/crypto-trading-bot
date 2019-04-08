@@ -227,7 +227,7 @@ module.exports = class Bitmex {
 
             client.addStream(symbol['symbol'], 'instrument', (instruments) => {
                 instruments.forEach(instrument => {
-                    tickSizes[symbol['symbol']] = instrument['lotSize']
+                    tickSizes[symbol['symbol']] = instrument['tickSize']
                     lotSizes[symbol['symbol']] = instrument['lotSize']
 
                     eventEmitter.emit('ticker', new TickerEvent(

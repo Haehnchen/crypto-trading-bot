@@ -31,7 +31,7 @@ describe('#order size calculation', () => {
             instances,
             {},
             {},
-            {'get': () => { return {'calculatePrice': (n) => n}}}
+            {'get': () => { return {'calculateAmount': (n) => n}}}
         );
 
         assert.equal(await calculator.calculateOrderSize('foobar', 'foo'), 12)
@@ -76,7 +76,7 @@ describe('#order size calculation', () => {
                     }
                 }},
             {},
-            {'get': () => { return {'calculatePrice': (n) => n}}}
+            {'get': () => { return {'calculateAmount': (n) => n}}}
         )
 
         assert.equal(await calculator.calculateOrderSize('foobar', 'foo'), 0.004)
