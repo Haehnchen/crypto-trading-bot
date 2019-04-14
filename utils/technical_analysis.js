@@ -261,7 +261,11 @@ module.exports = {
                     }))
                 } else if (indicatorName === 'macd') {
                     calculations.push(new Promise((resolve) => {
-                        tulind.indicators.macd.indicator([marketData.close], [12, 26, 9], (err, results) => {
+                        let fastLength = options['fast_length'] || 12
+                        let slowLength = options['slow_length'] || 26
+                        let signalLength = options['signal_length'] || 9
+
+                        tulind.indicators.macd.indicator([marketData.close], [fastLength, slowLength, signalLength], (err, results) => {
                             let result = [];
 
                             for (let i = 0; i < results[0].length; i++) {
