@@ -126,6 +126,10 @@ describe('#technical_analysis for candles', () => {
                 'key': 'roc',
             },
             {
+                'indicator': 'adx',
+                'key': 'adx',
+            },
+            {
                 'indicator': 'volume_by_price',
                 'key': 'volume_by_price',
             },
@@ -190,6 +194,8 @@ describe('#technical_analysis for candles', () => {
 
         assert.equal(result['atr'][0] > 0, true)
         assert.equal(result['roc'][0] < 0, true)
+
+        assert.equal(result['adx'][0] > 0, true)
 
         let volumeByPrice = result['volume_by_price'][0][0]
 

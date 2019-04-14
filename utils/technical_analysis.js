@@ -598,6 +598,15 @@ module.exports = {
                             })
                         })
                     }))
+                } else if (indicatorName === 'adx') {
+                    let length = options['length'] || 14
+                    calculations.push(new Promise((resolve) => {
+                        tulind.indicators.adx.indicator([marketData.high, marketData.low, marketData.close], [length], function(err, results) {
+                            resolve({
+                                [indicatorKey]: results[0]
+                            })
+                        })
+                    }))
                 } else if (indicatorName === 'volume_by_price') {
                     // https://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:volume_by_price
                     let length = options['length'] || 200
