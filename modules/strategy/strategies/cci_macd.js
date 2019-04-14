@@ -13,6 +13,8 @@ module.exports = class {
             'length': 40,
         })
 
+        indicatorBuilder.add('adx', 'adx', options['period'])
+
         indicatorBuilder.add('macd', 'macd', options['period'], {
             'fast_length': 12 * 2,
             'slow_length': 26 * 2,
@@ -47,7 +49,7 @@ module.exports = class {
         let lastSignal = indicatorPeriod.getLastSignal()
         if (!lastSignal) {
             // open position in allowed direction
-            if (currentValues.sma) {
+            if (currentValues.sma && !this.isSideways(indicatorPeriod)) {
                 let allowedSignal = indicatorPeriod.getPrice() > currentValues.sma ? 'long' : 'short'
                 if (allowedSignal === currentSignal) {
                     result.setSignal(currentSignal)
@@ -64,6 +66,16 @@ module.exports = class {
         }
 
         return result
+    }
+
+    isSideways(indicatorPeriod) {
+        for (let value of indicatorPeriod.visitLatestIndicators(10)) {
+            if (value.adx > 25) {
+                return false
+            }
+        }
+
+        return true
     }
 
     macdCciSignalTrigger(indicatorPeriod, result, options) {
@@ -124,6 +136,11 @@ module.exports = class {
             {
                 'label': 'direction',
                 'value': 'direction',
+            },
+            {
+                'label': 'adx',
+                'value': 'adx',
+
             },
         ]
     }
