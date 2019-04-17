@@ -13,8 +13,8 @@ program
     .command('trade')
     .description('upload a file')
     .option('-i, --instance <file>', 'Instance to start', 'instance.json')
-    .action(function(options) {
-        services.boot()
+    .action(async options => {
+        await services.boot()
 
         let cmd = new TradeCommand(options.instance);
         cmd.execute();
@@ -27,12 +27,12 @@ program
     .option('-s, --symbol <symbol>')
     .option('-p, --period <period>', '1m 5m, 15m, 1h', '15m')
     .option('-d, --date <date>', 'days in past to collect start', '7')
-    .action(function(options) {
+    .action(async options => {
         if (!options.exchange || !options.symbol || !options.period || !options.date) {
             throw 'Not all options are given'
         }
 
-        services.boot()
+        await services.boot()
 
         let cmd = new Backfill();
         cmd.execute(options.exchange, options.symbol, options.period, options.date);

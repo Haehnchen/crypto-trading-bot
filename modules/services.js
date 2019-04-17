@@ -112,13 +112,18 @@ let exchangeCandleCombine = undefined
 let candleExportHttp = undefined
 
 module.exports = {
-    boot: function() {
+    boot: async function() {
         try {
             instances = require('../instance')
         } catch (e) {
             throw 'Invalid instance.js file. Please check' + String(e)
             process.exit()
             return
+        }
+
+        // boot instance eg to load pairs external
+        if (typeof instances.init === 'function') {
+            await instances.init()
         }
 
         try {
