@@ -2,6 +2,78 @@ var c = module.exports = {}
 
 c.symbols = []
 
+/*
+// external loading; lazy init
+c.init = () => {
+    return new Promise(resolve => {
+        require('request')('https://api.binance.com/api/v1/exchangeInfo', (error, response, body) => {
+            let z = [
+                'BNBBTC', 'QKCBTC', 'XVGBTC', 'STRATBTC', 'LUNBTC', 'NANOBTC', 'LOOMBTC', 'VIBEBTC', 'PIVXBTC', 'MCOBTC', 'APPCBTC', 'STORJBTC', 'ELFBTC', 'ENJBTC', 'KNCBTC', 'RVNBTC', 'WANBTC', 'HCBTC',
+            ]
+
+            let trading = {
+                //'BTCUSDT': 50,
+                'TNTBTC': 6622,
+                'ADAUSDT': 300,
+                //'TUSDUSDT': 50,
+                'ONTUSDT': 40,
+            }
+
+            // only USDT pairs, because of its volume and ignore stable coin pairing
+            JSON.parse(body)['symbols']
+		        .filter(p => p['quoteAsset'] === 'USDT' && !['USDC', 'PAX', 'USDS', 'TUSD'].includes(p['baseAsset']) && p['status'].toLowerCase() === 'trading')
+                .forEach(p => {
+                    z.push(p['symbol'])
+                    trading[p['symbol']] = 50
+                }
+            )
+
+            z.forEach((pair) => {
+                let cfg = {
+                    'symbol': pair,
+                    'periods': ['1m', '15m', '1h'],
+                    'exchange': 'binance',
+                    'state': 'watch',
+                    'watchdogs': [
+                        {
+                            'name': 'stoploss_watch',
+                            'stop': 1.5,
+                        }
+                    ],
+                    'strategies': [
+                        {
+                            'strategy': 'cci',
+                            'options': {
+                                'period': '15m'
+                            }
+                        },
+                        {
+                            'strategy': 'obv_pump_dump'
+                        },
+                        {
+                            'strategy': 'macd',
+                            'options': {
+                                'period': '1h'
+                            }
+                        }
+                    ]
+                };
+
+                if (pair in trading) {
+                    cfg['trade'] = {
+                        'capital': trading[pair],
+                    }
+                }
+
+                c.symbols.push(cfg)
+            })
+
+            resolve()
+        })
+    })
+}
+*/
+
 // bitfinex
 let x = [
     'BTCUSD', 'EOSUSD', 'LTCUSD', 'ETHUSD', 'ETCUSD', 'NEOUSD', 'IOTUSD', 'XMRUSD', 'XRPUSD', 'DSHUSD', 'ZECUSD', 'OMGUSD', 'ETPUSD', 'ZRXUSD', 'BABUSD', 'BSVUSD',
