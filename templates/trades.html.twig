@@ -25,7 +25,7 @@
             {% for position in positions %}
                 <tr>
                     <td>{{ position.exchange }}</td>
-                    <td>{{ position.position.symbol }}</td>
+                    <td><a target="blank" href="/tradingview/{{ position.exchange }}:{{ position.position.symbol }}">{{ position.position.symbol }}</a></td>
                     <td class="{{ position.position.amount < 0 ? 'text-danger' : 'text-success' }}">
                         {{ position.position.amount }}
                     </td>
