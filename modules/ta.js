@@ -38,6 +38,7 @@ module.exports = class Ta {
                             ta.getIndicatorsLookbacks(candles.slice().reverse()).then(result => {
                                 resolve({
                                     'symbol': symbol.symbol,
+                                    'exchange': symbol.exchange,
                                     'period': period,
                                     'ta': result,
                                     'ticker': new Ticker(symbol.exchange, symbol.symbol, undefined, candles[0].close, candles[0].close),
@@ -59,6 +60,7 @@ module.exports = class Ta {
                     if (!x[v.symbol]) {
                         x[v.symbol] = {
                             'symbol': v.symbol,
+                            'exchange': v.exchange,
                             'ticker': v.ticker,
                             'ta': {},
                         }

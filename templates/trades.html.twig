@@ -17,6 +17,7 @@
                 <th scope="col">UpdatedAt</th>
                 <th scope="col">CreatedAt</th>
                 <th scope="col">Side</th>
+                <th scope="col"></th>
             </tr>
 
             </thead>
@@ -42,6 +43,11 @@
                         {% elseif position.position.side == 'long' %}
                             <i class="fas fa-chevron-circle-up text-success"></i>
                         {% endif %}
+                    </td>
+                    <td style="white-space: nowrap">
+                        <form action="/pairs/{{ position.exchange }}-{{ position.position.symbol }}" method="post">
+                            <button name="action" value="close" data-toggle="tooltip" title="Limit Close" class="btn btn-link"><i class="fas fa-window-close text-dark"></i></button>
+                        </form>
                     </td>
                 </tr>
             {% endfor %}

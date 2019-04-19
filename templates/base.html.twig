@@ -79,7 +79,7 @@
 
             {% for row in rows %}
                 <tr>
-                    <td><i class="fa-fw {% if 'USD' in row.symbol %}fas fa-dollar-sign{% elseif 'Z18' in row.symbol %}fas fa-file-contract{% else %}fab fa-bitcoin{% endif %}"></i> <a target="blank" href="/tradingview/{{ row.symbol }}">{{ row.symbol }}</a></td>
+                    <td><i class="fa-fw {% if 'USD' in row.symbol %}fas fa-dollar-sign{% elseif 'Z18' in row.symbol %}fas fa-file-contract{% else %}fab fa-bitcoin{% endif %}"></i> <a target="blank" href="/tradingview/{{ row.exchange }}:{{ row.symbol }}">{{ row.symbol }}</a></td>
                     <td>{{ row.ticker.bid|price_format }}</td>
 
                     {% for period in periods %}

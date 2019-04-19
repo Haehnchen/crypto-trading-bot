@@ -93,7 +93,7 @@ module.exports = class Http {
 
         app.get('/tradingview/:symbol', (req, res) => {
             res.render('../templates/tradingview.html.twig', {
-                symbol: req.params.symbol,
+                symbol: req.params.symbol.replace('-', '').replace('coinbase_pro', 'coinbase'),
             })
         })
 
