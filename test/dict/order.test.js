@@ -57,4 +57,11 @@ describe('#order dict test', function() {
         assert.equal(order.price > 0,true)
         assert.equal(order.side, 'long')
     })
+
+    it('test retry order', () => {
+        let order = Order.createRetryOrder(Order.createMarketOrder('BTCUSD', 12))
+
+        assert.equal(order.price > 0, true)
+        assert.equal(order.side, 'long')
+    })
 })

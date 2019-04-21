@@ -180,6 +180,54 @@ describe('#order executor', () => {
         assert.equal(Object.keys(executor.runningOrders).length, 0)
     })
 
+
+    it('test that price adjust order is recreated on placing error', async () => {
+        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', 1331, undefined, false, undefined, 'buy')
+
+        let exchangeName = undefined
+        let orderUpdate = undefined
+
+        let executor = new OrderExecutor(
+            {
+                'get': () => { return {
+                    'findOrderById': () => { return new Promise(resolve => {
+                        resolve(exchangeOrder)
+                    })},
+                    'updateOrder': (myExchangeName, myOrderUpdate) => {
+                        return new Promise(resolve => {
+                            exchangeName = myExchangeName
+                            orderUpdate = myOrderUpdate
+
+                            resolve(new ExchangeOrder('1815-1337', undefined, 'canceled', 1331, undefined, true, undefined, 'buy'))
+                        })
+                    },
+                }},
+            },
+            {'getIfUpToDate': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
+            {'getConfig': (key, defaultValue) => defaultValue},
+            {'info': () => {}, 'error': () => {}}
+        )
+
+        let retryOrder
+        executor.executeOrder = async (exchange, order) => {
+            retryOrder = order
+        }
+
+        let order = Order.createCloseOrderWithPriceAdjustment('BTCUSD', 1337)
+
+        executor.orders.push({
+            'id': exchangeOrder.id,
+            'order': order,
+            'exchangeOrder': exchangeOrder,
+            'exchange': 'test',
+        })
+
+        await executor.adjustOpenOrdersPrice()
+
+        assert.equal(retryOrder.amount, 1337)
+        assert.equal(retryOrder.hasAdjustedPrice(), true)
+    })
+
     it('test that price adjust order is created for short', async () => {
         let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', undefined, undefined, undefined, undefined, 'buy')
 

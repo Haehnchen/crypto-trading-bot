@@ -29,8 +29,8 @@ module.exports = class Order {
     }
 
     static createLimitPostOnlyOrder(symbol, side, price, amount, options) {
-        if(side !== 'long' && side !== 'short') {
-            throw 'Invalid order side:' + side;
+        if (side !== 'long' && side !== 'short') {
+            throw 'Invalid order side:' + side + ' - ' + JSON.stringify([symbol, side, price, amount, options])
         }
 
         return new Order(
@@ -72,8 +72,12 @@ module.exports = class Order {
     }
 
     static createRetryOrder(order) {
-        if(order.side !== 'long' && order.side !== 'short') {
-            throw 'Invalid order side:' + order.side;
+        if (!order instanceof Order) {
+            throw 'TypeError: no Order'
+        }
+
+        if (order.side !== 'long' && order.side !== 'short') {
+            throw 'Invalid order side:' + order.side + ' - ' + JSON.stringify(order)
         }
 
         return new Order(
@@ -88,8 +92,12 @@ module.exports = class Order {
     }
 
     static createRetryOrderWithPriceAdjustment(order, price) {
-        if(order.side !== 'long' && order.side !== 'short') {
-            throw 'Invalid order side:' + order.side;
+        if (!(order instanceof Order)) {
+            throw 'TypeError: no Order'
+        }
+
+        if (order.side !== 'long' && order.side !== 'short') {
+            throw 'Invalid order side:' + order.side + ' - ' + JSON.stringify(order)
         }
 
         return new Order(

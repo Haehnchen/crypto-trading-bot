@@ -94,12 +94,13 @@ module.exports = class OrderExecutor {
                     this.logger.error('OrderAdjust: Updated order canceled recreate: ' + JSON.stringify(order))
 
                     // recreate order
-                    await this.executeOrder(order.exchange, Order.createRetryOrder(order))
+                    // @TODO: resync used balance in case on order is partially filled
+                    await this.executeOrder(order.exchange, Order.createRetryOrder(order.order))
                 } else {
                     this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify(order))
                 }
             } catch(err) {
-                this.logger.error('OrderAdjust: adjusted failed: ' + JSON.stringify([String(err), order]))
+                this.logger.error('OrderAdjust: adjusted failed: ' + JSON.stringify([String(err), order, orderUpdate]))
             }
 
             delete this.runningOrders[order.id]
