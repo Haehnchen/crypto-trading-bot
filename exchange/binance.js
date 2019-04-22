@@ -548,7 +548,8 @@ module.exports = class Binance {
 
                 let orders = symbolOrders.filter(
                     // filled order and fully closed but be have also partially_filled ones if ordering was no fully done
-                    order => ['filled', 'partially_filled'].includes(order.status.toLowerCase())
+                    // in case order was canceled but executedQty is set we have a partially cancel
+                    order => ['filled', 'partially_filled'].includes(order.status.toLowerCase()) || order.status.toLowerCase() === 'canceled' && parseFloat(order.executedQty) > 0
                 ).sort(
                     // order by latest
                     (a, b) => b.time - a.time
