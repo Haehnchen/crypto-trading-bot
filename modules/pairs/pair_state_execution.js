@@ -49,7 +49,7 @@ module.exports = class PairStateExecution {
         }
 
         if (!hasManagedOrder) {
-            this.logger.info('Pair State: Create position open order: ' + JSON.stringify(pair.exchange))
+            this.logger.info('Pair State: Create position open order: ' + JSON.stringify([pair.exchange, pair.symbol, side, pair.options]))
 
             let order = await this.executeOrder(
                 pair.exchange,

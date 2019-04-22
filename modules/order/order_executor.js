@@ -45,7 +45,7 @@ module.exports = class OrderExecutor {
             // order not known by exchange cleanup
             let lastExchangeOrder = await exchange.findOrderById(orderContainer.id);
             if (!lastExchangeOrder || lastExchangeOrder.status !== 'open') {
-                this.logger.info('OrderAdjust: Unknown order cleanup: ' + JSON.stringify([orderContainer.exchangeOrder.id]))
+                this.logger.info('OrderAdjust: Unknown order cleanup: ' + JSON.stringify([orderContainer.exchangeOrder.id, orderContainer.exchange, orderContainer.symbol]))
 
                 // async issues? we are faster then exchange; even in high load: implement a global order management
                 // and filter out executed order (eg LIMIT order process)
@@ -217,8 +217,8 @@ module.exports = class OrderExecutor {
             return
         }
 
-        this.logger.info('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol, exchangeOrder.symbol]))
-        console.log('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol, exchangeOrder.symbol]))
+        this.logger.info('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol]))
+        console.log('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol]))
 
         this.orders.push({
             'id': exchangeOrder.id,
