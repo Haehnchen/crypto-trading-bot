@@ -33,53 +33,53 @@ module.exports = class OrderExecutor {
             }
         }
 
-        let visitExchangeOrder = async order => {
-            let exchange = this.exchangeManager.get(order.exchange)
+        let visitExchangeOrder = async orderContainer => {
+            let exchange = this.exchangeManager.get(orderContainer.exchange)
             if (!exchange) {
-                console.error('OrderAdjust: Invalid exchange:' + order.exchange)
-                delete this.runningOrders[order.id]
+                console.error('OrderAdjust: Invalid exchange:' + orderContainer.exchange)
+                delete this.runningOrders[orderContainer.id]
 
                 return
             }
 
             // order not known by exchange cleanup
-            let lastExchangeOrder = await exchange.findOrderById(order.id);
+            let lastExchangeOrder = await exchange.findOrderById(orderContainer.id);
             if (!lastExchangeOrder || lastExchangeOrder.status !== 'open') {
-                this.logger.info('OrderAdjust: Unknown order cleanup: ' + JSON.stringify([order.exchangeOrder.id]))
+                this.logger.info('OrderAdjust: Unknown order cleanup: ' + JSON.stringify([orderContainer.exchangeOrder.id]))
 
                 // async issues? we are faster then exchange; even in high load: implement a global order management
                 // and filter out executed order (eg LIMIT order process)
                 this.orders = this.orders.filter(myOrder =>
-                    myOrder.id !== order.id
+                    myOrder.id !== orderContainer.id
                 )
 
-                delete this.runningOrders[order.id]
+                delete this.runningOrders[orderContainer.id]
 
                 return
             }
 
-            if (order.id in this.runningOrders) {
-                this.logger.info('OrderAdjust: already running: ' + JSON.stringify([order.id, order.exchange, order.symbol]))
+            if (orderContainer.id in this.runningOrders) {
+                this.logger.info('OrderAdjust: already running: ' + JSON.stringify([orderContainer.id, orderContainer.exchange, orderContainer.symbol]))
                 return
             }
 
-            this.runningOrders[order.id] = new Date()
+            this.runningOrders[orderContainer.id] = new Date()
 
-            let price = await this.getCurrentPrice(order.exchange, order.order.symbol, order.order.side)
+            let price = await this.getCurrentPrice(orderContainer.exchange, orderContainer.order.symbol, orderContainer.order.side)
             if (!price) {
-                this.logger.info('OrderAdjust: No up to date ticker price found: ' + JSON.stringify([order.exchange, order.order.symbol, order.order.side]))
+                this.logger.info('OrderAdjust: No up to date ticker price found: ' + JSON.stringify([orderContainer.exchange, orderContainer.order.symbol, orderContainer.order.side]))
 
-                delete this.runningOrders[order.id]
+                delete this.runningOrders[orderContainer.id]
 
                 return
             }
 
-            let orderUpdate = Order.createPriceUpdateOrder(order.exchangeOrder.id, price)
+            let orderUpdate = Order.createPriceUpdateOrder(orderContainer.exchangeOrder.id, price)
 
             // normalize prices for positions compare; we can have negative prices depending on "side"
             if (Math.abs(lastExchangeOrder.price) === Math.abs(price)) {
-                this.logger.info('OrderAdjust: No price update needed:' + JSON.stringify([lastExchangeOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), order.exchange, order.symbol]))
-                delete this.runningOrders[order.id]
+                this.logger.info('OrderAdjust: No price update needed:' + JSON.stringify([lastExchangeOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), orderContainer.exchange, orderContainer.order.symbol]))
+                delete this.runningOrders[orderContainer.id]
 
                 return
             }
@@ -88,22 +88,22 @@ module.exports = class OrderExecutor {
                 let updatedOrder = await exchange.updateOrder(orderUpdate.id, orderUpdate)
 
                 if (updatedOrder.status === 'open') {
-                    this.logger.info('OrderAdjust: Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), order.exchange, order.symbol]))
+                    this.logger.info('OrderAdjust: Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), orderContainer.exchange, orderContainer.order.symbol]))
                 } else if(updatedOrder.status === 'canceled' && updatedOrder.retry === true) {
                     // we update the price outside the orderbook price range on PostOnly we will cancel the order directly
-                    this.logger.error('OrderAdjust: Updated order canceled recreate: ' + JSON.stringify(order))
+                    this.logger.error('OrderAdjust: Updated order canceled recreate: ' + JSON.stringify(orderContainer))
 
                     // recreate order
                     // @TODO: resync used balance in case on order is partially filled
-                    await this.executeOrder(order.exchange, Order.createRetryOrder(order.order))
+                    await this.executeOrder(orderContainer.exchange, Order.createRetryOrder(orderContainer.order))
                 } else {
-                    this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify(order))
+                    this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify(orderContainer))
                 }
             } catch(err) {
-                this.logger.error('OrderAdjust: adjusted failed: ' + JSON.stringify([String(err), order, orderUpdate]))
+                this.logger.error('OrderAdjust: adjusted failed: ' + JSON.stringify([String(err), orderContainer, orderUpdate]))
             }
 
-            delete this.runningOrders[order.id]
+            delete this.runningOrders[orderContainer.id]
         }
 
         return Promise.all(orders.map(order => {
