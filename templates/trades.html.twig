@@ -72,6 +72,7 @@
                 <th scope="col">UpdatedAt</th>
                 <th scope="col">Status</th>
                 <th scope="col">Side</th>
+                <th scope="col">Action</th>
             </tr>
 
             </thead>
@@ -95,6 +96,9 @@
                         {% elseif order.order.side == 'sell' %}
                             <i class="fas fa-chevron-circle-down text-danger"></i>
                         {% endif %}
+                    </td>
+                    <td>
+                        <a title="cancel" href="/order/{{ order.exchange }}/{{ order.order.id }}"><i class="fas fa-window-close text-dark"></i></a>
                     </td>
                 </tr>
             {% endfor %}

@@ -380,7 +380,7 @@ module.exports = class Bitfinex {
     findOrderById(id) {
         return new Promise(async resolve => {
             resolve((await this.getOrders()).find(order =>
-                order.id === id
+                order.id === id || order.id == id
             ))
         })
     }

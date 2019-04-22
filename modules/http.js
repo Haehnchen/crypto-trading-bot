@@ -160,6 +160,17 @@ module.exports = class Http {
         })
 
         let exchangeManager = this.exchangeManager
+        app.get('/order/:exchange/:id', async (req, res) => {
+            let exchangeName = req.params.exchange
+            let id = req.params.id
+
+            let exchange = exchangeManager.get(exchangeName)
+
+            await exchange.cancelOrder(id)
+
+            res.redirect('/trades')
+        })
+
         app.get('/trades', async (req, res) => {
             let positions = []
             let orders = []
