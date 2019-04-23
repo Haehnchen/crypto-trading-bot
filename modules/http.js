@@ -179,11 +179,22 @@ module.exports = class Http {
             for (let key in exchanges) {
                 let exchange = exchanges[key]
 
+                let exchangeName = exchange.getName();
+
                 let myPositions = await exchange.getPositions()
                 myPositions.forEach(position => {
+                    // simply converting of asset to currency value
+                    let currencyValue
+                    if (exchangeName.includes('bitmex') && ['XBTUSD', 'ETHUSD'].includes(position.symbol)) {
+                        currencyValue = Math.abs(position.amount)
+                    } else if(position.amount && position.entry) {
+                        currencyValue = position.entry * Math.abs(position.amount)
+                    }
+
                     positions.push({
-                        'exchange': exchange.getName(),
+                        'exchange': exchangeName,
                         'position': position,
+                        'currency': currencyValue
                     })
                 })
 
