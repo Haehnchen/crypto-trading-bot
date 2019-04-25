@@ -1,5 +1,5 @@
-./conf.json
-./instance.js
-./idea
-./node_modules
-./var/
+/conf.json
+/instance.js
+.idea
+node_modules/
+/var/
