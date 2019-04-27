@@ -18,7 +18,7 @@
                 <th scope="col">UpdatedAt</th>
                 <th scope="col">CreatedAt</th>
                 <th scope="col">Side</th>
-                <th scope="col"></th>
+                <th scope="col">Action</th>
             </tr>
 
             </thead>
@@ -48,9 +48,9 @@
                             <i class="fas fa-chevron-circle-up text-success"></i>
                         {% endif %}
                     </td>
-                    <td style="white-space: nowrap">
-                        <form action="/pairs/{{ position.exchange }}-{{ position.position.symbol }}" method="post">
-                            <button name="action" value="close" data-toggle="tooltip" title="Limit Close" class="btn btn-link"><i class="fas fa-window-close text-dark"></i></button>
+                    <td style="white-space: nowrap;padding: 0;">
+                        <form style="margin: 5px;" action="/pairs/{{ position.exchange }}-{{ position.position.symbol }}" method="post">
+                            <button style="padding: 0;" name="action" value="close" data-toggle="tooltip" title="Limit Close" class="btn btn-link"><i class="fas fa-window-close text-dark"></i></button>
                         </form>
                     </td>
                 </tr>
