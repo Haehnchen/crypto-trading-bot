@@ -1,41 +1,45 @@
 {% extends './layout.html.twig' %}
 
 {% block content %}
-    <div class="container">
-        <table class="table">
-            <thead>
-            <tr>
-                <th scope="col">Exchange</th>
-                <th scope="col">Symbol</th>
-                <th scope="col">Side</th>
-                <th scope="col">Strategy</th>
-                <th scope="col">Time</th>
-                <th scope="col">State</th>
-                <th scope="col">Options</th>
-            </tr>
-
-            </thead>
-            <tbody>
-            {% for signal in signals %}
+    <div class="container-fluid">
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm table-hover">
+                <thead>
                 <tr>
-                    <td>{{ signal.exchange }}</td>
-                    <td>{{ signal.symbol }}</td>
-                    <td>
-                        {% if signal.side == 'long' %}
-                            <i class="fas fa-chevron-circle-up text-success"></i>
-                        {% elseif signal.side == 'short' %}
-                            <i class="fas fa-chevron-circle-down text-danger"></i>
-                        {% elseif signal.side == 'close' %}
-                            <i class="fa fa-times" aria-hidden="true"></i>
-                        {% endif %}
-                    </td>
-                    <td>{{ signal.strategy }}</td>
-                    <td>{{ signal.income_at|date('d.m.y H:i') }}</td>
-                    <td>{{ signal.state }}</td>
-                    <td class="text-muted">{{ signal.options }}</td>
+                    <th scope="col">Exchange</th>
+                    <th scope="col">Symbol</th>
+                    <th scope="col">Side</th>
+                    <th scope="col">Strategy</th>
+                    <th scope="col">Time</th>
+                    <th scope="col">State</th>
+                    <th scope="col">Options</th>
                 </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+
+                </thead>
+                <tbody>
+                {% for signal in signals %}
+                    <tr>
+                        <td>{{ signal.exchange }}</td>
+                        <td>{{ signal.symbol }}</td>
+                        <td>
+                            {% if signal.side == 'long' %}
+                                <i class="fas fa-chevron-circle-up text-success"></i>
+                            {% elseif signal.side == 'short' %}
+                                <i class="fas fa-chevron-circle-down text-danger"></i>
+                            {% elseif signal.side == 'close' %}
+                                <i class="fa fa-times" aria-hidden="true"></i>
+                            {% endif %}
+                        </td>
+                        <td>{{ signal.strategy }}</td>
+                        <td>{{ signal.income_at|date('d.m.y H:i') }}</td>
+                        <td>{{ signal.state }}</td>
+                        <td class="text-muted">
+                            <span style="word-break: break-all">{{ signal.options }}</span>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 {% endblock %}

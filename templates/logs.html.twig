@@ -1,7 +1,7 @@
 {% extends './layout.html.twig' %}
 
 {% block content %}
-    <div class="container">
+    <div class="container-fluid">
 
         <strong>Filters</strong>
         <form method="get">
@@ -19,31 +19,33 @@
             </ul>
         </form>
 
-        <table class="table">
-            <thead>
-            <tr>
-                <th scope="col">Level</th>
-                <th scope="col">Message</th>
-                <th scope="col">CreatedAt</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for log in logs %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm table-hover">
+                <thead>
                 <tr>
-                    <td>
-                        {% if log.level == 'debug' %}
-                            <span class="text-muted">{{ log.level }}</span>
-                        {% elseif log.level == 'info' %}
-                            <span class="text-info">{{ log.level }}</span>
-                        {% elseif log.level == 'error' %}
-                            <span class="text-danger"><strong>{{ log.level }}</strong></span>
-                        {% endif %}
-                    </td>
-                    <td style="word-break: break-all;">{{ log.message|escape('html') }}</td>
-                    <td style="white-space: nowrap">{{ log.created_at|date('y-m-d H:i:s') }}</td>
+                    <th scope="col">Level</th>
+                    <th scope="col">Message</th>
+                    <th scope="col">CreatedAt</th>
                 </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                {% for log in logs %}
+                    <tr>
+                        <td>
+                            {% if log.level == 'debug' %}
+                                <span class="text-muted">{{ log.level }}</span>
+                            {% elseif log.level == 'info' %}
+                                <span class="text-info">{{ log.level }}</span>
+                            {% elseif log.level == 'error' %}
+                                <span class="text-danger"><strong>{{ log.level }}</strong></span>
+                            {% endif %}
+                        </td>
+                        <td style="word-break: break-all;">{{ log.message|escape('html') }}</td>
+                        <td style="white-space: nowrap">{{ log.created_at|date('y-m-d H:i:s') }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 {% endblock %}

@@ -1,5 +1,6 @@
+/node_modules/
+.idea/
+.vscode/
 /conf.json
 /instance.js
-.idea
-node_modules/
-/var/
+/bot.db
