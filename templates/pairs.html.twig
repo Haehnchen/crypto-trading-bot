@@ -1,61 +1,62 @@
 {% extends './layout.html.twig' %}
 
 {% block content %}
-    <div class="container">
-        <table class="table">
-            <thead>
-            <tr>
-                <th scope="col">Exchange</th>
-                <th scope="col">Symbol</th>
-                <th scope="col">State</th>
-                <th scope="col">Capital</th>
-                <th scope="col">Strategies</th>
-                <th scope="col">Options</th>
-                <th scope="col">Process</th>
-                <th scope="col">Limit</th>
-            </tr>
-
-            </thead>
-            <tbody>
-            {% for pair in pairs %}
+    <div class="container-fluid">
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm table-hover">
+                <thead>
                 <tr>
-                    <td style="white-space: nowrap">{{ pair.exchange }}</td>
-                    <td style="white-space: nowrap">{{ pair.symbol }}</td>
-                    <td>{{ pair.state }}</td>
-                    <td><strong>{{ pair.capital }}</strong></td>
-                    <td class="text-muted" style="word-break: break-all;">{{ pair.strategies|json_encode }}</td>
-                    <td class="text-muted" style="word-break: break-all;">
-                        {% if pair.watchdogs %}
-                            {{ pair.watchdogs|json_encode }}
-                        {% endif %}
-                    </td>
-                    <td style="white-space: nowrap">{{ pair.process }}</td>
-                    <td class="text-right"  style="white-space: nowrap">
-                        <form action="/pairs/{{ pair.exchange }}-{{ pair.symbol }}" method="post" style="margin:0; padding:0">
-                            <div class="btn-group btn-group-sm">
-                                {% if pair.has_position|default(false) == false and not pair.process %}
-                                    <button name="action" value="long" data-toggle="tooltip" title="Limit Long" class="btn btn-success btn-sm"><i class="fas fa-cart-plus"></i> Long</button>
-                                    <button name="action" value="short" data-toggle="tooltip" title="Limit Short" class="btn btn-danger btn-sm"><i class="fas fa-shopping-cart"></i> Short</button>
-
-
-                                    <button name="action" value="long_market" data-toggle="tooltip" title="Market Long" class="btn btn-success btn-sm"><i class="fas fa-cart-plus"></i></button>
-                                    <button name="action" value="short_market" data-toggle="tooltip" title="Market Short" class="btn btn-danger btn-sm"><i class="fas fa-shopping-cart"></i></button>
-                                {% endif %}
-
-                                {% if pair.has_position|default(false) and not pair.process %}
-                                    <button name="action" value="close" data-toggle="tooltip" title="Limit Close" class="btn btn-dark btn-sm"><i class="fas fa-window-close"></i> Close</button>
-                                    <button name="action" value="close_market" data-toggle="tooltip" title="Market Close" class="btn btn-dark btn-sm"><i class="fas fa-window-close"></i></button>
-                                {% endif %}
-
-                                {% if pair.process|default %}
-                                    <button name="action" value="cancel" data-toggle="tooltip" title="close" class="btn btn-primary btn-sm"><i class="fas fa-trash"></i> Cancel</button>
-                                {% endif %}
-                            </div>
-                        </form>
-                    </td>
+                    <th scope="col">Exchange</th>
+                    <th scope="col">Symbol</th>
+                    <th scope="col">State</th>
+                    <th scope="col">Capital</th>
+                    <th scope="col">Strategies</th>
+                    <th scope="col">Options</th>
+                    <th scope="col">Process</th>
+                    <th scope="col">Limit</th>
                 </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+
+                </thead>
+                <tbody>
+                {% for pair in pairs %}
+                    <tr>
+                        <td style="white-space: nowrap">{{ pair.exchange }}</td>
+                        <td style="white-space: nowrap">{{ pair.symbol }}</td>
+                        <td>{{ pair.state }}</td>
+                        <td><strong>{{ pair.capital }}</strong></td>
+                        <td class="text-muted" style="word-break: break-all;">{{ pair.strategies|json_encode }}</td>
+                        <td class="text-muted" style="word-break: break-all;">
+                            {% if pair.watchdogs %}
+                                {{ pair.watchdogs|json_encode }}
+                            {% endif %}
+                        </td>
+                        <td style="white-space: nowrap">{{ pair.process }}</td>
+                        <td class="text-right"  style="white-space: nowrap">
+                            <form action="/pairs/{{ pair.exchange }}-{{ pair.symbol }}" method="post" style="margin:0; padding:0">
+                                <div class="btn-group btn-group-sm">
+                                    {% if pair.has_position|default(false) == false and not pair.process %}
+                                        <button name="action" value="long" data-toggle="tooltip" title="Limit Long" class="btn btn-success btn-sm"><i class="fas fa-cart-plus"></i> Long</button>
+                                        <button name="action" value="short" data-toggle="tooltip" title="Limit Short" class="btn btn-danger btn-sm"><i class="fas fa-shopping-cart"></i> Short</button>
+
+
+                                        <button name="action" value="long_market" data-toggle="tooltip" title="Market Long" class="btn btn-success btn-sm"><i class="fas fa-cart-plus"></i></button>
+                                        <button name="action" value="short_market" data-toggle="tooltip" title="Market Short" class="btn btn-danger btn-sm"><i class="fas fa-shopping-cart"></i></button>
+                                    {% endif %}
+
+                                    {% if pair.has_position|default(false) and not pair.process %}
+                                        <button name="action" value="close" data-toggle="tooltip" title="Limit Close" class="btn btn-dark btn-sm"><i class="fas fa-window-close"></i> Close</button>
+                                    {% endif %}
+
+                                    {% if pair.process|default %}
+                                        <button name="action" value="cancel" data-toggle="tooltip" title="close" class="btn btn-primary btn-sm"><i class="fas fa-trash"></i> Cancel</button>
+                                    {% endif %}
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 {% endblock %}
