@@ -166,7 +166,11 @@ module.exports = class Http {
 
             let exchange = exchangeManager.get(exchangeName)
 
-            await exchange.cancelOrder(id)
+            try {
+                await exchange.cancelOrder(id)
+            } catch (e) {
+                console.log('Cancel order error: ' + JSON.stringify([exchangeName, id]))
+            }
 
             res.redirect('/trades')
         })
