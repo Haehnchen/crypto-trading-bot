@@ -131,7 +131,7 @@
                 {% if ta.mfi.value >= 80 %}text-danger{% endif %}
                 {% if ta.mfi.value > 20 and ta.rsi.value < 80 %}text-warning{% endif %}
             ">{{ ta.mfi.value|round(2) }}</td>
-                            <td class="
+                            <td style="white-space: nowrap" class="
                 {% if ta.bollinger_bands.percent >= 95 or ta.bollinger_bands.percent <= 5 %}font-weight-bold {% endif %}
                 {% if ta.bollinger_bands.percent <= 5 %}text-success{% endif %}
                 {% if ta.bollinger_bands.percent >= 95 %}text-danger{% endif %}

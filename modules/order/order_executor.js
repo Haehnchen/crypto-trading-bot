@@ -217,7 +217,7 @@ module.exports = class OrderExecutor {
             return
         }
 
-        this.logger.info('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol]))
+        this.logger.info('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol, order, exchangeOrder]))
         console.log('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol]))
 
         this.orders.push({

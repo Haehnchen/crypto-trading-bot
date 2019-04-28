@@ -254,10 +254,16 @@ module.exports = class Bitfinex {
         }
 
         if (order.price) {
-            changes['price'] = String(order.price)
+            changes['price'] = String(Math.abs(order.price))
         }
 
-        let result = await this.client.updateOrder(changes)
+        let result
+        try {
+            result = await this.client.updateOrder(changes)
+        } catch (e) {
+            this.logger.error('Bitfinex: error updating order: ' + JSON.stringify([id, order]))
+            throw e
+        }
 
         let unseralized = Order.unserialize(result)
 

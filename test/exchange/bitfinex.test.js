@@ -327,6 +327,44 @@ describe('#bitfinex exchange implementation', function() {
         assert.equal((await bitfinex.getOrders()).filter(p => p.symbol === 'BTCUSD').length, 0)
     })
 
+    it('test that order is updated', async () => {
+        let fixturesOrders = Bitfinex.createExchangeOrders(createResponse('on-orders.json'))
+
+        let bitfinex = new Bitfinex()
+
+        let myChanges
+        bitfinex.client = {
+            'updateOrder': async changes => {
+                myChanges = changes
+                return fixturesOrders[0]
+            },
+        }
+
+        let exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createPriceUpdateOrder(121212, 12))
+
+        assert.strictEqual(exchangeOrder.symbol, 'BCHBTC')
+        assert.deepStrictEqual(myChanges, {'id': 12345, 'price': '12'})
+    })
+
+    it('test that order is updated for short must give positive price', async () => {
+        let fixturesOrders = Bitfinex.createExchangeOrders(createResponse('on-orders.json'))
+
+        let bitfinex = new Bitfinex()
+
+        let myChanges
+        bitfinex.client = {
+            'updateOrder': async changes => {
+                myChanges = changes
+                return fixturesOrders[0]
+            },
+        }
+
+        let exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createPriceUpdateOrder(121212, -12))
+
+        assert.strictEqual(exchangeOrder.symbol, 'BCHBTC')
+        assert.deepStrictEqual(myChanges, {'id': 12345, 'price': '12'})
+    })
+
     let createResponse = function(filename) {
         return JSON.parse(fs.readFileSync(__dirname + '/bitfinex/' + filename, 'utf8'));
     }
