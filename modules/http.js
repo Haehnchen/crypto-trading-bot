@@ -63,7 +63,7 @@ module.exports = class Http {
             app.use((request, response, next) => {
                 let user = auth(request);
 
-                if (!user || (user.name !== username && user.pass !== password)) {
+                if (!user || !(user.name === username && user.pass === password)) {
                     response.set('WWW-Authenticate', 'Basic realm="Please Login"');
                     return response.status(401).send();
                 }
