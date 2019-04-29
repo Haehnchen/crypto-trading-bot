@@ -232,4 +232,4 @@ module.exports = class Http {
 
         console.log('Webserver listening on: ' + ip + ':' + port)
     }
-}
+};
