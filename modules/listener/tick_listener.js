@@ -1,47 +1,47 @@
 'use strict';
 
-const moment = require('moment')
-const StrategyContext = require('../../dict/strategy_context')
-let _ = require('lodash')
-const PQueue = require('p-queue')
+const moment = require('moment');
+const StrategyContext = require('../../dict/strategy_context');
+let _ = require('lodash');
+const PQueue = require('p-queue');
 
 module.exports = class TickListener {
     constructor(tickers, instances, notifier, signalLogger, strategyManager, exchangeManager, pairStateManager, logger, systemUtil) {
-        this.tickers = tickers
-        this.instances = instances
-        this.notifier = notifier
-        this.signalLogger = signalLogger
-        this.strategyManager = strategyManager
-        this.exchangeManager = exchangeManager
-        this.pairStateManager = pairStateManager
-        this.logger = logger
-        this.systemUtil = systemUtil
+        this.tickers = tickers;
+        this.instances = instances;
+        this.notifier = notifier;
+        this.signalLogger = signalLogger;
+        this.strategyManager = strategyManager;
+        this.exchangeManager = exchangeManager;
+        this.pairStateManager = pairStateManager;
+        this.logger = logger;
+        this.systemUtil = systemUtil;
 
         this.notified = {}
     }
 
     async visitStrategy(strategy, symbol) {
-        let ticker = this.tickers.get(symbol.exchange, symbol.symbol)
+        let ticker = this.tickers.get(symbol.exchange, symbol.symbol);
 
         if (!ticker) {
-            console.error('Ticker no found for + ' + symbol.exchange + symbol.symbol)
+            console.error('Ticker no found for + ' + symbol.exchange + symbol.symbol);
             return
         }
 
-        let strategyKey = strategy.strategy
+        let strategyKey = strategy.strategy;
 
-        let context = StrategyContext.create(ticker)
-        let position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol)
+        let context = StrategyContext.create(ticker);
+        let position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
         if (position) {
             context = StrategyContext.createFromPosition(ticker, position)
         }
 
-        let result = await this.strategyManager.executeStrategy(strategyKey, context, symbol.exchange, symbol.symbol, strategy['options'] || {})
+        let result = await this.strategyManager.executeStrategy(strategyKey, context, symbol.exchange, symbol.symbol, strategy['options'] || {});
         if (!result) {
             return
         }
 
-        let signal = result.getSignal()
+        let signal = result.getSignal();
         if (!signal || typeof signal === 'undefined') {
             return
         }
@@ -55,85 +55,99 @@ module.exports = class TickListener {
         if (this.notified[symbol.exchange + symbol.symbol + strategyKey] && signalWindow <= this.notified[symbol.exchange + symbol.symbol + strategyKey]) {
             // console.log('blocked')
         } else {
-            this.notified[symbol.exchange + symbol.symbol + strategyKey] = new Date()
-            this.notifier.send('[' + signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
+            this.notified[symbol.exchange + symbol.symbol + strategyKey] = new Date();
+            this.notifier.send('[' + signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask);
 
             // log signal
-            this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyKey, 'raw': JSON.stringify(result)}, signal, strategyKey)
+            this.signalLogger.signal(symbol.exchange, symbol.symbol, {
+                'price': ticker.ask,
+                'strategy': strategyKey,
+                'raw': JSON.stringify(result)
+            }, signal, strategyKey)
         }
     }
 
     async visitTradeStrategy(strategy, symbol) {
-        let ticker = this.tickers.get(symbol.exchange, symbol.symbol)
+        let ticker = this.tickers.get(symbol.exchange, symbol.symbol);
 
         if (!ticker) {
-            console.error('Ticker no found for + ' + symbol.exchange + symbol.symbol)
+            console.error('Ticker no found for + ' + symbol.exchange + symbol.symbol);
             return
         }
 
-        let strategyKey = strategy.strategy
+        let strategyKey = strategy.strategy;
 
-        let context = StrategyContext.create(ticker)
-        let position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol)
+        let context = StrategyContext.create(ticker);
+        let position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
         if (position) {
             context = StrategyContext.createFromPosition(ticker, position)
         }
 
-        let result = await this.strategyManager.executeStrategy(strategyKey, context, symbol.exchange, symbol.symbol, strategy['options'] || {})
+        let result = await this.strategyManager.executeStrategy(strategyKey, context, symbol.exchange, symbol.symbol, strategy['options'] || {});
         if (!result) {
             return
         }
 
-        let signal = result.getSignal()
+        let signal = result.getSignal();
         if (!signal || typeof signal === 'undefined') {
             return
         }
-        
+
         if (!['close', 'short', 'long'].includes(signal)) {
             throw 'Invalid signal: ' + JSON.stringify(signal, strategy)
         }
 
         let signalWindow = moment().subtract(_.get(symbol, 'trade.signal_slowdown_minutes', 15), 'minutes').toDate();
 
-        let noteKey = symbol.exchange + symbol.symbol
+        let noteKey = symbol.exchange + symbol.symbol;
         if (noteKey in this.notified && this.notified[noteKey] >= signalWindow) {
             return
         }
 
         // log signal
-        this.logger.info([new Date().toISOString(), signal, strategyKey, symbol.exchange, symbol.symbol, ticker.ask].join(' '))
-        this.notifier.send('[' + signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask)
-        this.signalLogger.signal(symbol.exchange, symbol.symbol, {'price': ticker.ask, 'strategy': strategyKey, 'raw': JSON.stringify(result)}, signal, strategyKey)
-        this.notified[noteKey] = new Date()
+        this.logger.info([new Date().toISOString(), signal, strategyKey, symbol.exchange, symbol.symbol, ticker.ask].join(' '));
+        this.notifier.send('[' + signal + ' (' + strategyKey + ')' + '] ' + symbol.exchange + ':' + symbol.symbol + ' - ' + ticker.ask);
+        this.signalLogger.signal(symbol.exchange, symbol.symbol, {
+            'price': ticker.ask,
+            'strategy': strategyKey,
+            'raw': JSON.stringify(result)
+        }, signal, strategyKey);
+        this.notified[noteKey] = new Date();
 
         await this.pairStateManager.update(symbol.exchange, symbol.symbol, signal)
     }
 
     async onTick() {
-        let promises = []
+        let promises = [];
 
         const queue = new PQueue({concurrency: this.systemUtil.getConfig('tick.pair_signal_concurrency', 10)});
 
         this.instances.symbols
             .filter(symbol => symbol.trade && symbol.trade.strategies && symbol.trade.strategies.length > 0)
             .forEach(symbol => {
-                symbol.trade.strategies.forEach(strategy => {
-                        promises.push(async () => { await this.visitTradeStrategy(strategy, symbol)})
-                    }
-                )}
-            )
+                    symbol.trade.strategies.forEach(strategy => {
+                            promises.push(async () => {
+                                await this.visitTradeStrategy(strategy, symbol)
+                            })
+                        }
+                    )
+                }
+            );
 
         this.instances.symbols
             .filter((symbol) => symbol.strategies && symbol.strategies.length > 0)
             .forEach(symbol => {
-                symbol.strategies.forEach(strategy => {
-                        promises.push(async () => { await this.visitStrategy(strategy, symbol)})
-                    }
-                )}
-            )
+                    symbol.strategies.forEach(strategy => {
+                            promises.push(async () => {
+                                await this.visitStrategy(strategy, symbol)
+                            })
+                        }
+                    )
+                }
+            );
 
-        await queue.addAll(promises)
+        await queue.addAll(promises);
 
         queue.clear()
     }
-}
+};
