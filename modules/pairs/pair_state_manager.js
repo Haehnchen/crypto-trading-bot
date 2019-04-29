@@ -2,13 +2,13 @@
 
 module.exports = class PairStateManager {
     constructor(logger) {
-        this.logger = logger
+        this.logger = logger;
         this.stats = {}
     }
 
     update(exchange, symbol, state, options = {}) {
         if (!['long', 'close', 'short', 'cancel'].includes(state)) {
-            this.logger.error('Invalidate state: ' + state)
+            this.logger.error('Invalidate state: ' + state);
             throw 'Invalidate state: ' + state
         }
 
@@ -18,12 +18,12 @@ module.exports = class PairStateManager {
             'time': new Date(),
             'symbol': symbol,
             'exchange': exchange,
-        }
+        };
 
         this.logger.info('Pair state changed: ' + JSON.stringify({
             'new': vars,
             'old': this.stats[exchange + symbol] || {},
-        }))
+        }));
 
         this.stats[exchange + symbol] = vars
     }
@@ -37,7 +37,7 @@ module.exports = class PairStateManager {
     }
 
     all() {
-        let stats = []
+        let stats = [];
 
         for (let key in this.stats) {
             stats.push(this.stats[key])
@@ -55,7 +55,7 @@ module.exports = class PairStateManager {
     }
 
     getSellingPairs() {
-        let pairs = []
+        let pairs = [];
 
         for (let key in this.stats) {
             if (this.stats[key].state === 'short') {
@@ -67,7 +67,7 @@ module.exports = class PairStateManager {
     }
 
     getBuyingPairs() {
-        let pairs = []
+        let pairs = [];
 
         for (let key in this.stats) {
             if (this.stats[key].state === 'long') {
@@ -79,7 +79,7 @@ module.exports = class PairStateManager {
     }
 
     getClosingPairs() {
-        let pairs = []
+        let pairs = [];
 
         for (let key in this.stats) {
             if (this.stats[key].state === 'close') {
@@ -91,7 +91,7 @@ module.exports = class PairStateManager {
     }
 
     getCancelPairs() {
-        let pairs = []
+        let pairs = [];
 
         for (let key in this.stats) {
             if (this.stats[key].state === 'cancel') {
@@ -105,4 +105,4 @@ module.exports = class PairStateManager {
     isNeutral(exchange, symbol) {
         return !((exchange + symbol) in this.stats)
     }
-}
+};
