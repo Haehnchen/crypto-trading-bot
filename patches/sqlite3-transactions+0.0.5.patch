@@ -1,0 +1,9 @@
+patch-package
+--- a/node_modules/sqlite3-transactions/sqlite3-transactions.js
++++ b/node_modules/sqlite3-transactions/sqlite3-transactions.js
+@@ -1,4 +1,4 @@
+-var sys = require('sys'),
++var sys = require('util'),
+     events = require('events'),
+     _ = require("underscore");
+ 
