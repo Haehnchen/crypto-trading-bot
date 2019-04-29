@@ -1,5 +1,16 @@
 {% extends './layout.html.twig' %}
 
+{% block head %}
+    <style>
+        /* Medium devices (tablets, 768px and up) */
+        @media (min-width: 768px) {
+            .span-md {
+                word-break: break-all;
+            }
+        }
+    </style>
+{% endblock head %}
+
 {% block content %}
     <div class="container-fluid">
         <div class="table-responsive">
@@ -33,9 +44,7 @@
                         <td>{{ signal.strategy }}</td>
                         <td>{{ signal.income_at|date('d.m.y H:i') }}</td>
                         <td>{{ signal.state }}</td>
-                        <td class="text-muted">
-                            <span style="word-break: break-all">{{ signal.options }}</span>
-                        </td>
+                        <td class="text-muted"><span class="span-md">{{ signal.options }}</span></td>
                     </tr>
                 {% endfor %}
                 </tbody>
