@@ -1,6 +1,7 @@
 'use strict';
 
 let Order = require('./../../dict/order')
+let moment = require('moment');
 
 /**
  * Provide a layer to trigger order states into "buy", "sell", "close", "cancel"
