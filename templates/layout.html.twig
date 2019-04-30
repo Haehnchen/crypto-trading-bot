@@ -14,11 +14,23 @@
     <style>
         body {
             font-size: 0.8em;
+            padding-top: 70px;
+        }
+
+        nav {
+            font-size: initial;
         }
 
         .table td,
         .table th {
             padding: .5rem;
+        }
+
+        /* Medium devices (tablets, 768px and up) */
+        @media (min-width: 768px) {
+            .span-md {
+                word-break: break-all;
+            }
         }
     </style>
 
@@ -27,8 +39,8 @@
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="#">Crypto-Bot</a>
+<nav class="navbar fixed-top navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="{{ '/' }}">Crypto-Bot</a>
 
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -37,25 +49,25 @@
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mr-auto">
             <li class="nav-item">
-                <a class="nav-link" href="/">Dashboard</a>
+                <a class="nav-link" href="{{ '/' }}">Dashboard</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/signals">Signals</a>
+                <a class="nav-link" href="{{ '/signals' }}">Signals</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/backtest">Backtest</a>
+                <a class="nav-link" href="{{ '/backtest' }}">Backtest</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/trades">Trades</a>
+                <a class="nav-link" href="{{ '/trades' }}">Trades</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/pairs">Pairs</a>
+                <a class="nav-link" href="{{ '/pairs' }}">Pairs</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/tools/candles">Candle Export</a>
+                <a class="nav-link" href="{{ '/tools/candles' }}">Candle Export</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/logs">Logs</a>
+                <a class="nav-link" href="{{ '/logs' }}">Logs</a>
             </li>
         </ul>
     </div>
@@ -67,6 +79,18 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Add Active Navigation Class Based on URL to Menu Item
+    $(function () {
+        let path = window.location.href; // because the 'href' property of the DOM element is the absolute path
+        $('#navbarNav ul a').each(function() {
+            if (this.href === path) {
+                $(this).addClass('active');
+            }
+        });
+    })
+</script>
 {% block javascript %}{% endblock javascript %}
 
 </body>

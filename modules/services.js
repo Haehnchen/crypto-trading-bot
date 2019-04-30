@@ -1,7 +1,7 @@
 let sqlite3 = require('sqlite3').verbose();
 let TransactionDatabase = require("sqlite3-transactions").TransactionDatabase;
 let fs = require('fs');
-let events = require('events')
+let events = require('events');
 
 const { createLogger, transports, format } = require('winston');
 
@@ -11,113 +11,113 @@ let Mail = require('../notify/mail');
 
 let Tickers = require('../storage/tickers');
 
-let CandleStickListener = require('../modules/listener/candle_stick_listener')
-let TickListener = require('../modules/listener/tick_listener')
-let CreateOrderListener = require('../modules/listener/create_order_listener')
-let CandleStickLogListener = require('../modules/listener/candle_stick_log_listener')
-let TickerDatabaseListener = require('../modules/listener/ticker_database_listener')
-let TickerLogListener = require('../modules/listener/ticker_log_listener')
-let ExchangeOrderWatchdogListener = require('../modules/listener/exchange_order_watchdog_listener')
+let CandleStickListener = require('../modules/listener/candle_stick_listener');
+let TickListener = require('../modules/listener/tick_listener');
+let CreateOrderListener = require('../modules/listener/create_order_listener');
+let CandleStickLogListener = require('../modules/listener/candle_stick_log_listener');
+let TickerDatabaseListener = require('../modules/listener/ticker_database_listener');
+let TickerLogListener = require('../modules/listener/ticker_log_listener');
+let ExchangeOrderWatchdogListener = require('../modules/listener/exchange_order_watchdog_listener');
 
-let SignalLogger = require('../modules/signal/signal_logger')
-let SignalHttp = require('../modules/signal/signal_http')
-let SignalListener = require('../modules/signal/signal_listener')
+let SignalLogger = require('../modules/signal/signal_logger');
+let SignalHttp = require('../modules/signal/signal_http');
+let SignalListener = require('../modules/signal/signal_listener');
 
-let SignalRepository = require('../modules/repository/signal_repository')
-let CandlestickRepository = require('../modules/repository/candlestick_repository')
-let StrategyManager = require('./strategy/strategy_manager')
-let ExchangeManager = require('./exchange/exchange_manager')
+let SignalRepository = require('../modules/repository/signal_repository');
+let CandlestickRepository = require('../modules/repository/candlestick_repository');
+let StrategyManager = require('./strategy/strategy_manager');
+let ExchangeManager = require('./exchange/exchange_manager');
 
-let Trade = require('../modules/trade')
-let Http = require('../modules/http')
-let Backtest = require('../modules/backtest')
-let Backfill = require('../modules/backfill')
+let Trade = require('../modules/trade');
+let Http = require('../modules/http');
+let Backtest = require('../modules/backtest');
+let Backfill = require('../modules/backfill');
 
-let StopLossCalculator = require('../modules/order/stop_loss_calculator')
-let RiskRewardRatioCalculator = require('../modules/order/risk_reward_ratio_calculator')
-let PairsHttp = require('../modules/pairs/pairs_http')
-let OrderExecutor = require('../modules/order/order_executor')
-let OrderCalculator = require('../modules/order/order_calculator')
-let PairStateManager = require('../modules/pairs/pair_state_manager')
-let PairStateExecution = require('../modules/pairs/pair_state_execution')
-let SystemUtil = require('../modules/system/system_util')
-let TechnicalAnalysisValidator = require('../utils/technical_analysis_validator')
-let WinstonSqliteTransport = require('../utils/winston_sqlite_transport')
-let LogsHttp = require('./system/logs_http')
-let LogsRepository = require('../modules/repository/logs_repository')
-let TickerLogRepository = require('../modules/repository/ticker_log_repository')
-let CandlestickResample = require('../modules/system/candlestick_resample')
-let RequestClient = require('../utils/request_client')
-let Queue = require('../utils/queue')
+let StopLossCalculator = require('../modules/order/stop_loss_calculator');
+let RiskRewardRatioCalculator = require('../modules/order/risk_reward_ratio_calculator');
+let PairsHttp = require('../modules/pairs/pairs_http');
+let OrderExecutor = require('../modules/order/order_executor');
+let OrderCalculator = require('../modules/order/order_calculator');
+let PairStateManager = require('../modules/pairs/pair_state_manager');
+let PairStateExecution = require('../modules/pairs/pair_state_execution');
+let SystemUtil = require('../modules/system/system_util');
+let TechnicalAnalysisValidator = require('../utils/technical_analysis_validator');
+let WinstonSqliteTransport = require('../utils/winston_sqlite_transport');
+let LogsHttp = require('./system/logs_http');
+let LogsRepository = require('../modules/repository/logs_repository');
+let TickerLogRepository = require('../modules/repository/ticker_log_repository');
+let CandlestickResample = require('../modules/system/candlestick_resample');
+let RequestClient = require('../utils/request_client');
+let Queue = require('../utils/queue');
 
-let Bitmex = require('../exchange/bitmex')
-let BitmexTestnet = require('../exchange/bitmex_testnet')
-let Binance = require('../exchange/binance')
-let Bitfinex = require('../exchange/bitfinex')
-let CoinbasePro = require('../exchange/coinbase_pro')
-let Noop = require('../exchange/noop')
-let ExchangeCandleCombine = require('../modules/exchange/exchange_candle_combine')
-let CandleExportHttp = require('../modules/system/candle_export_http')
-let CandleImporter = require('../modules/system/candle_importer')
+let Bitmex = require('../exchange/bitmex');
+let BitmexTestnet = require('../exchange/bitmex_testnet');
+let Binance = require('../exchange/binance');
+let Bitfinex = require('../exchange/bitfinex');
+let CoinbasePro = require('../exchange/coinbase_pro');
+let Noop = require('../exchange/noop');
+let ExchangeCandleCombine = require('../modules/exchange/exchange_candle_combine');
+let CandleExportHttp = require('../modules/system/candle_export_http');
+let CandleImporter = require('../modules/system/candle_importer');
 
 let _ = require('lodash');
 
-let db = undefined
-let instances = undefined
-let config = undefined
-let ta = undefined
-let eventEmitter = undefined
-let logger = undefined
-let notify = undefined
-let tickers = undefined
-let queue = undefined
+let db = undefined;
+let instances = undefined;
+let config = undefined;
+let ta = undefined;
+let eventEmitter = undefined;
+let logger = undefined;
+let notify = undefined;
+let tickers = undefined;
+let queue = undefined;
 
-let candleStickListener = undefined
-let candleStickImporter = undefined
-let candleStickLogListener = undefined
-let tickerDatabaseListener = undefined
-let tickerLogListener = undefined
-let tickListener = undefined
-let createOrderListener = undefined
-let exchangeOrderWatchdogListener = undefined
+let candleStickListener = undefined;
+let candleStickImporter = undefined;
+let candleStickLogListener = undefined;
+let tickerDatabaseListener = undefined;
+let tickerLogListener = undefined;
+let tickListener = undefined;
+let createOrderListener = undefined;
+let exchangeOrderWatchdogListener = undefined;
 
-let signalLogger = undefined
-let signalHttp = undefined
-let signalListener = undefined
+let signalLogger = undefined;
+let signalHttp = undefined;
+let signalListener = undefined;
 
-let signalRepository = undefined
-let candlestickRepository = undefined
+let signalRepository = undefined;
+let candlestickRepository = undefined;
 
-let exchangeManager = undefined
-let backtest = undefined
-let pairStateManager = undefined
-let pairStateExecution = undefined
+let exchangeManager = undefined;
+let backtest = undefined;
+let pairStateManager = undefined;
+let pairStateExecution = undefined;
 
-let strategyManager = undefined
+let strategyManager = undefined;
 
-let stopLossCalculator = undefined
-let riskRewardRatioCalculator = undefined
-let pairsHttp = undefined
-let orderExecutor = undefined
-let orderCalculator = undefined
-let systemUtil = undefined
-let technicalAnalysisValidator = undefined
-let logsHttp = undefined
-let logsRepository = undefined
-let tickerLogRepository = undefined
-let candlestickResample = undefined
-let exchanges = undefined
-let requestClient = undefined
-let exchangeCandleCombine = undefined
-let candleExportHttp = undefined
+let stopLossCalculator = undefined;
+let riskRewardRatioCalculator = undefined;
+let pairsHttp = undefined;
+let orderExecutor = undefined;
+let orderCalculator = undefined;
+let systemUtil = undefined;
+let technicalAnalysisValidator = undefined;
+let logsHttp = undefined;
+let logsRepository = undefined;
+let tickerLogRepository = undefined;
+let candlestickResample = undefined;
+let exchanges = undefined;
+let requestClient = undefined;
+let exchangeCandleCombine = undefined;
+let candleExportHttp = undefined;
 
 module.exports = {
-    boot: async function() {
+    boot: async function () {
         try {
             instances = require('../instance')
         } catch (e) {
-            throw 'Invalid instance.js file. Please check' + String(e)
-            process.exit()
+            throw 'Invalid instance.js file. Please check' + String(e);
+            process.exit();
             return
         }
 
@@ -129,8 +129,8 @@ module.exports = {
         try {
             config = JSON.parse(fs.readFileSync('./conf.json', 'utf8'))
         } catch (e) {
-            throw 'Invalid conf.json file. Please check: ' + String(e)
-            process.exit()
+            throw 'Invalid conf.json file. Please check: ' + String(e);
+            process.exit();
             return
         }
 
@@ -143,12 +143,12 @@ module.exports = {
         }
 
         let myDb = new TransactionDatabase(new sqlite3.Database('bot.db'));
-        myDb.configure("busyTimeout", 4000)
+        myDb.configure("busyTimeout", 4000);
 
         return db = myDb
     },
 
-    getTa: function() {
+    getTa: function () {
         if (ta) {
             return ta;
         }
@@ -157,7 +157,7 @@ module.exports = {
         return ta = new Ta(this.getDatabase(), this.getInstances())
     },
 
-    getBacktest: function() {
+    getBacktest: function () {
         if (backtest) {
             return backtest;
         }
@@ -169,7 +169,7 @@ module.exports = {
         )
     },
 
-    getStopLossCalculator: function() {
+    getStopLossCalculator: function () {
         if (stopLossCalculator) {
             return stopLossCalculator
         }
@@ -177,7 +177,7 @@ module.exports = {
         return stopLossCalculator = new StopLossCalculator(this.getTickers(), this.getLogger())
     },
 
-    getRiskRewardRatioCalculator: function() {
+    getRiskRewardRatioCalculator: function () {
         if (riskRewardRatioCalculator) {
             return riskRewardRatioCalculator
         }
@@ -185,7 +185,7 @@ module.exports = {
         return riskRewardRatioCalculator = new RiskRewardRatioCalculator(this.getLogger())
     },
 
-    getCandleStickListener: function() {
+    getCandleStickListener: function () {
         if (candleStickListener) {
             return candleStickListener;
         }
@@ -195,7 +195,7 @@ module.exports = {
         )
     },
 
-    getCandleImporter: function() {
+    getCandleImporter: function () {
         if (candleStickImporter) {
             return candleStickImporter;
         }
@@ -205,7 +205,7 @@ module.exports = {
         )
     },
 
-    getCreateOrderListener: function() {
+    getCreateOrderListener: function () {
         if (createOrderListener) {
             return createOrderListener;
         }
@@ -213,7 +213,7 @@ module.exports = {
         return createOrderListener = new CreateOrderListener(this.getExchangeManager(), this.getLogger())
     },
 
-    getTickListener: function() {
+    getTickListener: function () {
         if (tickListener) {
             return tickListener
         }
@@ -231,7 +231,7 @@ module.exports = {
         )
     },
 
-    getExchangeOrderWatchdogListener: function() {
+    getExchangeOrderWatchdogListener: function () {
         if (exchangeOrderWatchdogListener) {
             return exchangeOrderWatchdogListener
         }
@@ -248,7 +248,7 @@ module.exports = {
         )
     },
 
-    getCandleStickLogListener: function() {
+    getCandleStickLogListener: function () {
         if (candleStickLogListener) {
             return candleStickLogListener
         }
@@ -256,7 +256,7 @@ module.exports = {
         return candleStickLogListener = new CandleStickLogListener(this.getDatabase(), this.getLogger())
     },
 
-    getTickerDatabaseListener: function() {
+    getTickerDatabaseListener: function () {
         if (tickerDatabaseListener) {
             return tickerDatabaseListener
         }
@@ -264,7 +264,7 @@ module.exports = {
         return tickerDatabaseListener = new TickerDatabaseListener(this.getDatabase(), this.getLogger())
     },
 
-    getTickerLogListener: function() {
+    getTickerLogListener: function () {
         if (tickerLogListener) {
             return tickerLogListener
         }
@@ -272,7 +272,7 @@ module.exports = {
         return tickerLogListener = new TickerLogListener(this.getDatabase(), this.getLogger())
     },
 
-    getSignalLogger: function() {
+    getSignalLogger: function () {
         if (signalLogger) {
             return signalLogger
         }
@@ -280,7 +280,7 @@ module.exports = {
         return signalLogger = new SignalLogger(this.getDatabase(), this.getLogger())
     },
 
-    getSignalHttp: function() {
+    getSignalHttp: function () {
         if (signalHttp) {
             return signalHttp
         }
@@ -288,7 +288,7 @@ module.exports = {
         return signalHttp = new SignalHttp(this.getDatabase())
     },
 
-    getSignalListener: function() {
+    getSignalListener: function () {
         if (signalListener) {
             return signalListener
         }
@@ -301,7 +301,7 @@ module.exports = {
         )
     },
 
-    getSignalRepository: function() {
+    getSignalRepository: function () {
         if (signalRepository) {
             return signalRepository
         }
@@ -311,7 +311,7 @@ module.exports = {
         )
     },
 
-    getCandlestickRepository: function() {
+    getCandlestickRepository: function () {
         if (candlestickRepository) {
             return candlestickRepository
         }
@@ -321,15 +321,17 @@ module.exports = {
         )
     },
 
-    getEventEmitter: function() {
+    getEventEmitter: function () {
         if (eventEmitter) {
             return eventEmitter;
         }
 
-        return eventEmitter = new events.EventEmitter()
+        eventEmitter = new events.EventEmitter();
+        eventEmitter.setMaxListeners(0); // turn off limits by default
+        return eventEmitter;
     },
 
-    getLogger: function() {
+    getLogger: function () {
         if (logger) {
             return logger;
         }
@@ -356,8 +358,8 @@ module.exports = {
         });
     },
 
-    getNotifier: function() {
-        let notifiers = []
+    getNotifier: function () {
+        let notifiers = [];
 
         let config = this.getConfig();
 
@@ -376,7 +378,7 @@ module.exports = {
         return notify = new Notify(notifiers)
     },
 
-    getTickers: function() {
+    getTickers: function () {
         if (tickers) {
             return tickers;
         }
@@ -384,7 +386,7 @@ module.exports = {
         return tickers = new Tickers()
     },
 
-    getStrategyManager: function() {
+    getStrategyManager: function () {
         if (strategyManager) {
             return strategyManager
         }
@@ -396,7 +398,7 @@ module.exports = {
         )
     },
 
-    createWebserverInstance: function() {
+    createWebserverInstance: function () {
         return new Http(
             this.getSystemUtil(),
             this.getTa(),
@@ -409,13 +411,13 @@ module.exports = {
         )
     },
 
-    createBackfillInstance: function() {
+    createBackfillInstance: function () {
         return new Backfill(
             this.getExchangeManager(),
         )
     },
 
-    getExchangeManager: function() {
+    getExchangeManager: function () {
         if (exchangeManager) {
             return exchangeManager;
         }
@@ -428,7 +430,7 @@ module.exports = {
         )
     },
 
-    getOrderExecutor: function() {
+    getOrderExecutor: function () {
         if (orderExecutor) {
             return orderExecutor;
         }
@@ -441,7 +443,7 @@ module.exports = {
         )
     },
 
-    getOrderCalculator: function() {
+    getOrderCalculator: function () {
         if (orderCalculator) {
             return orderCalculator;
         }
@@ -454,7 +456,7 @@ module.exports = {
         )
     },
 
-    getHttpPairs: function() {
+    getHttpPairs: function () {
         if (pairsHttp) {
             return pairsHttp;
         }
@@ -466,7 +468,7 @@ module.exports = {
         )
     },
 
-    getPairStateManager: function() {
+    getPairStateManager: function () {
         if (pairStateManager) {
             return pairStateManager;
         }
@@ -476,7 +478,7 @@ module.exports = {
         )
     },
 
-    getPairStateExecution: function() {
+    getPairStateExecution: function () {
         if (pairStateExecution) {
             return pairStateExecution
         }
@@ -490,7 +492,7 @@ module.exports = {
         )
     },
 
-    getSystemUtil: function() {
+    getSystemUtil: function () {
         if (systemUtil) {
             return systemUtil;
         }
@@ -500,7 +502,7 @@ module.exports = {
         )
     },
 
-    getTechnicalAnalysisValidator: function() {
+    getTechnicalAnalysisValidator: function () {
         if (technicalAnalysisValidator) {
             return technicalAnalysisValidator;
         }
@@ -508,7 +510,7 @@ module.exports = {
         return technicalAnalysisValidator = new TechnicalAnalysisValidator()
     },
 
-    getLogsRepository: function() {
+    getLogsRepository: function () {
         if (logsRepository) {
             return logsRepository;
         }
@@ -516,7 +518,7 @@ module.exports = {
         return logsRepository = new LogsRepository(this.getDatabase())
     },
 
-    getLogsHttp: function() {
+    getLogsHttp: function () {
         if (logsHttp) {
             return logsHttp;
         }
@@ -524,7 +526,7 @@ module.exports = {
         return logsHttp = new LogsHttp(this.getLogsRepository())
     },
 
-    getTickerLogRepository: function() {
+    getTickerLogRepository: function () {
         if (tickerLogRepository) {
             return tickerLogRepository;
         }
@@ -532,7 +534,7 @@ module.exports = {
         return tickerLogRepository = new TickerLogRepository(this.getDatabase())
     },
 
-    getCandlestickResample: function() {
+    getCandlestickResample: function () {
         if (candlestickResample) {
             return candlestickResample;
         }
@@ -543,7 +545,7 @@ module.exports = {
         )
     },
 
-    getRequestClient: function() {
+    getRequestClient: function () {
         if (requestClient) {
             return requestClient;
         }
@@ -553,7 +555,7 @@ module.exports = {
         )
     },
 
-    getQueue: function() {
+    getQueue: function () {
         if (queue) {
             return queue;
         }
@@ -561,7 +563,7 @@ module.exports = {
         return queue = new Queue()
     },
 
-    getCandleExportHttp: function() {
+    getCandleExportHttp: function () {
         if (candleExportHttp) {
             return candleExportHttp;
         }
@@ -571,7 +573,7 @@ module.exports = {
         )
     },
 
-    getExchangeCandleCombine: function() {
+    getExchangeCandleCombine: function () {
         if (exchangeCandleCombine) {
             return exchangeCandleCombine
         }
@@ -581,7 +583,7 @@ module.exports = {
         )
     },
 
-    getExchanges: function() {
+    getExchanges: function () {
         if (exchanges) {
             return exchanges;
         }
@@ -620,8 +622,8 @@ module.exports = {
         ]
     },
 
-    createTradeInstance: function() {
-        this.getExchangeManager().init()
+    createTradeInstance: function () {
+        this.getExchangeManager().init();
 
         return new Trade(
             this.getEventEmitter(),
@@ -645,20 +647,20 @@ module.exports = {
         )
     },
 
-    getBackfill: function() {
+    getBackfill: function () {
         return new Backfill(
             this.getExchanges(),
             this.getCandleStickListener(),
         )
     },
 
-    createMailer: function() {
-        var mail = require("nodemailer")
+    createMailer: function () {
+        var mail = require("nodemailer");
 
-        let config = this.getConfig()
+        let config = this.getConfig();
 
         return mail.createTransport(
-            'smtps://' + config.notify.mail.username +':' + config.notify.mail.password + '@' + config.notify.mail.server + ':' + (config.notify.mail.password || 465), {
+            'smtps://' + config.notify.mail.username + ':' + config.notify.mail.password + '@' + config.notify.mail.server + ':' + (config.notify.mail.password || 465), {
                 from: config.notify.mail.username
             });
     },
@@ -670,6 +672,4 @@ module.exports = {
     getConfig: () => {
         return config
     }
-}
-
-
+};
