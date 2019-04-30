@@ -2,10 +2,7 @@
   "name": "crypto-trading-bot",
   "version": "0.0.0",
   "author": "Daniel Espendiller",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Haehnchen/crypto-trading-bot.git"
-  },
+  "bugs": "https://github.com/Haehnchen/crypto-trading-bot/issues",
   "contributors": [
     {
       "email": "daniel@espendiller.net",
@@ -56,7 +53,31 @@
   "engines": {
     "node": "^8.3.0 || ^9.0.0"
   },
+  "homepage": "https://github.com/coinbase/coinbase-pro-node",
+  "keywords": [
+    "cryptocurrency",
+    "crypto",
+    "exchange",
+    "trading",
+    "trading-bot",
+    "trading-strategies",
+    "websocket",
+    "nodejs",
+    "bitfinex",
+    "bitmex",
+    "binance",
+    "tradingview",
+    "bot",
+    "javascript"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Haehnchen/crypto-trading-bot.git"
+  },
   "scripts": {
+    "start": "node index.js trade",
     "postinstall": "patch-package",
     "test": "mocha 'test/**/*.test.js'"
   }
