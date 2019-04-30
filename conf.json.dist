@@ -30,6 +30,10 @@
             "password": "bar",
             "server": "mail.foo.de",
             "port": 465
+        },
+        "telegram" : {
+            "chat_id": null,
+            "token": null
         }
     },
     "webserver": {

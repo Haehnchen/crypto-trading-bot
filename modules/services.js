@@ -8,6 +8,7 @@ const { createLogger, transports, format } = require('winston');
 const Notify = require('../notify/notify');
 let Slack = require('../notify/slack');
 let Mail = require('../notify/mail');
+let Telegram = require('../notify/telegram');
 
 let Tickers = require('../storage/tickers');
 
@@ -375,6 +376,14 @@ module.exports = {
             ))
         }
 
+        if (_.has(config, 'notify.telegram')) {
+            notifiers.push(new Telegram(
+                this.createTelegram(),
+                config.notify.telegram,
+                this.getLogger(),
+            ))
+        }
+
         return notify = new Notify(notifiers)
     },
 
@@ -663,6 +672,18 @@ module.exports = {
             'smtps://' + config.notify.mail.username + ':' + config.notify.mail.password + '@' + config.notify.mail.server + ':' + (config.notify.mail.password || 465), {
                 from: config.notify.mail.username
             });
+    },
+
+    createTelegram: function () {
+        const Telegraf = require('telegraf');
+        const config = this.getConfig();
+        const token = config.notify.telegram.token;
+        if (!token) {
+            this.logger.error('Telegram: No api token given');
+            return
+        }
+
+        return new Telegraf(token)
     },
 
     getInstances: () => {
