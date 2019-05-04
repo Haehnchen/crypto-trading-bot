@@ -197,8 +197,12 @@ module.exports = class StrategyManager {
     }
 
     getCustomTableColumnsForRow(strategyName, row) {
-        return this.getBacktestColumns(strategyName).map((cfg) => {
-            let value = _.get(row, cfg['value'])
+        return this.getBacktestColumns(strategyName).map(cfg => {
+            // direct value of array or callback
+            let value = typeof cfg['value'] === 'function'
+                ? cfg['value'](row)
+                : _.get(row, cfg['value'])
+
             let valueOutput = value
 
             if (typeof value !== 'undefined') {

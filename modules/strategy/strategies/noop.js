@@ -111,7 +111,8 @@ module.exports = class {
             },
             {
                 'label': 'zigzag',
-                'value': 'zigzag',
+                'value': row => row.zigzag && row.zigzag.turningPoint === true ? 'warning' : undefined,
+                'type': 'icon',
             },
         ]
     }

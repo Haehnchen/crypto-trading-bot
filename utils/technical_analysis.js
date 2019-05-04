@@ -611,7 +611,7 @@ module.exports = {
                 } else if (indicatorName === 'volume_profile') {
                     calculations.push(new Promise((resolve) => {
                         let length = options['length'] || 200
-                        let bars = options['bars'] || 14
+                        let bars = options['ranges'] || 14
 
                         const VolumeProfile = require('technicalindicators').VolumeProfile;
 
