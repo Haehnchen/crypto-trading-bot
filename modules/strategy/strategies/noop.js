@@ -14,7 +14,7 @@ module.exports = class {
         indicatorBuilder.add('bb', 'bb', '15m')
         indicatorBuilder.add('rsi', 'rsi', '15m')
         indicatorBuilder.add('mfi', 'mfi', '15m')
-        indicatorBuilder.add('volume_by_price', 'volume_by_price', '15m')
+        indicatorBuilder.add('volume_profile', 'volume_profile', '15m')
         indicatorBuilder.add('zigzag', 'zigzag', '15m')
 
         indicatorBuilder.add('pivot_points_high_low', 'pivot_points_high_low', '15m', {
@@ -57,11 +57,11 @@ module.exports = class {
 
         let intl = new Intl.NumberFormat('en-US', { minimumSignificantDigits: 3, maximumSignificantDigits: 4})
 
-        let currentValue = currentValues['volume_by_price'];
+        let currentValue = currentValues['volume_profile'];
         currentValues['ranges'] = currentValue
-            .sort((a, b) => b.volume - a.volume)
+            .sort((a, b) => b.totalVolume - a.totalVolume)
             .slice(0, 3)
-            .map(v => intl.format(v.low) + '-' + intl.format(v.high) + ' ' + intl.format(v.volume))
+            .map(v => intl.format(v.rangeStart) + '-' + intl.format(v.rangeEnd) + ' ' + intl.format(v.totalVolume))
             .join(', ')
 
         return SignalResult.createEmptySignal(currentValues)
@@ -106,7 +106,7 @@ module.exports = class {
                 'value': 'foreign_candle.close',
             },
             {
-                'label': 'Ranges (Volume)',
+                'label': 'Top Volume Ranges',
                 'value': 'ranges',
             },
             {
