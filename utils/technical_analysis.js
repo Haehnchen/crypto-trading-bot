@@ -1,5 +1,6 @@
 const tulind = require('tulind')
 const percent = require('percent')
+const CustomIndicators = require('./indicators')
 
 module.exports = {
     /**
@@ -607,6 +608,28 @@ module.exports = {
                             })
                         })
                     }))
+                } else if (indicatorName === 'volume_profile') {
+                    calculations.push(new Promise((resolve) => {
+                        let length = options['length'] || 200
+                        let bars = options['bars'] || 14
+
+                        const VolumeProfile = require('technicalindicators').VolumeProfile;
+
+                        let f = new VolumeProfile({
+                            high: marketData.high.slice(-length),
+                            open: marketData.open.slice(-length),
+                            low: marketData.low.slice(-length),
+                            close: marketData.close.slice(-length),
+                            volume: marketData.volume.slice(-length),
+                            noOfBars: bars,
+                        })
+
+                        let results = f.getResult()
+
+                        resolve({
+                            [indicatorKey]: [results]
+                        })
+                    }))
                 } else if (indicatorName === 'volume_by_price') {
                     // https://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:volume_by_price
                     let length = options['length'] || 200
@@ -645,6 +668,22 @@ module.exports = {
 
                         resolve({
                             [indicatorKey]: [rangeBlocks.reverse()], // sort by price; low to high
+                        })
+                    }))
+                } else if (indicatorName === 'zigzag') {
+                    let deviation = options['deviation'] || 5
+                    let length = options['length'] || 1000
+
+                    calculations.push(new Promise(resolve => {
+                        let result = CustomIndicators.zigzag(lookbacks.slice(-length), deviation)
+
+                        // we only what to have turningPoints; non turningPoints should be empty lookback
+                        let turningPoints = result.map(r => {
+                            return r && r.turningPoint === true ? r : {}
+                        })
+
+                        resolve({
+                            [indicatorKey]: turningPoints,
                         })
                     }))
                 }

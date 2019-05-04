@@ -15,6 +15,7 @@ module.exports = class {
         indicatorBuilder.add('rsi', 'rsi', '15m')
         indicatorBuilder.add('mfi', 'mfi', '15m')
         indicatorBuilder.add('volume_by_price', 'volume_by_price', '15m')
+        indicatorBuilder.add('zigzag', 'zigzag', '15m')
 
         indicatorBuilder.add('pivot_points_high_low', 'pivot_points_high_low', '15m', {
             'left': 14,
@@ -107,6 +108,10 @@ module.exports = class {
             {
                 'label': 'Ranges (Volume)',
                 'value': 'ranges',
+            },
+            {
+                'label': 'zigzag',
+                'value': 'zigzag',
             },
         ]
     }

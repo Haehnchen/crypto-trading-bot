@@ -133,6 +133,14 @@ describe('#technical_analysis for candles', () => {
                 'indicator': 'volume_by_price',
                 'key': 'volume_by_price',
             },
+            {
+                'indicator': 'zigzag',
+                'key': 'zigzag',
+            },
+            {
+                'indicator': 'volume_profile',
+                'key': 'volume_profile',
+            },
         ]);
 
         assert.equal(result['ema_55'].length, 490)
@@ -203,6 +211,10 @@ describe('#technical_analysis for candles', () => {
         assert.equal(volumeByPrice.high > 0, true)
         assert.equal(volumeByPrice.volume > 0, true)
         assert.equal(result['volume_by_price'][0].length, 12)
+
+        assert.equal(result['zigzag'].filter(v => v.turningPoint == true).length > 0, true)
+
+        assert.equal(result['volume_profile'][0].length, 14)
     })
 
     it('technical_analysis for bollinger percent', () => {
