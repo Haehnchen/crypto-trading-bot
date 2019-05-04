@@ -24,11 +24,13 @@
                         <td style="white-space: nowrap">{{ pair.symbol }}</td>
                         <td>{{ pair.state }}</td>
                         <td><strong>{{ pair.capital }}</strong></td>
-                        <td class="text-muted" style="word-break: break-all;">{{ pair.strategies|json_encode }}</td>
-                        <td class="text-muted" style="word-break: break-all;">
-                            {% if pair.watchdogs %}
-                                {{ pair.watchdogs|json_encode }}
-                            {% endif %}
+                        <td class="text-muted"><span class="span-md">{{ pair.strategies|json_encode }}</span></td>
+                        <td class="text-muted">
+                            <span class="span-md">
+                                {% if pair.watchdogs %}
+                                    {{ pair.watchdogs|json_encode }}
+                                {% endif %}
+                            </span>
                         </td>
                         <td style="white-space: nowrap">{{ pair.process }}</td>
                         <td class="text-right"  style="white-space: nowrap">
