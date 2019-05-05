@@ -37,6 +37,8 @@ describe('#bitfinex exchange implementation', function() {
         assert.equal(orders[0].type, 'limit')
         assert.equal(orders[0].createdAt.toISOString(), '2018-10-19T19:31:40.939Z')
         assert.equal(orders[0].updatedAt instanceof Date, true)
+
+        assert.equal(orders[0].raw.status, 'ACTIVE')
     })
 
     it('test that symbol sizes are provided', async () => {

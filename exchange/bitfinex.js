@@ -504,6 +504,7 @@ module.exports = class Bitfinex {
             orderType,
             new Date(order['mtsUpdate']),
             new Date(),
+            order
         )
     }
 
