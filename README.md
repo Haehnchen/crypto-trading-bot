@@ -78,7 +78,7 @@ node index.js trade
 
 #### Setting Up Telegram Bot
 First, you'll need to create a bot for Telegram. Just talk to [BotFather](https://telegram.me/botfather) and follow simple steps until it gives you a token for it.
-You'll also need to create a Telegram group, the place where you and BitProphet will communicate. After creating it, add the bot as administrator (make sure to uncheck "All Members Are Admins").
+You'll also need to create a Telegram group, the place where you and crypto-trading-bot will communicate. After creating it, add the bot as administrator (make sure to uncheck "All Members Are Admins").
 
 ##### Retrieving Chat IDs
 Invite ```@RawDataBot``` to your group and get your group id in sended chat id field
