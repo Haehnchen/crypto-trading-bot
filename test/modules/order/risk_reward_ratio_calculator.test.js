@@ -160,8 +160,13 @@ describe('#risk reward order calculation', function() {
 
         let orders = await calculator.createRiskRewardOrdersOrders(position, [], {'stop_percent': 0.5, 'target_percent': 0.25})
 
-        assert.deepEqual(orders.find(order => order.type === 'limit').price, -6518.0144)
-        assert.deepEqual(orders.find(order => order.type === 'stop').price, -6469.251200000001)
+        let closeOrder = orders.find(order => order.type === 'limit');
+        assert.deepEqual(closeOrder.price, -6518.0144)
+        assert.deepEqual(closeOrder.options, {post_only: true, close: true})
+
+        let stopOrder = orders.find(order => order.type === 'stop');
+        assert.deepEqual(stopOrder.price, -6469.251200000001)
+        assert.deepEqual(stopOrder.options, {close: true})
     })
 
     it('create risk reward ratio orders (short)', async () => {
@@ -178,8 +183,13 @@ describe('#risk reward order calculation', function() {
 
         let orders = await calculator.createRiskRewardOrdersOrders(position, [], {'stop_percent': 0.5, 'target_percent': 0.25})
 
-        assert.deepEqual(orders.find(order => order.type === 'limit').price, 6485.5056)
-        assert.deepEqual(orders.find(order => order.type === 'stop').price, 6534.2688)
+        let closeOrder = orders.find(order => order.type === 'limit');
+        assert.deepEqual(closeOrder.price, 6485.5056)
+        assert.deepEqual(closeOrder.options, {post_only: true, close: true})
+
+        let stopOrder = orders.find(order => order.type === 'stop');
+        assert.deepEqual(stopOrder.price, 6534.2688)
+        assert.deepEqual(stopOrder.options, {close: true})
     })
 
     function createLoggerInstance() {

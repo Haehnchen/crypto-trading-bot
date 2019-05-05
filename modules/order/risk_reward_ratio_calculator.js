@@ -73,7 +73,7 @@ module.exports = class RiskRewardRatioCalculator {
 
         let newOrders = []
         if (ratioOrders.target) {
-            newOrders.push(Order.createLimitPostOnlyOrderAutoSide(position.symbol, ratioOrders.target.price, ratioOrders.target.amount))
+            newOrders.push(Order.createCloseLimitPostOnlyReduceOrder(position.symbol, ratioOrders.target.price, ratioOrders.target.amount))
         }
 
         if (ratioOrders.stop) {

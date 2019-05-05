@@ -46,6 +46,17 @@ describe('#order dict test', function() {
         assert.equal(Order.createCloseOrderWithPriceAdjustment('BTCUSD', 12).side, 'long')
     })
 
+    it('test order close creation for closes', () => {
+        let order = Order.createCloseLimitPostOnlyReduceOrder('BTCUSD', -12, 0.4)
+
+        assert.equal(order.symbol,'BTCUSD')
+        assert.equal(order.price,-12)
+        assert.equal(order.amount,0.4)
+
+        assert.equal(order.side, 'short')
+        assert.deepEqual(order.options, { close: true, post_only: true })
+    })
+
     it('test market order', () => {
         let order = Order.createMarketOrder('BTCUSD', -12)
 

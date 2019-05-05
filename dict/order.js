@@ -60,6 +60,21 @@ module.exports = class Order {
         )
     }
 
+    static createCloseLimitPostOnlyReduceOrder(symbol, price, amount) {
+        return new Order(
+            Math.round(((new Date()).getTime()).toString() * Math.random()),
+            symbol,
+            price < 0 ? 'short' : 'long',
+            price,
+            amount,
+            'limit',
+            {
+                'post_only': true,
+                'close': true
+            }
+        )
+    }
+
     static createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, amount, options = {}) {
         return Order.createLimitPostOnlyOrder(
             symbol,
