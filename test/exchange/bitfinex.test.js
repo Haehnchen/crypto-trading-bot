@@ -368,6 +368,9 @@ describe('#bitfinex exchange implementation', function() {
     })
 
     let createResponse = function(filename) {
-        return JSON.parse(fs.readFileSync(__dirname + '/bitfinex/' + filename, 'utf8'));
+        return JSON.parse(fs.readFileSync(__dirname + '/bitfinex/' + filename, 'utf8')).map(item => {
+            item['_fieldKeys'] = ['status'] // fake magic object of lib
+            return item
+        });
     }
 });

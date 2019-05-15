@@ -492,6 +492,13 @@ module.exports = class Bitfinex {
                 break;
         }
 
+        let orderValues = {}
+        if (order['_fieldKeys']) {
+            order['_fieldKeys'].map(k => {
+                orderValues[k] = order[k];
+            })
+        }
+
         return new ExchangeOrder(
             bitfinex_id,
             Bitfinex.formatSymbol(order['symbol']),
@@ -504,7 +511,7 @@ module.exports = class Bitfinex {
             orderType,
             new Date(order['mtsUpdate']),
             new Date(),
-            order
+            orderValues
         )
     }
 
