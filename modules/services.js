@@ -364,11 +364,13 @@ module.exports = {
 
         let config = this.getConfig();
 
-        if (_.has(config, 'notify.slack')) {
-            notifiers.push(new Slack(config.notify.slack))
+        let slack = _.get(config, 'notify.slack');
+        if (slack && slack.length > 0) {
+            notifiers.push(new Slack(slack))
         }
 
-        if (_.has(config, 'notify.mail.username')) {
+        let mailServer = _.get(config, 'notify.mail.server');
+        if (mailServer && mailServer.length > 0) {
             notifiers.push(new Mail(
                 this.createMailer(),
                 this.getSystemUtil(),
@@ -376,10 +378,11 @@ module.exports = {
             ))
         }
 
-        if (_.has(config, 'notify.telegram')) {
+        let telegram = _.get(config, 'notify.telegram');
+        if (telegram && telegram.length > 0) {
             notifiers.push(new Telegram(
                 this.createTelegram(),
-                config.notify.telegram,
+                telegram,
                 this.getLogger(),
             ))
         }
@@ -678,8 +681,9 @@ module.exports = {
         const Telegraf = require('telegraf');
         const config = this.getConfig();
         const token = config.notify.telegram.token;
+
         if (!token) {
-            this.logger.error('Telegram: No api token given');
+            console.log('Telegram: No api token given');
             return
         }
 

@@ -20,7 +20,7 @@
     },
     "notify": {
         "slack": {
-            "webhook": "https://hooks.slack.com/services/....",
+            "webhook": null,
             "name": "crypto-bot",
             "icon_emoji": ":ghost:"
         },
@@ -28,7 +28,7 @@
             "to": "example@example.de",
             "username": "foo@foo.de",
             "password": "bar",
-            "server": "mail.foo.de",
+            "server": null,
             "port": 465
         },
         "telegram" : {
