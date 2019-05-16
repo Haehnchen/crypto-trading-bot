@@ -76,6 +76,20 @@ Lets start it
 node index.js trade
 ```
 
+## How to use: Docker
+
+For initialize the configuration once
+
+```
+docker-compose run --rm --entrypoint "/bin/bash" bot "-c" "cp instance.js.dist instance.js && cp conf.json.dist conf.json && sqlite3 bot.db < bot.sql"
+```
+
+After this you can use `docker-compose` which will give you a running bot via <http://127.0.0.1:8080>
+
+```
+docker-compose up
+```
+
 #### Setting Up Telegram Bot
 First, you'll need to create a bot for Telegram. Just talk to [BotFather](https://telegram.me/botfather) and follow simple steps until it gives you a token for it.
 You'll also need to create a Telegram group, the place where you and crypto-trading-bot will communicate. After creating it, add the bot as administrator (make sure to uncheck "All Members Are Admins").
