@@ -23,11 +23,12 @@ let _ = require('lodash')
 const querystring = require('querystring');
 
 module.exports = class Bitmex {
-    constructor(eventEmitter, requestClient, candlestickResample, logger) {
+    constructor(eventEmitter, requestClient, candlestickResample, logger, queue) {
         this.eventEmitter = eventEmitter
         this.requestClient = requestClient
         this.candlestickResample = candlestickResample
         this.logger = logger
+        this.queue = queue
 
         this.apiKey = undefined
         this.apiSecret = undefined
@@ -155,45 +156,47 @@ module.exports = class Bitmex {
             myPeriods = Array.from(new Set(myPeriods))
 
             myPeriods.forEach(period => {
-                request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + period + '&partial=false&symbol=' + symbol['symbol'] + '&count=500&reverse=true', { json: true }, (err, res, body) => {
-                    if (err) {
-                        console.log('Bitmex: Candle backfill error: ' + String(err))
-                        logger.error('Bitmex: Candle backfill error: ' + String(err))
-                        return
-                    }
-
-                    if(!Array.isArray(body)) {
-                        console.log('Bitmex: Candle backfill error: ' + JSON.stringify(body));
-                        logger.error('Bitmex Candle backfill error: ' + JSON.stringify(body))
-                        return
-                    }
-
-                    let sticks = body.map(candle => {
-                        return new Candlestick(
-                            moment(candle['timestamp']).format('X'),
-                            candle['open'],
-                            candle['high'],
-                            candle['low'],
-                            candle['close'],
-                            candle['volume'],
-                        )
-                    })
-
-                    eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], period, sticks))
-
-                    // lets wait for settle down of database insert: per design we dont know when is was inserted to database
-                    setTimeout(() => {
-                        if (resamples[symbol['symbol']] && resamples[symbol['symbol']][period] && resamples[symbol['symbol']][period].length > 0) {
-                            for (let periodTo of resamples[symbol['symbol']][period]) {
-                                let resampledCandles = resample.resampleMinutes(
-                                    sticks.slice(),
-                                    resample.convertPeriodToMinute(periodTo) // 15m > 15
-                                )
-
-                                eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], periodTo, resampledCandles))
-                            }
+                this.queue.add(() => {
+                    request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + period + '&partial=false&symbol=' + symbol['symbol'] + '&count=500&reverse=true', { json: true }, (err, res, body) => {
+                        if (err) {
+                            console.log('Bitmex: Candle backfill error: ' + String(err))
+                            logger.error('Bitmex: Candle backfill error: ' + String(err))
+                            return
                         }
-                    }, 1000);
+
+                        if(!Array.isArray(body)) {
+                            console.log('Bitmex: Candle backfill error: ' + JSON.stringify(body));
+                            logger.error('Bitmex Candle backfill error: ' + JSON.stringify(body))
+                            return
+                        }
+
+                        let sticks = body.map(candle => {
+                            return new Candlestick(
+                                moment(candle['timestamp']).format('X'),
+                                candle['open'],
+                                candle['high'],
+                                candle['low'],
+                                candle['close'],
+                                candle['volume'],
+                            )
+                        })
+
+                        eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], period, sticks))
+
+                        // lets wait for settle down of database insert: per design we dont know when is was inserted to database
+                        setTimeout(() => {
+                            if (resamples[symbol['symbol']] && resamples[symbol['symbol']][period] && resamples[symbol['symbol']][period].length > 0) {
+                                for (let periodTo of resamples[symbol['symbol']][period]) {
+                                    let resampledCandles = resample.resampleMinutes(
+                                        sticks.slice(),
+                                        resample.convertPeriodToMinute(periodTo) // 15m > 15
+                                    )
+
+                                    eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], periodTo, resampledCandles))
+                                }
+                            }
+                        }, 1000);
+                    })
                 })
 
                 client.addStream(symbol['symbol'], 'tradeBin' + period, candles => {

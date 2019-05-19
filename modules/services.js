@@ -606,13 +606,15 @@ module.exports = {
                 this.getEventEmitter(),
                 this.getRequestClient(),
                 this.getCandlestickResample(),
-                this.getLogger()
+                this.getLogger(),
+                this.getQueue(),
             ),
             new BitmexTestnet(
                 this.getEventEmitter(),
                 this.getRequestClient(),
                 this.getCandlestickResample(),
-                this.getLogger()
+                this.getLogger(),
+                this.getQueue(),
             ),
             new Binance(
                 this.getEventEmitter(),
