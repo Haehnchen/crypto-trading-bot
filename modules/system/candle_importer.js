@@ -34,7 +34,7 @@ module.exports = class CandleImporter {
      */
     async insertThrottledCandles(candles) {
         for (let candle of candles) {
-            this.trottle[candle.symbol + candle.interval + candle.time] = candle
+            this.trottle[candle.symbol + candle.period + candle.time] = candle
         }
     }
 }
