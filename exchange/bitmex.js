@@ -157,7 +157,7 @@ module.exports = class Bitmex {
 
             myPeriods.forEach(period => {
                 this.queue.add(() => {
-                    request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + period + '&partial=false&symbol=' + symbol['symbol'] + '&count=500&reverse=true', { json: true }, (err, res, body) => {
+                    request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + period + '&partial=false&symbol=' + symbol['symbol'] + '&count=750&reverse=true', { json: true }, (err, res, body) => {
                         if (err) {
                             console.log('Bitmex: Candle backfill error: ' + String(err))
                             logger.error('Bitmex: Candle backfill error: ' + String(err))
