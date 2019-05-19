@@ -2,10 +2,10 @@
 
 {% block content %}
     <div class="container-fluid">
-        <h2>Exporter</h2>
-
         <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-6">
+                <h2>Export</h2>
+
                 <form method="get" class="form">
 
                     <div class="form-group mb-2">
@@ -26,6 +26,11 @@
                         </select>
                     </div>
 
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="metadata" name="metadata" checked>
+                        <label for="metadata">Include Metadata (Exchange, Symbol)</label>
+                    </div>
+
                     <div class="form-group mb-2">
                         <label for="form-start">Time Start</label>
                         <input id="form-start" name="start" type="text" class="form-control" value="{{ start|date('Y-m-d H:i') }}">
@@ -36,7 +41,20 @@
                         <input id="form-end" name="end" type="text" class="form-control" value="{{ end|date('Y-m-d H:i') }}">
                     </div>
 
-                    <button type="submit" class="btn btn-primary mb-2">Submit</button>
+                    <button type="submit" class="btn btn-primary mb-2">Export</button>
+                </form>
+            </div>
+
+            <div class="col-md-6">
+                <h2>Import</h2>
+
+                <form method="post" class="form">
+                    <div class="form-group">
+                        <label for="json_import">JSON from export</label>
+                        <textarea class="form-control" id="json_import" name="json" rows="5"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary mb-2">Import</button>
                 </form>
             </div>
         </div>

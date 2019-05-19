@@ -420,6 +420,7 @@ module.exports = {
             this.getHttpPairs(),
             this.getLogsHttp(),
             this.getCandleExportHttp(),
+            this.getCandleImporter(),
         )
     },
 

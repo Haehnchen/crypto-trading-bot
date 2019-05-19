@@ -8,7 +8,7 @@ let crypto = require('crypto');
 let moment = require('moment');
 
 module.exports = class Http {
-    constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp, logsHttp, candleExportHttp) {
+    constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp, logsHttp, candleExportHttp, candleImporter) {
         this.systemUtil = systemUtil;
         this.ta = ta;
         this.signalHttp = signalHttp;
@@ -17,6 +17,7 @@ module.exports = class Http {
         this.pairsHttp = pairsHttp;
         this.logsHttp = logsHttp;
         this.candleExportHttp = candleExportHttp
+        this.candleImporter = candleImporter
     }
 
     start() {
@@ -52,7 +53,7 @@ module.exports = class Http {
             strict_variables: true
         });
 
-        app.use(express.urlencoded({extended: true}));
+        app.use(express.urlencoded({limit: "12mb", extended: true, parameterLimit:50000}));
         app.use(cookieParser());
         app.use(express.static(__dirname + '/../web/static'));
 
@@ -138,6 +139,14 @@ module.exports = class Http {
                     new Date(req.query.end),
                 );
 
+                if (req.query.metadata) {
+                    candles.map(c => {
+                        c['exchange'] = exchange
+                        c['symbol'] = symbol
+                        return c
+                    })
+                }
+
                 options.start = new Date(req.query.start);
                 options.end = new Date(req.query.end);
 
@@ -149,6 +158,15 @@ module.exports = class Http {
             }
 
             res.render('../templates/candle_stick_export.html.twig', options)
+        });
+
+        app.post('/tools/candles', async (req, res) => {
+            let exchangeCandlesticks = JSON.parse(req.body.json);
+            await this.candleImporter.insertCandles(exchangeCandlesticks)
+
+            console.log('Imported: ' + exchangeCandlesticks.length + ' items')
+
+            res.redirect('/tools/candles');
         });
 
         app.post('/pairs/:pair', async (req, res) => {
