@@ -143,6 +143,7 @@ module.exports = class Http {
                     candles.map(c => {
                         c['exchange'] = exchange
                         c['symbol'] = symbol
+                        c['period'] = req.query.period
                         return c
                     })
                 }
