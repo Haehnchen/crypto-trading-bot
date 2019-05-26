@@ -365,7 +365,7 @@ module.exports = {
         let config = this.getConfig();
 
         let slack = _.get(config, 'notify.slack');
-        if (slack && slack.length > 0) {
+        if (slack && slack.webhook && slack.webhook.length > 0) {
             notifiers.push(new Slack(slack))
         }
 
