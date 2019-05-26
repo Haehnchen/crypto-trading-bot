@@ -1,13 +1,13 @@
 'use strict';
 
-var moment = require('moment');
-let CandlestickEvent = require('../event/candlestick_event')
-var _ = require('lodash')
+let moment = require('moment');
+let ExchangeCandlestick = require('../dict/exchange_candlestick')
+let _ = require('lodash')
 
 module.exports = class Backfill {
-    constructor(exchangesIterator, candleStickListener) {
+    constructor(exchangesIterator, candleImporter) {
         this.exchangesIterator = exchangesIterator
-        this.candleStickListener = candleStickListener
+        this.candleImporter = candleImporter
     }
 
     async backfill(exchangeName, symbol, period, date) {
@@ -17,19 +17,23 @@ module.exports = class Backfill {
         }
 
         let start = moment().subtract(date, 'days');
-        let results = undefined
+        let candles = undefined
 
         do {
-            console.log('Since: ' + start)
-            results = await exchange.backfill(symbol, period, start)
+            console.log('Since: ' + new Date(start).toISOString())
+            candles = await exchange.backfill(symbol, period, start)
 
-            let event = new CandlestickEvent(exchangeName, symbol, period, results)
+            let exchangeCandlesticks = candles.map(candle => {
+                return ExchangeCandlestick.createFromCandle(exchangeName, symbol, period, candle)
+            });
 
-            await this.candleStickListener.onCandleStick(event)
+            await this.candleImporter.insertCandles(exchangeCandlesticks)
 
-            console.log('Got: ' + results.length)
+            console.log('Got: ' + candles.length + ' candles')
 
-            start = _.max(results.map(r => new Date(r.time * 1000)))
-        } while (results.length > 10);
+            start = _.max(candles.map(r => new Date(r.time * 1000)))
+        } while (candles.length > 10);
+
+        console.log('finish')
     }
 };

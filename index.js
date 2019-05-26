@@ -35,7 +35,9 @@ program
         await services.boot()
 
         let cmd = new Backfill();
-        cmd.execute(options.exchange, options.symbol, options.period, options.date);
+        await cmd.execute(options.exchange, options.symbol, options.period, options.date);
+
+        process.exit()
     });
 
 program

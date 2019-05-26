@@ -424,12 +424,6 @@ module.exports = {
         )
     },
 
-    createBackfillInstance: function () {
-        return new Backfill(
-            this.getExchangeManager(),
-        )
-    },
-
     getExchangeManager: function () {
         if (exchangeManager) {
             return exchangeManager;
@@ -667,7 +661,7 @@ module.exports = {
     getBackfill: function () {
         return new Backfill(
             this.getExchanges(),
-            this.getCandleStickListener(),
+            this.getCandleImporter(),
         )
     },
 
