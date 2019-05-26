@@ -608,6 +608,7 @@ module.exports = {
                 this.getCandlestickResample(),
                 this.getLogger(),
                 this.getQueue(),
+                this.getCandleImporter(),
             ),
             new BitmexTestnet(
                 this.getEventEmitter(),
@@ -615,6 +616,7 @@ module.exports = {
                 this.getCandlestickResample(),
                 this.getLogger(),
                 this.getQueue(),
+                this.getCandleImporter(),
             ),
             new Binance(
                 this.getEventEmitter(),

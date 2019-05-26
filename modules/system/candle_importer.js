@@ -6,10 +6,14 @@ module.exports = class CandleImporter {
     constructor(candlestickRepository) {
         this.candlestickRepository = candlestickRepository
         this.trottle = {}
+        this.promises = []
 
         setInterval(async () => {
             let candles = Object.values(this.trottle)
             this.trottle = {}
+
+            let promises = this.promises.slice()
+            this.promises = []
 
             // on init we can have a lot or REST api we can have a lot of candles
             // reduce database locking time by split them
@@ -18,6 +22,10 @@ module.exports = class CandleImporter {
                     await this.insertCandles(chunk)
                 }
             }
+
+            promises.forEach(resolve => {
+                resolve()
+            })
 
         }, 1000 * 5)
     }
@@ -36,5 +44,24 @@ module.exports = class CandleImporter {
         for (let candle of candles) {
             this.trottle[candle.symbol + candle.period + candle.time] = candle
         }
+
+        const {promise, resolve} = this.getPromise();
+
+        this.promises.push(resolve)
+
+        return promise
+    }
+
+    /**
+     * @private
+     */
+    getPromise() {
+        let resolve;
+
+        const promise = new Promise(res => {
+            resolve = res;
+        });
+
+        return { promise, resolve};
     }
 }

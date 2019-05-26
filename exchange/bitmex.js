@@ -3,6 +3,7 @@
 let Candlestick = require('./../dict/candlestick')
 let Ticker = require('./../dict/ticker')
 let Orderbook = require('./../dict/orderbook')
+let ExchangeCandlestick = require('../dict/exchange_candlestick')
 
 let CandlestickEvent = require('./../event/candlestick_event')
 let TickerEvent = require('./../event/ticker_event')
@@ -23,12 +24,13 @@ let _ = require('lodash')
 const querystring = require('querystring');
 
 module.exports = class Bitmex {
-    constructor(eventEmitter, requestClient, candlestickResample, logger, queue) {
+    constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter) {
         this.eventEmitter = eventEmitter
         this.requestClient = requestClient
         this.candlestickResample = candlestickResample
         this.logger = logger
         this.queue = queue
+        this.candleImporter = candleImporter
 
         this.apiKey = undefined
         this.apiSecret = undefined
@@ -157,7 +159,7 @@ module.exports = class Bitmex {
 
             myPeriods.forEach(period => {
                 this.queue.add(() => {
-                    request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + period + '&partial=false&symbol=' + symbol['symbol'] + '&count=750&reverse=true', { json: true }, (err, res, body) => {
+                    request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + period + '&partial=false&symbol=' + symbol['symbol'] + '&count=750&reverse=true', { json: true }, async (err, res, body) => {
                         if (err) {
                             console.log('Bitmex: Candle backfill error: ' + String(err))
                             logger.error('Bitmex: Candle backfill error: ' + String(err))
@@ -170,7 +172,7 @@ module.exports = class Bitmex {
                             return
                         }
 
-                        let sticks = body.map(candle => {
+                        let candleSticks = body.map(candle => {
                             return new Candlestick(
                                 moment(candle['timestamp']).format('X'),
                                 candle['open'],
@@ -181,21 +183,24 @@ module.exports = class Bitmex {
                             )
                         })
 
-                        eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], period, sticks))
+                        await this.candleImporter.insertThrottledCandles(candleSticks.map(candle => {
+                            return ExchangeCandlestick.createFromCandle(this.getName(), symbol['symbol'], period, candle)
+                        }))
 
-                        // lets wait for settle down of database insert: per design we dont know when is was inserted to database
-                        setTimeout(() => {
-                            if (resamples[symbol['symbol']] && resamples[symbol['symbol']][period] && resamples[symbol['symbol']][period].length > 0) {
-                                for (let periodTo of resamples[symbol['symbol']][period]) {
-                                    let resampledCandles = resample.resampleMinutes(
-                                        sticks.slice(),
-                                        resample.convertPeriodToMinute(periodTo) // 15m > 15
-                                    )
+                        if (resamples[symbol['symbol']] && resamples[symbol['symbol']][period] && resamples[symbol['symbol']][period].length > 0) {
+                            resamples[symbol['symbol']][period].forEach(async periodTo => {
+                                let resampledCandles = resample.resampleMinutes(
+                                    candleSticks.slice(),
+                                    resample.convertPeriodToMinute(periodTo) // 15m > 15
+                                )
 
-                                    eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], periodTo, resampledCandles))
-                                }
-                            }
-                        }, 1000);
+                                let candles = resampledCandles.map(candle => {
+                                    return ExchangeCandlestick.createFromCandle(this.getName(), symbol['symbol'], periodTo, candle)
+                                });
+
+                                await this.candleImporter.insertThrottledCandles(candles)
+                            })
+                        }
                     })
                 })
 
