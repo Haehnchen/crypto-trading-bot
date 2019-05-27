@@ -158,6 +158,7 @@ module.exports = class Bitmex {
             myPeriods = Array.from(new Set(myPeriods))
 
             myPeriods.forEach(period => {
+                // for bot init prefill data: load latest candles from api
                 this.queue.add(() => {
                     request(me.getBaseUrl() + '/api/v1/trade/bucketed?binSize=' + period + '&partial=false&symbol=' + symbol['symbol'] + '&count=750&reverse=true', { json: true }, async (err, res, body) => {
                         if (err) {
@@ -204,12 +205,13 @@ module.exports = class Bitmex {
                     })
                 })
 
-                client.addStream(symbol['symbol'], 'tradeBin' + period, candles => {
+                // listen for new incoming candles
+                client.addStream(symbol['symbol'], 'tradeBin' + period, async candles => {
                     // we need a force reset; candles are like queue
                     let myCandles = candles.slice();
                     candles.length = 0
 
-                    let sticks = myCandles.map(candle => {
+                    let candleSticks = myCandles.map(candle => {
                         return new Candlestick(
                             moment(candle['timestamp']).format('X'),
                             candle['open'],
@@ -220,16 +222,15 @@ module.exports = class Bitmex {
                         );
                     });
 
-                    eventEmitter.emit('candlestick', new CandlestickEvent(this.getName(), symbol['symbol'], period, sticks));
+                    await this.candleImporter.insertThrottledCandles(candleSticks.map(candle => {
+                        return ExchangeCandlestick.createFromCandle(this.getName(), symbol['symbol'], period, candle)
+                    }))
 
-                    // lets wait for settle down of database insert: per design we dont know when is was inserted to database
-                    setTimeout(async () => {
-                        if (resamples[symbol['symbol']] && resamples[symbol['symbol']][period] && resamples[symbol['symbol']][period].length > 0) {
-                            for (let periodTo of resamples[symbol['symbol']][period]) {
-                                await me.candlestickResample.resample(this.getName(), symbol['symbol'], period, periodTo, true)
-                            }
-                        }
-                    }, 1000);
+                    if (resamples[symbol['symbol']] && resamples[symbol['symbol']][period] && resamples[symbol['symbol']][period].length > 0) {
+                        resamples[symbol['symbol']][period].forEach(async periodTo => {
+                            await me.candlestickResample.resample(this.getName(), symbol['symbol'], period, periodTo, true)
+                        })
+                    }
                 })
             })
 
