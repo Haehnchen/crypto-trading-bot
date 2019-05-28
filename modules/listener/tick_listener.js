@@ -114,7 +114,7 @@ module.exports = class TickListener {
         }, signal, strategyKey);
         this.notified[noteKey] = new Date();
 
-        await this.pairStateManager.update(symbol.exchange, symbol.symbol, signal)
+        await this.pairStateManager.update(symbol.exchange, symbol.symbol, signal, strategy['options'] || {})
     }
 
     async onTick() {
