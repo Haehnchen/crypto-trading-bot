@@ -196,7 +196,7 @@ module.exports = class Http {
             try {
                 await exchange.cancelOrder(id)
             } catch (e) {
-                console.log('Cancel order error: ' + JSON.stringify([exchangeName, id]))
+                console.log('Cancel order error: ' + JSON.stringify([exchangeName, id, String(e)]))
             }
 
             res.redirect('/trades')
