@@ -1,0 +1,51 @@
+[
+  {
+    "order_id": "5724145d-cc4e-4efc-a085-c8e8a342a279",
+    "order_link_id": "",
+    "symbol": "BTCUSD",
+    "side": "Buy",
+    "order_type": "Limit",
+    "price": 7898.5,
+    "qty": 1,
+    "time_in_force": "GoodTillCancel",
+    "order_status": "New",
+    "leaves_qty": 1,
+    "cum_exec_qty": 0,
+    "cum_exec_value": 0,
+    "cum_exec_fee": 0,
+    "timestamp": "2019-06-09T11:06:21.000Z"
+  },
+  {
+    "order_id": "5724145d-cc4e-4efc-a085-c8e8a342a279",
+    "order_link_id": "",
+    "symbol": "BTCUSD",
+    "side": "Buy",
+    "order_type": "Limit",
+    "price": 7898.5,
+    "qty": 1,
+    "time_in_force": "GoodTillCancel",
+    "order_status": "Filled",
+    "leaves_qty": 0,
+    "cum_exec_qty": 1,
+    "cum_exec_value": 0.0001266,
+    "cum_exec_fee": -3e-8,
+    "timestamp": "2019-06-09T11:07:14.000Z"
+  },
+  {
+    "user_id": 500181,
+    "stop_order_status": "Untriggered",
+    "symbol": "EOSUSD",
+    "side": "Buy",
+    "order_type": "Market",
+    "price": 6.188,
+    "qty": 11,
+    "time_in_force": "GoodTillCancel",
+    "stop_order_type": "Stop",
+    "base_price": 6.195,
+    "order_link_id": "",
+    "created_at": "2019-06-09T13:55:25.000Z",
+    "updated_at": "2019-06-09T13:55:25.000Z",
+    "stop_px": 6.9,
+    "stop_order_id": "04463f4c-5021-443f-a794-e67e2a54a4bd"
+  }
+]
