@@ -76,10 +76,7 @@ module.exports = class Bybit {
             me.logger.info('Bybit: Connection opened.')
 
             symbols.forEach(symbol => {
-                let value = {'op': 'subscribe', 'args': ['kline.' + symbol['symbol'] +'.' + symbol['periods'].join('|')]};
-                let data = JSON.stringify(value);
-                //ws.send(data);
-
+                ws.send(JSON.stringify({'op': 'subscribe', 'args': ['kline.' + symbol['symbol'] +'.' + symbol['periods'].join('|')]}));
                 ws.send(JSON.stringify({'op': 'subscribe', 'args': ['instrument.' + symbol['symbol']]}));
             })
 
