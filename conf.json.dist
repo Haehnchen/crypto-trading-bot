@@ -16,6 +16,10 @@
             "key": null,
             "secret": null,
             "passphrase": null
+        },
+        "bybit": {
+            "key": null,
+            "secret": null
         }
     },
     "notify": {

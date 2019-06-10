@@ -26,7 +26,8 @@ As most trading bots just provide basic buy and sell signals they provide many s
  * [Binance](https://www.binance.com/?ref=17569916)
  * [Coinbase Pro](https://www.coinbase.com/join/5a2ae60e76531100d3af2ee5)
  * [Bitfinex](https://www.bitfinex.com) (margin wallet)
- 
+ * [Bybit](https://www.bybit.com/app/register?ref=46AK7) with leverage configuration (Limitation on stops via websocket order; only updated once per minute)
+  
 TODOS:
 
  * [Huobi Global](https://www.hbg.com/) (margin) 
@@ -223,6 +224,28 @@ You should only provide one of them, first wins.
             'currency_capital': 50,  // this will use 50 EUR and buys the equal amount of BTC (example: BTC price 3000 use 50 EUR. will result in 0.016 BTC)
         },
     })
+```
+
+### Margin / Leverage
+
+Per pair you can set used margin before orders are created; depending on exchange
+
+```
+    c.symbols.push({
+        'symbol': 'BTCUSD',
+        'exchange': 'bitmex',
+        'extra': {
+            'bitmex_leverage': 5,
+        },
+    })
+    
+    c.symbols.push({
+        'symbol': 'EOSUSD',
+        'exchange': 'bybit',
+        'extra': {
+            'bybit_leverage': 5,
+        },
+    })    
 ```
 
 ## Signals
