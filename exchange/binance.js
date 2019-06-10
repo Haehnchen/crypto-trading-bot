@@ -275,6 +275,7 @@ module.exports = class Binance {
 
         // dont overwrite state closed order
         if (order.id in this.orders && ['done', 'canceled'].includes(this.orders[order.id].status)) {
+            delete this.orders[order.id]
             return
         }
 
