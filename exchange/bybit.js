@@ -748,14 +748,14 @@ module.exports = class Bybit {
 
                     if (error || !response || response.statusCode !== 200) {
                         this.logger.error('Bybit: Invalid orders response:' + JSON.stringify({'error': error, 'body': body}))
-                        resolve()
+                        resolve([])
                         return
                     }
 
                     let json = JSON.parse(body);
                     if (!json.result || !json.result.data) {
                         this.logger.error('Bybit: Invalid orders json:' + JSON.stringify({'body': body}))
-                        resolve()
+                        resolve([])
                         return
                     }
 
@@ -794,14 +794,14 @@ module.exports = class Bybit {
 
                 if (error || !response || response.statusCode !== 200) {
                     this.logger.error('Bybit: Invalid order update:' + JSON.stringify({'error': error, 'body': body}))
-                    resolve()
+                    resolve([])
                     return
                 }
 
                 let json = JSON.parse(body);
                 if (!json.result || !json.result.data) {
                     this.logger.error('Bybit: Invalid stop-order json:' + JSON.stringify({'body': body}))
-                    resolve()
+                    resolve([])
                     return
                 }
 
