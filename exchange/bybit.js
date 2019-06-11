@@ -393,6 +393,9 @@ module.exports = class Bybit {
         parameters['api_key'] = this.apiKey
         parameters['timestamp'] = new Date().getTime()
 
+        // disabled: bind error on api
+        // delete parameters['reduce_only']
+
         if (order.type === 'stop') {
             if (!this.tickers[order.symbol]) {
                 this.logger.error('Bybit: base_price based on ticker for conditional not found')
