@@ -198,6 +198,13 @@ module.exports = class OrderExecutor {
             return
         }
 
+        if (!exchangeOrder) {
+            this.logger.error('Order create canceled no exchange return');
+
+            resolve();
+            return
+        }
+
         if (exchangeOrder.status === 'canceled' && exchangeOrder.retry === false) {
             this.logger.error('Order create canceled:' + JSON.stringify(order) + ' - ' + JSON.stringify(exchangeOrder));
 

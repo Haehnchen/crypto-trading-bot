@@ -435,13 +435,13 @@ module.exports = class Bybit {
 
         if (error || !response || response.statusCode !== 200) {
             this.logger.error('Bybit: Invalid order create:' + JSON.stringify({'error': error, 'body': body}))
-            return
+            return ExchangeOrder.createCanceledFromOrder(order)
         }
 
         let json = JSON.parse(body);
         if (!json.result) {
             this.logger.error('Bybit: Invalid order create body:' + JSON.stringify({'body': body}))
-            return
+            return ExchangeOrder.createCanceledFromOrder(order)
         }
 
         let returnOrder
