@@ -802,6 +802,7 @@ module.exports = class Bybit {
             orders.push(...order)
         })
 
+        this.logger.debug('Bybit: Orders via API updated')
         this.fullOrdersUpdate(orders)
     }
 
