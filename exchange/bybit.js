@@ -799,6 +799,12 @@ module.exports = class Bybit {
                 }
 
                 let json = JSON.parse(body);
+                if (!json.result || !json.result.data) {
+                    this.logger.error('Bybit: Invalid stop-order json:' + JSON.stringify({'body': body}))
+                    resolve()
+                    return
+                }
+
                 let orders = json.result.data.filter(order => order.stop_order_status === 'Untriggered');
                 resolve(orders)
             }))
