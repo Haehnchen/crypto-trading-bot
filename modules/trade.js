@@ -1,8 +1,9 @@
 'use strict';
 
-var moment = require('moment');
+const moment = require('moment');
 const crypto = require('crypto');
 const os = require('os');
+const PositionStateChangeEvent = require('../event/position_state_change_event')
 
 module.exports = class Trade {
     constructor(
@@ -24,6 +25,7 @@ module.exports = class Trade {
         systemUtil,
         logsRepository,
         tickerLogRepository,
+        exchangePositionWatcher
     ) {
         this.eventEmitter = eventEmitter
         this.instances = instances
@@ -43,6 +45,7 @@ module.exports = class Trade {
         this.systemUtil = systemUtil
         this.logsRepository = logsRepository
         this.tickerLogRepository = tickerLogRepository
+        this.exchangePositionWatcher = exchangePositionWatcher
     }
 
     start() {
@@ -140,6 +143,11 @@ module.exports = class Trade {
 
         eventEmitter.on('watchdog', async () => {
             me.exchangeOrderWatchdogListener.onTick()
+            await me.exchangePositionWatcher.onPositionStateChangeTick()
+        })
+
+        eventEmitter.on(PositionStateChangeEvent.EVENT_NAME, async event => {
+            await me.exchangeOrderWatchdogListener.onPositionChanged(event)
         })
 
         eventEmitter.on('signal_tick', async () => me.signalListener.onSignalTick())

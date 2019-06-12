@@ -61,6 +61,31 @@ module.exports = class ExchangeOrderWatchdogListener {
         })
     }
 
+    async onPositionChanged(positionStateChangeEvent) {
+        if (!positionStateChangeEvent.isClosed()) {
+            return
+        }
+
+        let exchangeName = positionStateChangeEvent.getExchange()
+        let symbol = positionStateChangeEvent.getSymbol()
+
+        let pair = this.instances.symbols.find(instance =>
+            instance.exchange === exchangeName && instance.symbol === symbol
+        )
+
+        if (!pair) {
+            return
+        }
+
+        let found = pair.watchdogs.find(watchdog => ['stoploss', 'risk_reward_ratio'].includes(watchdog.name))
+        if (!found) {
+            return
+        }
+
+        this.logger.info('Watchdog: position closed cleanup orders: ' + JSON.stringify([exchangeName, symbol]))
+        await this.exchangeManager.get(exchangeName).cancelAll(positionStateChangeEvent.getSymbol())
+    }
+
     async stopLossWatchdog(exchange, position, stopLoss) {
         let logger = this.logger
         let stopLossCalculator = this.stopLossCalculator

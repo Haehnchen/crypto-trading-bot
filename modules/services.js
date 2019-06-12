@@ -19,6 +19,7 @@ let CandleStickLogListener = require('../modules/listener/candle_stick_log_liste
 let TickerDatabaseListener = require('../modules/listener/ticker_database_listener');
 let TickerLogListener = require('../modules/listener/ticker_log_listener');
 let ExchangeOrderWatchdogListener = require('../modules/listener/exchange_order_watchdog_listener');
+let ExchangePositionWatcher = require('../modules/exchange/exchange_position_watcher');
 
 let SignalLogger = require('../modules/signal/signal_logger');
 let SignalHttp = require('../modules/signal/signal_http');
@@ -113,6 +114,7 @@ let exchanges = undefined;
 let requestClient = undefined;
 let exchangeCandleCombine = undefined;
 let candleExportHttp = undefined;
+let exchangePositionWatcher = undefined;
 
 module.exports = {
     boot: async function () {
@@ -592,6 +594,18 @@ module.exports = {
         )
     },
 
+    getExchangePositionWatcher: function () {
+        if (exchangePositionWatcher) {
+            return exchangePositionWatcher
+        }
+
+        return exchangePositionWatcher = new ExchangePositionWatcher(
+            this.getExchangeManager(),
+            this.getEventEmitter(),
+            this.getLogger(),
+        )
+    },
+
     getExchanges: function () {
         if (exchanges) {
             return exchanges;
@@ -665,6 +679,7 @@ module.exports = {
             this.getSystemUtil(),
             this.getLogsRepository(),
             this.getTickerLogRepository(),
+            this.getExchangePositionWatcher(),
         )
     },
 
