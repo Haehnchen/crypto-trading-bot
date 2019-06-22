@@ -2,7 +2,6 @@ let assert = require('assert')
 let ExchangeOrderWatchdogListener = require('../../../modules/listener/exchange_order_watchdog_listener')
 let Ticker = require('../../../dict/ticker')
 let Position = require('../../../dict/position')
-let SignalResult = require('../../../modules/strategy/dict/signal_result')
 
 describe('#watchdogs are working', () => {
     it('watchdog for stoploss is working (long)', async () => {
@@ -129,5 +128,58 @@ describe('#watchdogs are working', () => {
         await listener.stoplossWatch(exchange, new Position('FOOUSD', 'short', -1, undefined, undefined, 100), {'stop': 0.9})
 
         assert.deepEqual(calls, [])
+    })
+
+    it('closed position should clear open orders', async () => {
+        let symbols = [
+            {'exchange': 'foobar', 'symbol': 'FOOUSD'},
+            {'exchange': 'foobar', 'symbol': 'BTCUSD', 'watchdogs': [{'name': 'stoploss'}]}
+        ];
+
+        let calls = [];
+        let listener = new ExchangeOrderWatchdogListener(
+            {},
+            {'symbols': symbols},
+            {},
+            {},
+            {'cancelAll': async (exchange, symbol) => {calls.push([exchange, symbol])}},
+            {},
+            {'info': () => {}},
+            {},
+        );
+
+        await listener.onPositionChanged({
+            'getExchange': () => 'foobar',
+            'getSymbol': () => 'BTCUSD',
+            'isClosed': () => true,
+        });
+
+        assert.deepStrictEqual(calls[0], ['foobar', 'BTCUSD'])
+    })
+
+    it('closed position without watchdog should be ignored', async () => {
+        let symbols = [
+            {'exchange': 'foobar', 'symbol': 'BTCUSD'},
+        ];
+
+        let calls = [];
+        let listener = new ExchangeOrderWatchdogListener(
+            {},
+            {'symbols': symbols},
+            {},
+            {},
+            {'cancelAll': async (exchange, symbol) => {calls.push([exchange, symbol])}},
+            {},
+            {'info': () => {}},
+            {},
+        );
+
+        await listener.onPositionChanged({
+            'getExchange': () => 'foobar',
+            'getSymbol': () => 'BTCUSD',
+            'isClosed': () => true,
+        });
+
+        assert.deepStrictEqual(calls.length, 0)
     })
 })

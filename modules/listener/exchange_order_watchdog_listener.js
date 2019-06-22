@@ -73,7 +73,7 @@ module.exports = class ExchangeOrderWatchdogListener {
             instance.exchange === exchangeName && instance.symbol === symbol
         )
 
-        if (!pair) {
+        if (!pair || !pair.watchdogs) {
             return
         }
 
@@ -83,7 +83,7 @@ module.exports = class ExchangeOrderWatchdogListener {
         }
 
         this.logger.info('Watchdog: position closed cleanup orders: ' + JSON.stringify([exchangeName, symbol]))
-        await this.exchangeManager.get(exchangeName).cancelAll(positionStateChangeEvent.getSymbol())
+        await this.orderExecutor.cancelAll(exchangeName, positionStateChangeEvent.getSymbol())
     }
 
     async stopLossWatchdog(exchange, position, stopLoss) {
