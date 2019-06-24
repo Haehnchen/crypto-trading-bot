@@ -49,15 +49,7 @@ module.exports = class ExchangeManager {
     }
 
     async getPosition(exchangeName, symbol) {
-        return new Promise(async (resolve) => {
-            let exchange = this.get(exchangeName);
-            if (!exchange) {
-                resolve()
-                return;
-            }
-
-            resolve(await exchange.getPositionForSymbol(symbol))
-        })
+        return this.get(exchangeName).getPositionForSymbol(symbol);
     }
 
     async getPositions() {
@@ -76,14 +68,6 @@ module.exports = class ExchangeManager {
     }
 
     async getOrders(exchangeName, symbol) {
-        return new Promise(async (resolve) => {
-            let exchange = this.get(exchangeName);
-            if (!exchange) {
-                resolve([])
-                return
-            }
-
-            resolve(await exchange.getOrdersForSymbol(symbol))
-        })
+        return this.get(exchangeName).getOrdersForSymbol(symbol)
     }
 }

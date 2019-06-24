@@ -419,17 +419,14 @@ module.exports = class Bitmex {
         return results
     }
 
-    getPositionForSymbol(symbol) {
-        return new Promise(async resolve => {
-            for (let position of (await this.getPositions())) {
-                if(position.symbol === symbol) {
-                    resolve(position)
-                    return
-                }
+    async getPositionForSymbol(symbol) {
+        for (let position of (await this.getPositions())) {
+            if(position.symbol === symbol) {
+                return position
             }
+        }
 
-            resolve()
-        })
+        return undefined
     }
 
     /**

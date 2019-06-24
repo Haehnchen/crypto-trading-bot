@@ -2,6 +2,11 @@
 
 let _ = require('lodash')
 
+/**
+ * The order that should place from our side and sending to remote
+ *
+ * @type {module.Order}
+ */
 module.exports = class Order {
     constructor(id, symbol, side, price, amount, type, options = {}) {
         this.id = id

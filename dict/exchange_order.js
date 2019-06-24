@@ -1,5 +1,8 @@
 'use strict';
 
+/**
+ * Order that coming from exchange that is placed there
+ */
 module.exports = class ExchangeOrder {
     constructor(id, symbol, status, price, amount, retry, ourId, side, type, createdAt, updatedAt, raw = undefined, options = {}) {
         if (side !== 'buy' && side !== 'sell') {
