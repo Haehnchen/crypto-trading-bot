@@ -854,8 +854,13 @@ module.exports = class Bybit {
             return
         }
 
-        this.logger.debug('Bybit: Positions via API updated')
         let json = JSON.parse(body);
+        if (!json.result) {
+            this.logger.error('Bybit: Invalid position update:' + JSON.stringify({'body': body}))
+            return
+        }
+
+        this.logger.debug('Bybit: Positions via API updated')
         this.fullPositionsUpdate(json.result)
     }
 
