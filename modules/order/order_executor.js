@@ -117,25 +117,20 @@ module.exports = class OrderExecutor {
         })
     }
 
-    cancelOrder(exchangeName, orderId) {
-        return new Promise(async resolve => {
-            let exchange = this.exchangeManager.get(exchangeName);
-            if (!exchange) {
-                console.error('Invalid exchange: ' + exchangeName);
+    async cancelOrder(exchangeName, orderId) {
+        let exchange = this.exchangeManager.get(exchangeName);
+        if (!exchange) {
+            console.error('Invalid exchange: ' + exchangeName);
+            return;
+        }
 
-                resolve();
-                return;
-            }
-
-            try {
-                resolve(await exchange.cancelOrder(orderId))
-            } catch (err) {
-                this.logger.error('Order cancel error: ' + orderId + ' ' + err);
-                console.log('Order error: ' + orderId + err);
-
-                resolve()
-            }
-        })
+        try {
+            let order = await exchange.cancelOrder(orderId)
+            this.logger.info('Order canceled: ' + orderId);
+            return order
+        } catch (err) {
+            this.logger.error('Order cancel error: ' + orderId + ' ' + err);
+        }
     }
 
     cancelAll(exchangeName, symbol) {
