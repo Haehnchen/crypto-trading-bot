@@ -15,15 +15,12 @@ let Tickers = require('../storage/tickers');
 let CandleStickListener = require('../modules/listener/candle_stick_listener');
 let TickListener = require('../modules/listener/tick_listener');
 let CreateOrderListener = require('../modules/listener/create_order_listener');
-let CandleStickLogListener = require('../modules/listener/candle_stick_log_listener');
 let TickerDatabaseListener = require('../modules/listener/ticker_database_listener');
-let TickerLogListener = require('../modules/listener/ticker_log_listener');
 let ExchangeOrderWatchdogListener = require('../modules/listener/exchange_order_watchdog_listener');
 let ExchangePositionWatcher = require('../modules/exchange/exchange_position_watcher');
 
 let SignalLogger = require('../modules/signal/signal_logger');
 let SignalHttp = require('../modules/signal/signal_http');
-let SignalListener = require('../modules/signal/signal_listener');
 
 let SignalRepository = require('../modules/repository/signal_repository');
 let CandlestickRepository = require('../modules/repository/candlestick_repository');
@@ -78,16 +75,13 @@ let queue = undefined;
 
 let candleStickListener = undefined;
 let candleStickImporter = undefined;
-let candleStickLogListener = undefined;
 let tickerDatabaseListener = undefined;
-let tickerLogListener = undefined;
 let tickListener = undefined;
 let createOrderListener = undefined;
 let exchangeOrderWatchdogListener = undefined;
 
 let signalLogger = undefined;
 let signalHttp = undefined;
-let signalListener = undefined;
 
 let signalRepository = undefined;
 let candlestickRepository = undefined;
@@ -253,28 +247,12 @@ module.exports = {
         )
     },
 
-    getCandleStickLogListener: function () {
-        if (candleStickLogListener) {
-            return candleStickLogListener
-        }
-
-        return candleStickLogListener = new CandleStickLogListener(this.getDatabase(), this.getLogger())
-    },
-
     getTickerDatabaseListener: function () {
         if (tickerDatabaseListener) {
             return tickerDatabaseListener
         }
 
         return tickerDatabaseListener = new TickerDatabaseListener(this.getDatabase(), this.getLogger())
-    },
-
-    getTickerLogListener: function () {
-        if (tickerLogListener) {
-            return tickerLogListener
-        }
-
-        return tickerLogListener = new TickerLogListener(this.getDatabase(), this.getLogger())
     },
 
     getSignalLogger: function () {
@@ -291,19 +269,6 @@ module.exports = {
         }
 
         return signalHttp = new SignalHttp(this.getDatabase())
-    },
-
-    getSignalListener: function () {
-        if (signalListener) {
-            return signalListener
-        }
-
-        return signalListener = new SignalListener(
-            this.getSignalRepository(),
-            this.getInstances(),
-            this.getTickers(),
-            this.getEventEmitter(),
-        )
     },
 
     getSignalRepository: function () {
@@ -669,10 +634,7 @@ module.exports = {
             this.getTickListener(),
             this.getCandleStickListener(),
             this.getTickers(),
-            this.getCandleStickLogListener(),
             this.getTickerDatabaseListener(),
-            this.getTickerLogListener(),
-            this.getSignalListener(),
             this.getExchangeOrderWatchdogListener(),
             this.getOrderExecutor(),
             this.getPairStateExecution(),
