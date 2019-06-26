@@ -331,9 +331,7 @@ module.exports = {
             return eventEmitter;
         }
 
-        eventEmitter = new events.EventEmitter();
-        eventEmitter.setMaxListeners(0); // turn off limits by default
-        return eventEmitter;
+        return eventEmitter = new events.EventEmitter();
     },
 
     getLogger: function () {
