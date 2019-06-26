@@ -49,7 +49,7 @@ TODOS:
 Install packages
 
 ```
-npm install
+npm install --production
 ```
 
 Create instance file for pairs and changes
