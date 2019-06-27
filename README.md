@@ -83,12 +83,13 @@ For initialize the configuration once
 
 ```
 docker-compose run --rm --entrypoint "/bin/bash" bot "-c" "cp instance.js.dist instance.js && cp conf.json.dist conf.json && sqlite3 bot.db < bot.sql"
+docker-compose build
 ```
 
 After this you can use `docker-compose` which will give you a running bot via <http://127.0.0.1:8080>
 
 ```
-docker-compose up
+docker-compose up -d
 ```
 
 #### Setting Up Telegram Bot

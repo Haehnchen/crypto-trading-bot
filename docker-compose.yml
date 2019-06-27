@@ -2,12 +2,14 @@ version: '3.7'
 
 services:
   bot:
-    image: node:11
+    container_name: crypto-trading-bot
+    image: node:10
     build:
         context: .
         dockerfile: Dockerfile
     volumes:
-        - .:/src
+        - .:/usr/src/app
+        - /usr/src/app/node_modules
     ports:
         - "8080:8080"
-    working_dir: /src
+    command: npm start
