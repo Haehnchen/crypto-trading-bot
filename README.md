@@ -49,7 +49,8 @@ TODOS:
 Install packages
 
 ```
-npm install --production
+➜ npm install --production
+➜ npm run postinstall
 ```
 
 Create instance file for pairs and changes
