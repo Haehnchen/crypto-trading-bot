@@ -216,7 +216,8 @@ module.exports = class Http {
                 myPositions.forEach(position => {
                     // simply converting of asset to currency value
                     let currencyValue;
-                    if (exchangeName.includes('bitmex') && ['XBTUSD', 'ETHUSD'].includes(position.symbol)) {
+                    if ((exchangeName.includes('bitmex') && ['XBTUSD', 'ETHUSD'].includes(position.symbol)) || exchangeName.includes('bybit')) {
+                        // inverse exchanges
                         currencyValue = Math.abs(position.amount)
                     } else if (position.amount && position.entry) {
                         currencyValue = position.entry * Math.abs(position.amount)
