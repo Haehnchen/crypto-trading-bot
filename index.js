@@ -7,14 +7,14 @@ let Backfill = require('./command/backfill.js');
 let program = require('commander');
 
 // init
-let services = require('./modules/services')
+let services = require('./modules/services');
 
 program
     .command('trade')
-    .description('upload a file')
+    .description('start crypto trading bot')
     .option('-i, --instance <file>', 'Instance to start', 'instance.json')
     .action(async options => {
-        await services.boot()
+        await services.boot();
 
         let cmd = new TradeCommand(options.instance);
         cmd.execute();
@@ -22,7 +22,7 @@ program
 
 program
     .command('backfill')
-    .description('upload a file')
+    .description('process historical data collection')
     .option('-e, --exchange <exchange>')
     .option('-s, --symbol <symbol>')
     .option('-p, --period <period>', '1m 5m, 15m, 1h', '15m')
@@ -32,7 +32,7 @@ program
             throw 'Not all options are given'
         }
 
-        await services.boot()
+        await services.boot();
 
         let cmd = new Backfill();
         await cmd.execute(options.exchange, options.symbol, options.period, options.date);
@@ -42,6 +42,7 @@ program
 
 program
     .command('server')
+    .description('')
     .option('-i, --instance <file>', 'Instance to start', 'instance.json')
     .action(function(options) {
         let cmd = new ServerCommand(options.instance);
