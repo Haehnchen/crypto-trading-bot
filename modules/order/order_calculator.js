@@ -1,25 +1,25 @@
 'use strict';
 
-let _ = require('lodash')
+let _ = require('lodash');
 
 module.exports = class OrderCalculator {
     constructor(instances, tickers, logger, exchangeManager) {
-        this.instances = instances
-        this.tickers = tickers
-        this.logger = {}
+        this.instances = instances;
+        this.tickers = tickers;
+        this.logger = logger;
         this.exchangeManager = exchangeManager
     }
 
     async calculateOrderSize(exchangeName, symbol) {
-        let orderSizeCalculated = await this.getSymbolCapital(exchangeName, symbol)
+        let orderSizeCalculated = await this.getSymbolCapital(exchangeName, symbol);
         if (!orderSizeCalculated) {
             return
         }
 
         // normalize the size to allowed size
-        let orderSize = this.exchangeManager.get(exchangeName).calculateAmount(orderSizeCalculated, symbol)
+        let orderSize = this.exchangeManager.get(exchangeName).calculateAmount(orderSizeCalculated, symbol);
         if (!orderSize) {
-            this.logger.error('Can no normalize buy price: ' + JSON.stringify([exchangeName, symbol, orderSize]))
+            this.logger.error('Can no normalize buy price: ' + JSON.stringify([exchangeName, symbol, orderSize]));
 
             return
         }
@@ -31,7 +31,7 @@ module.exports = class OrderCalculator {
         let capital = this.instances.symbols.find(instance =>
             instance.exchange === exchange && instance.symbol === symbol &&
             (_.get(instance, 'trade.capital', 0) > 0)
-        )
+        );
 
         if (capital) {
             return capital.trade.capital
@@ -40,13 +40,13 @@ module.exports = class OrderCalculator {
         let capitalCurrency = this.instances.symbols.find(instance =>
             instance.exchange === exchange && instance.symbol === symbol &&
             (_.get(instance, 'trade.currency_capital', 0) > 0)
-        )
+        );
 
         if (capitalCurrency) {
             return await this.convertCurrencyToAsset(exchange, symbol, capitalCurrency.trade.currency_capital)
         }
 
-        return
+
     }
 
     /**
@@ -60,10 +60,10 @@ module.exports = class OrderCalculator {
     async convertCurrencyToAsset(exchangeName, symbol, currencyAmount) {
         let ticker = this.tickers.get(exchangeName, symbol);
         if (!ticker || !ticker.bid) {
-            this.logger.error('Invalid ticker for calculate currency capital:' + JSON.stringify([exchangeName, symbol, currencyAmount]))
+            this.logger.error('Invalid ticker for calculate currency capital:' + JSON.stringify([exchangeName, symbol, currencyAmount]));
             return
         }
 
         return currencyAmount / ticker.bid
     }
-}
+};

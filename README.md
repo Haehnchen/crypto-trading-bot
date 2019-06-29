@@ -49,7 +49,8 @@ TODOS:
 Install packages
 
 ```
-npm install
+➜ npm install --production
+➜ npm run postinstall
 ```
 
 Create instance file for pairs and changes
@@ -64,10 +65,8 @@ Provide a configuration with your exchange credentials
 cp conf.json.dist conf.json
 ```
 
-Create a new sqlite data base
-
+Create a new sqlite database use bot.sql scheme to create the tables
 ```
-# use bot.sql scheme to create the tables
 sqlite3 bot.db < bot.sql
 ```
 
@@ -82,14 +81,11 @@ node index.js trade
 For initialize the configuration once
 
 ```
-docker-compose run --rm --entrypoint "/bin/bash" bot "-c" "cp instance.js.dist instance.js && cp conf.json.dist conf.json && sqlite3 bot.db < bot.sql"
+➜ cp instance.js.dist instance.js && cp conf.json.dist conf.json && sqlite3 bot.db < bot.sql
+➜ docker-compose build
+➜ docker-compose up -d
 ```
-
 After this you can use `docker-compose` which will give you a running bot via <http://127.0.0.1:8080>
-
-```
-docker-compose up
-```
 
 #### Setting Up Telegram Bot
 First, you'll need to create a bot for Telegram. Just talk to [BotFather](https://telegram.me/botfather) and follow simple steps until it gives you a token for it.
