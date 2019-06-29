@@ -399,13 +399,15 @@ module.exports = class CoinbasePro {
                 let profit;
 
                 // try to find a entry price, based on trade history
-                if (this.fills[pair] && this.fills[pair][0] && this.fills[pair][0].side === 'buy') {
-                    entry = parseFloat(this.fills[pair][0].price);
-                    createdAt = new Date(this.fills[pair][0].created_at);
+                if (this.fills[pair] && this.fills[pair][0]) {
+                    let result = CoinbasePro.calculateEntryOnFills(this.fills[pair])
+                    if (result) {
+                        createdAt = new Date(result['created_at']);
 
-                    // calculate profit based on the ticket price
-                    if (entry && this.tickers[pair]) {
-                        profit = ((this.tickers[pair].bid / entry) - 1) * 100
+                        // calculate profit based on the ticket price
+                        if (result['average_price'] && this.tickers[pair]) {
+                            profit = ((this.tickers[pair].bid / result['average_price']) - 1) * 100
+                        }
                     }
                 }
 
@@ -414,6 +416,39 @@ module.exports = class CoinbasePro {
         }
 
         return positions
+    }
+
+    static calculateEntryOnFills(fills, balance) {
+        let result = {
+            'size': 0,
+            'costs': 0,
+        };
+
+        for (let fill of fills) {
+            // stop if last fill is a sell
+            if (fill.side !== 'buy') {
+                break;
+            }
+
+            // stop if price out of range window
+            let number = result.size + parseFloat(fill.size);
+            if (number > balance * 1.15) {
+                break;
+            }
+
+            result.size += parseFloat(fill.size);
+            result.costs += parseFloat(fill.size) * (parseFloat(fill.fee) + parseFloat(fill.price))
+
+            result['created_at'] = fill.created_at
+        }
+
+        result['average_price'] = result.costs / result.size
+
+        if (result.size === 0 || result.costs === 0) {
+            return undefined;
+        }
+
+        return result
     }
 
     async getPositionForSymbol(symbol) {
