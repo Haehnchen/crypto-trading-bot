@@ -6,7 +6,7 @@ module.exports = class OrderCalculator {
     constructor(instances, tickers, logger, exchangeManager) {
         this.instances = instances;
         this.tickers = tickers;
-        this.logger = {}
+        this.logger = logger;
         this.exchangeManager = exchangeManager
     }
 
