@@ -403,9 +403,10 @@ module.exports = class CoinbasePro {
                     let result = CoinbasePro.calculateEntryOnFills(this.fills[pair])
                     if (result) {
                         createdAt = new Date(result['created_at']);
+                        entry = result['average_price']
 
                         // calculate profit based on the ticket price
-                        if (result['average_price'] && this.tickers[pair]) {
+                        if (this.tickers[pair] && this.tickers[pair].bid) {
                             profit = ((this.tickers[pair].bid / result['average_price']) - 1) * 100
                         }
                     }
