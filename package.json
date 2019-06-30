@@ -46,7 +46,7 @@
     "technicalindicators": "^2.0.9",
     "telegraf": "^3.29.0",
     "tulind": "^0.8.15",
-    "twig": "^1.12.0",
+    "twig": "^1.13.3",
     "winston": "^3.2.1",
     "ws": "^7.0.0",
     "zero-fill": "^2.2.3"
