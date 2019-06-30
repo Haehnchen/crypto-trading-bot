@@ -16,7 +16,7 @@ module.exports = class Http {
         this.exchangeManager = exchangeManager;
         this.pairsHttp = pairsHttp;
         this.logsHttp = logsHttp;
-        this.candleExportHttp = candleExportHttp
+        this.candleExportHttp = candleExportHttp;
         this.candleImporter = candleImporter
     }
 
@@ -141,9 +141,9 @@ module.exports = class Http {
 
                 if (req.query.metadata) {
                     candles.map(c => {
-                        c['exchange'] = exchange
-                        c['symbol'] = symbol
-                        c['period'] = req.query.period
+                        c['exchange'] = exchange;
+                        c['symbol'] = symbol;
+                        c['period'] = req.query.period;
                         return c
                     })
                 }
@@ -163,9 +163,9 @@ module.exports = class Http {
 
         app.post('/tools/candles', async (req, res) => {
             let exchangeCandlesticks = JSON.parse(req.body.json);
-            await this.candleImporter.insertCandles(exchangeCandlesticks)
+            await this.candleImporter.insertCandles(exchangeCandlesticks);
 
-            console.log('Imported: ' + exchangeCandlesticks.length + ' items')
+            console.log('Imported: ' + exchangeCandlesticks.length + ' items');
 
             res.redirect('/tools/candles');
         });
