@@ -36,6 +36,8 @@ module.exports = class Ta {
                                 return;
                             }
 
+                            //let range = moment().subtract(24, 'hours')
+
                             let rangeMin = moment().subtract(24, 'hours').subtract(35, 'minutes').unix()
                             let rangeMax = moment().subtract(24, 'hours').add(35, 'minutes').unix()
 
