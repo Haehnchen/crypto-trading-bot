@@ -1,0 +1,56 @@
+{% extends './layout.html.twig' %}
+
+{% block title %}Desk: {{ desk.name }} | Crypto Bot{% endblock %}
+
+{% block javascript %}
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+<script type="text/javascript">
+{% for pair in desk.pairs %}
+new TradingView.widget(
+    {
+        "autosize": true,
+        "symbol": "{{ pair.symbol }}",
+        "interval": "{{ interval > 0 ? interval : desk.intervals[0] }}",
+        "theme": "Light",
+        "style": "1",
+        "locale": "en",
+        "toolbar_bg": "#f1f3f6",
+        "enable_publishing": false,
+        "allow_symbol_change": true,
+        "container_id": "tradingview_{{ loop.index }}",
+        "studies": [
+            "RSI@tv-basicstudies"
+        ],
+    }
+);
+{% endfor %}
+</script>
+{% endblock javascript %}
+
+{% block content %}
+    <div class="container-fluid">
+        <strong>{{ desk.name }}</strong>
+
+        {% if desk.intervals|length > 0 %}
+            {% for interval in desk.intervals|default([]) %}
+                <a href="/desks/{{ id }}?interval={{ interval }}">{{ interval }}</a>
+            {% endfor %}
+        {% endif %}
+
+        {% set i = 1 %}
+        {% for row in desk.pairs|batch(desk.grid|default(4), "empty") %}
+            <div class="row">
+                {% for pair in row %}
+                    <div class="col-sm">
+                        {% if pair.symbol %}
+                            <div id="tradingview_{{ i }}" style="width: 100%; height: {{ desk.height|default(300) }}px"></div>
+                        {% endif %}
+                    </div>
+
+                    {% set i = i + 1 %}
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock content %}

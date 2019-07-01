@@ -57,5 +57,50 @@
     "order": {
         "retry": null,
         "retry_ms": null
-    }
+    },
+    "desks": [
+        {
+            "name": "Top 10",
+            "grid": 4,
+            "intervals": [15, 60],
+            "height": 400,
+            "pairs": [
+                {
+                    "symbol": "bitmex:XBTUSD"
+                },
+                {
+                    "symbol": "bitmex:ETHUSD"
+                },
+                {
+                    "symbol": "binance:ETHUSDT"
+                },
+                {
+                    "symbol": "binance:LTCUSDT"
+                },
+                {
+                    "symbol": "binance:XRPUSDT"
+                },
+                {
+                    "symbol": "binance:EOSUSDT"
+                }
+            ]
+        },
+        {
+            "name": "Stock",
+            "grid": 3,
+            "intervals": [1440],
+            "height": 400,
+            "pairs": [
+                {
+                    "symbol": "SPY"
+                },
+                {
+                    "symbol": "TVC:NDX"
+                },
+                {
+                    "symbol": "DJI"
+                }
+            ]
+        }
+    ]
 }

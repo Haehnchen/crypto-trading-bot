@@ -42,6 +42,11 @@ module.exports = class Http {
             return assetVersion
         });
 
+        let desks = this.systemUtil.getConfig('desks', []).map(desk => desk.name);
+        twig.extendFunction('desks', function () {
+            return desks
+        });
+
         twig.extendFilter('format_json', function (value) {
             return JSON.stringify(value, null, '\t')
         });
@@ -122,6 +127,14 @@ module.exports = class Http {
 
         app.get('/logs', async (req, res) => {
             res.render('../templates/logs.html.twig', await this.logsHttp.getLogsPageVariables(req, res))
+        });
+
+        app.get('/desks/:desk', async (req, res) => {
+            res.render('../templates/desks.html.twig', {
+                'desk': this.systemUtil.getConfig('desks')[req.params.desk],
+                'interval': req.query.interval || undefined,
+                'id': req.params.desk,
+            })
         });
 
         app.get('/tools/candles', async (req, res) => {
