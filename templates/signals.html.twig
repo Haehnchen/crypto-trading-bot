@@ -22,7 +22,7 @@
                 {% for signal in signals %}
                     <tr>
                         <td>{{ signal.exchange }}</td>
-                        <td>{{ signal.symbol }}</td>
+                        <td><a target="blank" href="/tradingview/{{ signal.exchange }}:{{ signal.symbol }}">{{ signal.symbol }}</a></td>
                         <td>
                             {% if signal.side == 'long' %}
                                 <i class="fas fa-chevron-circle-up text-success"></i>
