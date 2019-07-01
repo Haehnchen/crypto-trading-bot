@@ -23,7 +23,7 @@
                 {% for pair in pairs %}
                     <tr>
                         <td style="white-space: nowrap">{{ pair.exchange }}</td>
-                        <td style="white-space: nowrap">{{ pair.symbol }}</td>
+                        <td style="white-space: nowrap"><a target="blank" href="/tradingview/{{ pair.exchange }}:{{ pair.symbol }}">{{ pair.symbol }}</td>
                         <td>{{ pair.state }}</td>
                         <td><strong>{{ pair.capital }}</strong></td>
                         <td class="text-muted"><span class="span-md">{{ pair.strategies|json_encode }}</span></td>
