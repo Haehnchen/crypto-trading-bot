@@ -439,6 +439,7 @@ module.exports = {
             this.getInstances(),
             this.getExchangeManager(),
             this.getPairStateManager(),
+            this.getEventEmitter(),
         )
     },
 

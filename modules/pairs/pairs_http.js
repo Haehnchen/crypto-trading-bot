@@ -3,10 +3,11 @@
 let _ = require('lodash');
 
 module.exports = class PairsHttp {
-    constructor(instances, exchangeManager, pairStateManager) {
+    constructor(instances, exchangeManager, pairStateManager, eventEmitter) {
         this.instances = instances
         this.exchangeManager = exchangeManager
         this.pairStateManager = pairStateManager
+        this.eventEmitter = eventEmitter
     }
 
     async getTradePairs() {
@@ -43,18 +44,15 @@ module.exports = class PairsHttp {
     }
 
     async triggerOrder(exchangeName, symbol, action) {
-        return new Promise(async resolve => {
+        let side = action
+        let options = {}
+        if (['long_market', 'short_market', 'close_market'].includes(action)) {
+            options['market'] = true
+            side = side.replace('_market', '')
+        }
 
-            let side = action
-            let options = {}
-            if (['long_market', 'short_market', 'close_market'].includes(action)) {
-                options['market'] = true
-                side = side.replace('_market', '')
-            }
+        this.pairStateManager.update(exchangeName, symbol, side, options)
 
-            this.pairStateManager.update(exchangeName, symbol, side, options)
-
-            resolve()
-        })
+        this.eventEmitter.emit('tick_ordering')
     }
 }
