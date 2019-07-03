@@ -49,6 +49,7 @@
 
                                     {% if pair.has_position|default(false) and not pair.process %}
                                         <button name="action" value="close" data-toggle="tooltip" title="Limit Close" class="btn btn-dark btn-sm"><i class="fas fa-window-close"></i> Close</button>
+                                        <button name="action" value="close_market" data-toggle="tooltip" title="Market Close" class="btn btn-dark btn-sm"><i class="fas fa-window-close"></i></button>
                                     {% endif %}
 
                                     {% if pair.process|default %}
