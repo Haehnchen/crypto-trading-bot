@@ -136,8 +136,17 @@ module.exports = class PairStateExecution {
                 pair.options,
             );
 
+
             if (order) {
-                this.managedOrders.push(order)
+                // should we also check for rejected on close? its important to close
+                if (order.status === ExchangeOrder.STATUS_DONE) {
+                    // add order to know it for later usage
+                    this.logger.info('Pair State: Order directly filled clearing state: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
+                    this.pairStateManager.clear(pair.exchange, pair.symbol)
+                } else {
+                    // add order to know it for later usage
+                    this.managedOrders.push(order)
+                }
             }
         }
 
@@ -228,7 +237,7 @@ module.exports = class PairStateExecution {
             return
         }
 
-        let myOrder = options['market'] === true
+        let myOrder = options && options['market'] === true
             ? Order.createMarketOrder(symbol, exchangeOrderSize)
             : Order.createCloseOrderWithPriceAdjustment(symbol, exchangeOrderSize);
 

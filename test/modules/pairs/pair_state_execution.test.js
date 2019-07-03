@@ -1,6 +1,7 @@
 let assert = require('assert')
 let PairStateExecution = require('../../../modules/pairs/pair_state_execution')
 let ExchangeOrder = require('../../../dict/exchange_order')
+let Position = require('../../../dict/position');
 
 describe('#pair state execution', function() {
     it('test limit open order trigger for long', async () => {
@@ -232,5 +233,39 @@ describe('#pair state execution', function() {
 
         assert.strictEqual(logMessages['info'].filter(msg => msg.includes('position open order')).length, 1)
         assert.strictEqual(logMessages['error'].filter(msg => msg.includes('order rejected clearing pair state')).length, 1)
+    })
+
+    it('test buy/sell directly filled for closing an order', async () => {
+        let clearCalls = []
+
+        let logMessages = {
+            'info': [],
+        }
+
+        let executor = new PairStateExecution(
+            {
+                'clear': (exchange, symbol) => { clearCalls.push([exchange, symbol]) },
+            },
+            {
+                'getPosition': async () => new Position('ADAUSDT', 'long', 1337),
+                'getOrders': async () => [],
+                'get': () => {
+                    return {'calculateAmount': v => v }
+                },
+            },
+            {'calculateOrderSize': async () => { return 1337 }},
+            {'executeOrder': async () => new ExchangeOrder('foobar', 'ADAUSDT', 'done', undefined, undefined, undefined, undefined, 'buy')},
+            {
+                'info': message => { logMessages['info'].push(message) },
+            }
+        )
+
+        await executor.onClosePair({'exchange': 'foobar', 'symbol': 'ADAUSDT'})
+
+        assert.strictEqual(clearCalls[0][0], 'foobar')
+        assert.strictEqual(clearCalls[0][1], 'ADAUSDT')
+
+        assert.strictEqual(logMessages['info'].filter(msg => msg.includes('position close order')).length, 1)
+        assert.strictEqual(logMessages['info'].filter(msg => msg.includes('directly filled clearing state')).length, 1)
     })
 })
