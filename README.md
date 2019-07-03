@@ -46,7 +46,21 @@ TODOS:
  
 ## How to use
 
-Install packages
+
+### [optional] Preinstall
+
+The tulip library is used for indicators; which sometimes is having some issues on `npm install` because of code compiling:
+
+Install build tools
+
+```
+sudo apt-get install build-essential
+```
+
+Also the build from source is not supporting all nodejs version. It looks like versions <= 10 are working. You can use nodejs 12 if you compiled it once via older version.
+
+
+### Install packages
 
 ```
 ➜ npm install --production
