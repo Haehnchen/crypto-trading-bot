@@ -91,7 +91,7 @@ module.exports = class Order {
             }))
     }
 
-    static createRetryOrder(order) {
+    static createRetryOrder(order, amount) {
         if (!order instanceof Order) {
             throw 'TypeError: no Order'
         }
@@ -100,12 +100,21 @@ module.exports = class Order {
             throw 'Invalid order side:' + order.side + ' - ' + JSON.stringify(order)
         }
 
+        let orderAmount = order.amount;
+        if (typeof amount !== 'undefined') {
+            orderAmount = Math.abs(amount)
+
+            if (order.side === 'short') {
+                orderAmount *= -1
+            }
+        }
+
         return new Order(
             Math.round(((new Date()).getTime()).toString() * Math.random()),
             order.symbol,
             order.side,
             order.price,
-            order.amount,
+            orderAmount,
             order.type,
             order.options,
         )

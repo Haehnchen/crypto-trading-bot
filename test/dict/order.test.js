@@ -72,7 +72,36 @@ describe('#order dict test', function() {
     it('test retry order', () => {
         let order = Order.createRetryOrder(Order.createMarketOrder('BTCUSD', 12))
 
-        assert.equal(order.price > 0, true)
-        assert.equal(order.side, 'long')
+        assert.strictEqual(order.price > 0, true)
+        assert.strictEqual(order.side, 'long')
+        assert.strictEqual(order.amount, 12)
+    })
+
+    it('test retry order with amount [long]', () => {
+        let order = Order.createRetryOrder(Order.createMarketOrder('BTCUSD', 12), -16)
+
+        assert.strictEqual(order.price > 0, true)
+        assert.strictEqual(order.side, 'long')
+        assert.strictEqual(order.amount, 16)
+
+        order = Order.createRetryOrder(Order.createMarketOrder('BTCUSD', 12), 16)
+
+        assert.strictEqual(order.price > 0, true)
+        assert.strictEqual(order.side, 'long')
+        assert.strictEqual(order.amount, 16)
+    })
+
+    it('test retry order with amount [short]', () => {
+        let order = Order.createRetryOrder(Order.createMarketOrder('BTCUSD', -12), -16)
+
+        assert.strictEqual(order.price > 0, false)
+        assert.strictEqual(order.side, 'short')
+        assert.strictEqual(order.amount, -16)
+
+        order = Order.createRetryOrder(Order.createMarketOrder('BTCUSD', -12), 16)
+
+        assert.strictEqual(order.price > 0, false)
+        assert.strictEqual(order.side, 'short')
+        assert.strictEqual(order.amount, -16)
     })
 })

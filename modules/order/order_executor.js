@@ -95,7 +95,12 @@ module.exports = class OrderExecutor {
 
                     // recreate order
                     // @TODO: resync used balance in case on order is partially filled
-                    await this.executeOrder(orderContainer.exchange, Order.createRetryOrder(orderContainer.order))
+
+                    // create a retry order with the order amount we had before; eg if partially filled
+                    let retryOrder = Order.createRetryOrder(orderContainer.order, Math.abs(lastExchangeOrder.amount));
+                    this.logger.error('OrderAdjust: replacing canceled order: ' + JSON.stringify(retryOrder));
+
+                    await this.executeOrder(orderContainer.exchange, retryOrder)
                 } else {
                     this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify(orderContainer))
                 }

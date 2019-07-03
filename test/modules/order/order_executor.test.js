@@ -182,30 +182,26 @@ describe('#order executor', () => {
 
 
     it('test that price adjust order is recreated on placing error', async () => {
-        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', 1331, undefined, false, undefined, 'buy')
+        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', 337, 1331, false, undefined, 'buy')
 
-        let exchangeName = undefined
-        let orderUpdate = undefined
+        let logMessages = {
+            'info': [],
+            'error': [],
+        }
 
         let executor = new OrderExecutor(
             {
                 'get': () => { return {
-                    'findOrderById': () => { return new Promise(resolve => {
-                        resolve(exchangeOrder)
-                    })},
-                    'updateOrder': (myExchangeName, myOrderUpdate) => {
-                        return new Promise(resolve => {
-                            exchangeName = myExchangeName
-                            orderUpdate = myOrderUpdate
-
-                            resolve(new ExchangeOrder('1815-1337', undefined, 'canceled', 1331, undefined, true, undefined, 'buy'))
-                        })
-                    },
+                    'findOrderById': async () => exchangeOrder,
+                    'updateOrder': () => new ExchangeOrder('1815-1337', undefined, 'canceled', 1339, undefined, true, undefined, 'buy'),
                 }},
             },
-            {'getIfUpToDate': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
+            {'getIfUpToDate': () => new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)},
             {'getConfig': (key, defaultValue) => defaultValue},
-            {'info': () => {}, 'error': () => {}}
+            {
+                'info': message => { logMessages['info'].push(message) },
+                'error': message => { logMessages['error'].push(message) },
+            }
         )
 
         let retryOrder
@@ -224,8 +220,11 @@ describe('#order executor', () => {
 
         await executor.adjustOpenOrdersPrice()
 
-        assert.equal(retryOrder.amount, 1337)
-        assert.equal(retryOrder.hasAdjustedPrice(), true)
+        assert.strictEqual(retryOrder.amount, 1331)
+        assert.strictEqual(retryOrder.hasAdjustedPrice(), true)
+
+        assert.strictEqual(logMessages['error'].filter(msg => msg.includes('canceled recreate')).length, 1)
+        assert.strictEqual(logMessages['error'].filter(msg => msg.includes('replacing canceled order')).length, 1)
     })
 
     it('test that price adjust order is created for short', async () => {
