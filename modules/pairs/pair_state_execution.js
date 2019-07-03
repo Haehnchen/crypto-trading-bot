@@ -1,6 +1,7 @@
 'use strict';
 
 let Order = require('./../../dict/order');
+let ExchangeOrder = require('./../../dict/exchange_order');
 let moment = require('moment');
 
 /**
@@ -61,9 +62,19 @@ module.exports = class PairStateExecution {
 
             if (order) {
                 if (order.shouldCancelOrderProcess()) {
-                    // order was canceled by exchange eg no balance or invalid amount
-                    //this.pairStateManager.clear(pair.exchange, pair.symbol)
-                    this.logger.info('Pair State: Signal canceld for invalid order: ' + JSON.stringify(pair.exchange))
+                    // check if we need to to cancel the process
+                    if (order.status === ExchangeOrder.STATUS_REJECTED) {
+                        // order was canceled by exchange eg no balance or invalid amount
+                        this.logger.error('Pair State: order rejected clearing pair state: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
+                        this.pairStateManager.clear(pair.exchange, pair.symbol)
+                    } else {
+                        // just log this case
+                        this.logger.error('Pair State: Signal canceled for invalid order: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
+                    }
+                } else if(order.status === ExchangeOrder.STATUS_DONE) {
+                    // add order to know it for later usage
+                    this.logger.info('Pair State: Order directly filled clearing state: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
+                    this.pairStateManager.clear(pair.exchange, pair.symbol)
                 } else {
                     // add order to know it for later usage
                     this.managedOrders.push(order)
@@ -72,7 +83,7 @@ module.exports = class PairStateExecution {
         }
 
         // found multiple order; clear this invalid state
-        // we also reset or managed order here
+        // we also reset our managed order here
         let newOrders = (await this.exchangeManager.getOrders(pair.exchange, pair.symbol));
         if (newOrders.length > 1) {
             this.logger.error('Pair State: Clear invalid orders:' + JSON.stringify([newOrders.length]));
@@ -202,7 +213,7 @@ module.exports = class PairStateExecution {
             orderSize = orderSize * -1
         }
 
-        let myOrder = options['market'] === true
+        let myOrder = options && options.market === true
             ? Order.createMarketOrder(symbol, orderSize)
             : Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, orderSize);
 
