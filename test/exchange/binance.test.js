@@ -407,6 +407,27 @@ describe('#binance exchange implementation', function() {
         assert.equal(balances.find(balance => balance.asset === 'TNT').locked > 1, true)
     })
 
+    it('test placing order on balance issue', async () => {
+        let binance = new Binance(
+            undefined,
+            {
+                'error': () => {}
+            }
+        )
+
+        binance.client = {
+            'order': () => {throw new Error('Account has insufficient balance for requested action');}
+        }
+
+        let order = await binance.order(Order.createMarketOrder('FOOBAR', 12))
+
+        assert.strictEqual(order.retry, false)
+        assert.strictEqual(order.status, 'rejected')
+        assert.strictEqual(order.symbol, 'FOOBAR')
+        assert.strictEqual(order.amount, 12)
+        assert.strictEqual(order.type, 'market')
+    })
+
     let getEvent = function(find) {
         return JSON.parse(fs.readFileSync(__dirname + '/binance/events.json', 'utf8')).find(find)
     }

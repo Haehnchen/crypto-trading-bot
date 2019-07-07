@@ -93,4 +93,25 @@ module.exports = class ExchangeOrder {
             order.type,
         )
     }
+
+    static createRejectedFromOrder(order) {
+        let side = order.side
+        if (order.side === 'long') {
+            side = 'buy'
+        } else if(order.side === 'short') {
+            side = 'sell'
+        }
+
+        return new ExchangeOrder(
+            order.id,
+            order.symbol,
+            'rejected',
+            order.price,
+            order.amount,
+            false,
+            order.ourId,
+            side,
+            order.type,
+        )
+    }
 }
