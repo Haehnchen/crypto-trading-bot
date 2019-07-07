@@ -176,6 +176,14 @@ module.exports = class PairStateExecution {
         let promises = [];
 
         this.pairStateManager.all().forEach(pair => {
+            // cancel execution if not possible to place after some minutes
+            // @TODO: add check if order not filled after X min; and provide a workflow for it currently its cancel here also
+            if (pair.time < moment().subtract(15, 'minutes')) {
+                this.logger.error('Pair execution timeout cancel: ' + JSON.stringify([pair]))
+                promises.push(this.onCancelPair(pair));
+                return
+            }
+
             switch (pair.state) {
                 case 'cancel':
                     promises.push(this.onCancelPair(pair));
