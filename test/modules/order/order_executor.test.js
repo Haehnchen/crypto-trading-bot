@@ -103,7 +103,7 @@ describe('#order executor', () => {
             {'get': () => { return {'findOrderById': () => { return exchangeOrder }} }},
             undefined,
             undefined,
-            {'info': () => {}}
+            {'debug': () => {}}
         )
 
         let order = Order.createCloseOrderWithPriceAdjustment('BTCUSD', 1337)
