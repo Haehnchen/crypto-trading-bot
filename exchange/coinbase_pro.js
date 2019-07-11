@@ -438,7 +438,7 @@ module.exports = class CoinbasePro {
             }
 
             result.size += parseFloat(fill.size);
-            result.costs += parseFloat(fill.size) * (parseFloat(fill.fee) + parseFloat(fill.price))
+            result.costs += (parseFloat(fill.size) * parseFloat(fill.price)) + parseFloat(fill.fee)
 
             result['created_at'] = fill.created_at
         }
