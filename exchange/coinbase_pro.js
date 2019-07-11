@@ -536,24 +536,26 @@ module.exports = class CoinbasePro {
         this.orders[order.id] = order
     }
 
-    order(order) {
-        return new Promise(async (resolve, reject) => {
-            let payload = CoinbasePro.createOrderBody(order);
-            let result = undefined;
+    async order(order) {
+        let payload = CoinbasePro.createOrderBody(order);
+        let result = undefined;
 
-            try {
-                result = await this.client.placeOrder(payload)
-            } catch (e) {
-                this.logger.error("Coinbase Pro: order create error:" + e.message);
-                reject();
-                return
+        try {
+            result = await this.client.placeOrder(payload)
+        } catch (e) {
+            this.logger.error('Coinbase Pro: order create error: ' + e.message);
+
+            if(e.message && (e.message.match(/HTTP\s4\d{2}/i) || e.message.toLowerCase().includes('size is too accurate') || e.message.toLowerCase().includes('size is too small') )) {
+                return ExchangeOrder.createRejectedFromOrder(order);
             }
 
-            let exchangeOrder = CoinbasePro.createOrders(result)[0];
+            return
+        }
 
-            this.triggerOrder(exchangeOrder);
-            resolve(exchangeOrder)
-        })
+        let exchangeOrder = CoinbasePro.createOrders(result)[0];
+
+        this.triggerOrder(exchangeOrder);
+        return exchangeOrder
     }
 
     async cancelOrder(id) {

@@ -1,6 +1,7 @@
 let assert = require('assert');
 let CoinbasePro = require('../../exchange/coinbase_pro');
 let Ticker = require('../../dict/ticker');
+let Order = require('../../dict/order');
 
 describe('#coinbase pro exchange implementation', function() {
     it('profits are calculated', () => {
@@ -90,5 +91,72 @@ describe('#coinbase pro exchange implementation', function() {
         assert.equal(positions[0].entry.toFixed(2), 97.90)
         assert.equal(positions[0].profit.toFixed(0), 44)
         assert.equal(positions[0].createdAt instanceof Date, true)
+    })
+
+    it('test placing order', async () => {
+        let coinbasePro = new CoinbasePro(
+            undefined,
+            {
+                'error': () => {}
+            }
+        )
+
+        coinbasePro.client = {
+            'placeOrder': async () => {return {
+                'status': 'open',
+                'type': 'limit',
+                'side': 'buy',
+                'product_id': 'FOOBAR',
+            }}
+        }
+
+        let order = await coinbasePro.order(Order.createMarketOrder('FOOBAR', 12))
+
+        assert.strictEqual(order.retry, false)
+        assert.strictEqual(order.status, 'open')
+        assert.strictEqual(order.symbol, 'FOOBAR')
+        assert.strictEqual(order.type, 'limit')
+    })
+
+    it('test placing order issues with rejection', async () => {
+        let coinbasePro = new CoinbasePro(
+            undefined,
+            {
+                'error': () => {}
+            }
+        )
+
+        coinbasePro.client = {
+            'placeOrder': async () => {throw new Error('HTTP 400 Error: foobar');}
+        }
+
+        let order = await coinbasePro.order(Order.createMarketOrder('FOOBAR', 12))
+
+        assert.strictEqual(order.retry, false)
+        assert.strictEqual(order.status, 'rejected')
+        assert.strictEqual(order.symbol, 'FOOBAR')
+        assert.strictEqual(order.amount, 12)
+        assert.strictEqual(order.type, 'market')
+    })
+
+    it('test placing order issues with rejection based on text', async () => {
+        let coinbasePro = new CoinbasePro(
+            undefined,
+            {
+                'error': () => {}
+            }
+        )
+
+        coinbasePro.client = {
+            'placeOrder': async () => {throw new Error('HTTP 4xxx Error: size is too accurate');}
+        }
+
+        let order = await coinbasePro.order(Order.createMarketOrder('FOOBAR', 12))
+
+        assert.strictEqual(order.retry, false)
+        assert.strictEqual(order.status, 'rejected')
+        assert.strictEqual(order.symbol, 'FOOBAR')
+        assert.strictEqual(order.amount, 12)
+        assert.strictEqual(order.type, 'market')
     })
 })
