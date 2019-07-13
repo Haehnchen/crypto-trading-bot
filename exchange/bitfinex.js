@@ -370,9 +370,15 @@ module.exports = class Bitfinex {
             return
         }
 
+        // external lib does not support string as id; must be int
+        // is failing in a timeout
+        if (id.match(/^\d+$/)) {
+            id = parseInt(id);
+        }
+
         let result
         try {
-            result = await this.client.cancelOrder(id)
+            result = await this.client.cancelOrder(parseInt(id))
         } catch (e) {
             this.logger.error('Bitfinex: cancel order error: ' + e)
             return
