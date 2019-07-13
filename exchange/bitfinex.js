@@ -378,7 +378,7 @@ module.exports = class Bitfinex {
 
         let result
         try {
-            result = await this.client.cancelOrder(parseInt(id))
+            result = await this.client.cancelOrder(id)
         } catch (e) {
             this.logger.error('Bitfinex: cancel order error: ' + e)
             return
