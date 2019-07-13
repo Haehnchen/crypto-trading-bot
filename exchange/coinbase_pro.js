@@ -543,7 +543,7 @@ module.exports = class CoinbasePro {
         try {
             result = await this.client.placeOrder(payload)
         } catch (e) {
-            this.logger.error('Coinbase Pro: order create error: ' + e.message);
+            this.logger.error('Coinbase Pro: order create error: ' + JSON.stringify([e.message, order, payload]));
 
             if(e.message && (e.message.match(/HTTP\s4\d{2}/i) || e.message.toLowerCase().includes('size is too accurate') || e.message.toLowerCase().includes('size is too small') )) {
                 return ExchangeOrder.createRejectedFromOrder(order);
@@ -702,7 +702,7 @@ module.exports = class CoinbasePro {
         pairs.forEach(pair => {
             exchangePairs[pair['id']] = {
                 'tick_size': parseFloat(pair['quote_increment']),
-                'lot_size': parseFloat(pair['quote_increment']),
+                'lot_size': parseFloat(pair['base_min_size']),
             }
         });
 
