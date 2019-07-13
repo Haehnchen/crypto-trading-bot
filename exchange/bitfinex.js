@@ -389,12 +389,10 @@ module.exports = class Bitfinex {
         return ExchangeOrder.createCanceled(order)
     }
 
-    findOrderById(id) {
-        return new Promise(async resolve => {
-            resolve((await this.getOrders()).find(order =>
-                order.id === id || order.id == id
-            ))
-        })
+    async findOrderById(id) {
+        return (await this.getOrders()).find(order =>
+            order.id === id || order.id == id
+        )
     }
 
     async cancelAll(symbol) {
