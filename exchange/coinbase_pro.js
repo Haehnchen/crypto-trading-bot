@@ -394,6 +394,12 @@ module.exports = class CoinbasePro {
                     continue
                 }
 
+                // coin dust: which is smaller then the allowed order size should not be shown
+                let exchangePairInfo = this.exchangePairs[pair];
+                if (exchangePairInfo && exchangePairInfo.lot_size && balanceUsed < exchangePairInfo.lot_size) {
+                    continue
+                }
+
                 let entry;
                 let createdAt = new Date();
                 let profit;
