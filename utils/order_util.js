@@ -1,10 +1,12 @@
+let ExchangeOrder = require('../dict/exchange_order');
+
 module.exports = {
     calculateOrderAmount: (price, capital) => {
         return capital / price
     },
 
     syncStopLossOrder: (position, orders) => {
-        if (orders.filter(order => order.type === 'stop').length === 0) {
+        if (orders.filter(order => order.type === ExchangeOrder.TYPE_STOP).length === 0) {
             return [
                 {
                     'amount': Math.abs(position.amount),
@@ -12,7 +14,7 @@ module.exports = {
             ]
         }
 
-        let stopOrder = orders.find(order => order.type === 'stop')
+        let stopOrder = orders.find(order => order.type === ExchangeOrder.TYPE_STOP)
 
         let difference = Math.abs(position.amount) - Math.abs(stopOrder.amount)
 

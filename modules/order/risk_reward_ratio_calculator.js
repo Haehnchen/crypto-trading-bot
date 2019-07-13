@@ -1,6 +1,7 @@
 'use strict';
 
 let Order = require('../../dict/order')
+let ExchangeOrder = require('../../dict/exchange_order')
 
 module.exports = class RiskRewardRatioCalculator {
     constructor(logger) {
@@ -41,7 +42,7 @@ module.exports = class RiskRewardRatioCalculator {
 
         let riskRewardRatio = await this.calculateForOpenPosition(position, options)
 
-        if (orders.filter(order => order.type === 'stop').length === 0) {
+        if (orders.filter(order => order.type === ExchangeOrder.TYPE_STOP).length === 0) {
             newOrders['stop'] = {
                 'amount': Math.abs(position.amount),
                 'price': riskRewardRatio.stop
@@ -53,7 +54,7 @@ module.exports = class RiskRewardRatioCalculator {
             }
         }
 
-        if (orders.filter(order => order.type === 'limit').length === 0) {
+        if (orders.filter(order => order.type === ExchangeOrder.TYPE_LIMIT).length === 0) {
             newOrders['target'] = {
                 'amount': Math.abs(position.amount),
                 'price': riskRewardRatio.target

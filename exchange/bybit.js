@@ -274,32 +274,25 @@ module.exports = class Bybit {
         this.orders = ourOrders
     }
 
-    getOrders() {
-        return new Promise(resolve => {
-            let orders = []
+    async getOrders() {
+        let orders = []
 
-            for (let key in this.orders){
-                if (this.orders[key].status === 'open') {
-                    orders.push(this.orders[key])
-                }
+        for (let key in this.orders){
+            if (this.orders[key].status === 'open') {
+                orders.push(this.orders[key])
             }
+        }
 
-            resolve(orders)
-        })
+        return orders
     }
 
-    findOrderById(id) {
-        return new Promise(async resolve => {
-            resolve((await this.getOrders()).find(order =>
-                order.id === id || order.id == id
-            ))
-        })
+    async findOrderById(id) {
+        return (await this.getOrders())
+            .find(order => order.id === id || order.id == id)
     }
 
-    getOrdersForSymbol(symbol) {
-        return new Promise(async resolve => {
-            resolve((await this.getOrders()).filter(order => order.symbol === symbol))
-        })
+    async getOrdersForSymbol(symbol) {
+        return (await this.getOrders()).filter(order => order.symbol === symbol)
     }
 
     async getPositions() {
@@ -321,17 +314,14 @@ module.exports = class Bybit {
         return results
     }
 
-    getPositionForSymbol(symbol) {
-        return new Promise(async resolve => {
-            for (let position of (await this.getPositions())) {
-                if(position.symbol === symbol) {
-                    resolve(position)
-                    return
-                }
+    async getPositionForSymbol(symbol) {
+        for (let position of (await this.getPositions())) {
+            if(position.symbol === symbol) {
+                return position
             }
+        }
 
-            resolve()
-        })
+        return undefined
     }
 
     /**
@@ -674,6 +664,9 @@ module.exports = class Bybit {
                     break;
                 case 'stop':
                     orderType = ExchangeOrder.TYPE_STOP
+                    break;
+                default:
+                    orderType = ExchangeOrder.TYPE_UNKNOWN
                     break;
             }
 

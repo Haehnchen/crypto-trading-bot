@@ -24,7 +24,7 @@ module.exports = class Tickers {
             return undefined;
         }
 
-        return this.tickers[exchange + '.' + symbol].createdAt > moment().subtract(lastUpdatedSinceMs, 'ms').toDate()
+        return this.tickers[exchange + '.' + symbol] && this.tickers[exchange + '.' + symbol].createdAt > moment().subtract(lastUpdatedSinceMs, 'ms').toDate()
             ? this.tickers[exchange + '.' + symbol]
             : undefined
     }
