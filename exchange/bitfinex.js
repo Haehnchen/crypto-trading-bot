@@ -484,12 +484,21 @@ module.exports = class Bitfinex {
         let price_avg = order['price_avg']
 
         let orderType = undefined
-        switch (order.type.toLowerCase()) {
+        switch (order.type.toLowerCase().replace(/[\W_]+/g,'')) {
             case 'limit':
-                orderType = 'limit'
+                orderType = ExchangeOrder.TYPE_LIMIT
                 break;
             case 'stop':
-                orderType = 'stop'
+                orderType = ExchangeOrder.TYPE_STOP
+                break;
+            case 'market':
+                orderType = ExchangeOrder.TYPE_MARKET
+                break;
+            case 'stoplimit':
+                orderType = ExchangeOrder.TYPE_STOP_LIMIT
+                break;
+            default:
+                orderType = ExchangeOrder.TYPE_UNKNOWN
                 break;
         }
 

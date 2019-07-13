@@ -61,7 +61,7 @@ describe('#exchange manager', () => {
         let exchange = new Noop()
         exchange.getPositionForSymbol = async symbol => new Position(symbol, 'long', 1, undefined, undefined, 100, {'stop': 0.9})
         exchange.getPositions = async() => [new Position('BTCUSDT', 'long', 1, undefined, undefined, 100, {'stop': 0.9})]
-        exchange.getOrdersForSymbol = async symbol => new ExchangeOrder('25035356', symbol, 'open', undefined, undefined, undefined, undefined, 'buy')
+        exchange.getOrdersForSymbol = async symbol => new ExchangeOrder('25035356', symbol, 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT)
 
         let exchangeManager = new ExchangeManager(
             [exchange],

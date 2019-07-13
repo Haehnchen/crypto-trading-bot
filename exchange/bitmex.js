@@ -1006,16 +1006,25 @@ module.exports = class Bitmex {
                 retry = true
             }
 
-            let ordType = order['ordType'].toLowerCase();
+            let ordType = order['ordType'].toLowerCase().replace(/[\W_]+/g,'');
 
             // secure the value
             let orderType = undefined
             switch (ordType) {
                 case 'limit':
-                    orderType = 'limit'
+                    orderType = ExchangeOrder.TYPE_LIMIT
                     break;
                 case 'stop':
-                    orderType = 'stop'
+                    orderType = ExchangeOrder.TYPE_STOP
+                    break;
+                case 'stoplimit':
+                    orderType = ExchangeOrder.TYPE_STOP_LIMIT
+                    break;
+                case 'market':
+                    orderType = ExchangeOrder.TYPE_MARKET
+                    break;
+                default:
+                    orderType = ExchangeOrder.TYPE_UNKNOWN
                     break;
             }
 

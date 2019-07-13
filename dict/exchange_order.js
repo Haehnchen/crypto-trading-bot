@@ -8,9 +8,19 @@ module.exports = class ExchangeOrder {
     static get STATUS_CANCELED() { return 'canceled'; }
     static get STATUS_REJECTED() { return 'rejected'; }
 
+    static get TYPE_LIMIT() { return 'limit'; }
+    static get TYPE_STOP() { return 'stop'; } // think use market
+    static get TYPE_STOP_LIMIT() { return 'stop_limit'; }
+    static get TYPE_MARKET() { return 'market'; }
+    static get TYPE_UNKNOWN() { return 'unknown'; }
+
     constructor(id, symbol, status, price, amount, retry, ourId, side, type, createdAt, updatedAt, raw = undefined, options = {}) {
         if (side !== 'buy' && side !== 'sell') {
             throw 'Invalid order direction given:' + side
+        }
+
+        if (![ExchangeOrder.TYPE_LIMIT, ExchangeOrder.TYPE_STOP_LIMIT, ExchangeOrder.TYPE_MARKET, ExchangeOrder.TYPE_UNKNOWN, ExchangeOrder.TYPE_STOP].includes(type)) {
+            throw 'Invalid order type: ' + type
         }
 
         this.id = id

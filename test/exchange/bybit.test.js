@@ -41,6 +41,8 @@ describe('#bitmex exchange implementation', function() {
         assert.equal(orders[2].id, '04463f4c-5021-443f-a794-e67e2a54a4bd')
         assert.equal(orders[2].type, 'stop')
         assert.equal(orders[2].status, 'open')
+
+        assert.equal(orders[3].type, 'stop_limit')
     })
 
     it('test that request body for order is created (limit order)', () => {

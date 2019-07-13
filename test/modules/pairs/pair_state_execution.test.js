@@ -187,7 +187,7 @@ describe('#pair state execution', function() {
                 'getOrders': async () => [],
             },
             {'calculateOrderSize': async () => { return 1337 }},
-            {'executeOrder': async () => new ExchangeOrder('foobar', 'ADAUSDT', 'done', undefined, undefined, undefined, undefined, 'buy')},
+            {'executeOrder': async () => new ExchangeOrder('foobar', 'ADAUSDT', 'done', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT)},
             {
                 'info': message => { logMessages['info'].push(message) },
             }
@@ -219,7 +219,7 @@ describe('#pair state execution', function() {
                 'getOrders': async () => [],
             },
             {'calculateOrderSize': async () => { return 1337 }},
-            {'executeOrder': async () => new ExchangeOrder('foobar', 'ADAUSDT', ExchangeOrder.STATUS_REJECTED, undefined, undefined, false, undefined, 'buy')},
+            {'executeOrder': async () => new ExchangeOrder('foobar', 'ADAUSDT', ExchangeOrder.STATUS_REJECTED, undefined, undefined, false, undefined, 'buy', ExchangeOrder.TYPE_LIMIT)},
             {
                 'info': message => { logMessages['info'].push(message) },
                 'error': message => { logMessages['error'].push(message) },
@@ -254,7 +254,7 @@ describe('#pair state execution', function() {
                 },
             },
             {'calculateOrderSize': async () => { return 1337 }},
-            {'executeOrder': async () => new ExchangeOrder('foobar', 'ADAUSDT', 'done', undefined, undefined, undefined, undefined, 'buy')},
+            {'executeOrder': async () => new ExchangeOrder('foobar', 'ADAUSDT', 'done', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT)},
             {
                 'info': message => { logMessages['info'].push(message) },
             }

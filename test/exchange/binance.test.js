@@ -332,8 +332,8 @@ describe('#binance exchange implementation', function() {
             'openOrders': async () => { throw 'Connection issue' }
         }
 
-        binance.triggerOrder(new ExchangeOrder('25035356', 'BTCUSDT', 'open', undefined, undefined, undefined, undefined, 'buy'))
-        binance.triggerOrder(new ExchangeOrder('foobar', 'ADAUSDT', 'open', undefined, undefined, undefined, undefined, 'buy'))
+        binance.triggerOrder(new ExchangeOrder('25035356', 'BTCUSDT', 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT))
+        binance.triggerOrder(new ExchangeOrder('foobar', 'ADAUSDT', 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT))
 
         assert.equal(Object.keys(binance.orders).length, 2)
         assert.equal(binance.orders[25035356].symbol, 'BTCUSDT')
@@ -369,8 +369,8 @@ describe('#binance exchange implementation', function() {
             'openOrders': async () => { throw 'Connection issue' }
         }
 
-        binance.triggerOrder(new ExchangeOrder('25035356', 'BTCUSDT', 'open', undefined, undefined, undefined, undefined, 'buy'))
-        binance.triggerOrder(new ExchangeOrder('foobar', 'ADAUSDT', 'open', undefined, undefined, undefined, undefined, 'buy'))
+        binance.triggerOrder(new ExchangeOrder('25035356', 'BTCUSDT', 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT))
+        binance.triggerOrder(new ExchangeOrder('foobar', 'ADAUSDT', 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT))
 
         assert.equal(Object.keys(binance.orders).length, 2)
         assert.equal(binance.orders[25035356].symbol, 'BTCUSDT')

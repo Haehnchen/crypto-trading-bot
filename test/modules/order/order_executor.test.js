@@ -8,7 +8,7 @@ const moment = require('moment')
 describe('#order executor', () => {
     it('test order create execution', async () => {
         let exchangeOrders = [
-            new ExchangeOrder('1815-1337-1', undefined, undefined, undefined, undefined, false, undefined, 'buy'),
+            new ExchangeOrder('1815-1337-1', undefined, undefined, undefined, undefined, false, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
         ]
 
         let configs = {
@@ -35,10 +35,10 @@ describe('#order executor', () => {
 
     it('test order create execution with retry', async () => {
         let exchangeOrders = [
-            new ExchangeOrder('1815-1337-1', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
-            new ExchangeOrder('1815-1337-2', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
-            new ExchangeOrder('1815-1337-3', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
-            new ExchangeOrder('1815-1337-4', undefined, undefined, undefined, undefined, false, undefined, 'buy'),
+            new ExchangeOrder('1815-1337-1', undefined, undefined, undefined, undefined, true, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
+            new ExchangeOrder('1815-1337-2', undefined, undefined, undefined, undefined, true, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
+            new ExchangeOrder('1815-1337-3', undefined, undefined, undefined, undefined, true, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
+            new ExchangeOrder('1815-1337-4', undefined, undefined, undefined, undefined, false, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
         ]
 
         let configs = {
@@ -67,11 +67,11 @@ describe('#order executor', () => {
 
     it('test order create execution with out of retry limit', async () => {
         let exchangeOrders = [
-            new ExchangeOrder('1815-1337-1', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
-            new ExchangeOrder('1815-1337-2', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
-            new ExchangeOrder('1815-1337-3', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
-            new ExchangeOrder('1815-1337-4', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
-            new ExchangeOrder('1815-1337-4', undefined, undefined, undefined, undefined, true, undefined, 'buy'),
+            new ExchangeOrder('1815-1337-1', undefined, undefined, undefined, undefined, true, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
+            new ExchangeOrder('1815-1337-2', undefined, undefined, undefined, undefined, true, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
+            new ExchangeOrder('1815-1337-3', undefined, undefined, undefined, undefined, true, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
+            new ExchangeOrder('1815-1337-4', undefined, undefined, undefined, undefined, true, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
+            new ExchangeOrder('1815-1337-4', undefined, undefined, undefined, undefined, true, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
         ]
 
         let configs = {
@@ -97,7 +97,7 @@ describe('#order executor', () => {
     })
 
     it('test that adjust price handler must clean up unknown orders', async () => {
-        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, undefined, undefined, undefined, undefined, undefined, 'buy')
+        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, undefined, undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT)
 
         let executor = new OrderExecutor(
             {'get': () => { return {'findOrderById': () => { return exchangeOrder }} }},
@@ -140,7 +140,7 @@ describe('#order executor', () => {
     })
 
     it('test that price adjust order is created for long', async () => {
-        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', undefined, undefined, undefined, undefined, 'buy')
+        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT)
 
         let exchangeName = undefined
         let orderUpdate = undefined
@@ -182,7 +182,7 @@ describe('#order executor', () => {
 
 
     it('test that price adjust order is recreated on placing error', async () => {
-        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', 337, 1331, false, undefined, 'buy')
+        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', 337, 1331, false, undefined, 'buy', ExchangeOrder.TYPE_LIMIT)
 
         let logMessages = {
             'info': [],
@@ -193,7 +193,7 @@ describe('#order executor', () => {
             {
                 'get': () => { return {
                     'findOrderById': async () => exchangeOrder,
-                    'updateOrder': () => new ExchangeOrder('1815-1337', undefined, 'canceled', 1339, undefined, true, undefined, 'buy'),
+                    'updateOrder': () => new ExchangeOrder('1815-1337', undefined, 'canceled', 1339, undefined, true, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
                 }},
             },
             {'getIfUpToDate': () => new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)},
@@ -228,7 +228,7 @@ describe('#order executor', () => {
     })
 
     it('test that price adjust order is created for short', async () => {
-        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', undefined, undefined, undefined, undefined, 'buy')
+        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT)
 
         let exchangeName = undefined
         let orderUpdate = undefined

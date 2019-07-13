@@ -396,12 +396,16 @@ module.exports = class Bybit {
         // disabled: bind error on api
         // delete parameters['reduce_only']
 
-        if (order.type === 'stop') {
+        // limit and stops have different api endpoints
+        let isConditionalOrder = this.isConditionalExchangeOrder(order)
+
+        if (isConditionalOrder) {
             if (!this.tickers[order.symbol]) {
                 this.logger.error('Bybit: base_price based on ticker for conditional not found')
                 return
             }
 
+            // current ticker price is required on this api
             parameters['base_price'] = this.tickers[order.symbol].bid
         }
 
@@ -413,7 +417,7 @@ module.exports = class Bybit {
             .digest('hex');
 
         let url
-        if (order.type === 'stop') {
+        if (isConditionalOrder) {
             url = this.getBaseUrl() + '/open-api/stop-order/create?' + querystring.stringify(parametersSorted);
         } else {
             url = this.getBaseUrl() + '/open-api/order/create?' + querystring.stringify(parametersSorted);
@@ -533,9 +537,11 @@ module.exports = class Bybit {
             return
         }
 
+        let isConditionalOrder = this.isConditionalExchangeOrder(order);
+
         let parameters = {
             'api_key': this.apiKey,
-            [order.type === 'stop' ? 'stop_order_id' : 'order_id']: id,
+            [isConditionalOrder ? 'stop_order_id' : 'order_id']: id,
             'timestamp': new Date().getTime(),
         }
 
@@ -544,7 +550,7 @@ module.exports = class Bybit {
             .digest('hex');
 
         let url
-        if (order.type === 'stop') {
+        if (isConditionalOrder) {
             url = this.getBaseUrl() + '/open-api/stop-order/cancel?' + querystring.stringify(parameters);
         } else {
             url = this.getBaseUrl() + '/open-api/order/cancel?' + querystring.stringify(parameters);
@@ -583,6 +589,10 @@ module.exports = class Bybit {
         })
 
         return returnOrder
+    }
+
+    isConditionalExchangeOrder(order) {
+        return [ExchangeOrder.TYPE_STOP, ExchangeOrder.TYPE_STOP_LIMIT].includes(order.type);
     }
 
     async cancelAll(symbol) {
@@ -660,11 +670,15 @@ module.exports = class Bybit {
             // secure the value
             switch (ordType) {
                 case 'limit':
-                    orderType = 'limit'
+                    orderType = ExchangeOrder.TYPE_LIMIT
                     break;
                 case 'stop':
-                    orderType = 'stop'
+                    orderType = ExchangeOrder.TYPE_STOP
                     break;
+            }
+
+            if (orderType === ExchangeOrder.TYPE_LIMIT && order['stop_px'] && parseFloat(order['stop_px']) > 0) {
+                orderType = ExchangeOrder.TYPE_STOP_LIMIT
             }
 
             let price = order['price']

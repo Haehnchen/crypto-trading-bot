@@ -237,16 +237,25 @@ module.exports = class Binance {
                 retry = true
             }
 
-            let ordType = order['type'].toLowerCase();
+            let ordType = order['type'].toLowerCase().replace(/[\W_]+/g,'');
 
             // secure the value
             let orderType = undefined
             switch (ordType) {
                 case 'limit':
-                    orderType = 'limit'
+                    orderType = ExchangeOrder.TYPE_LIMIT
                     break;
-                case 'stop_loss':
-                    orderType = 'stop'
+                case 'stoploss':
+                    orderType = ExchangeOrder.TYPE_STOP
+                    break;
+                case 'stoplimit':
+                    orderType = ExchangeOrder.TYPE_STOP_LIMIT
+                    break;
+                case 'market':
+                    orderType = ExchangeOrder.TYPE_MARKET
+                    break;
+                default:
+                    orderType = ExchangeOrder.TYPE_UNKNOWN
                     break;
             }
 
