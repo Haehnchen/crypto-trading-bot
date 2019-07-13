@@ -69,7 +69,7 @@ module.exports = class PairStateExecution {
                         this.pairStateManager.clear(pair.exchange, pair.symbol)
                     } else {
                         // just log this case
-                        this.logger.error('Pair State: Signal canceled for invalid order: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
+                        this.logger.info('Pair State: Signal canceled for invalid order: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
                     }
                 } else if(order.status === ExchangeOrder.STATUS_DONE) {
                     // add order to know it for later usage

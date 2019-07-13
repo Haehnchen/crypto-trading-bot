@@ -91,20 +91,27 @@ describe('#bitmex exchange implementation', function() {
         })
     })
 
-    it('test that order response is provide', async () => {
-        let myOptions = undefined
+    it('test that order response is provided', async () => {
+        let myOptions = []
 
+        let calls = [
+            {
+                'error': undefined,
+                'response': {'statusCode': 200},
+                'body': JSON.stringify({'result': createResponse('ws-orders.json')[0]}),
+            },
+            {
+                'error': undefined,
+                'response': {'statusCode': 200},
+                'body': JSON.stringify({'result': {'data': createResponse('ws-orders.json')}}),
+            }
+        ]
+
+        let currentCall = 0
         let requestClient = {
-            'executeRequestRetry': (options) => {
-                return new Promise((resolve) => {
-                    myOptions = options
-
-                    resolve({
-                        'error': undefined,
-                        'response': {'statusCode': 200},
-                        'body': JSON.stringify({'result': createResponse('ws-orders.json')[0]}),
-                    })
-                })
+            'executeRequestRetry': async options => {
+                myOptions.push(options);
+                return calls[currentCall++];
             }
         }
 
@@ -115,9 +122,16 @@ describe('#bitmex exchange implementation', function() {
 
         let order = await bybit.order(Order.createMarketOrder('BTCUSD', 12))
 
-        assert.strictEqual(true, myOptions.url.includes('&order_type=Market&qty=12&side=Buy&symbol=BTCUSD'))
+        assert.strictEqual(true, myOptions[0].url.includes('&order_type=Market&qty=12&side=Buy&symbol=BTCUSD'))
+        assert.strictEqual(myOptions[0].method, 'POST')
+        assert.strictEqual(true, myOptions[0].url.includes('&timestamp'))
+        assert.strictEqual(true, myOptions[0].url.includes('&sign'))
 
-        assert.strictEqual(myOptions.method, 'POST')
+        assert.strictEqual(myOptions[1].method, 'GET')
+        assert.strictEqual(true, myOptions[1].url.includes('/open-api/order/list?'))
+        assert.strictEqual(true, myOptions[1].url.includes('&symbol=BTCUSD'))
+        assert.strictEqual(true, myOptions[1].url.includes('&timestamp'))
+        assert.strictEqual(true, myOptions[1].url.includes('&sign'))
 
         assert.strictEqual(order.type, 'limit')
         assert.strictEqual(order.side, 'buy')

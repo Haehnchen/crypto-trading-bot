@@ -4,6 +4,7 @@ let Candlestick = require('./../dict/candlestick')
 let Ticker = require('./../dict/ticker')
 let TickerEvent = require('./../event/ticker_event')
 let Orderbook = require('./../dict/orderbook')
+let Order = require('./../dict/order')
 let ExchangeCandlestick = require('../dict/exchange_candlestick')
 const WebSocket = require('ws');
 const querystring = require('querystring');
@@ -447,7 +448,73 @@ module.exports = class Bybit {
             returnOrder = order
         })
 
+        if (!isConditionalOrder) {
+            let restOrder = await this.validatePlacedOrder(returnOrder)
+            if (restOrder) {
+                returnOrder = restOrder
+            }
+        }
+
         return returnOrder
+    }
+
+    /**
+     * In case the order was not able to place we need to wait some "ms" and call order via API again
+     * @TODO use the websocket event
+     *
+     * @param order
+     * @returns {Promise<any>}
+     */
+    validatePlacedOrder(order) {
+        return new Promise(resolve => {
+            setTimeout(async () => {
+                // calling a direct "order_id" is not given any result
+                // we fetch latest order and find our id
+                let parameters2 = {
+                    'api_key': this.apiKey,
+                    'timestamp': new Date().getTime(),
+                    'symbol': order.symbol,
+                    'limit': 5,
+                }
+
+                let parametersSorted2 = {}
+                Object.keys(parameters2).sort().forEach(key => parametersSorted2[key] = parameters2[key])
+
+                parametersSorted2['sign'] = crypto.createHmac('sha256', this.apiSecret)
+                    .update(querystring.stringify(parametersSorted2))
+                    .digest('hex');
+
+                let url1 = this.getBaseUrl() + '/open-api/order/list?' + querystring.stringify(parametersSorted2);
+                let placedOrder = await this.requestClient.executeRequestRetry({
+                    method: 'GET',
+                    url:  url1,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    }
+                }, result => {
+                    return result && result.response && result.response.statusCode >= 500
+                })
+
+                let body = placedOrder.body
+
+                let json = JSON.parse(body);
+                if (!json.result || !json.result.data) {
+                    this.logger.error('Bybit: Invalid order body:' + JSON.stringify({'body': body}))
+                    resolve()
+                }
+
+
+                let find = json.result.data.find(o => o.order_id = order.id);
+                if (!find) {
+                    this.logger.error('Bybit: Order not found:' + JSON.stringify({'body': body}))
+                    resolve();
+                }
+
+                let orders = Bybit.createOrders([find]);
+                resolve(orders[0])
+            }, 1000);
+        })
     }
 
     /**
@@ -568,7 +635,7 @@ module.exports = class Bybit {
 
         let json = JSON.parse(body);
         if (!json.result) {
-            this.logger.error('Bybit: Invalid order cancel body:' + JSON.stringify({'body': body}))
+            this.logger.error('Bybit: Invalid order cancel body:' + JSON.stringify({'body': body, 'id': order}))
             return
         }
 
@@ -595,8 +662,20 @@ module.exports = class Bybit {
         return orders
     }
 
-    updateOrder(id, order) {
-        throw 'Not implemented'
+    async updateOrder(id, order) {
+        if (!order.amount && !order.price) {
+            throw 'Invalid amount / price for update'
+        }
+
+        let currentOrder = await this.findOrderById(id);
+        if (!currentOrder) {
+            return
+        }
+
+        // cancel order; mostly it can already be canceled
+        await this.cancelOrder(id);
+
+        return await this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount))
     }
 
     /**
@@ -635,20 +714,20 @@ module.exports = class Bybit {
             let status = undefined
 
             let orderStatus
-            let orderType = undefined
+            let orderType = ExchangeOrder.TYPE_UNKNOWN
 
             if (order['order_status']) {
                 orderStatus = order['order_status'].toLowerCase()
             } else if (order['stop_order_status'] && order['stop_order_status'].toLowerCase() === 'untriggered') {
                 orderStatus = 'new'
-                orderType = 'stop'
+                orderType = ExchangeOrder.TYPE_STOP
             }
 
             if (['new', 'partiallyfilled', 'pendingnew', 'doneforday', 'stopped'].includes(orderStatus)) {
                 status = 'open'
             } else if (orderStatus === 'filled') {
                 status = 'done'
-            } else if (orderStatus === 'canceled') {
+            } else if (orderStatus === 'canceled' || orderStatus === 'cancelled') {
                 status = 'canceled'
             } else if (orderStatus === 'rejected' || orderStatus === 'expired') {
                 status = 'rejected'
@@ -664,9 +743,6 @@ module.exports = class Bybit {
                     break;
                 case 'stop':
                     orderType = ExchangeOrder.TYPE_STOP
-                    break;
-                default:
-                    orderType = ExchangeOrder.TYPE_UNKNOWN
                     break;
             }
 
