@@ -372,7 +372,7 @@ module.exports = class Bitfinex {
 
         // external lib does not support string as id; must be int
         // is failing in a timeout
-        if (id.match(/^\d+$/)) {
+        if (typeof id === 'string' && id.match(/^\d+$/)) {
             id = parseInt(id);
         }
 
