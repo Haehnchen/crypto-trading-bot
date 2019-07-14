@@ -65,8 +65,8 @@ module.exports = class Bybit {
             }
 
             body.result.forEach(instrument => {
-                tickSizes[instrument['name']] = instrument['price_filter']['tick_size']
-                lotSizes[instrument['name']] = instrument['lot_size_filter']['qty_step']
+                tickSizes[instrument['name']] = parseFloat(instrument['price_filter']['tick_size'])
+                lotSizes[instrument['name']] = parseFloat(instrument['lot_size_filter']['qty_step'])
             })
         })
 
@@ -138,14 +138,28 @@ module.exports = class Bybit {
                 } else if (data.data && data.topic && data.topic.startsWith('instrument.')) {
                     data.data.forEach(instrument => {
                         // not always given
-                        if (!instrument['last_price']) {
+
+                        let price = instrument['last_price'];
+                        if (!price) {
                             return
+                        }
+
+                        let bid = price;
+                        let ask = price;
+
+                        let symbol = instrument['symbol'];
+
+                        // add price spread around the last price; as we not getting the bid and ask of the orderbook directly
+                        // prevent also floating issues
+                        if (symbol in me.tickSizes) {
+                            bid = orderUtil.calculateNearestSize(bid - me.tickSizes[symbol], me.tickSizes[symbol])
+                            ask = orderUtil.calculateNearestSize(ask + me.tickSizes[symbol], me.tickSizes[symbol])
                         }
 
                         eventEmitter.emit('ticker', new TickerEvent(
                             me.getName(),
-                            instrument['symbol'],
-                            me.tickers[instrument['symbol']] = new Ticker(me.getName(), instrument['symbol'], moment().format('X'), instrument['last_price'], instrument['last_price'])
+                            symbol,
+                            me.tickers[symbol] = new Ticker(me.getName(), symbol, moment().format('X'), bid, ask)
                         ))
                     })
                 } else if (data.data && data.topic && data.topic.toLowerCase() === 'order') {
