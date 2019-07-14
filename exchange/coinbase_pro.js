@@ -2,7 +2,7 @@
 
 const Gdax = require('coinbase-pro');
 
-let Candlestick = require('./../dict/candlestick');
+let ExchangeCandlestick = require('./../dict/exchange_candlestick');
 let Ticker = require('./../dict/ticker');
 let CandlestickEvent = require('./../event/candlestick_event');
 let TickerEvent = require('./../event/ticker_event');
@@ -14,11 +14,12 @@ let Order = require('../dict/order');
 let moment = require('moment');
 
 module.exports = class CoinbasePro {
-    constructor(eventEmitter, logger, candlestickResample, queue) {
+    constructor(eventEmitter, logger, candlestickResample, queue, candleImporter) {
         this.eventEmitter = eventEmitter;
         this.queue = queue;
         this.logger = logger;
         this.candlestickResample = candlestickResample;
+        this.candleImporter = candleImporter;
 
         this.client = undefined;
 
@@ -97,7 +98,10 @@ module.exports = class CoinbasePro {
                 }
 
                 let ourCandles = candles.map(candle =>
-                    new Candlestick(
+                    new ExchangeCandlestick(
+                        this.getName(),
+                        symbol['symbol'],
+                        interval,
                         candle[0],
                         candle[3],
                         candle[2],
@@ -107,7 +111,7 @@ module.exports = class CoinbasePro {
                     )
                 );
 
-                eventEmitter.emit('candlestick', new CandlestickEvent('coinbase_pro', symbol['symbol'], interval, ourCandles));
+                await this.candleImporter.insertThrottledCandles(ourCandles)
             }))
         });
 
@@ -188,7 +192,7 @@ module.exports = class CoinbasePro {
                     resamples = symbolCfg['periods']
                 }
 
-                me.onTrade(data, '1m', resamples)
+                await me.onTrade(data, '1m', resamples)
             }
         });
 
@@ -221,7 +225,7 @@ module.exports = class CoinbasePro {
      * @param period string
      * @param resamples array
      */
-    onTrade(msg, period, resamples = []) {
+    async onTrade(msg, period, resamples = []) {
         if (!msg.price || !msg.size || !msg.product_id) {
             return;
         }
@@ -281,7 +285,10 @@ module.exports = class CoinbasePro {
         for (let timestamp in this.candles[productId]) {
             let candle = this.candles[productId][timestamp];
 
-            ourCandles.push(new Candlestick(
+            ourCandles.push(new ExchangeCandlestick(
+                this.getName(),
+                msg.product_id,
+                period,
                 candle.timestamp,
                 candle.open,
                 candle.high,
@@ -291,20 +298,17 @@ module.exports = class CoinbasePro {
             ))
         }
 
-        this.eventEmitter.emit('candlestick', new CandlestickEvent('coinbase_pro', msg.product_id, period, ourCandles));
-
-        // wait for insert
-        setTimeout(async () => {
-            // resample
-            await Promise.all(resamples.filter(r => r !== periodMinutes).map(async resamplePeriod => {
-                await this.candlestickResample.resample(this.getName(), msg.product_id, period, resamplePeriod, true)
-            }))
-        }, 1000);
-
         // delete old candles
         Object.keys(this.candles[productId]).sort((a, b) => b - a).slice(200).forEach(i => {
             delete this.candles[productId][i]
         })
+
+        await this.candleImporter.insertThrottledCandles(ourCandles)
+
+        // wait for insert of previous database inserts
+        await Promise.all(resamples.filter(r => r !== periodMinutes).map(async resamplePeriod => {
+            await this.candlestickResample.resample(this.getName(), msg.product_id, period, resamplePeriod, true)
+        }))
     }
 
     getOrders() {

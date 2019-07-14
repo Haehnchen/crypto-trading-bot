@@ -603,6 +603,7 @@ module.exports = {
                 this.getLogger(),
                 this.getCandlestickResample(),
                 this.getQueue(),
+                this.getCandleImporter(),
             ),
             new Bitfinex(
                 this.getEventEmitter(),
