@@ -138,25 +138,14 @@ module.exports = class OrderExecutor {
         }
     }
 
-    cancelAll(exchangeName, symbol) {
-        return new Promise(async resolve => {
-            let exchange = this.exchangeManager.get(exchangeName);
-            if (!exchange) {
-                console.error('Invalid exchange: ' + exchangeName);
+    async cancelAll(exchangeName, symbol) {
+        let exchange = this.exchangeManager.get(exchangeName);
 
-                resolve();
-                return;
-            }
-
-            try {
-                resolve(await exchange.cancelAll(symbol))
-            } catch (err) {
-                this.logger.error('Order cancel all error: ' + symbol);
-                console.log('Order all error: ' + symbol);
-
-                resolve()
-            }
-        })
+        try {
+            return await exchange.cancelAll(symbol)
+        } catch (err) {
+            this.logger.error('Order cancel all error: ' + JSON.stringify([symbol, err]));
+        }
     }
 
     async triggerOrder(resolve, exchangeName, order, retry = 0) {
