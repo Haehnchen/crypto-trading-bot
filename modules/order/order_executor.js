@@ -87,11 +87,11 @@ module.exports = class OrderExecutor {
             try {
                 let updatedOrder = await exchange.updateOrder(orderUpdate.id, orderUpdate);
 
-                if (updatedOrder.status === 'open') {
-                    this.logger.info('OrderAdjust: Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), orderContainer.exchange, orderContainer.order.symbol]))
-                } else if (updatedOrder.status === 'canceled' && updatedOrder.retry === true) {
+                if (updatedOrder && updatedOrder.status === 'open') {
+                    this.logger.info('OrderAdjust: Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), orderContainer.exchange, orderContainer.order.symbol, updatedOrder]))
+                } else if (updatedOrder && updatedOrder.status === 'canceled' && updatedOrder.retry === true) {
                     // we update the price outside the orderbook price range on PostOnly we will cancel the order directly
-                    this.logger.error('OrderAdjust: Updated order canceled recreate: ' + JSON.stringify(orderContainer));
+                    this.logger.error('OrderAdjust: Updated order canceled recreate: ' + JSON.stringify(orderContainer, updatedOrder));
 
                     // recreate order
                     // @TODO: resync used balance in case on order is partially filled
@@ -102,7 +102,7 @@ module.exports = class OrderExecutor {
 
                     await this.executeOrder(orderContainer.exchange, retryOrder)
                 } else {
-                    this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify(orderContainer))
+                    this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify([orderContainer, updatedOrder]))
                 }
             } catch (err) {
                 this.logger.error('OrderAdjust: adjusted failed: ' + JSON.stringify([String(err), orderContainer, orderUpdate]))
