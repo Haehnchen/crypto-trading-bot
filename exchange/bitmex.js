@@ -956,11 +956,19 @@ module.exports = class Bitmex {
         return positions.filter((position) => {
             return position['isOpen'] === true
         }).map(position => {
+            // profit is calculated on ticker
+            // this fallback provide the exchange position value and "unleverage" it
+            let unrealisedRoePcnt = position['unrealisedRoePcnt'];
+
+            if (position['leverage'] && position['leverage'] > 1) {
+                unrealisedRoePcnt /= position['leverage']
+            }
+
             return new Position(
                 position['symbol'],
                 position['currentQty'] < 0 ? 'short' : 'long',
                 position['currentQty'],
-                position['unrealisedRoePcnt']  * 100,
+                parseFloat((unrealisedRoePcnt * 100).toFixed(2)),
                 new Date(),
                 position['avgEntryPrice'],
                 new Date(position['openingTimestamp'])
