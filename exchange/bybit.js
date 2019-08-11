@@ -713,7 +713,7 @@ module.exports = class Bybit {
                 position['symbol'],
                 side,
                 size,
-                undefined,
+                position['unrealised_pnl'] && position['position_value'] ? parseFloat((position['unrealised_pnl'] / position['position_value'] * 100).toFixed(2)) : null,
                 new Date(),
                 parseFloat(position['entry_price']),
                 new Date(),
