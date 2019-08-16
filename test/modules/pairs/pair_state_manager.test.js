@@ -1,6 +1,9 @@
 let assert = require('assert')
 let PairStateManager = require('../../../modules/pairs/pair_state_manager')
 
+let ExchangeOrder = require('../../../dict/exchange_order')
+let Order = require('../../../dict/order')
+
 describe('#pair state manager', function() {
     it('test pair state changes', () => {
         let manager = new PairStateManager(
@@ -28,5 +31,12 @@ describe('#pair state manager', function() {
 
         assert.equal(manager.isNeutral('foo2', 'BTCUSD3'), true)
         assert.equal(manager.isNeutral('UNKNOWN', 'FOOBAR'), true)
+
+        let state = manager.get('foo4', 'BTCUSD5', 'order', {'foo': 'foo'});
+        state.setOrder(Order.createMarketOrder('FOO', 'FOO'))
+        state.setExchangeOrder(new ExchangeOrder(25035356, 'FOOUSD', 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT))
+
+        assert.equal(manager.get('foo4', 'BTCUSD5', 'order', {'foo': 'foo'}).getExchangeOrder().symbol, 'FOOUSD');
+        assert.equal(manager.get('foo4', 'BTCUSD5', 'order', {'foo': 'foo'}).exchangeOrder.symbol, 'FOOUSD');
     })
 })

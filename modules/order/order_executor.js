@@ -1,11 +1,14 @@
 'use strict';
 
 const Order = require('../../dict/order');
+const PairState = require('../../dict/pair_state');
+const ExchangeOrder = require('../../dict/exchange_order');
 const _ = require('lodash');
 const moment = require('moment');
 
 module.exports = class OrderExecutor {
-    constructor(exchangeManager, tickers, systemUtil, logger) {
+    constructor(exchangeManager, tickers, systemUtil, logger, pairStateManager) {
+        this.pairStateManager = pairStateManager;
         this.exchangeManager = exchangeManager;
         this.tickers = tickers;
         this.logger = logger;
@@ -14,72 +17,59 @@ module.exports = class OrderExecutor {
 
         this.tickerPriceInterval = 200;
         this.tickerPriceRetries = 40;
-
-        this.orders = []
     }
 
     /**
      * Keep open orders in orderbook at first position
      */
     adjustOpenOrdersPrice() {
-        let orders = this.orders.filter(order =>
-            order.order.hasAdjustedPrice()
-        );
-
-        // cleanup
         for (let orderId in this.runningOrders) {
             if (this.runningOrders[orderId] < moment().subtract(2, 'minutes')) {
                 delete this.runningOrders[orderId]
             }
         }
 
-        let visitExchangeOrder = async orderContainer => {
-            let exchange = this.exchangeManager.get(orderContainer.exchange);
-            if (!exchange) {
-                console.error('OrderAdjust: Invalid exchange:' + orderContainer.exchange);
-                delete this.runningOrders[orderContainer.id];
+        let visitExchangeOrder = async pairState => {
+            if (!pairState.hasAdjustedPrice()) {
+                return;
+            }
 
+            let exchange = this.exchangeManager.get(pairState.getExchange());
+
+            let exchangeOrder = pairState.getExchangeOrder();
+            if (!exchangeOrder) {
+                return;
+            }
+
+            if (exchangeOrder.id in this.runningOrders) {
+                this.logger.info('OrderAdjust: already running: ' + JSON.stringify([exchangeOrder.id, pairState.getExchange(), pairState.getSymbol()]));
                 return
             }
 
             // order not known by exchange cleanup
-            let lastExchangeOrder = await exchange.findOrderById(orderContainer.id);
-            if (!lastExchangeOrder || lastExchangeOrder.status !== 'open') {
-                this.logger.debug('OrderAdjust: managed order does not exists maybe filled; cleanup: ' + JSON.stringify([orderContainer.exchangeOrder.id, orderContainer.exchange, orderContainer.symbol, lastExchangeOrder]));
-
-                // async issues? we are faster then exchange; even in high load: implement a global order management
-                // and filter out executed order (eg LIMIT order process)
-                this.orders = this.orders.filter(myOrder =>
-                    myOrder.id !== orderContainer.id
-                );
-
-                delete this.runningOrders[orderContainer.id];
-
+            let lastExchangeOrder = await exchange.findOrderById(exchangeOrder.id);
+            if (!lastExchangeOrder || lastExchangeOrder.status !== ExchangeOrder.STATUS_OPEN) {
+                this.logger.debug('OrderAdjust: managed order does not exists maybe filled; cleanup: ' + JSON.stringify([exchangeOrder.id, pairState.getExchange(), pairState.getSymbol(), lastExchangeOrder]));
                 return
             }
 
-            if (orderContainer.id in this.runningOrders) {
-                this.logger.info('OrderAdjust: already running: ' + JSON.stringify([orderContainer.id, orderContainer.exchange, orderContainer.symbol]));
-                return
-            }
+            this.runningOrders[exchangeOrder.id] = new Date();
 
-            this.runningOrders[orderContainer.id] = new Date();
-
-            let price = await this.getCurrentPrice(orderContainer.exchange, orderContainer.order.symbol, orderContainer.order.side);
+            let price = await this.getCurrentPrice(pairState.getExchange(), pairState.getSymbol(), exchangeOrder.getLongOrShortSide());
             if (!price) {
-                this.logger.info('OrderAdjust: No up to date ticker price found: ' + JSON.stringify([orderContainer.exchange, orderContainer.order.symbol, orderContainer.order.side]));
+                this.logger.info('OrderAdjust: No up to date ticker price found: ' + JSON.stringify([exchangeOrder.id, pairState.getExchange(), pairState.getSymbol(), order.side]));
 
-                delete this.runningOrders[orderContainer.id];
+                delete this.runningOrders[exchangeOrder.id];
 
                 return
             }
 
-            let orderUpdate = Order.createPriceUpdateOrder(orderContainer.exchangeOrder.id, price);
+            let orderUpdate = Order.createPriceUpdateOrder(exchangeOrder.id, price);
 
             // normalize prices for positions compare; we can have negative prices depending on "side"
             if (Math.abs(lastExchangeOrder.price) === Math.abs(price)) {
-                this.logger.info('OrderAdjust: No price update needed:' + JSON.stringify([lastExchangeOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), orderContainer.exchange, orderContainer.order.symbol]));
-                delete this.runningOrders[orderContainer.id];
+                this.logger.info('OrderAdjust: No price update needed:' + JSON.stringify([lastExchangeOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), pairState.getExchange(), pairState.getSymbol()]));
+                delete this.runningOrders[exchangeOrder.id];
 
                 return
             }
@@ -87,32 +77,41 @@ module.exports = class OrderExecutor {
             try {
                 let updatedOrder = await exchange.updateOrder(orderUpdate.id, orderUpdate);
 
-                if (updatedOrder && updatedOrder.status === 'open') {
-                    this.logger.info('OrderAdjust: Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), orderContainer.exchange, orderContainer.order.symbol, updatedOrder]))
-                } else if (updatedOrder && updatedOrder.status === 'canceled' && updatedOrder.retry === true) {
+                if (updatedOrder && updatedOrder.status === ExchangeOrder.STATUS_OPEN) {
+                    this.logger.info('OrderAdjust: Order adjusted with orderbook price: ' + JSON.stringify([updatedOrder.id, Math.abs(lastExchangeOrder.price), Math.abs(price), pairState.getExchange(), pairState.getSymbol(), updatedOrder]))
+                    pairState.setExchangeOrder(updatedOrder)
+                } else if (updatedOrder && updatedOrder.status === ExchangeOrder.STATUS_CANCELED && updatedOrder.retry === true) {
                     // we update the price outside the orderbook price range on PostOnly we will cancel the order directly
-                    this.logger.error('OrderAdjust: Updated order canceled recreate: ' + JSON.stringify(orderContainer, updatedOrder));
+                    this.logger.error('OrderAdjust: Updated order canceled recreate: ' + JSON.stringify(pairState, updatedOrder));
 
                     // recreate order
                     // @TODO: resync used balance in case on order is partially filled
 
+                    let amount = lastExchangeOrder.getLongOrShortSide() === ExchangeOrder.SIDE_LONG
+                        ? Math.abs(lastExchangeOrder.amount)
+                        : Math.abs(lastExchangeOrder.amount) * -1;
+
                     // create a retry order with the order amount we had before; eg if partially filled
-                    let retryOrder = Order.createRetryOrder(orderContainer.order, Math.abs(lastExchangeOrder.amount));
+                    let retryOrder = pairState.getState() === PairState.STATE_CLOSE
+                        ? Order.createCloseOrderWithPriceAdjustment(pairState.getSymbol(), amount)
+                        : Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(pairState.getSymbol(), amount);
+
                     this.logger.error('OrderAdjust: replacing canceled order: ' + JSON.stringify(retryOrder));
 
-                    await this.executeOrder(orderContainer.exchange, retryOrder)
+                    let exchangeOrder = await this.executeOrder(pairState.getOrder(), retryOrder);
+                    pairState.setExchangeOrder(exchangeOrder)
                 } else {
-                    this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify([orderContainer, updatedOrder]))
+                    this.logger.error('OrderAdjust: Unknown order state: ' + JSON.stringify([pairState, updatedOrder]))
                 }
             } catch (err) {
-                this.logger.error('OrderAdjust: adjusted failed: ' + JSON.stringify([String(err), orderContainer, orderUpdate]))
+                this.logger.error('OrderAdjust: adjusted failed: ' + JSON.stringify([String(err), pairState, orderUpdate]))
             }
 
-            delete this.runningOrders[orderContainer.id]
+            delete this.runningOrders[exchangeOrder.id]
         };
 
-        return Promise.all(orders.map(order => {
-            return visitExchangeOrder(order)
+        return Promise.all(this.pairStateManager.all().map(pairState => {
+            return visitExchangeOrder(pairState)
         }))
     }
 
@@ -216,14 +215,6 @@ module.exports = class OrderExecutor {
         this.logger.info('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol, order, exchangeOrder]));
         console.log('Order created: ' + JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol]));
 
-
-        this.orders.push({
-            'id': exchangeOrder.id,
-            'exchange': exchangeName,
-            'exchangeOrder': exchangeOrder,
-            'order': order,
-        });
-
         resolve(exchangeOrder)
     }
 
@@ -256,6 +247,10 @@ module.exports = class OrderExecutor {
      * @returns {Promise<any>}
      */
     getCurrentPrice(exchangeName, symbol, side) {
+        if (!['long', 'short'].includes(side)) {
+            throw 'Invalid side: ' + side
+        }
+
         return new Promise(async resolve => {
             let wait = (time) => {
                 return new Promise(resolve => {

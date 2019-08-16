@@ -12,6 +12,14 @@ let moment = require('moment');
  * @type {module.PairStateExecution}
  */
 module.exports = class PairStateExecution {
+    /**
+     *
+     * @param pairStateManager {PairStateManager}
+     * @param exchangeManager
+     * @param orderCalculator
+     * @param orderExecutor
+     * @param logger
+     */
     constructor(pairStateManager, exchangeManager, orderCalculator, orderExecutor, logger) {
         this.pairStateManager = pairStateManager;
         this.exchangeManager = exchangeManager;
@@ -19,8 +27,6 @@ module.exports = class PairStateExecution {
         this.orderExecutor = orderExecutor;
         this.logger = logger;
         this.lastRunAt = undefined;
-
-        this.managedOrders = []
     }
 
     async onCancelPair(pair) {
@@ -37,8 +43,9 @@ module.exports = class PairStateExecution {
             return
         }
 
-        let orders = await this.exchangeManager.getOrders(pair.exchange, pair.symbol);
+        let pairState = this.pairStateManager.get(pair.exchange, pair.symbol)
 
+        /*
         let hasManagedOrder = false;
         for (let key in orders) {
             // dont self remove the managed order
@@ -49,35 +56,41 @@ module.exports = class PairStateExecution {
 
             await this.orderExecutor.cancelOrder(pair.exchange, orders[key].id)
         }
+        */
 
-        if (!hasManagedOrder) {
+        let exchangeOrderStored = pairState.getExchangeOrder();
+        if (exchangeOrderStored && !(await this.exchangeManager.findOrderById(pairState.getExchange(), exchangeOrderStored.id))) {
+            pairState.setExchangeOrder(null)
+            this.logger.info('Pair State: Clearing unknown stored exchangeOrder: ' + JSON.stringify([exchangeOrderStored]));
+        } else if (!exchangeOrderStored) {
             this.logger.info('Pair State: Create position open order: ' + JSON.stringify([pair.exchange, pair.symbol, side, pair.options]));
 
-            let order = await this.executeOrder(
+            let exchangeOrder = await this.executeOrder(
                 pair.exchange,
                 pair.symbol,
                 side,
                 pair.options,
             );
 
-            if (order) {
-                if (order.shouldCancelOrderProcess()) {
+            if (exchangeOrder) {
+                if (exchangeOrder.shouldCancelOrderProcess()) {
                     // check if we need to to cancel the process
-                    if (order.status === ExchangeOrder.STATUS_REJECTED) {
+                    if (exchangeOrder.status === ExchangeOrder.STATUS_REJECTED) {
                         // order was canceled by exchange eg no balance or invalid amount
-                        this.logger.error('Pair State: order rejected clearing pair state: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
+                        this.logger.error('Pair State: order rejected clearing pair state: ' + JSON.stringify([pair.exchange, pair.symbol, exchangeOrder]))
                         this.pairStateManager.clear(pair.exchange, pair.symbol)
                     } else {
                         // just log this case
-                        this.logger.info('Pair State: Signal canceled for invalid order: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
+                        this.logger.info('Pair State: Signal canceled for invalid order: ' + JSON.stringify([pair.exchange, pair.symbol, exchangeOrder]))
+                        pairState.triggerRetry()
                     }
-                } else if(order.status === ExchangeOrder.STATUS_DONE) {
+                } else if(exchangeOrder.status === ExchangeOrder.STATUS_DONE) {
                     // add order to know it for later usage
-                    this.logger.info('Pair State: Order directly filled clearing state: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
+                    this.logger.info('Pair State: Order directly filled clearing state: ' + JSON.stringify([pair.exchange, pair.symbol, exchangeOrder]))
                     this.pairStateManager.clear(pair.exchange, pair.symbol)
                 } else {
                     // add order to know it for later usage
-                    this.managedOrders.push(order)
+                    pairState.setExchangeOrder(exchangeOrder)
                 }
             }
         }
@@ -89,6 +102,10 @@ module.exports = class PairStateExecution {
             this.logger.error('Pair State: Clear invalid orders:' + JSON.stringify([newOrders.length]));
 
             for (let key in newOrders) {
+                if (pairState.getExchangeOrder() && pairState.getExchangeOrder().id === newOrders[key].id) {
+                    continue;
+                }
+
                 await this.orderExecutor.cancelOrder(pair.exchange, newOrders[key].id)
             }
         }
@@ -99,7 +116,7 @@ module.exports = class PairStateExecution {
 
         if (!position) {
             this.pairStateManager.clear(pair.exchange, pair.symbol);
-            this.logger.debug('Close Pair: Block selling order; open position: ' + JSON.stringify([pair.exchange, pair.symbol]));
+            this.logger.debug('Close Pair: Block selling order; no open position: ' + JSON.stringify([pair.exchange, pair.symbol]));
 
             // clear untouched order
             let orders = (await this.exchangeManager.getOrders(pair.exchange, pair.symbol));
@@ -111,8 +128,10 @@ module.exports = class PairStateExecution {
             return
         }
 
-        let orders = (await this.exchangeManager.getOrders(pair.exchange, pair.symbol));
+        let pairState = this.pairStateManager.get(pair.exchange, pair.symbol)
 
+        /*
+        let orders = (await this.exchangeManager.getOrders(pair.exchange, pair.symbol));
         let hasManagedOrder = false;
         for (let key in orders) {
             // dont self remove the managed order
@@ -123,37 +142,44 @@ module.exports = class PairStateExecution {
 
             await this.orderExecutor.cancelOrder(pair.exchange, orders[key].id)
         }
+        */
 
-        if (!hasManagedOrder) {
-            this.logger.info('Pair State: Create position close order: ' + JSON.stringify(pair.exchange));
+        let exchangeOrderStored = pairState.getExchangeOrder();
+        if (exchangeOrderStored && !(await this.exchangeManager.findOrderById(pairState.getExchange(), exchangeOrderStored.id))) {
+            pairState.setExchangeOrder(null)
+            this.logger.info('Pair State: Clearing unknown stored exchangeOrder: ' + JSON.stringify([exchangeOrderStored]));
+        } else if (!exchangeOrderStored) {
+            this.logger.info('Pair State: Create position close order: ' + JSON.stringify([pair.exchange]));
 
             let amount = Math.abs(position.amount);
 
-            let order = await this.executeCloseOrder(
+            let exchangeOrder = await this.executeCloseOrder(
                 pair.exchange,
                 pair.symbol,
                 position.side === 'short' ? amount : amount * -1, // invert the current position
                 pair.options,
+                pairState
             );
 
-            if (order) {
-                if (order.shouldCancelOrderProcess()) {
+            if (exchangeOrder) {
+                if (exchangeOrder.shouldCancelOrderProcess()) {
                     // check if we need to to cancel the process
-                    if (order.status === ExchangeOrder.STATUS_REJECTED) {
+                    if (exchangeOrder.status === ExchangeOrder.STATUS_REJECTED) {
                         // order was canceled by exchange eg no balance or invalid amount
-                        this.logger.error('Pair State: order rejected clearing pair state: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
+                        this.logger.error('Pair State: order rejected clearing pair state: ' + JSON.stringify([pair.exchange, pair.symbol, exchangeOrder]))
                         this.pairStateManager.clear(pair.exchange, pair.symbol)
                     } else {
                         // just log this case
-                        this.logger.error('Pair State: Signal canceled for invalid order: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
+                        this.logger.error('Pair State: Signal canceled for invalid order: ' + JSON.stringify([pair.exchange, pair.symbol, exchangeOrder]))
+                        pairState.triggerRetry()
                     }
-                } else if(order.status === ExchangeOrder.STATUS_DONE) {
+                } else if(exchangeOrder.status === ExchangeOrder.STATUS_DONE) {
                     // order done
-                    this.logger.info('Pair State: Order directly filled clearing state: ' + JSON.stringify([pair.exchange, pair.symbol, order]))
+                    this.logger.info('Pair State: Order directly filled clearing state: ' + JSON.stringify([pair.exchange, pair.symbol, exchangeOrder]))
                     this.pairStateManager.clear(pair.exchange, pair.symbol)
                 } else {
                     // add order to know it for later usage
-                    this.managedOrders.push(order)
+                    pairState.setExchangeOrder(exchangeOrder)
                 }
             }
         }
@@ -165,6 +191,10 @@ module.exports = class PairStateExecution {
             this.logger.error('Pair State: Clear invalid orders:' + JSON.stringify([newOrders.length]));
 
             for (let key in newOrders) {
+                if (exchangeOrderStored && exchangeOrderStored.id === newOrders[key].id) {
+                    continue;
+                }
+
                 await this.orderExecutor.cancelOrder(pair.exchange, newOrders[key].id)
             }
         }
@@ -184,10 +214,16 @@ module.exports = class PairStateExecution {
         let promises = [];
 
         this.pairStateManager.all().forEach(pair => {
+            let pairState = this.pairStateManager.get(pair.exchange, pair.symbol)
+            if (pairState && pairState.getRetries() > 10) {
+                this.logger.error('Pair execution max retries reached: ' + JSON.stringify([pair, pairState]))
+                promises.push(this.onCancelPair(pair));
+                return
+            }
+
             // cancel execution if not possible to place after some minutes
-            // @TODO: add check if order not filled after X min; and provide a workflow for it currently its cancel here also
-            if (pair.time < moment().subtract(15, 'minutes')) {
-                this.logger.error('Pair execution timeout cancel: ' + JSON.stringify([pair]))
+            if (pair.time < moment().subtract(60, 'minutes')) {
+                this.logger.error('Pair execution timeout cancel: ' + JSON.stringify([pair, pairState]))
                 promises.push(this.onCancelPair(pair));
                 return
             }
@@ -220,17 +256,13 @@ module.exports = class PairStateExecution {
         this.lastRunAt = undefined
     }
 
-    isManagedOrder(orderId) {
-        return this.managedOrders.find(order => order.id === orderId) !== undefined
-    }
-
     async executeOrder(exchangeName, symbol, side, options) {
         let orderSize = await this.orderCalculator.calculateOrderSize(exchangeName, symbol);
         if (!orderSize) {
             console.error('Invalid order size: ' + JSON.stringify([exchangeName, symbol, side]));
             this.logger.error('Invalid order size: ' + JSON.stringify([exchangeName, symbol, side]));
 
-            return
+            return {}
         }
 
         // inverse price for short
@@ -250,14 +282,14 @@ module.exports = class PairStateExecution {
         let exchangeOrderSize = this.exchangeManager.get(exchangeName).calculateAmount(orderSize, symbol);
         if (!exchangeOrderSize) {
             this.logger.error('Exchange order amount issues: ' + JSON.stringify([exchangeName, symbol, orderSize]));
-            return
+            return {}
         }
 
-        let myOrder = options && options['market'] === true
+        let order = options && options['market'] === true
             ? Order.createMarketOrder(symbol, exchangeOrderSize)
             : Order.createCloseOrderWithPriceAdjustment(symbol, exchangeOrderSize);
 
-        return this.orderExecutor.executeOrder(exchangeName, myOrder)
+        return await this.orderExecutor.executeOrder(exchangeName, order)
     }
 
     async onTerminate() {

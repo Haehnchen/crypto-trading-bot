@@ -70,4 +70,8 @@ module.exports = class ExchangeManager {
     async getOrders(exchangeName, symbol) {
         return this.get(exchangeName).getOrdersForSymbol(symbol)
     }
+
+    async findOrderById(exchangeName, id) {
+        return this.get(exchangeName).findOrderById(id)
+    }
 }

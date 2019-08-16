@@ -45,8 +45,6 @@ module.exports = class OrderCalculator {
         if (capitalCurrency) {
             return await this.convertCurrencyToAsset(exchange, symbol, capitalCurrency.trade.currency_capital)
         }
-
-
     }
 
     /**

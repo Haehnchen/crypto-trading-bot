@@ -1,5 +1,7 @@
 'use strict';
 
+let PairState = require('../../dict/pair_state')
+
 module.exports = class PairStateManager {
     constructor(logger) {
         this.logger = logger;
@@ -12,22 +14,28 @@ module.exports = class PairStateManager {
             throw 'Invalidate state: ' + state
         }
 
-        let vars = {
-            'state': state,
-            'options': options || {},
-            'time': new Date(),
-            'symbol': symbol,
-            'exchange': exchange,
-        };
+        let pairState = new PairState(
+            exchange,
+            symbol,
+            state,
+            options || {},
+            true,
+        );
 
         this.logger.info('Pair state changed: ' + JSON.stringify({
-            'new': vars,
-            'old': this.stats[exchange + symbol] || {},
+            'new': JSON.stringify(pairState),
+            'old': JSON.stringify(this.stats[exchange + symbol] || {}),
         }));
 
-        this.stats[exchange + symbol] = vars
+        this.stats[exchange + symbol] = pairState
     }
 
+    /**
+     *
+     * @param exchange
+     * @param symbol
+     * @returns {undefined|PairState}
+     */
     get(exchange, symbol) {
         if ((exchange + symbol) in this.stats) {
             return this.stats[exchange + symbol]

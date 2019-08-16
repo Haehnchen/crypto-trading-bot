@@ -4,6 +4,7 @@
  * Order that coming from exchange that is placed there
  */
 module.exports = class ExchangeOrder {
+    static get STATUS_OPEN() { return 'open'; }
     static get STATUS_DONE() { return 'done'; }
     static get STATUS_CANCELED() { return 'canceled'; }
     static get STATUS_REJECTED() { return 'rejected'; }
@@ -13,6 +14,9 @@ module.exports = class ExchangeOrder {
     static get TYPE_STOP_LIMIT() { return 'stop_limit'; }
     static get TYPE_MARKET() { return 'market'; }
     static get TYPE_UNKNOWN() { return 'unknown'; }
+
+    static get SIDE_SHORT() { return 'short'; }
+    static get SIDE_LONG() { return 'long'; }
 
     constructor(id, symbol, status, price, amount, retry, ourId, side, type, createdAt, updatedAt, raw = undefined, options = {}) {
         if (side !== 'buy' && side !== 'sell') {
@@ -44,6 +48,17 @@ module.exports = class ExchangeOrder {
 
     isPostOnly() {
         return this.options.post_only && this.options.post_only === true
+    }
+
+    getLongOrShortSide() {
+        switch (this.side) {
+            case 'buy':
+                return 'long'
+            case 'sell':
+                return 'short'
+        }
+
+        throw 'Invalid side:' + this.side
     }
 
     shouldCancelOrderProcess() {

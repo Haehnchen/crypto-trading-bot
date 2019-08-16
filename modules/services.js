@@ -414,6 +414,7 @@ module.exports = {
             this.getTickers(),
             this.getSystemUtil(),
             this.getLogger(),
+            this.getPairStateManager(),
         )
     },
 

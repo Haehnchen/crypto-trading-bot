@@ -1,6 +1,7 @@
 let assert = require('assert')
 let OrderExecutor = require('../../../modules/order/order_executor')
 let Order = require('../../../dict/order')
+let PairState = require('../../../dict/pair_state')
 let Ticker = require('../../../dict/ticker')
 let ExchangeOrder = require('../../../dict/exchange_order')
 const moment = require('moment')
@@ -16,6 +17,8 @@ describe('#order executor', () => {
             'order.retry_ms': 8,
         }
 
+        let pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+
         let i = 0
         let executor = new OrderExecutor(
             {'get': () => { return {
@@ -23,14 +26,14 @@ describe('#order executor', () => {
                 }}},
             undefined,
             {'getConfig': (key) => { return configs[key] }},
-            {'info': () => {}, 'error': () => {}}
+            {'info': () => {}, 'error': () => {}},
+            {'all': () => [pairState]},
         )
 
         let result = await executor.executeOrder('foobar', Order.createLimitPostOnlyOrderAutoSide('BTCUSD', 1337, -10))
 
         assert.equal(i, 1)
         assert.equal(result.id, '1815-1337-1')
-        assert.equal(executor.orders.find(o => o.id === '1815-1337-1').id, '1815-1337-1')
     })
 
     it('test order create execution with retry', async () => {
@@ -60,9 +63,6 @@ describe('#order executor', () => {
 
         assert.equal(i, 4)
         assert.equal(result.id, '1815-1337-4')
-
-        assert.equal(executor.orders.find(o => o.id === '1815-1337-4').id, '1815-1337-4')
-        assert.equal(executor.orders.find(o => o.id === '1815-1337-3'), undefined)
     })
 
     it('test order create execution with out of retry limit', async () => {
@@ -93,30 +93,23 @@ describe('#order executor', () => {
 
         assert.equal(i, 4)
         assert.equal(result, undefined)
-        assert.equal(executor.orders.length, 0)
     })
 
     it('test that adjust price handler must clean up unknown orders', async () => {
         let exchangeOrder = new ExchangeOrder('1815-1337', undefined, undefined, undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT)
 
+        let pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+        pairState.setExchangeOrder(exchangeOrder);
+
         let executor = new OrderExecutor(
             {'get': () => { return {'findOrderById': () => { return exchangeOrder }} }},
             undefined,
             undefined,
-            {'debug': () => {}}
+            {'debug': () => {}},
+            {'all': () => [pairState]},
         )
 
-        let order = Order.createCloseOrderWithPriceAdjustment('BTCUSD', 1337)
-
-        executor.orders.push({
-            'id': exchangeOrder.id,
-            'order': order,
-            'exchangeOrder': exchangeOrder
-        })
-
         await executor.adjustOpenOrdersPrice()
-
-        assert.equal(executor.orders.length, 0)
         assert.equal('1815-1337' in executor.runningOrders, false)
     })
 
@@ -125,7 +118,8 @@ describe('#order executor', () => {
             undefined,
             undefined,
             undefined,
-            undefined
+            undefined,
+            {'all': () => []},
         )
 
         // current
@@ -145,6 +139,9 @@ describe('#order executor', () => {
         let exchangeName = undefined
         let orderUpdate = undefined
 
+        let pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+        pairState.setExchangeOrder(exchangeOrder)
+
         let executor = new OrderExecutor(
             {
                 'get': () => { return {
@@ -163,16 +160,9 @@ describe('#order executor', () => {
             },
             {'getIfUpToDate': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
             undefined,
-            {'info': () => {}, 'error': () => {}}
+            {'info': () => {}, 'error': () => {}},
+            {'all': () => [pairState]},
         )
-
-        let order = Order.createCloseOrderWithPriceAdjustment('BTCUSD', 1337)
-
-        executor.orders.push({
-            'id': exchangeOrder.id,
-            'order': order,
-            'exchangeOrder': exchangeOrder
-        })
 
         await executor.adjustOpenOrdersPrice()
 
@@ -181,13 +171,16 @@ describe('#order executor', () => {
     })
 
 
-    it('test that price adjust order is recreated on placing error', async () => {
+    it('test that price adjust order is recreated on placing error [long]', async () => {
         let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', 337, 1331, false, undefined, 'buy', ExchangeOrder.TYPE_LIMIT)
 
         let logMessages = {
             'info': [],
             'error': [],
         }
+
+        let pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+        pairState.setExchangeOrder(exchangeOrder)
 
         let executor = new OrderExecutor(
             {
@@ -201,22 +194,14 @@ describe('#order executor', () => {
             {
                 'info': message => { logMessages['info'].push(message) },
                 'error': message => { logMessages['error'].push(message) },
-            }
+            },
+            {'all': () => [pairState]},
         )
 
         let retryOrder
         executor.executeOrder = async (exchange, order) => {
             retryOrder = order
         }
-
-        let order = Order.createCloseOrderWithPriceAdjustment('BTCUSD', 1337)
-
-        executor.orders.push({
-            'id': exchangeOrder.id,
-            'order': order,
-            'exchangeOrder': exchangeOrder,
-            'exchange': 'test',
-        })
 
         await executor.adjustOpenOrdersPrice()
 
@@ -227,11 +212,55 @@ describe('#order executor', () => {
         assert.strictEqual(logMessages['error'].filter(msg => msg.includes('replacing canceled order')).length, 1)
     })
 
+    it('test that price adjust order is recreated on placing error [short]', async () => {
+        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', 337, 1331, false, undefined, 'sell', ExchangeOrder.TYPE_LIMIT)
+
+        let logMessages = {
+            'info': [],
+            'error': [],
+        }
+
+        let pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+        pairState.setExchangeOrder(exchangeOrder)
+
+        let executor = new OrderExecutor(
+            {
+                'get': () => { return {
+                    'findOrderById': async () => exchangeOrder,
+                    'updateOrder': () => new ExchangeOrder('1815-1337', undefined, 'canceled', 1339, undefined, true, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
+                }},
+            },
+            {'getIfUpToDate': () => new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)},
+            {'getConfig': (key, defaultValue) => defaultValue},
+            {
+                'info': message => { logMessages['info'].push(message) },
+                'error': message => { logMessages['error'].push(message) },
+            },
+            {'all': () => [pairState]},
+        )
+
+        let retryOrder
+        executor.executeOrder = async (exchange, order) => {
+            retryOrder = order
+        }
+
+        await executor.adjustOpenOrdersPrice()
+
+        assert.strictEqual(retryOrder.amount, -1331)
+        assert.strictEqual(retryOrder.hasAdjustedPrice(), true)
+
+        assert.strictEqual(logMessages['error'].filter(msg => msg.includes('canceled recreate')).length, 1)
+        assert.strictEqual(logMessages['error'].filter(msg => msg.includes('replacing canceled order')).length, 1)
+    })
+
     it('test that price adjust order is created for short', async () => {
-        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT)
+        let exchangeOrder = new ExchangeOrder('1815-1337', undefined, 'open', undefined, undefined, undefined, undefined, 'sell', ExchangeOrder.TYPE_LIMIT)
 
         let exchangeName = undefined
         let orderUpdate = undefined
+
+        let pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+        pairState.setExchangeOrder(exchangeOrder)
 
         let executor = new OrderExecutor(
             {
@@ -249,18 +278,11 @@ describe('#order executor', () => {
                     },
                 }},
             },
-            {'getIfUpToDate': () => { return new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)}},
+            {'getIfUpToDate': () => new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338)},
             undefined,
-            {'info': () => {}, 'error': () => {}}
+            {'info': () => {}, 'error': () => {}},
+            {'all': () => [pairState]},
         )
-
-        let order = Order.createCloseOrderWithPriceAdjustment('BTCUSD', -1337)
-
-        executor.orders.push({
-            'id': exchangeOrder.id,
-            'order': order,
-            'exchangeOrder': exchangeOrder
-        })
 
         await executor.adjustOpenOrdersPrice()
 

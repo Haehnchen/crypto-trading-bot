@@ -2,6 +2,7 @@ let assert = require('assert')
 let PairStateExecution = require('../../../modules/pairs/pair_state_execution')
 let ExchangeOrder = require('../../../dict/exchange_order')
 let Position = require('../../../dict/position');
+let PairState = require('../../../dict/pair_state')
 
 describe('#pair state execution', function() {
     it('test limit open order trigger for long', async () => {
@@ -181,6 +182,7 @@ describe('#pair state execution', function() {
         let executor = new PairStateExecution(
             {
                 'clear': (exchange, symbol) => { clearCalls.push([exchange, symbol]) },
+                'get': () => new PairState('foobar', 'ADAUSDT', 'long', {}, true),
             },
             {
                 'getPosition': async () => undefined,
@@ -213,6 +215,7 @@ describe('#pair state execution', function() {
         let executor = new PairStateExecution(
             {
                 'clear': (exchange, symbol) => { clearCalls.push([exchange, symbol]) },
+                'get': () => new PairState('foobar', 'ADAUSDT', 'long', {}, true),
             },
             {
                 'getPosition': async () => undefined,
@@ -245,6 +248,7 @@ describe('#pair state execution', function() {
         let executor = new PairStateExecution(
             {
                 'clear': (exchange, symbol) => { clearCalls.push([exchange, symbol]) },
+                'get': () => new PairState('foobar', 'ADAUSDT', 'long', {}, true),
             },
             {
                 'getPosition': async () => new Position('ADAUSDT', 'long', 1337),
@@ -267,5 +271,52 @@ describe('#pair state execution', function() {
 
         assert.strictEqual(logMessages['info'].filter(msg => msg.includes('position close order')).length, 1)
         assert.strictEqual(logMessages['info'].filter(msg => msg.includes('directly filled clearing state')).length, 1)
+    })
+
+    it('test onPairStateExecutionTick calling', async () => {
+        let clearCalls = []
+
+        let logMessages = {
+            'error': [],
+        }
+
+        let pairState = new PairState('foobar', 'ADAUSDT', 'long', {}, true);
+
+        for (let i = 0; i < 20; i++) {
+            pairState.triggerRetry()
+        }
+
+        let executor = new PairStateExecution(
+            {
+                'clear': (exchange, symbol) => { clearCalls.push([exchange, symbol]) },
+                'get': () => pairState,
+                'all': () => [pairState],
+            },
+            {
+                'getPosition': async () => new Position('ADAUSDT', 'long', 1337),
+                'getOrders': async () => [],
+                'get': () => {
+                    return {'calculateAmount': v => v }
+                },
+            },
+            {
+                'calculateOrderSize': async () => { return 1337 },
+            },
+            {
+                'executeOrder': async () => new ExchangeOrder('foobar', 'ADAUSDT', 'done', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
+                'cancelAll': async ()  => {},
+
+            },
+            {
+                'error': message => { logMessages['error'].push(message) },
+            },
+        )
+
+        await executor.onPairStateExecutionTick()
+
+        assert.strictEqual(clearCalls[0][0], 'foobar')
+        assert.strictEqual(clearCalls[0][1], 'ADAUSDT')
+
+        assert.strictEqual(logMessages['error'].filter(msg => msg.includes('max retries')).length, 1)
     })
 })
