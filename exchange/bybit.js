@@ -446,13 +446,13 @@ module.exports = class Bybit {
         let body = result.body
 
         if (error || !response || response.statusCode !== 200) {
-            this.logger.error('Bybit: Invalid order create:' + JSON.stringify({'error': error, 'body': body}))
+            this.logger.error('Bybit: Invalid order create:' + JSON.stringify([error, body]))
             return ExchangeOrder.createCanceledFromOrder(order)
         }
 
         let json = JSON.parse(body);
         if (!json.result) {
-            this.logger.error('Bybit: Invalid order create body:' + JSON.stringify({'body': body}))
+            this.logger.error('Bybit: Invalid order create body:' + JSON.stringify([body, parametersSorted]))
             return ExchangeOrder.createCanceledFromOrder(order)
         }
 
@@ -737,7 +737,7 @@ module.exports = class Bybit {
                 orderType = ExchangeOrder.TYPE_STOP
             }
 
-            if (['new', 'partiallyfilled', 'pendingnew', 'doneforday', 'stopped'].includes(orderStatus)) {
+            if (['new', 'partiallyfilled', 'pendingnew', 'doneforday', 'stopped', 'created'].includes(orderStatus)) {
                 status = 'open'
             } else if (orderStatus === 'filled') {
                 status = 'done'
@@ -786,6 +786,10 @@ module.exports = class Bybit {
                 orderId = order['order_id'];
             } else if (order['stop_order_id']) {
                 orderId = order['stop_order_id'];
+            }
+
+            if (!status) {
+                throw 'Invalid status:' + JSON.stringify([order]);
             }
 
             return new ExchangeOrder(
