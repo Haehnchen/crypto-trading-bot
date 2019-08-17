@@ -142,6 +142,10 @@ module.exports = {
         let myDb = new TransactionDatabase(new sqlite3.Database('bot.db'));
         myDb.configure("busyTimeout", 4000);
 
+        myDb.run('PRAGMA JOURNAL_MODE = PERSIST;');
+        myDb.run('PRAGMA SYNCHRONOUS = 1;');
+        myDb.run('PRAGMA LOCKING_MODE = EXCLUSIVE;');
+
         return db = myDb
     },
 
