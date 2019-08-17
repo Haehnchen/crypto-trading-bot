@@ -447,6 +447,16 @@ module.exports = class CoinbasePro {
                 break;
             }
 
+            // stop on old fills
+            if (result['created_at']) {
+                let secDiff = Math.abs(new Date(fill.created_at).getTime() - new Date(result['created_at']).getTime());
+
+                // out of 7 day range
+                if (secDiff > 60 * 60 * 24 * 7 * 1000) {
+                    break;
+                }
+            }
+
             result.size += parseFloat(fill.size);
             result.costs += (parseFloat(fill.size) * parseFloat(fill.price)) + parseFloat(fill.fee)
 
