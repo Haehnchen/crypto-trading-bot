@@ -2,9 +2,9 @@
 
 const BFX = require('bitfinex-api-node')
 
-let Candlestick = require('./../dict/candlestick.js');
-let Ticker = require('./../dict/ticker.js');
-let Position = require('../dict/position.js');
+let ExchangeCandlestick = require('./../dict/exchange_candlestick');
+let Ticker = require('./../dict/ticker');
+let Position = require('../dict/position');
 
 let CandlestickEvent = require('./../event/candlestick_event.js');
 let TickerEvent = require('./../event/ticker_event.js');
@@ -15,8 +15,9 @@ const { Order } = require('bfx-api-node-models')
 let moment = require('moment')
 
 module.exports = class Bitfinex {
-    constructor(eventEmitter, logger, requestClient) {
+    constructor(eventEmitter, logger, requestClient, candleImport) {
         this.eventEmitter = eventEmitter
+        this.candleImport = candleImport
         this.logger = logger
         this.positions = {}
         this.orders = []
@@ -98,7 +99,7 @@ module.exports = class Bitfinex {
             ));
         })
 
-        ws.on('candle', (candles, pair) => {
+        ws.on('candle', async (candles, pair) => {
             let options = pair.split(':');
 
             let period = options[1].toLowerCase();
@@ -121,7 +122,10 @@ module.exports = class Bitfinex {
             let sticks = myCandles.filter(function (candle) {
                 return typeof candle['mts'] !== 'undefined';
             }).map(function(candle) {
-                return new Candlestick(
+                return new ExchangeCandlestick(
+                    'bitfinex',
+                    mySymbol,
+                    period.toLowerCase(),
                     Math.round(candle['mts'] / 1000),
                     candle['open'],
                     candle['high'],
@@ -136,7 +140,7 @@ module.exports = class Bitfinex {
                 return;
             }
 
-            eventEmitter.emit('candlestick', new CandlestickEvent('bitfinex', mySymbol, period.toLowerCase(), sticks));
+            await this.candleImport.insertThrottledCandles(sticks)
         })
 
         let me = this
@@ -415,7 +419,7 @@ module.exports = class Bitfinex {
                 'Accept': 'application/json',
             },
         }, result => {
-            return result.response.statusCode >= 500
+            return result.response && result.response.statusCode >= 500
         })
 
         let exchangePairs = {}

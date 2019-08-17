@@ -12,7 +12,6 @@ let Telegram = require('../notify/telegram');
 
 let Tickers = require('../storage/tickers');
 
-let CandleStickListener = require('../modules/listener/candle_stick_listener');
 let TickListener = require('../modules/listener/tick_listener');
 let CreateOrderListener = require('../modules/listener/create_order_listener');
 let TickerDatabaseListener = require('../modules/listener/ticker_database_listener');
@@ -73,7 +72,6 @@ let notify = undefined;
 let tickers = undefined;
 let queue = undefined;
 
-let candleStickListener = undefined;
 let candleStickImporter = undefined;
 let tickerDatabaseListener = undefined;
 let tickListener = undefined;
@@ -182,16 +180,6 @@ module.exports = {
         }
 
         return riskRewardRatioCalculator = new RiskRewardRatioCalculator(this.getLogger())
-    },
-
-    getCandleStickListener: function () {
-        if (candleStickListener) {
-            return candleStickListener;
-        }
-
-        return candleStickListener = new CandleStickListener(
-            this.getCandleImporter(),
-        )
     },
 
     getCandleImporter: function () {
@@ -610,6 +598,7 @@ module.exports = {
                 this.getEventEmitter(),
                 this.getLogger(),
                 this.getRequestClient(),
+                this.getCandleImporter(),
             ),
             new Bybit(
                 this.getEventEmitter(),
@@ -633,7 +622,6 @@ module.exports = {
             this.getLogger(),
             this.getCreateOrderListener(),
             this.getTickListener(),
-            this.getCandleStickListener(),
             this.getTickers(),
             this.getTickerDatabaseListener(),
             this.getExchangeOrderWatchdogListener(),

@@ -13,7 +13,6 @@ module.exports = class Trade {
         logger,
         createOrderListener,
         tickListener,
-        candleStickListener,
         tickers,
         tickerDatabaseListener,
         exchangeOrderWatchdogListener,
@@ -30,7 +29,6 @@ module.exports = class Trade {
         this.logger = logger
         this.createOrderListener = createOrderListener
         this.tickListener = tickListener
-        this.candleStickListener = candleStickListener
         this.tickers = tickers
         this.tickerDatabaseListener = tickerDatabaseListener
         this.exchangeOrderWatchdogListener = exchangeOrderWatchdogListener
@@ -112,10 +110,6 @@ module.exports = class Trade {
         eventEmitter.on('orderbook', function(orderbookEvent) {
             //console.log(orderbookEvent.orderbook)
         });
-
-        eventEmitter.on('candlestick', async (event) => {
-            me.candleStickListener.onCandleStick(event)
-        })
 
         eventEmitter.on('order', async (event) => me.createOrderListener.onCreateOrder(event))
 
