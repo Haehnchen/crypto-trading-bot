@@ -1,12 +1,12 @@
 'use strict';
 
-let resample = require('../../utils/resample')
-let CandlestickEvent = require('../../event/candlestick_event')
+let resample = require('../../utils/resample');
+let ExchangeCandlestick = require('../../dict/exchange_candlestick');
 
 module.exports = class CandlestickResample {
-    constructor(candlestickRepository, eventEmitter) {
-        this.candlestickRepository = candlestickRepository
-        this.eventEmitter = eventEmitter
+    constructor(candlestickRepository, candleImporter) {
+        this.candlestickRepository = candlestickRepository;
+        this.candleImporter = candleImporter;
     }
 
     /**
@@ -20,29 +20,43 @@ module.exports = class CandlestickResample {
      * @returns {Promise<void>}
      */
     async resample(exchange, symbol, periodFrom, periodTo, limitCandles = false) {
-        let toMinute = resample.convertPeriodToMinute(periodTo)
-        let fromMinute = resample.convertPeriodToMinute(periodFrom)
+        let toMinute = resample.convertPeriodToMinute(periodTo);
+        let fromMinute = resample.convertPeriodToMinute(periodFrom);
 
         if (fromMinute > toMinute) {
-            throw 'Invalid resample "from" must be geater then "to"'
+            throw 'Invalid resample "from" must be geater then "to"';
         }
 
         // we need some
-        let wantCandlesticks = 750
+        let wantCandlesticks = 750;
 
         // we can limit the candles in the range we should resample
         // but for mass resample history provide a switch
         if (limitCandles === true) {
-            wantCandlesticks = Math.round(toMinute / fromMinute * 5.6)
+            wantCandlesticks = Math.round(toMinute / fromMinute * 5.6);
         }
 
-        let candlestick = await this.candlestickRepository.getLookbacksForPair(exchange, symbol, periodFrom, wantCandlesticks)
+        let candlestick = await this.candlestickRepository.getLookbacksForPair(exchange, symbol, periodFrom, wantCandlesticks);
         if (candlestick.length === 0) {
             return
         }
 
-        let resampleCandlesticks = resample.resampleMinutes(candlestick, toMinute)
+        let resampleCandlesticks = resample.resampleMinutes(candlestick, toMinute);
 
-        this.eventEmitter.emit('candlestick', new CandlestickEvent(exchange, symbol, periodTo, resampleCandlesticks))
+        let candles = resampleCandlesticks.map(candle => {
+            return new ExchangeCandlestick(
+                exchange,
+                symbol,
+                periodTo,
+                candle.time,
+                candle.open,
+                candle.high,
+                candle.low,
+                candle.close,
+                candle.volume,
+            );
+        });
+
+        await this.candleImporter.insertThrottledCandles(candles);
     }
-}
+};

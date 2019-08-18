@@ -518,7 +518,7 @@ module.exports = {
 
         return candlestickResample = new CandlestickResample(
             this.getCandlestickRepository(),
-            this.getEventEmitter(),
+            this.getCandleImporter(),
         )
     },
 
