@@ -23,21 +23,14 @@ module.exports = class WinstonSqliteTransport extends Transport {
             this.emit('logged', info);
         })
 
-        let insert = '' +
-            'INSERT INTO ' + this.table + '(uuid, level, message, created_at) VALUES ($uuid, $level, $message, $created_at)'
-
         let parameters = {
-            '$uuid': WinstonSqliteTransport.createUUID(),
-            '$level': info.level,
-            '$message': info.message,
-            '$created_at': Math.floor(Date.now() / 1000),
+            'uuid': WinstonSqliteTransport.createUUID(),
+            'level': info.level,
+            'message': info.message,
+            'created_at': Math.floor(Date.now() / 1000),
         }
 
-        this.db.run(insert, parameters, err => {
-            if (err) {
-                return console.log(err.message);
-            }
-        })
+        this.db.prepare('INSERT INTO ' + this.table + '(uuid, level, message, created_at) VALUES ($uuid, $level, $message, $created_at)').run(parameters);
 
         callback();
     }

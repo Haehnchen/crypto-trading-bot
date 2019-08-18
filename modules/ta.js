@@ -1,67 +1,51 @@
-let Candlestick = require('./../dict/candlestick.js');
 let ta = require('../utils/technical_analysis');
 let Ticker = require('../dict/ticker');
 let moment = require('moment');
 
 module.exports = class Ta {
-    constructor(db, instances) {
+    constructor(candlestickRepository, instances,) {
         this.instances = instances
-        this.db = db
+        this.candlestickRepository = candlestickRepository
     }
 
     getTaForPeriods (periods) {
         return new Promise((resolve) => {
-            let db = this.db
-
             let promises = [];
 
             this.instances['symbols'].forEach((symbol) => {
                 periods.forEach(period => {
-                    promises.push(new Promise((resolve) => {
-                        let sql = 'SELECT * from candlesticks where exchange = ? AND symbol = ? and period = ? order by time DESC LIMIT 200';
+                    promises.push(new Promise(async (resolve) => {
+                        let candles = await this.candlestickRepository.getLookbacksForPair(symbol.exchange, symbol.symbol, period, 200)
 
-                        db.all(sql, [symbol.exchange, symbol.symbol, period], (err, rows) => {
-                            if (err) {
-                                console.log(err);
-                                resolve();
-                                return;
-                            }
+                        if (candles.length === 0) {
+                            resolve();
+                            return;
+                        }
 
-                            let candles = rows.map((row) => {
-                                return new Candlestick(row.time, row.open, row.high, row.low, row.close, row.volume)
-                            });
-
-                            if (candles.length === 0) {
-                                resolve();
-                                return;
-                            }
-
-                            let range = moment().subtract(24, 'hours')
-
-                            let rangeMin = moment().subtract(24, 'hours').subtract(35, 'minutes').unix()
-                            let rangeMax = moment().subtract(24, 'hours').add(35, 'minutes').unix()
+                        let rangeMin = moment().subtract(24, 'hours').subtract(35, 'minutes').unix()
+                        let rangeMax = moment().subtract(24, 'hours').add(35, 'minutes').unix()
 
 
-                            let dayCandle = candles.find(candle =>
-                                candle.time > rangeMin && candle.time < rangeMax
-                            )
+                        let dayCandle = candles.find(candle =>
+                            candle.time > rangeMin && candle.time < rangeMax
+                        )
 
-                            let change
-                            if (dayCandle) {
-                                change = 100 * (candles[0].close / dayCandle.close) - 100
-                            }
+                        let change
+                        if (dayCandle) {
+                            change = 100 * (candles[0].close / dayCandle.close) - 100
+                        }
 
-                            ta.getIndicatorsLookbacks(candles.slice().reverse()).then(result => {
-                                resolve({
-                                    'symbol': symbol.symbol,
-                                    'exchange': symbol.exchange,
-                                    'period': period,
-                                    'ta': result,
-                                    'ticker': new Ticker(symbol.exchange, symbol.symbol, undefined, candles[0].close, candles[0].close),
-                                    'percentage_change': change,
-                                })
+                        ta.getIndicatorsLookbacks(candles.slice().reverse()).then(result => {
+                            resolve({
+                                'symbol': symbol.symbol,
+                                'exchange': symbol.exchange,
+                                'period': period,
+                                'ta': result,
+                                'ticker': new Ticker(symbol.exchange, symbol.symbol, undefined, candles[0].close, candles[0].close),
+                                'percentage_change': change,
                             })
-                        });
+                        })
+
                     }))
                 })
             })

@@ -1,32 +1,27 @@
 'use strict';
 
-let moment = require('moment')
-let Signal = require('../../dict/signal')
-
 module.exports = class SignalRepository {
     constructor(db) {
         this.db = db
     }
 
-    getValidSignals(exchange, symbol) {
+    getSignals(since) {
         return new Promise((resolve) => {
-            let sql = 'SELECT * from signals where state is NOT "executed" and income_at > ? and exchange = ?  and symbol = ?  order by income_at DESC LIMIT 1'
-
-            this.db.all(sql, [Math.floor(moment().subtract(45, 'minutes').toDate() / 1000), exchange, symbol], (err, rows) => {
-                if (err) {
-                    console.log(err)
-                    resolve()
-                    return;
-                }
-
-                if(rows.length === 0) {
-                    resolve()
-                }
-
-                resolve(rows.map((row) => {
-                    return new Signal(row.id, row.exchange, row.symbol, row.side, row.income_at)
-                })[0])
-            });
+            const stmt = this.db.prepare('SELECT * from signals where income_at > ? order by income_at DESC LIMIT 100');
+            resolve(stmt.all(since))
         })
+    }
+
+    insertSignal(exchange, symbol, options, side, strategy) {
+        const stmt = this.db.prepare('INSERT INTO signals(exchange, symbol, options, side, strategy, income_at) VALUES ($exchange, $symbol, $options, $side, $strategy, $income_at)');
+
+        stmt.run({
+            'exchange': exchange,
+            'symbol': symbol,
+            'options': JSON.stringify(options || {}),
+            'side': side,
+            'strategy': strategy,
+            'income_at': Math.floor(Date.now() / 1000),
+        });
     }
 }

@@ -141,12 +141,11 @@ module.exports = {
             return db;
         }
 
-        let myDb = new TransactionDatabase(new sqlite3.Database('bot.db'));
-        myDb.configure("busyTimeout", 4000);
+        let myDb = require('better-sqlite3')('bot.db');
+        myDb.pragma('journal_mode = WAL');
 
-        myDb.run('PRAGMA JOURNAL_MODE = PERSIST;');
-        myDb.run('PRAGMA SYNCHRONOUS = 1;');
-        myDb.run('PRAGMA LOCKING_MODE = EXCLUSIVE;');
+        myDb.pragma('SYNCHRONOUS = 1;');
+        myDb.pragma('LOCKING_MODE = EXCLUSIVE;');
 
         return db = myDb
     },
@@ -157,7 +156,7 @@ module.exports = {
         }
 
         let Ta = require('../modules/ta.js');
-        return ta = new Ta(this.getDatabase(), this.getInstances())
+        return ta = new Ta(this.getCandlestickRepository(), this.getInstances())
     },
 
     getBacktest: function () {
@@ -254,7 +253,7 @@ module.exports = {
             return signalLogger
         }
 
-        return signalLogger = new SignalLogger(this.getDatabase(), this.getLogger())
+        return signalLogger = new SignalLogger(this.getSignalRepository())
     },
 
     getSignalHttp: function () {
@@ -262,7 +261,7 @@ module.exports = {
             return signalHttp
         }
 
-        return signalHttp = new SignalHttp(this.getDatabase())
+        return signalHttp = new SignalHttp(this.getSignalRepository())
     },
 
     getSignalRepository: function () {
@@ -270,7 +269,7 @@ module.exports = {
             return signalRepository
         }
 
-        return signalListener = new SignalRepository(
+        return signalRepository = new SignalRepository(
             this.getDatabase(),
         )
     },
