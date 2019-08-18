@@ -14,7 +14,7 @@ module.exports = class LogsRepository {
             let parameters = {}
 
             if (excludes.length > 0) {
-                sql = 'SELECT * from logs WHERE level NOT IN (' + excludes.map((exclude, index) => 'level_' + index).join(', ') + ') order by created_at DESC LIMIT ' + limit
+                sql = 'SELECT * from logs WHERE level NOT IN (' + excludes.map((exclude, index) => '$level_' + index).join(', ') + ') order by created_at DESC LIMIT ' + limit
 
                 excludes.forEach((exclude, index) => { parameters['level_' + index] = exclude })
             }
