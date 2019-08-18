@@ -44,6 +44,7 @@ let WinstonSqliteTransport = require('../utils/winston_sqlite_transport');
 let LogsHttp = require('./system/logs_http');
 let LogsRepository = require('../modules/repository/logs_repository');
 let TickerLogRepository = require('../modules/repository/ticker_log_repository');
+let TickerRepository = require('../modules/repository/ticker_repository');
 let CandlestickResample = require('../modules/system/candlestick_resample');
 let RequestClient = require('../utils/request_client');
 let Queue = require('../utils/queue');
@@ -107,6 +108,7 @@ let requestClient = undefined;
 let exchangeCandleCombine = undefined;
 let candleExportHttp = undefined;
 let exchangePositionWatcher = undefined;
+let tickerRepository = undefined;
 
 module.exports = {
     boot: async function () {
@@ -244,7 +246,7 @@ module.exports = {
             return tickerDatabaseListener
         }
 
-        return tickerDatabaseListener = new TickerDatabaseListener(this.getDatabase(), this.getLogger())
+        return tickerDatabaseListener = new TickerDatabaseListener(this.getTickerRepository())
     },
 
     getSignalLogger: function () {
@@ -500,6 +502,14 @@ module.exports = {
         }
 
         return tickerLogRepository = new TickerLogRepository(this.getDatabase())
+    },
+
+    getTickerRepository: function () {
+        if (tickerRepository) {
+            return tickerRepository;
+        }
+
+        return tickerRepository = new TickerRepository(this.getDatabase(), this.getLogger())
     },
 
     getCandlestickResample: function () {
