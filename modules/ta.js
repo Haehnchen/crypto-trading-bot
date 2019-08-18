@@ -3,9 +3,10 @@ let Ticker = require('../dict/ticker');
 let moment = require('moment');
 
 module.exports = class Ta {
-    constructor(candlestickRepository, instances,) {
+    constructor(candlestickRepository, instances, tickers) {
         this.instances = instances
         this.candlestickRepository = candlestickRepository
+        this.tickers = tickers
     }
 
     getTaForPeriods (periods) {
@@ -59,10 +60,11 @@ module.exports = class Ta {
 
                 v.forEach((v) => {
                     if (!x[v.symbol]) {
+                        let liveTicker = this.tickers.get(v.exchange, v.symbol);
                         x[v.symbol] = {
                             'symbol': v.symbol,
                             'exchange': v.exchange,
-                            'ticker': v.ticker,
+                            'ticker': liveTicker ? liveTicker : v.ticker,
                             'ta': {},
                             'percentage_change': v.percentage_change,
                         }

@@ -156,7 +156,7 @@ module.exports = {
         }
 
         let Ta = require('../modules/ta.js');
-        return ta = new Ta(this.getCandlestickRepository(), this.getInstances())
+        return ta = new Ta(this.getCandlestickRepository(), this.getInstances(), this.getTickers())
     },
 
     getBacktest: function () {
