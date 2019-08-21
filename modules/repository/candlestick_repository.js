@@ -52,8 +52,10 @@ module.exports = class CandlestickRepository {
 
     insertCandles(exchangeCandlesticks) {
         return new Promise(resolve => {
-            const insert = this.db.prepare('UPDATE candlesticks SET exchange=$exchange, symbol=$symbol, period=$period, time=$time, open=$open, high=$high, low=$low, close=$close, volume=$volume WHERE exchange=$exchange AND symbol=$symbol AND period=$period AND time=$time');
-            const update = this.db.prepare('INSERT OR IGNORE INTO candlesticks(exchange, symbol, period, time, open, high, low, close, volume) VALUES ($exchange, $symbol, $period, $time, $open, $high, $low, $close, $volume)');
+            const upsert = this.db.prepare(
+                'INSERT INTO candlesticks(exchange, symbol, period, time, open, high, low, close, volume) VALUES ($exchange, $symbol, $period, $time, $open, $high, $low, $close, $volume) ' +
+                'ON CONFLICT(exchange, symbol, period, time) DO UPDATE SET open=$open, high=$high, low=$low, close=$close, volume=$volume'
+            );
 
             this.db.transaction(() => {
                 exchangeCandlesticks.forEach(exchangeCandlestick => {
@@ -69,8 +71,7 @@ module.exports = class CandlestickRepository {
                         'volume': exchangeCandlestick.volume
                     };
 
-                    insert.run(parameters);
-                    update.run(parameters);
+                    upsert.run(parameters);
                 })
             })();
 
