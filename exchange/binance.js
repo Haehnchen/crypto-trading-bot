@@ -4,13 +4,13 @@ const BinanceClient = require('binance-api-node').default
 
 let ExchangeCandlestick = require('./../dict/exchange_candlestick')
 let Ticker = require('./../dict/ticker')
-let CandlestickEvent = require('./../event/candlestick_event')
 let TickerEvent = require('./../event/ticker_event')
 let ExchangeOrder = require('../dict/exchange_order')
 let moment = require('moment')
 let OrderUtil = require('../utils/order_util')
 let Position = require('../dict/position')
 let Order = require('../dict/order')
+let OrderBag = require('./utils/order_bag')
 
 module.exports = class Binance {
     constructor(eventEmitter, logger, queue, candleImport) {
@@ -20,13 +20,13 @@ module.exports = class Binance {
         this.candleImport = candleImport
 
         this.client = undefined
-        this.orders = {}
         this.exchangePairs = {}
         this.symbols = []
         this.positions = []
         this.trades = {}
         this.tickers = {}
         this.balances = []
+        this.orderbag = new OrderBag()
     }
 
     start(config, symbols) {
@@ -165,7 +165,7 @@ module.exports = class Binance {
             return
         }
 
-        delete this.orders[id]
+        this.orderbag.delete(id)
 
         return ExchangeOrder.createCanceled(order)
     }
@@ -282,46 +282,21 @@ module.exports = class Binance {
      * @param order
      */
     triggerOrder(order) {
-        if (!(order instanceof ExchangeOrder)) {
-            throw 'Invalid order given'
-        }
-
-        // dont overwrite state closed order
-        if (order.id in this.orders && ['done', 'canceled'].includes(this.orders[order.id].status)) {
-            delete this.orders[order.id]
-            return
-        }
-
-        this.orders[order.id] = order
+        return this.orderbag.triggerOrder(order);
     }
 
     getOrders() {
-        return new Promise(resolve => {
-            let orders = []
-
-            for (let key in this.orders){
-                if (this.orders[key].status === 'open') {
-                    orders.push(this.orders[key])
-                }
-            }
-
-            resolve(orders)
-        })
+        return this.orderbag.getOrders();
     }
 
     findOrderById(id) {
-        return new Promise(async resolve => {
-            resolve((await this.getOrders()).find(order =>
-                order.id === id || order.id == id
-            ))
-        })
+        return this.orderbag.findOrderById(id);
     }
 
     getOrdersForSymbol(symbol) {
-        return new Promise(async resolve => {
-            resolve((await this.getOrders()).filter(order => order.symbol === symbol))
-        })
+        return this.orderbag.getOrdersForSymbol(symbol);
     }
+
     /**
      * LTC: 0.008195 => 0.00820
      *
@@ -435,8 +410,8 @@ module.exports = class Binance {
 
             // clean orders with state is switching from open to close
             let orderStatus = event.orderStatus.toLowerCase();
-            if (['canceled', 'filled', 'rejected'].includes(orderStatus) && event.orderId && this.orders[event.orderId]) {
-                delete this.orders[event.orderId]
+            if (['canceled', 'filled', 'rejected'].includes(orderStatus) && event.orderId && this.orderbag.get(event.orderId)) {
+                this.orderbag.delete(event.orderId)
             }
 
             // set last order price to our trades. so we have directly profit and entry prices
@@ -504,7 +479,7 @@ module.exports = class Binance {
             orders[o.id] = o
         })
 
-        this.orders = orders
+        this.orderbag.set(orders)
     }
 
     async syncBalances() {

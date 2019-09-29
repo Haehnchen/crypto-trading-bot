@@ -335,12 +335,12 @@ describe('#binance exchange implementation', function() {
         binance.triggerOrder(new ExchangeOrder('25035356', 'BTCUSDT', 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT))
         binance.triggerOrder(new ExchangeOrder('foobar', 'ADAUSDT', 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT))
 
-        assert.equal(Object.keys(binance.orders).length, 2)
-        assert.equal(binance.orders[25035356].symbol, 'BTCUSDT')
+        assert.equal(Object.keys(binance.orderbag.all()).length, 2)
+        assert.equal(binance.orderbag.all()[25035356].symbol, 'BTCUSDT')
 
         await binance.onWebSocketEvent(getEvent(event => event.orderId === 25035356))
-        assert.equal(binance.orders[25035356], undefined)
-        assert.equal(Object.keys(binance.orders).length, 1)
+        assert.equal(binance.orderbag.all()[25035356], undefined)
+        assert.equal(Object.keys(binance.orderbag.all()).length, 1)
 
         assert.deepEqual(calls, [{
             "symbol": "ONTUSDT",
@@ -372,8 +372,8 @@ describe('#binance exchange implementation', function() {
         binance.triggerOrder(new ExchangeOrder('25035356', 'BTCUSDT', 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT))
         binance.triggerOrder(new ExchangeOrder('foobar', 'ADAUSDT', 'open', undefined, undefined, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT))
 
-        assert.equal(Object.keys(binance.orders).length, 2)
-        assert.equal(binance.orders[25035356].symbol, 'BTCUSDT')
+        assert.equal(Object.keys(binance.orderbag.all()).length, 2)
+        assert.equal(binance.orderbag.all()[25035356].symbol, 'BTCUSDT')
 
         await binance.onWebSocketEvent(getEvent(event => event.orderId === 25035368))
 
