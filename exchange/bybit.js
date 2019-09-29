@@ -854,14 +854,13 @@ module.exports = class Bybit {
                     }
 
                     let json = JSON.parse(body);
-                    if (!json.result || !json.result.data) {
+                    if (!json.result) {
                         this.logger.error('Bybit: Invalid orders json:' + JSON.stringify({'body': body}))
                         resolve([])
                         return
                     }
 
-                    let orders = json.result.data;
-                    resolve(orders)
+                    resolve(json.result.data || [])
                 }))
             })
 
