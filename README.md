@@ -5,8 +5,8 @@
 A **work in progress** Cryptocurrency for common exchanges like Bitfinex, Bitmex and Binance.
 As most trading bots just provide basic buy and sell signals they provide many stuff to get profitable eg exchange orders like stop-losses or stop-limits are not supported by main bots. Also the limitation of fixed timeframe and technical indicators must be broken  
 
-**Not production ready** only basic functionality 
- 
+**Not production ready** only basic functionality
+
 ## Features
 
  * Fully use Websocket for exchange communication to react as fast as possible on market
@@ -27,23 +27,23 @@ As most trading bots just provide basic buy and sell signals they provide many s
  * [Coinbase Pro](https://www.coinbase.com/join/5a2ae60e76531100d3af2ee5)
  * [Bitfinex](https://www.bitfinex.com) (margin wallet)
  * [Bybit](https://www.bybit.com/app/register?ref=46AK7) with leverage configuration (Limitation on stops via websocket order; only updated once per minute)
-  
+
 TODOS:
 
- * [Huobi Global](https://www.hbg.com/) (margin) 
- 
+ * [Huobi Global](https://www.hbg.com/) (margin)
+
 ## Technical stuff and packages
 
  * node.js
  * sqlite3
  * [technicalindicators](https://github.com/anandanand84/technicalindicators)
  * [tulipindicators - tulind](https://tulipindicators.org/list)
- * [TA-Lib](https://mrjbq7.github.io/ta-lib/) 
+ * [TA-Lib](https://mrjbq7.github.io/ta-lib/)
  * twig
  * express
  * Bootstrap v4
  * Tradingview widgets
- 
+
 ## How to use
 
 
@@ -56,6 +56,8 @@ Install build tools
 ```
 sudo apt-get install build-essential
 ```
+
+The nodejs wrapper for tulipindicators is called [Tulip Node (tuind)](https://www.npmjs.com/package/tulind), check out installation instructions there.
 
 Also the build from source is not supporting all nodejs version. It looks like versions <= 10 are working. You can use nodejs 12 if you compiled it once via older version.
 
@@ -135,11 +137,11 @@ Some browser links
  * Tradingview: http://127.0.0.1:8080/tradingview/BTCUSD
  * Backtesting: http://127.0.0.1:8080/backtest
  * Order & Pair Management: http://127.0.0.1:8080/pairs
- 
- 
+
+
 ### Security / Authentication
 
-As the webserver provides just basic auth for access you should combine some with eh a https for public server. Here s simple `proxy_pass` for nginx. 
+As the webserver provides just basic auth for access you should combine some with eh a https for public server. Here s simple `proxy_pass` for nginx.
 
 ```
 # /etc/nginx/sites-available/YOURHOST
@@ -166,7 +168,7 @@ You should also set the listen ip to a local one
 webserver.ip: 127.0.0.1
 
 ```
-   
+
 ![Webserver UI](documentation/cryptobot.png "Webserver UI")
 
 ## Backtesting
@@ -189,16 +191,16 @@ node index.js backfill -e bitmex -p 1m -s XRPZ18
 For custom strategies use [var/strategies](var/strategies) folder.
 
 Find some example strategies inside [modules/strategy/strategies](modules/strategy/strategies)
- 
+
 ## Tools / Watchdog
- 
+
  * `order_adjust` Keep open orders in bid / ask of the orderbook in first position
- 
+
 ### Watchdog
 
  * `stoploss` provide general stoploss order in percent of entry price (Exchange Order)
- * `risk_reward_ratio` Creates Risk Reward order for take profit and stoploss (Exchange Order Limit+Stop) 
- * `stoploss_watch` Close open position if ticker price falls below the percent lose; use this for exchange that dont support stop_loss order liek Binance 
+ * `risk_reward_ratio` Creates Risk Reward order for take profit and stoploss (Exchange Order Limit+Stop)
+ * `stoploss_watch` Close open position if ticker price falls below the percent lose; use this for exchange that dont support stop_loss order liek Binance
 
 ```
     'watchdogs': [
@@ -248,7 +250,7 @@ Per pair you can set used margin before orders are created; depending on exchang
             'bitmex_leverage': 5,
         },
     })
-    
+
     c.symbols.push({
         'symbol': 'EOSUSD',
         'exchange': 'bybit',
@@ -286,7 +288,7 @@ Other bots with possible design pattern
 
 ### Strategies
 
-Some strategies based on technical indicators for collection some ideas 
+Some strategies based on technical indicators for collection some ideas
 
  * https://github.com/freqtrade/freqtrade-strategies
  * https://github.com/freqtrade/freqtrade-strategies/tree/master/user_data/strategies/berlinguyinca
