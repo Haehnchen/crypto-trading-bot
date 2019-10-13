@@ -95,6 +95,44 @@ module.exports = {
   },
 
   /**
+   * Init helper for Binance to fetch all USDT pairs with spot only
+   * @param callback
+   * @returns {Promise<unknown>}
+   */
+  binanceInitSpotUsd: async callback => {
+    return module.exports.binanceInitUsd((result, pair) => {
+      if (pair.isMarginTradingAllowed !== false) {
+        return undefined;
+      }
+
+      if (!callback) {
+        return result;
+      }
+
+      return callback(result, pair);
+    });
+  },
+
+  /**
+   * Init helper for Binance to fetch all USDT pairs with margin only
+   * @param callback
+   * @returns {Promise<unknown>}
+   */
+  binanceInitMarginUsd: async callback => {
+    return module.exports.binanceInitUsd((result, pair) => {
+      if (pair.isMarginTradingAllowed !== true) {
+        return undefined;
+      }
+
+      if (!callback) {
+        return result;
+      }
+
+      return callback(result, pair);
+    });
+  },
+
+  /**
    * Init helper for Bitmex exchange to fetch only contracts; not this option like pair or weekly / daily pairs
    * @param callback
    * @returns {Promise<unknown>}

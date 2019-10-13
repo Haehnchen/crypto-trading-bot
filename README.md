@@ -16,7 +16,7 @@ As most trading bots just provide basic buy and sell signals they provide many s
  * Support for going "Short" and "Long"
  * Signal browser dashboard for pairs
  * Slack and email notification
- * Join foreign exchange candles (eg. Trade on Bitmex with the faster moving Binace trades / candles)
+ * Join foreign exchange candles (eg. Trade on Bitmex with the faster moving Binance trades / candles)
  * TODO: Show possible arbitrage trades   
 
 ### Exchanges
@@ -24,6 +24,7 @@ As most trading bots just provide basic buy and sell signals they provide many s
  * [Bitmex](https://www.bitmex.com/register/jS4mLN) with leverage configuration
  * [Bitmex Testnet](https://www.bitmex.com/register/jS4mLN)
  * [Binance](https://www.binance.com/?ref=17569916)
+ * [Binance Margin](https://www.binance.com/?ref=17569916)
  * [Binance Futures](https://www.binance.com/?ref=17569916)
  * [Coinbase Pro](https://www.coinbase.com/join/5a2ae60e76531100d3af2ee5)
  * [Bitfinex](https://www.bitfinex.com/?refcode=kDLceRHa) (margin wallet)
@@ -32,8 +33,8 @@ As most trading bots just provide basic buy and sell signals they provide many s
  
 TODOS:
 
- * [Huobi Global](https://www.hbg.com/) (margin)
-
+ * [Huobi Global](https://www.hbg.com/) (margin) 
+ 
 ## Technical stuff and packages
 
  * node.js

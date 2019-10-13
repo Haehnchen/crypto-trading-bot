@@ -1,6 +1,9 @@
+'use strict';
+
 const BinanceClient = require('binance-api-node').default;
 
 const moment = require('moment');
+const Binance = require('./binance');
 const ExchangeCandlestick = require('./../dict/exchange_candlestick');
 const Ticker = require('./../dict/ticker');
 const TickerEvent = require('./../event/ticker_event');
@@ -10,12 +13,12 @@ const Position = require('../dict/position');
 const Order = require('../dict/order');
 const OrderBag = require('./utils/order_bag');
 
-module.exports = class Binance {
+module.exports = class BinanceMargin {
   constructor(eventEmitter, logger, queue, candleImport) {
     this.eventEmitter = eventEmitter;
+    this.candleImport = candleImport;
     this.logger = logger;
     this.queue = queue;
-    this.candleImport = candleImport;
 
     this.client = undefined;
     this.exchangePairs = {};
@@ -42,7 +45,7 @@ module.exports = class Binance {
     const me = this;
 
     if (config.key && config.secret) {
-      this.client.ws.user(async event => {
+      this.client.ws.marginUser(async event => {
         await this.onWebSocketEvent(event);
       });
 
@@ -91,10 +94,10 @@ module.exports = class Binance {
         eventEmitter.emit(
           'ticker',
           new TickerEvent(
-            'binance',
+            'binance_margin',
             symbol.symbol,
             (this.tickers[symbol.symbol] = new Ticker(
-              'binance',
+              'binance_margin',
               symbol.symbol,
               moment().format('X'),
               ticker.bestBid,
@@ -110,7 +113,7 @@ module.exports = class Binance {
           client.candles({ symbol: symbol.symbol, limit: 500, interval: interval }).then(async candles => {
             const ourCandles = candles.map(candle => {
               return new ExchangeCandlestick(
-                'binance',
+                'binance_margin',
                 symbol.symbol,
                 interval,
                 Math.round(candle.openTime / 1000),
@@ -129,7 +132,7 @@ module.exports = class Binance {
         // live candles
         client.ws.candles(symbol.symbol, interval, async candle => {
           const ourCandle = new ExchangeCandlestick(
-            'binance',
+            'binance_margin',
             symbol.symbol,
             interval,
             Math.round(candle.startTime / 1000),
@@ -148,10 +151,14 @@ module.exports = class Binance {
 
   async order(order) {
     const payload = Binance.createOrderBody(order);
+
+    // borrow or repay
+    payload.sideEffectType = order.isLong() ? 'MARGIN_BUY' : 'AUTO_REPAY';
+
     let result;
 
     try {
-      result = await this.client.order(payload);
+      result = await this.client.marginOrder(payload);
     } catch (e) {
       this.logger.error(`Binance: order create error: ${JSON.stringify(e.message, order, payload)}`);
 
@@ -170,17 +177,17 @@ module.exports = class Binance {
   async cancelOrder(id) {
     const order = await this.findOrderById(id);
     if (!order) {
-      return;
+      return undefined;
     }
 
     try {
-      await this.client.cancelOrder({
+      await this.client.marginCancelOrder({
         symbol: order.symbol,
         orderId: id
       });
     } catch (e) {
       this.logger.error(`Binance: cancel order error: ${e}`);
-      return;
+      return undefined;
     }
 
     this.orderbag.delete(id);
@@ -196,102 +203,6 @@ module.exports = class Binance {
     }
 
     return orders;
-  }
-
-  static createOrderBody(order) {
-    if (!order.amount && !order.price && !order.symbol) {
-      throw 'Invalid amount for update';
-    }
-
-    const myOrder = {
-      symbol: order.symbol,
-      side: order.price < 0 ? 'SELL' : 'BUY',
-      quantity: Math.abs(order.amount)
-    };
-
-    let orderType;
-    if (!order.type || order.type === 'limit') {
-      orderType = 'LIMIT';
-      myOrder.price = Math.abs(order.price);
-    } else if (order.type === 'stop') {
-      orderType = 'STOP_LOSS';
-      myOrder.stopPrice = Math.abs(order.price);
-    } else if (order.type === 'market') {
-      orderType = 'MARKET';
-    }
-
-    if (!orderType) {
-      throw 'Invalid order type';
-    }
-
-    myOrder.type = orderType;
-
-    if (order.id) {
-      myOrder.newClientOrderId = order.id;
-    }
-
-    return myOrder;
-  }
-
-  static createOrders(...orders) {
-    return orders.map(order => {
-      let retry = false;
-
-      let status;
-      const orderStatus = order.status.toLowerCase().replace('_', '');
-
-      // https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md#enum-definitions
-      if (['new', 'partiallyfilled', 'pendingnew'].includes(orderStatus)) {
-        status = 'open';
-      } else if (orderStatus === 'filled') {
-        status = 'done';
-      } else if (orderStatus === 'canceled') {
-        status = 'canceled';
-      } else if (orderStatus === 'rejected') {
-        status = 'rejected';
-        retry = false;
-      } else if (orderStatus === 'expired') {
-        status = 'rejected';
-        retry = true;
-      }
-
-      const ordType = order.type.toLowerCase().replace(/[\W_]+/g, '');
-
-      // secure the value
-      let orderType;
-      switch (ordType) {
-        case 'limit':
-          orderType = ExchangeOrder.TYPE_LIMIT;
-          break;
-        case 'stoploss':
-          orderType = ExchangeOrder.TYPE_STOP;
-          break;
-        case 'stoplimit':
-          orderType = ExchangeOrder.TYPE_STOP_LIMIT;
-          break;
-        case 'market':
-          orderType = ExchangeOrder.TYPE_MARKET;
-          break;
-        default:
-          orderType = ExchangeOrder.TYPE_UNKNOWN;
-          break;
-      }
-
-      return new ExchangeOrder(
-        order.orderId,
-        order.symbol,
-        status,
-        parseFloat(order.price),
-        parseFloat(order.origQty),
-        retry,
-        order.clientOrderId,
-        order.side.toLowerCase() === 'buy' ? 'buy' : 'sell', // secure the value,
-        orderType,
-        new Date(order.transactTime ? order.transactTime : order.time),
-        new Date(),
-        order
-      );
-    });
   }
 
   /**
@@ -375,27 +286,27 @@ module.exports = class Binance {
 
         // 1% balance left indicate open position
         const pairCapital = capitals[pair];
-        const balanceUsed = parseFloat(balance.available) + parseFloat(balance.locked);
+        const balanceUsed = parseFloat(Math.abs(balance.available)) + parseFloat(balance.locked);
         if (Math.abs(balanceUsed / pairCapital) < 0.1) {
           continue;
         }
 
-        let entry;
-        let createdAt = new Date();
+        // let entry;
+        // let createdAt = new Date();
 
         // try to find a entry price, based on trade history
-        if (this.trades[pair] && this.trades[pair].side === 'buy') {
-          entry = parseFloat(this.trades[pair].price);
-          createdAt = this.trades[pair].time;
-        }
+        // if (this.trades[pair] && this.trades[pair].side === 'buy') {
+        //  entry = parseFloat(this.trades[pair].price);
+        //  createdAt = this.trades[pair].time;
+        // }
 
         // calulcate profit based on the ticket price
-        let profit;
-        if (entry && this.tickers[pair]) {
-          profit = (this.tickers[pair].bid / entry - 1) * 100;
-        }
+        // let profit;
+        // if (entry && this.tickers[pair]) {
+        //  profit = (this.tickers[pair].bid / entry - 1) * 100;
+        // }
 
-        positions.push(new Position(pair, 'long', balanceUsed, profit, new Date(), entry, createdAt));
+        positions.push(Position.create(pair, balance.available, new Date()));
       }
     }
 
@@ -423,7 +334,7 @@ module.exports = class Binance {
   }
 
   getName() {
-    return 'binance';
+    return 'binance_margin';
   }
 
   async onWebSocketEvent(event) {
@@ -464,39 +375,20 @@ module.exports = class Binance {
     // get balances and same them internally; allows to take open positions
     // Format we get: balances: {'EOS': {"available": 12, "locked": 8}}
     if (event.eventType && event.eventType === 'account' && 'balances' in event) {
-      const balances = [];
+      // we dont get the margin information here;
+      // so we would only be able to calculate longs, so do a full sync on API
 
-      for (const asset in event.balances) {
-        const balance = event.balances[asset];
-
-        if (parseFloat(balance.available) + parseFloat(balance.locked) > 0) {
-          balances.push({
-            available: parseFloat(balance.available),
-            locked: parseFloat(balance.locked),
-            asset: asset
-          });
-        }
-      }
-
-      this.balances = balances;
+      await this.syncBalances();
     }
   }
 
   async syncOrders() {
-    const symbols = this.symbols
-      .filter(
-        s =>
-          s.trade &&
-          ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0))
-      )
-      .map(s => s.symbol);
-
-    this.logger.debug(`Binance: Sync orders for symbols: ${symbols.length}`);
+    this.logger.debug(`Binance: Sync orders`);
 
     // false equal to all symbols
     let openOrders = [];
     try {
-      openOrders = await this.client.openOrders(false);
+      openOrders = await this.client.marginOpenOrders(false);
     } catch (e) {
       this.logger.error(`Binance: error sync orders: ${String(e)}`);
       return;
@@ -508,27 +400,19 @@ module.exports = class Binance {
   async syncBalances() {
     let accountInfo;
     try {
-      accountInfo = await this.client.accountInfo();
+      accountInfo = await this.client.marginAccountInfo();
     } catch (e) {
       this.logger.error(`Binance: error sync balances: ${String(e)}`);
       return;
     }
 
-    if (!accountInfo || !accountInfo.balances) {
+    if (!accountInfo || !accountInfo.userAssets) {
       return;
     }
 
     this.logger.debug('Binance: Sync balances');
 
-    this.balances = accountInfo.balances
-      .filter(b => parseFloat(b.free) + parseFloat(b.locked) > 0)
-      .map(balance => {
-        return {
-          available: parseFloat(balance.free),
-          locked: parseFloat(balance.locked),
-          asset: balance.asset
-        };
-      });
+    this.balances = BinanceMargin.createMarginBalances(accountInfo.userAssets);
   }
 
   /**
@@ -559,7 +443,7 @@ module.exports = class Binance {
           let symbolOrders;
 
           try {
-            symbolOrders = await this.client.allOrders({ symbol: symbol, limit: 150 });
+            symbolOrders = await this.client.marginAllOrders({ symbol: symbol, limit: 150 });
           } catch (e) {
             this.logger.error(`Binance: Error on symbol order fetch: ${String(e)}`);
             return resolve(undefined);
@@ -623,6 +507,22 @@ module.exports = class Binance {
 
     this.logger.info(`Binance: pairs synced: ${pairs.symbols.length}`);
     this.exchangePairs = exchangePairs;
+  }
+
+  static createMarginBalances(balances) {
+    // ignore empty balances and stable coins
+    return balances
+      .filter(b => parseFloat(b.netAsset) !== 0 && !['USDT', 'BUSD', 'USDC'].includes(b.asset))
+      .map(balance => {
+        const netAsset = parseFloat(balance.netAsset);
+
+        return {
+          available: netAsset > 0 ? parseFloat(balance.free) : balance.borrowed * -1,
+          locked: parseFloat(balance.locked),
+          asset: balance.asset,
+          netAsset: netAsset
+        };
+      });
   }
 
   isInverseSymbol(symbol) {

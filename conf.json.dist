@@ -16,6 +16,10 @@
             "key": null,
             "secret": null
         },
+        "binance_margin": {
+            "key": null,
+            "secret": null
+        },
         "coinbase_pro": {
             "key": null,
             "secret": null,

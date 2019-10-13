@@ -126,10 +126,7 @@ module.exports = class Http {
 
     app.get('/tradingview/:symbol', (req, res) => {
       res.render('../templates/tradingview.html.twig', {
-        symbol: req.params.symbol
-          .replace('-', '')
-          .replace('coinbase_pro', 'coinbase')
-          .toUpperCase()
+        symbol: this.buildTradingViewSymbol(req.params.symbol)
       });
     });
 
@@ -257,10 +254,7 @@ module.exports = class Http {
         orders: this.ordersHttp.getOrders(pair),
         position: await this.exchangeManager.getPosition(tradingview[0], tradingview[1]),
         ticker: ticker,
-        tradingview: `${tradingview[0]}:${tradingview[1]}`
-          .replace('-', '')
-          .replace('coinbase_pro', 'coinbase')
-          .toUpperCase(),
+        tradingview: this.buildTradingViewSymbol(`${tradingview[0]}:${tradingview[1]}`),
         form: {
           price: ticker ? ticker.bid : undefined,
           type: 'limit'
@@ -298,10 +292,7 @@ module.exports = class Http {
         ticker: ticker,
         position: await this.exchangeManager.getPosition(tradingview[0], tradingview[1]),
         form: form,
-        tradingview: `${tradingview[0]}:${tradingview[1]}`
-          .replace('-', '')
-          .replace('coinbase_pro', 'coinbase')
-          .toUpperCase(),
+        tradingview: this.buildTradingViewSymbol(`${tradingview[0]}:${tradingview[1]}`),
         alert: {
           title: success ? 'Order Placed' : 'Place Error',
           type: success ? 'success' : 'danger',
@@ -376,5 +367,32 @@ module.exports = class Http {
     app.listen(port, ip);
 
     console.log(`Webserver listening on: ${ip}:${port}`);
+  }
+
+  /**
+   * Tricky way to normalize our tradingview views
+   *
+   * eg:
+   *  - binance_futures:BTCUSDT => binance:BTCUSDTPERP
+   *  - binance_margin:BTCUSDT => binance:BTCUSDT
+   *  - coinbase_pro:BTC-USDT => coinbase:BTCUSDT
+   *
+   * @param symbol
+   * @returns {string}
+   */
+  buildTradingViewSymbol(symbol) {
+    let mySymbol = symbol;
+
+    // binance:BTCUSDTPERP
+    if (mySymbol.includes('binance_futures')) {
+      mySymbol = mySymbol.replace('binance_futures', 'binance');
+      mySymbol += 'PERP';
+    }
+
+    return mySymbol
+      .replace('-', '')
+      .replace('coinbase_pro', 'coinbase')
+      .replace('binance_margin', 'binance')
+      .toUpperCase();
   }
 };

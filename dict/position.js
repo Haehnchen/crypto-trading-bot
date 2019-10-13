@@ -38,6 +38,10 @@ module.exports = class Position {
     return this.side === 'long';
   }
 
+  static create(symbol, amount, updatedAt, createdAt, entry, profit) {
+    return new Position(symbol, amount < 0 ? 'short' : 'long', amount, profit, updatedAt, entry, createdAt);
+  }
+
   static createProfitUpdate(position, profit) {
     return new Position(
       position.symbol,

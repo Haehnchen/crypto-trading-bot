@@ -38,6 +38,11 @@ c.init = async () => {
     // Binance all USDT pairs
     c.symbols.push(...(await InstanceUtil.binanceInitUsd()));
 
+    // Binance all USDT pairs spot or margin
+    // c.symbols.push(...(await InstanceUtil.binanceInitMarginUsd()));
+    // c.symbols.push(...(await InstanceUtil.binanceInitSpotUsd()));
+
+
     // Binance futures
     c.symbols.push(...(await InstanceUtil.binanceFuturesInit()));
 
