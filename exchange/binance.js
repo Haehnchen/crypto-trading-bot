@@ -77,6 +77,15 @@ module.exports = class Binance {
         }
 
         symbols.forEach(symbol => {
+            // live prices
+            client.ws.ticker(symbol['symbol'], ticker => {
+                eventEmitter.emit('ticker', new TickerEvent(
+                    'binance',
+                    symbol['symbol'],
+                    this.tickers[symbol['symbol']] = new Ticker('binance', symbol['symbol'], moment().format('X'), ticker['bestBid'], ticker['bestAsk'])
+                ))
+            })
+
             symbol['periods'].forEach(interval => {
                 // backfill
                 this.queue.add(() => {
@@ -114,15 +123,6 @@ module.exports = class Binance {
                     )
 
                     await this.candleImport.insertThrottledCandles([ourCandle])
-                })
-
-                // live prices
-                client.ws.ticker(symbol['symbol'], ticker => {
-                    eventEmitter.emit('ticker', new TickerEvent(
-                        'binance',
-                        symbol['symbol'],
-                        this.tickers[symbol['symbol']] = new Ticker('binance', symbol['symbol'], moment().format('X'), ticker['bestBid'], ticker['bestAsk'])
-                    ))
                 })
             })
         })
