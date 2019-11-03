@@ -848,14 +848,14 @@ module.exports = class Bybit {
                     let body = result.body
 
                     if (error || !response || response.statusCode !== 200) {
-                        this.logger.error('Bybit: Invalid orders response:' + JSON.stringify({'error': error, 'body': body}))
+                        this.logger.error('Bybit: Invalid orders response:' + JSON.stringify({'error': error, 'body': body, 'orderStatus': orderStatus}))
                         resolve([])
                         return
                     }
 
                     let json = JSON.parse(body);
-                    if (!json.result) {
-                        this.logger.error('Bybit: Invalid orders json:' + JSON.stringify({'body': body}))
+                    if (!'result' in json) {
+                        this.logger.error('Bybit: Invalid orders json:' + JSON.stringify({'body': body, 'orderStatus': orderStatus}))
                         resolve([])
                         return
                     }
