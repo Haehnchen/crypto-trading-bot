@@ -1,0 +1,36 @@
+[
+  {
+    "collateralUsed": 0,
+    "cost": 0,
+    "entryPrice": null,
+    "estimatedLiquidationPrice": null,
+    "future": "ADA-PERP",
+    "initialMarginRequirement": 0.05,
+    "longOrderSize": 0,
+    "maintenanceMarginRequirement": 0.03,
+    "netSize": 0,
+    "openSize": 0,
+    "realizedPnl": -43.93447263,
+    "shortOrderSize": 0,
+    "side": "buy",
+    "size": 0,
+    "unrealizedPnl": 0
+  },
+  {
+    "collateralUsed": 9.9164026,
+    "cost": -198.328052,
+    "entryPrice": 0.002669,
+    "estimatedLiquidationPrice": 0.0030896924356879473,
+    "future": "DOGE-PERP",
+    "initialMarginRequirement": 0.05,
+    "longOrderSize": 0,
+    "maintenanceMarginRequirement": 0.03,
+    "netSize": -74308,
+    "openSize": 74308,
+    "realizedPnl": 1.77959695,
+    "shortOrderSize": 0,
+    "side": "sell",
+    "size": 74308,
+    "unrealizedPnl": 0
+  }
+]

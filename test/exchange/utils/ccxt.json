@@ -1,0 +1,30 @@
+{
+  "info": {
+    "avgFillPrice": null,
+    "clientId": null,
+    "createdAt": null,
+    "filledSize": 0,
+    "future": "SHIT-PERP",
+    "id": 759782359,
+    "ioc": false,
+    "market": "SHIT-PERP",
+    "postOnly": true,
+    "price": 543,
+    "reduceOnly": true,
+    "remainingSize": 0.803,
+    "side": "buy",
+    "size": 0.803,
+    "status": "open",
+    "type": "limit"
+  },
+  "id": "759782359",
+  "symbol": "SHIT-PERP",
+  "type": "limit",
+  "side": "buy",
+  "price": 543,
+  "amount": 0.803,
+  "cost": 0,
+  "filled": 0,
+  "remaining": 0.803,
+  "status": "open"
+}
