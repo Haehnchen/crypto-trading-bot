@@ -33,7 +33,7 @@ module.exports = class LogsRepository {
 
     cleanOldLogEntries(days = 7) {
         return new Promise((resolve) => {
-            const stmt = db.prepare('DELETE FROM logs WHERE created_at < $created_at');
+            const stmt = this.db.prepare('DELETE FROM logs WHERE created_at < $created_at');
 
             stmt.run({
                 '$created_at': moment().subtract(days, 'days').unix(),
