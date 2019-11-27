@@ -20,7 +20,6 @@ let Position = require('../dict/position');
 let ExchangeOrder = require('../dict/exchange_order');
 
 let CcxtExchangeOrder = require('./ccxt/ccxt_exchange_order')
-let CcxtExchangeLimits = require('./ccxt/ccxt_exchange_limits')
 let CcxtUtil = require('./utils/ccxt_util')
 
 let _ = require('lodash')
@@ -42,15 +41,15 @@ module.exports = class Ftx {
         this.tickers = {}
         this.symbols = []
         this.intervals = []
+        this.ccxtClient = undefined
     }
 
     start(config, symbols) {
         let eventEmitter = this.eventEmitter
         let logger = this.logger
         this.exchange = null
-        this.echangeLimits = new CcxtExchangeLimits()
 
-        const ccxtClient = new ccxt.ftx({
+        const ccxtClient = this.ccxtClient = new ccxt.ftx({
             'apiKey': config['key'],
             'secret': config['secret'],
         })
@@ -69,7 +68,7 @@ module.exports = class Ftx {
         let me = this
 
         setTimeout(async () => {
-            me.echangeLimits.updateMarkets(await ccxtClient.fetchMarkets())
+            await ccxtClient.fetchMarkets()
         }, 5000);
 
         ws.onopen = function() {
@@ -224,7 +223,7 @@ module.exports = class Ftx {
     }
 
     calculatePrice(price, symbol) {
-        return this.echangeLimits.calculatePrice(price, symbol)
+        return price // done by ccxt
     }
 
     /**
@@ -241,7 +240,7 @@ module.exports = class Ftx {
     }
 
     calculateAmount(amount, symbol) {
-        return this.echangeLimits.calculateAmount(amount, symbol)
+        return amount // done by ccxt
     }
 
     getName() {
