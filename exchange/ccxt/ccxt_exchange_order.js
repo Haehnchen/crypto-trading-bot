@@ -4,6 +4,7 @@ let OrderBag = require('../utils/order_bag')
 let Order = require('../../dict/order')
 let ExchangeOrder = require('../../dict/exchange_order')
 let CcxtUtil = require('../utils/ccxt_util')
+const ccxt = require ('ccxt')
 
 module.exports = class CcxtExchangeOrder {
     constructor(ccxtClient, symbols, logger) {
@@ -14,28 +15,57 @@ module.exports = class CcxtExchangeOrder {
     }
 
     async createOrder(order) {
-        let payload = CcxtUtil.createExchangeOrder(order)
-        let result = undefined
-
-        try {
-            result = await this.client.order(payload)
-        } catch (e) {
-            this.logger.error(this.ccxtClient.name + ': order create error: ' + JSON.stringify(e.message, order, payload))
-
-            if(e.message && e.message.toLowerCase().includes('insufficient balance')) {
-                return ExchangeOrder.createRejectedFromOrder(order);
-            }
-
-            return
+        let side
+        switch (order.side) {
+            case 'buy':
+            case 'long':
+                side = 'buy'
+                break;
+            case 'sell':
+            case 'short':
+                side = 'sell'
+                break;
+            default:
+                throw 'Not supported order side:' + order.side
         }
 
-        let exchangeOrder = Binance.createOrders(result)[0]
+        let promise
+        switch (order.type) {
+            case 'limit':
+                promise = this.ccxtClient.createOrder(order.symbol, order.type, side, Math.abs(order.amount), order.price)
+                break;
+            case 'market':
+                promise = this.ccxtClient.createOrder(order.symbol, order.type, side, Math.abs(order.amount))
+                break;
+            default:
+                throw 'Not supported order type:' + order.type
+        }
+
+        let placedOrder
+        try {
+            placedOrder = await promise;
+        } catch (e) {
+            if (e instanceof ccxt.NetworkError) {
+                return undefined
+            }
+
+            throw e
+        }
+
+        let exchangeOrder
+        try {
+            exchangeOrder = await CcxtUtil.createExchangeOrder(placedOrder);
+        } catch (e) {
+            this.logger.error('CCXT order place issue: ' + JSON.stringify(e))
+            return undefined
+        }
+
         this.triggerOrder(exchangeOrder)
         return exchangeOrder
     }
 
     async syncOrders() {
-        let result = await CcxtUtil.createExchangeOrder(await this.ccxtClient.fetchOpenOrders());
+        let result = CcxtUtil.createExchangeOrders(await this.ccxtClient.fetchOpenOrders());
         result.forEach(order => this.triggerOrder(order))
         return result
     }

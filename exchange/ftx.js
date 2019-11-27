@@ -19,9 +19,10 @@ let crypto = require('crypto')
 let Position = require('../dict/position');
 let ExchangeOrder = require('../dict/exchange_order');
 
-let orderUtil = require('../utils/order_util')
-let CcxtUtil = require('./utils/ccxt_util')
 let CcxtExchangeOrder = require('./ccxt/ccxt_exchange_order')
+let CcxtExchangeLimits = require('./ccxt/ccxt_exchange_limits')
+let CcxtUtil = require('./utils/ccxt_util')
+
 let _ = require('lodash')
 
 module.exports = class Ftx {
@@ -30,14 +31,11 @@ module.exports = class Ftx {
         this.logger = logger
         this.queue = queue
         this.candleImporter = candleImporter
-        this.requestClient = requestClient
         this.exchange = null
 
         this.apiKey = undefined
         this.apiSecret = undefined
         this.ccxtExchangeOrder = undefined
-        this.tickSizes = {}
-        this.lotSizes = {}
 
         this.positions = {}
         this.orders = {}
@@ -49,9 +47,8 @@ module.exports = class Ftx {
     start(config, symbols) {
         let eventEmitter = this.eventEmitter
         let logger = this.logger
-        let tickSizes = this.tickSizes
-        let lotSizes = this.lotSizes
         this.exchange = null
+        this.echangeLimits = new CcxtExchangeLimits()
 
         const ccxtClient = new ccxt.ftx({
             'apiKey': config['key'],
@@ -70,6 +67,11 @@ module.exports = class Ftx {
         let ws = new WebSocket('wss://ftx.com/ws/')
 
         let me = this
+
+        setTimeout(async () => {
+            me.echangeLimits.updateMarkets(await ccxtClient.fetchMarkets())
+        }, 5000);
+
         ws.onopen = function() {
             me.logger.info('FTX: Connection opened.')
 
@@ -117,7 +119,7 @@ module.exports = class Ftx {
                 }
 
                 if (data.channel === 'orders') {
-                    me.ccxtExchangeOrder.triggerOrder(ccxtClient.parseOrder(data.data))
+                    me.ccxtExchangeOrder.triggerOrder(CcxtUtil.createExchangeOrder(ccxtClient.parseOrder(data.data)))
                 }
 
                 if (data.channel === 'ticker') {
@@ -132,7 +134,6 @@ module.exports = class Ftx {
 
         ws.onclose = function() {
             logger.info('FTX: Connection closed.')
-            console.log('FTX: Connection closed.')
 
             for (let interval of me.intervals) {
                 clearInterval(interval)
@@ -152,15 +153,6 @@ module.exports = class Ftx {
                 this.queue.add(() => {
                 })
             })
-        })
-    }
-
-    async syncOrders() {
-        this.logger.debug('FTX: sync orders')
-        const orders = await this.exchange.fetchOpenOrders()
-
-        CcxtUtil.createExchangeOrder(orders).forEach(order => {
-            this.triggerOrder(order)
         })
     }
 
@@ -231,19 +223,8 @@ module.exports = class Ftx {
         return undefined
     }
 
-    /**
-     * LTC: 0.008195 => 0.00820
-     *
-     * @param price
-     * @param symbol
-     * @returns {*}
-     */
     calculatePrice(price, symbol) {
-        if (!(symbol in this.tickSizes)) {
-            return undefined
-        }
-
-        return orderUtil.calculateNearestSize(price, this.tickSizes[symbol])
+        return this.echangeLimits.calculatePrice(price, symbol)
     }
 
     /**
@@ -259,19 +240,8 @@ module.exports = class Ftx {
         await this.ccxtExchangeOrder.triggerOrder(order)
     }
 
-    /**
-     * LTC: 0.65 => 1
-     *
-     * @param amount
-     * @param symbol
-     * @returns {*}
-     */
     calculateAmount(amount, symbol) {
-        if (!(symbol in this.lotSizes)) {
-            return undefined
-        }
-
-        return orderUtil.calculateNearestSize(amount, this.lotSizes[symbol])
+        return this.echangeLimits.calculateAmount(amount, symbol)
     }
 
     getName() {
