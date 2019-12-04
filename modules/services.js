@@ -339,7 +339,7 @@ module.exports = {
         }
 
         let telegram = _.get(config, 'notify.telegram');
-        if (telegram && telegram.length > 0) {
+        if (telegram && telegram.chat_id && telegram.chat_id.length > 0 && telegram.token && telegram.token.length > 0) {
             notifiers.push(new Telegram(
                 this.createTelegram(),
                 telegram,
