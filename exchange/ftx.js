@@ -149,7 +149,22 @@ module.exports = class Ftx {
         symbols.forEach(symbol => {
             symbol['periods'].forEach(period => {
                 // for bot init prefill data: load latest candles from api
-                this.queue.add(() => {
+                this.queue.add(async () => {
+                    let ourCandles = (await ccxtClient.fetchOHLCV(symbol['symbol'], period, undefined, 500)).map(candle => {
+                        return new ExchangeCandlestick(
+                            me.getName(),
+                            symbol['symbol'],
+                            period,
+                            Math.round(candle[0] / 1000),
+                            candle[1],
+                            candle[2],
+                            candle[3],
+                            candle[4],
+                            candle[5],
+                        )
+                    })
+
+                    await me.candleImporter.insertThrottledCandles(ourCandles)
                 })
             })
         })
