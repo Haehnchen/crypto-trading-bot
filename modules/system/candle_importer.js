@@ -42,7 +42,7 @@ module.exports = class CandleImporter {
      */
     async insertThrottledCandles(candles) {
         for (let candle of candles) {
-            this.trottle[candle.symbol + candle.period + candle.time] = candle
+            this.trottle[candle.exchange + candle.symbol + candle.period + candle.time] = candle
         }
 
         const {promise, resolve} = this.getPromise();
