@@ -1,0 +1,16 @@
+{
+  "id": 771250569,
+  "clientId": null,
+  "market": "ETH-PERP",
+  "type": "limit",
+  "side": "sell",
+  "price": 184.85,
+  "size": 0.005,
+  "status": "new",
+  "filledSize": 0,
+  "remainingSize": 0.005,
+  "reduceOnly": false,
+  "avgFillPrice": null,
+  "postOnly": false,
+  "ioc": false
+}

@@ -20,6 +20,10 @@
         "bybit": {
             "key": null,
             "secret": null
+        },
+        "ftx": {
+            "key": null,
+            "secret": null
         }
     },
     "notify": {
