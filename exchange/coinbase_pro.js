@@ -8,6 +8,7 @@ let CandlestickEvent = require('./../event/candlestick_event');
 let TickerEvent = require('./../event/ticker_event');
 let OrderUtil = require('../utils/order_util');
 let Resample = require('../utils/resample');
+let CandlesFromTrades = require('./utils/candles_from_trades');
 let ExchangeOrder = require('../dict/exchange_order');
 let Position = require('../dict/position');
 let Order = require('../dict/order');
@@ -30,9 +31,9 @@ module.exports = class CoinbasePro {
         this.fills = {};
         this.balances = [];
 
-        this.candles = {};
-        this.lastCandleMap = {};
         this.intervals = []
+
+        this.candlesFromTrades = new CandlesFromTrades(candlestickResample, candleImporter)
     }
 
     start(config, symbols) {
@@ -185,14 +186,7 @@ module.exports = class CoinbasePro {
 
             // we ignore "last_match". its not in our range
             if (data.type && ['match'].includes(data.type)) {
-                let resamples = [];
-
-                let symbolCfg = symbols.find(symbol => symbol.symbol === data.product_id);
-                if (symbolCfg) {
-                    resamples = symbolCfg['periods']
-                }
-
-                await me.onTrade(data, '1m', resamples)
+                await me.onTrade(data, symbols)
             }
         });
 
@@ -222,93 +216,21 @@ module.exports = class CoinbasePro {
      * Coinbase does not deliver candles via websocket, so we fake them on the public order history (websocket)
      *
      * @param msg array
-     * @param period string
-     * @param resamples array
+     * @param symbols
      */
-    async onTrade(msg, period, resamples = []) {
+    async onTrade(msg, symbols) {
         if (!msg.price || !msg.size || !msg.product_id) {
             return;
         }
 
-        // Price and volume are sent as strings by the API
-        msg.price = parseFloat(msg.price);
-        msg.size = parseFloat(msg.size);
-
-        let productId = msg.product_id;
-
-        // Round the time to the nearest minute, Change as per your resolution
-        let periodMinutes = Resample.convertPeriodToMinute(period);
-        let roundedTime = Math.floor(new Date(msg.time) / 60000.0) * (periodMinutes * 60);
-
-        // If the candles hashmap doesnt have this product id create an empty object for that id
-        if (!this.candles[productId]) {
-            this.candles[productId] = {}
-        }
-
-        // candle still open just modify it
-        if (this.candles[productId][roundedTime]) {
-            // If this timestamp exists in our map for the product id, we need to update an existing candle
-            let candle = this.candles[productId][roundedTime];
-
-            candle.high = msg.price > candle.high ? msg.price : candle.high;
-            candle.low = msg.price < candle.low ? msg.price : candle.low;
-            candle.close = msg.price;
-            candle.baseVolume = parseFloat((candle.baseVolume + msg.size).toFixed(8));
-
-            // Set the last candle as the one we just updated
-            this.lastCandleMap[productId] = candle;
-
-            return
-        }
-
-        //Before creating a new candle, lets mark the old one as closed
-        let lastCandle = this.lastCandleMap[productId];
-
-        if (lastCandle) {
-            lastCandle.closed = true;
-            delete this.candles[productId][lastCandle.timestamp]
-        }
-
-        // Set Quote Volume to -1 as GDAX doesnt supply it
-        this.candles[productId][roundedTime] = {
-            timestamp: roundedTime,
-            open: msg.price,
-            high: msg.price,
-            low: msg.price,
-            close: msg.price,
-            baseVolume: msg.size,
-            quoteVolume: -1,
-            closed: false
+        let trade = {
+            'timestamp': new Date(msg.time).getTime(),
+            'price': parseFloat(msg.price),
+            'amount': parseFloat(msg.size),
+            'symbol': msg.product_id,
         };
 
-        let ourCandles = [];
-        for (let timestamp in this.candles[productId]) {
-            let candle = this.candles[productId][timestamp];
-
-            ourCandles.push(new ExchangeCandlestick(
-                this.getName(),
-                msg.product_id,
-                period,
-                candle.timestamp,
-                candle.open,
-                candle.high,
-                candle.low,
-                candle.close,
-                candle.baseVolume,
-            ))
-        }
-
-        // delete old candles
-        Object.keys(this.candles[productId]).sort((a, b) => b - a).slice(200).forEach(i => {
-            delete this.candles[productId][i]
-        })
-
-        await this.candleImporter.insertThrottledCandles(ourCandles)
-
-        // wait for insert of previous database inserts
-        await Promise.all(resamples.filter(r => r !== periodMinutes).map(async resamplePeriod => {
-            await this.candlestickResample.resample(this.getName(), msg.product_id, period, resamplePeriod, true)
-        }))
+        return this.candlesFromTrades.onTrade(this.getName(), trade, symbols);
     }
 
     getOrders() {

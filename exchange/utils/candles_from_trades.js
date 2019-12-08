@@ -25,18 +25,18 @@ module.exports = class CandlesFromTrades {
      * @param symbols array for calculate the resamples
      */
     async onTrade(exchangeName, trade, symbols = []) {
-        if (!trade.price || !trade.amount || !trade.symbol) {
+        if (!trade.price || !trade.amount || !trade.symbol || !trade.timestamp) {
             return;
         }
 
         // Price and volume are sent as strings by the API
         trade.price = parseFloat(trade.price);
-        trade.size = parseFloat(trade.size);
+        trade.amount = parseFloat(trade.amount);
 
         let symbol = trade.symbol;
 
         // Round the time to the nearest minute, Change as per your resolution
-        let roundedTime = Math.floor(new Date(trade.time) / 60000.0) * 60;
+        let roundedTime = Math.floor(new Date(trade.timestamp) / 60000.0) * 60;
 
         // If the candles hashmap doesnt have this product id create an empty object for that id
         if (!this.candles[symbol]) {
@@ -51,7 +51,7 @@ module.exports = class CandlesFromTrades {
             candle.high = trade.price > candle.high ? trade.price : candle.high;
             candle.low = trade.price < candle.low ? trade.price : candle.low;
             candle.close = trade.price;
-            candle.volume = parseFloat((candle.volume + trade.size).toFixed(8));
+            candle.volume = parseFloat((candle.volume + trade.amount).toFixed(8));
 
             // Set the last candle as the one we just updated
             this.lastCandleMap[symbol] = candle;
@@ -73,7 +73,7 @@ module.exports = class CandlesFromTrades {
             high: trade.price,
             low: trade.price,
             close: trade.price,
-            volume: trade.size,
+            volume: trade.amount,
             closed: false
         };
 
