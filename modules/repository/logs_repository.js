@@ -36,7 +36,7 @@ module.exports = class LogsRepository {
             const stmt = this.db.prepare('DELETE FROM logs WHERE created_at < $created_at');
 
             stmt.run({
-                '$created_at': moment().subtract(days, 'days').unix(),
+                'created_at': moment().subtract(days, 'days').unix(),
             });
 
             resolve()
