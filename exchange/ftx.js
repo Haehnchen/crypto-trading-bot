@@ -92,6 +92,10 @@ module.exports = class Ftx {
 
                 setInterval(function f() {
                     me.ccxtExchangeOrder.syncOrders()
+                    return f
+                }(), 1000 * 30)
+
+                setInterval(function f() {
                     me.syncPositionViaRestApi()
                     return f
                 }(), 1000 * 30)
@@ -121,11 +125,16 @@ module.exports = class Ftx {
                     me.ccxtExchangeOrder.triggerOrder(CcxtUtil.createExchangeOrder(ccxtClient.parseOrder(data.data)))
                 }
 
+                if (data.channel === 'fills') {
+                    // do a full sync
+                    await me.syncPositionViaRestApi()
+                }
+
                 if (data.channel === 'ticker') {
                     eventEmitter.emit('ticker', new TickerEvent(
                         me.getName(),
                         data.market,
-                        new Ticker(me.getName(), data.market, moment().format('X'), data.data.bid, data.data.ask)
+                        me.tickers[data.market] = new Ticker(me.getName(), data.market, moment().format('X'), data.data.bid, data.data.ask)
                     ))
                 }
             }
@@ -176,20 +185,9 @@ module.exports = class Ftx {
      * @param positions Position in raw json from Bitmex
      */
     fullPositionsUpdate(positions) {
-        let openPositions = []
-
-        for (const position of positions) {
-            if (position['symbol'] in this.positions && !['buy', 'sell'].includes(position['side'].toLowerCase())) {
-                delete this.positions[position.symbol]
-                continue
-            }
-
-            openPositions.push(position)
-        }
-
         let currentPositions = {}
 
-        for(const position of Bybit.createPositionsWithOpenStateOnly(openPositions)) {
+        for(const position of positions) {
             currentPositions[position.symbol] = position
         }
 
@@ -300,25 +298,23 @@ module.exports = class Ftx {
      * @param positions
      * @returns {*}
      */
-    static createPositionsWithOpenStateOnly(positions) {
-        return positions.filter((position) => {
-            return ['buy', 'sell'].includes(position['side'].toLowerCase())
-        }).map(position => {
-            let side = position['side'].toLowerCase() === 'buy' ? 'long' : 'short';
-            let size = position['size'];
+    static createPositions(positions) {
+        return positions.map(position => {
+            let amount = Math.abs(position.size);
+            let side = position.side === 'sell' ? 'short' : 'long';
 
             if (side === 'short') {
-                size = size * -1
+                amount *= -1;
             }
 
             return new Position(
-                position['symbol'],
+                position.future,
                 side,
-                size,
-                position['unrealised_pnl'] && position['position_value'] ? parseFloat((position['unrealised_pnl'] / position['position_value'] * 100).toFixed(2)) : null,
+                amount,
+                undefined,
                 new Date(),
-                parseFloat(position['entry_price']),
-                new Date(),
+                position.entryPrice, // @TODO: its not clear how to calculate this
+                undefined
             )
         })
     }
@@ -327,13 +323,15 @@ module.exports = class Ftx {
      * As a websocket fallback update orders also on REST
      */
     async syncPositionViaRestApi() {
-        //let positions = await this.exchange.privateGetPositions()
+        let response
+        try {
+            response = await this.exchange.privateGetPositions();
+        } catch (e) {
+            this.logger.error('FTX: error getting positions:' + e)
+            return
+        }
 
-        //let pos = CcxtUtil.createPositions(positions);
-
-        //console.log(pos)
-
-
-        //this.fullPositionsUpdate(json.result)
+        let positions = response.result.filter(position => position.size > 0)
+        this.fullPositionsUpdate(Ftx.createPositions(positions))
     }
 }
