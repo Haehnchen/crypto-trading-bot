@@ -10,7 +10,8 @@ const WebSocket = require('ws');
 const querystring = require('querystring');
 const ccxt = require ('ccxt')
 
-let resample = require('./../utils/resample')
+let Resample = require('./../utils/resample')
+let CandlesFromTrades = require('./utils/candles_from_trades')
 
 let moment = require('moment')
 let request = require('request');
@@ -42,6 +43,8 @@ module.exports = class Ftx {
         this.symbols = []
         this.intervals = []
         this.ccxtClient = undefined
+
+        this.candlesFromTrades = new CandlesFromTrades(candlestickResample, candleImporter)
     }
 
     start(config, symbols) {
@@ -75,7 +78,7 @@ module.exports = class Ftx {
             me.logger.info('FTX: Connection opened.')
 
             symbols.forEach(symbol => {
-                //ws.send(JSON.stringify({'op': 'subscribe', 'channel': 'trades', 'market': symbol.symbol}));
+                ws.send(JSON.stringify({'op': 'subscribe', 'channel': 'trades', 'market': symbol.symbol}));
                 ws.send(JSON.stringify({'op': 'subscribe', 'channel': 'ticker', 'market': symbol.symbol}));
             })
 
@@ -128,6 +131,16 @@ module.exports = class Ftx {
                 if (data.channel === 'fills') {
                     // do a full sync
                     await me.syncPositionViaRestApi()
+                }
+
+                if (data.channel === 'trades') {
+                    let trades = data.data.map(trade => {
+                        let t = ccxtClient.parseTrade(trade, data.market);
+                        t.symbol = data.market;
+                        return t;
+                    })
+
+                    await me.candlesFromTrades.onTrades(me.getName(), trades, symbols)
                 }
 
                 if (data.channel === 'ticker') {
