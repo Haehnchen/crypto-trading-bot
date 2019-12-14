@@ -1,54 +1,48 @@
-'use strict';
-
-let ExchangePosition = require('../dict/exchange_position')
+const ExchangePosition = require('../dict/exchange_position');
 
 module.exports = class PositionStateChangeEvent {
-    static get EVENT_NAME() { return 'position_state_changed'; }
+  static get EVENT_NAME() {
+    return 'position_state_changed';
+  }
 
-    constructor(state, exchangePosition) {
-        if (!(exchangePosition instanceof ExchangePosition)) {
-            throw 'TypeError: invalid exchangePosition';
-        }
-
-        if (!['opened', 'closed'].includes(state)) {
-            throw 'TypeError: invalid state: ' + state;
-        }
-
-        this._state = state;
-        this._exchangePosition = exchangePosition;
+  constructor(state, exchangePosition) {
+    if (!(exchangePosition instanceof ExchangePosition)) {
+      throw 'TypeError: invalid exchangePosition';
     }
 
-    isOpened() {
-        return this._state === 'opened';
+    if (!['opened', 'closed'].includes(state)) {
+      throw `TypeError: invalid state: ${state}`;
     }
 
-    isClosed() {
-        return this._state === 'closed';
-    }
+    this._state = state;
+    this._exchangePosition = exchangePosition;
+  }
 
-    getExchange() {
-        return this._exchangePosition.getExchange();
-    }
+  isOpened() {
+    return this._state === 'opened';
+  }
 
-    getPosition() {
-        return this._exchangePosition.getPosition();
-    }
+  isClosed() {
+    return this._state === 'closed';
+  }
 
-    getSymbol() {
-        return this._exchangePosition.getSymbol();
-    }
+  getExchange() {
+    return this._exchangePosition.getExchange();
+  }
 
-    static createOpened(exchangePosition) {
-        return new PositionStateChangeEvent(
-            'opened',
-            exchangePosition,
-        )
-    }
+  getPosition() {
+    return this._exchangePosition.getPosition();
+  }
 
-    static createClosed(exchangePosition) {
-        return new PositionStateChangeEvent(
-            'closed',
-            exchangePosition,
-        )
-    }
+  getSymbol() {
+    return this._exchangePosition.getSymbol();
+  }
+
+  static createOpened(exchangePosition) {
+    return new PositionStateChangeEvent('opened', exchangePosition);
+  }
+
+  static createClosed(exchangePosition) {
+    return new PositionStateChangeEvent('closed', exchangePosition);
+  }
 };

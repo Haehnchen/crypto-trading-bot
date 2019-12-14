@@ -1,22 +1,24 @@
-let assert = require('assert');
-let TechnicalPattern = require('../../utils/technical_pattern')
-let fs = require('fs')
+const assert = require('assert');
+const fs = require('fs');
+const TechnicalPattern = require('../../utils/technical_pattern');
 
 describe('#technical pattern', () => {
-    it('pump it with volume', () => {
-        let candles = createCandleFixtures().slice().reverse()
+  it('pump it with volume', () => {
+    const candles = createCandleFixtures()
+      .slice()
+      .reverse();
 
-        let results = []
-        for (let i = 40; i < candles.length; i++) {
-            results.push(TechnicalPattern.volumePump(candles.slice(0, i)))
-        }
-
-        let success = results.filter(r => r.hint === 'success')
-
-        assert.equal(success[0].price_trigger.toFixed(3), 15.022)
-    })
-
-    let createCandleFixtures = function() {
-        return JSON.parse(fs.readFileSync(__dirname + '/fixtures/pattern/volume_pump_BNBUSDT.json', 'utf8'));
+    const results = [];
+    for (let i = 40; i < candles.length; i++) {
+      results.push(TechnicalPattern.volumePump(candles.slice(0, i)));
     }
-})
+
+    const success = results.filter(r => r.hint === 'success');
+
+    assert.equal(success[0].price_trigger.toFixed(3), 15.022);
+  });
+
+  let createCandleFixtures = function() {
+    return JSON.parse(fs.readFileSync(`${__dirname}/fixtures/pattern/volume_pump_BNBUSDT.json`, 'utf8'));
+  };
+});

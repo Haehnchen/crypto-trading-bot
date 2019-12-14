@@ -1,137 +1,135 @@
-'use strict';
-
-let OrderBag = require('../utils/order_bag')
-let Order = require('../../dict/order')
-let ExchangeOrder = require('../../dict/exchange_order')
-let CcxtUtil = require('../utils/ccxt_util')
-const ccxt = require ('ccxt')
+const ccxt = require('ccxt');
+const OrderBag = require('../utils/order_bag');
+const Order = require('../../dict/order');
+const ExchangeOrder = require('../../dict/exchange_order');
+const CcxtUtil = require('../utils/ccxt_util');
 
 module.exports = class CcxtExchangeOrder {
-    constructor(ccxtClient, symbols, logger) {
-        this.orderbag = new OrderBag()
-        this.symbols = symbols
-        this.logger = logger
-        this.ccxtClient = ccxtClient
+  constructor(ccxtClient, symbols, logger) {
+    this.orderbag = new OrderBag();
+    this.symbols = symbols;
+    this.logger = logger;
+    this.ccxtClient = ccxtClient;
+  }
+
+  async createOrder(order) {
+    let side;
+    switch (order.side) {
+      case 'buy':
+      case 'long':
+        side = 'buy';
+        break;
+      case 'sell':
+      case 'short':
+        side = 'sell';
+        break;
+      default:
+        throw `Not supported order side:${order.side}`;
     }
 
-    async createOrder(order) {
-        let side
-        switch (order.side) {
-            case 'buy':
-            case 'long':
-                side = 'buy'
-                break;
-            case 'sell':
-            case 'short':
-                side = 'sell'
-                break;
-            default:
-                throw 'Not supported order side:' + order.side
-        }
-
-        let promise
-        switch (order.type) {
-            case 'limit':
-                promise = this.ccxtClient.createOrder(order.symbol, order.type, side, Math.abs(order.amount), order.price)
-                break;
-            case 'market':
-                promise = this.ccxtClient.createOrder(order.symbol, order.type, side, Math.abs(order.amount))
-                break;
-            default:
-                throw 'Not supported order type:' + order.type
-        }
-
-        let placedOrder
-        try {
-            placedOrder = await promise;
-        } catch (e) {
-            if (e instanceof ccxt.NetworkError) {
-                return undefined
-            }
-
-            throw e
-        }
-
-        let exchangeOrder
-        try {
-            exchangeOrder = await CcxtUtil.createExchangeOrder(placedOrder);
-        } catch (e) {
-            this.logger.error('CCXT order place issue: ' + JSON.stringify(e))
-            return undefined
-        }
-
-        this.triggerOrder(exchangeOrder)
-        return exchangeOrder
+    let promise;
+    switch (order.type) {
+      case 'limit':
+        promise = this.ccxtClient.createOrder(order.symbol, order.type, side, Math.abs(order.amount), order.price);
+        break;
+      case 'market':
+        promise = this.ccxtClient.createOrder(order.symbol, order.type, side, Math.abs(order.amount));
+        break;
+      default:
+        throw `Not supported order type:${order.type}`;
     }
 
-    async syncOrders() {
-        let result = CcxtUtil.createExchangeOrders(await this.ccxtClient.fetchOpenOrders());
-        result.forEach(order => this.triggerOrder(order))
-        return result
+    let placedOrder;
+    try {
+      placedOrder = await promise;
+    } catch (e) {
+      if (e instanceof ccxt.NetworkError) {
+        return undefined;
+      }
+
+      throw e;
     }
 
-    /**
-     * Force an order update only if order is "not closed" for any reason already by exchange
-     *
-     * @param order
-     */
-    triggerOrder(order) {
-        return this.orderbag.triggerOrder(order);
+    let exchangeOrder;
+    try {
+      exchangeOrder = await CcxtUtil.createExchangeOrder(placedOrder);
+    } catch (e) {
+      this.logger.error(`CCXT order place issue: ${JSON.stringify(e)}`);
+      return undefined;
     }
 
-    getOrders() {
-        return this.orderbag.getOrders();
+    this.triggerOrder(exchangeOrder);
+    return exchangeOrder;
+  }
+
+  async syncOrders() {
+    const result = CcxtUtil.createExchangeOrders(await this.ccxtClient.fetchOpenOrders());
+    result.forEach(order => this.triggerOrder(order));
+    return result;
+  }
+
+  /**
+   * Force an order update only if order is "not closed" for any reason already by exchange
+   *
+   * @param order
+   */
+  triggerOrder(order) {
+    return this.orderbag.triggerOrder(order);
+  }
+
+  getOrders() {
+    return this.orderbag.getOrders();
+  }
+
+  findOrderById(id) {
+    return this.orderbag.findOrderById(id);
+  }
+
+  getOrdersForSymbol(symbol) {
+    return this.orderbag.getOrdersForSymbol(symbol);
+  }
+
+  async updateOrder(id, order) {
+    if (!order.amount && !order.price) {
+      throw 'Invalid amount / price for update';
     }
 
-    findOrderById(id) {
-        return this.orderbag.findOrderById(id);
+    const currentOrder = await this.findOrderById(id);
+    if (!currentOrder) {
+      return;
     }
 
-    getOrdersForSymbol(symbol) {
-        return this.orderbag.getOrdersForSymbol(symbol);
+    // cancel order; mostly it can already be canceled
+    await this.cancelOrder(id);
+
+    return await this.createOrder(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
+  }
+
+  async cancelOrder(id) {
+    const order = await this.findOrderById(id);
+    if (!order) {
+      return;
     }
 
-    async updateOrder(id, order) {
-        if (!order.amount && !order.price) {
-            throw 'Invalid amount / price for update'
-        }
-
-        let currentOrder = await this.findOrderById(id);
-        if (!currentOrder) {
-            return
-        }
-
-        // cancel order; mostly it can already be canceled
-        await this.cancelOrder(id)
-
-        return await this.createOrder(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount))
+    try {
+      await this.ccxtClient.cancelOrder(id);
+    } catch (e) {
+      this.logger.error(`${this.ccxtClient.name}: cancel order error: ${e}`);
+      return;
     }
 
-    async cancelOrder(id) {
-        let order = await this.findOrderById(id)
-        if (!order) {
-            return
-        }
+    this.orderbag.delete(id);
 
-        try {
-            await this.ccxtClient.cancelOrder(id)
-        } catch (e) {
-            this.logger.error(this.ccxtClient.name + ': cancel order error: ' + e)
-            return
-        }
+    return ExchangeOrder.createCanceled(order);
+  }
 
-        this.orderbag.delete(id)
+  async cancelAll(symbol) {
+    const orders = [];
 
-        return ExchangeOrder.createCanceled(order)
+    for (const order of await this.getOrdersForSymbol(symbol)) {
+      orders.push(await this.cancelOrder(order.id));
     }
 
-    async cancelAll(symbol) {
-        let orders = []
-
-        for (let order of (await this.getOrdersForSymbol(symbol))) {
-            orders.push(await this.cancelOrder(order.id))
-        }
-
-        return orders
-    }
-}
+    return orders;
+  }
+};

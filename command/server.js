@@ -1,11 +1,9 @@
-'use strict';
-
-let services = require('../modules/services')
+const services = require('../modules/services');
 
 module.exports = class ServerCommand {
-    constructor() {}
+  constructor() {}
 
-    execute() {
-        services.createWebserverInstance().start()
-    }
+  execute() {
+    services.createWebserverInstance().start();
+  }
 };

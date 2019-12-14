@@ -1,96 +1,94 @@
-let assert = require('assert')
-let TickListener = require('../../../modules/listener/tick_listener')
-let Ticker = require('../../../dict/ticker')
-let SignalResult = require('../../../modules/strategy/dict/signal_result')
+const assert = require('assert');
+const TickListener = require('../../../modules/listener/tick_listener');
+const Ticker = require('../../../dict/ticker');
+const SignalResult = require('../../../modules/strategy/dict/signal_result');
 
 describe('#tick listener for order', function() {
-    it('test tick listener for live order', async () => {
+  it('test tick listener for live order', async () => {
+    let updates = [];
 
-        let updates = []
+    const listener = new TickListener(
+      { get: () => new Ticker() },
+      {},
+      { send: () => {} },
+      { signal: () => {} },
+      {
+        executeStrategy: async () => {
+          return SignalResult.createSignal('short', {});
+        }
+      },
+      {
+        getPosition: async () => {
+          return [];
+        }
+      },
+      {
+        update: async (exchange, symbol, signal) => {
+          updates.push(exchange, symbol, signal);
+          return [];
+        }
+      },
+      { info: () => {} }
+    );
 
-        let listener = new TickListener(
-            {'get': () => new Ticker()},
-            {},
-            {'send': () => {}},
-            {'signal': () => {}},
-            {
-                'executeStrategy': async () => {
-                    return SignalResult.createSignal('short', {})
-                }
-            },
-            {
-                'getPosition': async () => {
-                    return []
-                }
-            },
-            {'update': async (exchange, symbol, signal) => {
-                updates.push(exchange, symbol, signal)
-                return []
-            }},
-            {'info': () => {}},
-        )
+    await listener.visitTradeStrategy('foobar', {
+      symbol: 'FOOUSD',
+      exchange: 'FOOBAR'
+    });
 
-        await listener.visitTradeStrategy('foobar', {
-            'symbol': 'FOOUSD',
-            'exchange': 'FOOBAR',
-        })
+    assert.deepEqual(['FOOBAR', 'FOOUSD', 'short'], updates);
 
-        assert.deepEqual(['FOOBAR', 'FOOUSD', 'short'], updates)
+    // reset; block for time window
+    updates = [];
+    await listener.visitTradeStrategy('foobar', {
+      symbol: 'FOOUSD',
+      exchange: 'FOOBAR'
+    });
 
-        // reset; block for time window
-        updates = []
-        await listener.visitTradeStrategy('foobar', {
-            'symbol': 'FOOUSD',
-            'exchange': 'FOOBAR',
-        })
+    assert.deepEqual([], updates);
+  });
 
-        assert.deepEqual([], updates)
-    })
+  it('test tick listener for notifier order', async () => {
+    const calls = [];
 
-    it('test tick listener for notifier order', async () => {
-        let calls = []
+    const listener = new TickListener(
+      { get: () => new Ticker() },
+      {},
+      { send: () => {} },
+      {
+        signal: (exchange, symbol, opts, signal, strategyKey) => {
+          calls.push(exchange, symbol, opts, signal, strategyKey);
+          return [];
+        }
+      },
+      {
+        executeStrategy: async () => {
+          return SignalResult.createSignal('short', {});
+        }
+      },
+      {
+        getPosition: async () => {
+          return [];
+        }
+      },
+      {},
+      { info: () => {} }
+    );
 
-        let listener = new TickListener(
-            {'get': () => new Ticker()},
-            {},
-            {'send': () => {}},
-            {
-                'signal': (exchange, symbol, opts, signal, strategyKey) => {
-                    calls.push(exchange, symbol, opts, signal, strategyKey)
-                    return []
-                }
-            },
-            {
-                'executeStrategy': async () => {
-                    return SignalResult.createSignal('short', {})
-                }
-            },
-            {
-                'getPosition': async () => {
-                    return []
-                }
-            },
-            {},
-            {'info': () => {}},
-        )
+    await listener.visitStrategy(
+      { strategy: 'foobar' },
+      {
+        symbol: 'FOOUSD',
+        exchange: 'FOOBAR'
+      }
+    );
 
-        await listener.visitStrategy({'strategy': 'foobar'}, {
-            'symbol': 'FOOUSD',
-            'exchange': 'FOOBAR',
-        })
-
-        assert.deepEqual(
-            calls,
-            [
-                'FOOBAR',
-                'FOOUSD',
-                { price: undefined,
-                    strategy: 'foobar',
-                    raw: '{"_debug":{},"_signal":"short"}'
-                },
-                'short',
-                'foobar'
-            ]
-        )
-    })
-})
+    assert.deepEqual(calls, [
+      'FOOBAR',
+      'FOOUSD',
+      { price: undefined, strategy: 'foobar', raw: '{"_debug":{},"_signal":"short"}' },
+      'short',
+      'foobar'
+    ]);
+  });
+});

@@ -1,12 +1,9 @@
-'use strict';
-
-let services = require('../modules/services')
+const services = require('../modules/services');
 
 module.exports = class BackfillCommand {
-    constructor() {
-    }
+  constructor() {}
 
-    async execute(exchangeName, symbol, period, date) {
-        await services.getBackfill().backfill(exchangeName, symbol, period, date)
-    }
+  async execute(exchangeName, symbol, period, date) {
+    await services.getBackfill().backfill(exchangeName, symbol, period, date);
+  }
 };

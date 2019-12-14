@@ -1,139 +1,147 @@
-'use strict';
-
 const moment = require('moment');
-const StrategyManager = require('./strategy/strategy_manager')
-const Resample = require('../utils/resample')
-const _ = require('lodash')
+const _ = require('lodash');
+const StrategyManager = require('./strategy/strategy_manager');
+const Resample = require('../utils/resample');
 
 module.exports = class Backtest {
-    constructor(instances, strategyManager, exchangeCandleCombine) {
-        this.instances = instances
-        this.strategyManager = strategyManager
-        this.exchangeCandleCombine = exchangeCandleCombine
-    }
+  constructor(instances, strategyManager, exchangeCandleCombine) {
+    this.instances = instances;
+    this.strategyManager = strategyManager;
+    this.exchangeCandleCombine = exchangeCandleCombine;
+  }
 
-    getBacktestPairs() {
-        let pairs = []
+  getBacktestPairs() {
+    const pairs = [];
 
-        this.instances['symbols'].forEach((symbol) => {
-            pairs.push(symbol.exchange + '.' + symbol.symbol)
-        })
+    this.instances.symbols.forEach(symbol => {
+      pairs.push(`${symbol.exchange}.${symbol.symbol}`);
+    });
 
-        return pairs.sort()
-    }
+    return pairs.sort();
+  }
 
-    getBacktestStrategies() {
-        return this.strategyManager.getStrategies().map(strategy => { return {
-            'name': strategy.getName(),
-            'options': typeof strategy.getOptions !== "undefined" ? strategy.getOptions() : undefined,
-        }})
-    }
+  getBacktestStrategies() {
+    return this.strategyManager.getStrategies().map(strategy => {
+      return {
+        name: strategy.getName(),
+        options: typeof strategy.getOptions !== 'undefined' ? strategy.getOptions() : undefined
+      };
+    });
+  }
 
-    getBacktestResult(tickIntervalInMinutes, hours, strategy, candlePeriod, exchange, pair, options) {
-        return new Promise(async (resolve) => {
-            let start = moment()
-                .startOf('hour')
-                .subtract(hours * 60, 'minutes')
-                .unix()
+  getBacktestResult(tickIntervalInMinutes, hours, strategy, candlePeriod, exchange, pair, options) {
+    return new Promise(async resolve => {
+      const start = moment()
+        .startOf('hour')
+        .subtract(hours * 60, 'minutes')
+        .unix();
 
-            // collect candles for cart and allow a prefill of eg 200 candles for our indicators starts
+      // collect candles for cart and allow a prefill of eg 200 candles for our indicators starts
 
-            let rows = []
-            let current = start
-            let lastSignal = undefined
+      const rows = [];
+      let current = start;
+      let lastSignal;
 
-            // mock repository for window selection of candles
-            let periodCache = {}
-            let prefillWindow = start - (Resample.convertPeriodToMinute(candlePeriod) * 200 * 60)
-            let mockedRepository = {
-                fetchCombinedCandles: async (mainExchange, symbol, period, exchanges = []) => {
-                    let key = mainExchange + symbol + period;
-                    if (!periodCache[key]) {
-                        periodCache[key] = await this.exchangeCandleCombine.fetchCombinedCandlesSince(mainExchange, symbol, period, exchanges, prefillWindow)
-                    }
+      // mock repository for window selection of candles
+      const periodCache = {};
+      const prefillWindow = start - Resample.convertPeriodToMinute(candlePeriod) * 200 * 60;
+      const mockedRepository = {
+        fetchCombinedCandles: async (mainExchange, symbol, period, exchanges = []) => {
+          const key = mainExchange + symbol + period;
+          if (!periodCache[key]) {
+            periodCache[key] = await this.exchangeCandleCombine.fetchCombinedCandlesSince(
+              mainExchange,
+              symbol,
+              period,
+              exchanges,
+              prefillWindow
+            );
+          }
 
-                    let filter = {}
-                    for (let ex in periodCache[key]) {
-                        filter[ex] = periodCache[key][ex].slice().filter(candle => candle.time < current)
-                    }
+          const filter = {};
+          for (const ex in periodCache[key]) {
+            filter[ex] = periodCache[key][ex].slice().filter(candle => candle.time < current);
+          }
 
-                    return filter
-                }
-            }
+          return filter;
+        }
+      };
 
-            let end = moment().unix()
-            while (current < end) {
-                let strategyManager = new StrategyManager({}, mockedRepository)
+      const end = moment().unix();
+      while (current < end) {
+        const strategyManager = new StrategyManager({}, mockedRepository);
 
-                let item = await strategyManager.executeStrategyBacktest(strategy, exchange, pair, options, lastSignal)
-                item['time'] = current
+        const item = await strategyManager.executeStrategyBacktest(strategy, exchange, pair, options, lastSignal);
+        item.time = current;
 
-                // so change in signal
-                let currentSignal = item.result ? item.result.getSignal() : undefined
-                if (currentSignal === lastSignal) {
-                    currentSignal = undefined
-                }
+        // so change in signal
+        let currentSignal = item.result ? item.result.getSignal() : undefined;
+        if (currentSignal === lastSignal) {
+          currentSignal = undefined;
+        }
 
-                if (['long', 'short'].includes(currentSignal)) {
-                    lastSignal = currentSignal
-                } else if(currentSignal === 'close') {
-                    lastSignal = undefined
-                }
+        if (['long', 'short'].includes(currentSignal)) {
+          lastSignal = currentSignal;
+        } else if (currentSignal === 'close') {
+          lastSignal = undefined;
+        }
 
-                rows.push(item)
+        rows.push(item);
 
-                current += (tickIntervalInMinutes * 60);
-            }
+        current += tickIntervalInMinutes * 60;
+      }
 
-            let signals = rows.slice().filter(r => r.result && r.result.getSignal())
+      const signals = rows.slice().filter(r => r.result && r.result.getSignal());
 
-            let dates = {}
+      const dates = {};
 
-            signals.forEach(signal => {
-                if(!dates[signal.time]) {
-                    dates[signal.time] = []
-                }
+      signals.forEach(signal => {
+        if (!dates[signal.time]) {
+          dates[signal.time] = [];
+        }
 
-                dates[signal.time].push(signal)
-            })
+        dates[signal.time].push(signal);
+      });
 
-            let exchangeCandles = await mockedRepository.fetchCombinedCandles(exchange, pair, candlePeriod)
-            let candles = exchangeCandles[exchange].filter(c => c.time > start).map(candle => {
-                let signals = undefined
+      const exchangeCandles = await mockedRepository.fetchCombinedCandles(exchange, pair, candlePeriod);
+      const candles = exchangeCandles[exchange]
+        .filter(c => c.time > start)
+        .map(candle => {
+          let signals;
 
-                for (let time in JSON.parse(JSON.stringify(dates))) {
-                    if (time >= candle.time) {
-                        signals = dates[time].map(i => {
-                            return {
-                                'signal': i.result.getSignal(),
-                            }
-                        })
-                        delete dates[time]
-                    }
-                }
-
+          for (const time in JSON.parse(JSON.stringify(dates))) {
+            if (time >= candle.time) {
+              signals = dates[time].map(i => {
                 return {
-                    date: new Date(candle.time * 1000),
-                    open: candle.open,
-                    high: candle.high,
-                    low: candle.low,
-                    close: candle.close,
-                    volume: candle.volume,
-                    signals: signals,
-                }
-            })
+                  signal: i.result.getSignal()
+                };
+              });
+              delete dates[time];
+            }
+          }
 
-            resolve({
-                'rows': rows.slice().reverse(),
-                'signals': signals.slice().reverse(),
-                'candles': JSON.stringify(candles),
-                'extra_fields': this.strategyManager.getBacktestColumns(strategy),
-                'configuration': {
-                    'exchange': exchange,
-                    'symbol': pair,
-                    'period': candlePeriod,
-                }
-            })
-        })
-    }
+          return {
+            date: new Date(candle.time * 1000),
+            open: candle.open,
+            high: candle.high,
+            low: candle.low,
+            close: candle.close,
+            volume: candle.volume,
+            signals: signals
+          };
+        });
+
+      resolve({
+        rows: rows.slice().reverse(),
+        signals: signals.slice().reverse(),
+        candles: JSON.stringify(candles),
+        extra_fields: this.strategyManager.getBacktestColumns(strategy),
+        configuration: {
+          exchange: exchange,
+          symbol: pair,
+          period: candlePeriod
+        }
+      });
+    });
+  }
 };

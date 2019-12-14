@@ -1,7 +1,5 @@
-'use strict';
-
 module.exports = class Ticker {
-    constructor(lookbacks) {
-        this.time = lookbacks;
-    }
+  constructor(lookbacks) {
+    this.time = lookbacks;
+  }
 };

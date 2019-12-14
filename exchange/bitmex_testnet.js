@@ -1,13 +1,11 @@
-'use strict';
-
-const Bitmex = require('./bitmex')
+const Bitmex = require('./bitmex');
 
 module.exports = class BitmexTestnet extends Bitmex {
-    getName() {
-        return 'bitmex_testnet'
-    }
+  getName() {
+    return 'bitmex_testnet';
+  }
 
-    getBaseUrl() {
-        return 'https://testnet.bitmex.com'
-    }
-}
+  getBaseUrl() {
+    return 'https://testnet.bitmex.com';
+  }
+};
