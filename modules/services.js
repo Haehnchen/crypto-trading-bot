@@ -1,5 +1,3 @@
-let sqlite3 = require('sqlite3').verbose();
-let TransactionDatabase = require("sqlite3-transactions").TransactionDatabase;
 let fs = require('fs');
 let events = require('events');
 
