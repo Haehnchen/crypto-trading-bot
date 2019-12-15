@@ -3,115 +3,161 @@
 {% block title %}Trades | Crypto Bot{% endblock %}
 
 {% block content %}
-    <div class="container-fluid">
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1>Trades</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="{{ '/' }}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Trades</li>
+                        </ol>
+                    </div>
+                </div>
+            </div><!-- /.container-fluid -->
+        </section>
+        <!-- /.container-fluid -->
 
-        <h2>Positions</h2>
+        <!-- Main content -->
+        <div class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Positions</h3>
+                            </div>
+                            <!-- /.card-header -->
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm table-hover">
+                                        <thead>
+                                        <tr>
+                                            <th scope="col">Exchange</th>
+                                            <th scope="col">Symbol</th>
+                                            <th scope="col">Amount</th>
+                                            <th scope="col">Currency</th>
+                                            <th scope="col">Profit</th>
+                                            <th scope="col">Entry</th>
+                                            <th scope="col">UpdatedAt</th>
+                                            <th scope="col">CreatedAt</th>
+                                            <th scope="col">Side</th>
+                                            <th scope="col">Action</th>
+                                        </tr>
 
-        <div class="table-responsive">
-            <table class="table table-bordered table-sm table-hover">
-                <thead>
-                <tr>
-                    <th scope="col">Exchange</th>
-                    <th scope="col">Symbol</th>
-                    <th scope="col">Amount</th>
-                    <th scope="col">Currency</th>
-                    <th scope="col">Profit</th>
-                    <th scope="col">Entry</th>
-                    <th scope="col">UpdatedAt</th>
-                    <th scope="col">CreatedAt</th>
-                    <th scope="col">Side</th>
-                    <th scope="col">Action</th>
-                </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for position in positions %}
+                                            <tr>
+                                                <td>{{ position.exchange }}</td>
+                                                <td><a target="blank" href="/tradingview/{{ position.exchange }}:{{ position.position.symbol }}">{{ position.position.symbol }}</a></td>
+                                                <td class="{{ position.position.amount < 0 ? 'text-danger' : 'text-success' }}">
+                                                    {{ position.position.amount|price_format }}
+                                                </td>
+                                                <td>
+                                                    {% if position.currency %}{{ position.currency|price_format }}{% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if position.position.profit is defined %}
+                                                        <span class="{{ position.position.profit < 0 ? 'text-danger' : 'text-success' }}">{{ position.position.profit|round(2) }} %</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ position.position.entry|price_format }}</td>
+                                                <td>{{ position.position.updatedAt|date('d.m.y H:i') }}</td>
+                                                <td>{{ position.position.createdAt|date('d.m.y H:i') }}</td>
+                                                <td>
+                                                    {% if position.position.side == 'short' %}
+                                                        <i class="fas fa-chevron-circle-down text-danger"></i>
+                                                    {% elseif position.position.side == 'long' %}
+                                                        <i class="fas fa-chevron-circle-up text-success"></i>
+                                                    {% endif %}
+                                                </td>
+                                                <td style="white-space: nowrap;padding: 0;">
+                                                    <form action="/pairs/{{ position.exchange }}-{{ position.position.symbol }}" method="post">
+                                                        <button style="padding: 0 0 0 3px;" name="action" value="close" data-toggle="tooltip"
+                                                                title="Limit Close" class="btn btn-link">
+                                                            <i class="fas fa-window-close text-dark" style="font-size: 0.9rem"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- /.card-body -->
+                        </div>
 
-                </thead>
-                <tbody>
-                {% for position in positions %}
-                    <tr>
-                        <td>{{ position.exchange }}</td>
-                        <td><a target="blank" href="/tradingview/{{ position.exchange }}:{{ position.position.symbol }}">{{ position.position.symbol }}</a></td>
-                        <td class="{{ position.position.amount < 0 ? 'text-danger' : 'text-success' }}">
-                            {{ position.position.amount|price_format }}
-                        </td>
-                        <td>
-                            {% if position.currency %}{{ position.currency|price_format }}{% endif %}
-                        </td>
-                        <td>
-                            {% if position.position.profit is defined %}
-                                <span class="{{ position.position.profit < 0 ? 'text-danger' : 'text-success' }}">{{ position.position.profit|round(2) }} %</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ position.position.entry|price_format }}</td>
-                        <td>{{ position.position.updatedAt|date('d.m.y H:i') }}</td>
-                        <td>{{ position.position.createdAt|date('d.m.y H:i') }}</td>
-                        <td>
-                            {% if position.position.side == 'short' %}
-                                <i class="fas fa-chevron-circle-down text-danger"></i>
-                            {% elseif position.position.side == 'long' %}
-                                <i class="fas fa-chevron-circle-up text-success"></i>
-                            {% endif %}
-                        </td>
-                        <td style="white-space: nowrap;padding: 0;">
-                            <form style="margin: 3px 0 0 7px;" action="/pairs/{{ position.exchange }}-{{ position.position.symbol }}" method="post">
-                                <button style="padding: 0;" name="action" value="close" data-toggle="tooltip" title="Limit Close" class="btn btn-link"><i class="fas fa-window-close text-dark" style="font-size: 0.8em;"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Orders</h3>
+                            </div>
+                            <!-- /.card-header -->
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm table-hover">
+                                        <thead>
+                                        <tr>
+                                            <th scope="col">Exchange</th>
+                                            <th scope="col">Symbol</th>
+                                            <th scope="col">Type</th>
+                                            <th scope="col">ID</th>
+                                            <th scope="col">Price</th>
+                                            <th scope="col">Amount</th>
+                                            <th scope="col">Retry</th>
+                                            <th scope="col">OurId</th>
+                                            <th scope="col">CreatedAt</th>
+                                            <th scope="col">UpdatedAt</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Side</th>
+                                            <th scope="col">Action</th>
+                                        </tr>
+
+                                        </thead>
+                                        <tbody>
+                                        {% for order in orders %}
+                                            <tr>
+                                                <td>{{ order.exchange }}</td>
+                                                <td>{{ order.order.symbol }}</td>
+                                                <td>{{ order.order.type }}</td>
+                                                <td>{{ order.order.id }}</td>
+                                                <td>{{ order.order.price }}</td>
+                                                <td class="{{ order.order.amount < 0 ? 'text-danger' : 'text-success' }}">{{ order.order.amount }}</td>
+                                                <td>{{ order.order.retry }}</td>
+                                                <td>{{ order.order.ourId }}</td>
+                                                <td>{{ order.order.createdAt|date('d.m.y H:i') }}</td>
+                                                <td>{{ order.order.updateAt|date('d.m.y H:i') }}</td>
+                                                <td>{{ order.order.status }}</td>
+                                                <td>
+                                                    {% if order.order.side == 'buy' %}
+                                                        <i class="fas fa-chevron-circle-up text-success"></i>
+                                                    {% elseif order.order.side == 'sell' %}
+                                                        <i class="fas fa-chevron-circle-down text-danger"></i>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <a title="cancel" href="/order/{{ order.exchange }}/{{ order.order.id }}"><i class="fas fa-window-close text-dark"></i></a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- /.card-body -->
+                        </div>
+                    </div>
+                </div>
+                <!-- /.row -->
+            </div><!-- /.container-fluid -->
         </div>
-
-
-        <h2>Orders</h2>
-
-        <div class="table-responsive">
-            <table class="table table-bordered table-sm table-hover">
-                <thead>
-                <tr>
-                    <th scope="col">Exchange</th>
-                    <th scope="col">Symbol</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">ID</th>
-                    <th scope="col">Price</th>
-                    <th scope="col">Amount</th>
-                    <th scope="col">Retry</th>
-                    <th scope="col">OurId</th>
-                    <th scope="col">CreatedAt</th>
-                    <th scope="col">UpdatedAt</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Side</th>
-                    <th scope="col">Action</th>
-                </tr>
-
-                </thead>
-                <tbody>
-                {% for order in orders %}
-                    <tr>
-                        <td>{{ order.exchange }}</td>
-                        <td>{{ order.order.symbol }}</td>
-                        <td>{{ order.order.type }}</td>
-                        <td>{{ order.order.id }}</td>
-                        <td>{{ order.order.price }}</td>
-                        <td class="{{ order.order.amount < 0 ? 'text-danger' : 'text-success' }}">{{ order.order.amount }}</td>
-                        <td>{{ order.order.retry }}</td>
-                        <td>{{ order.order.ourId }}</td>
-                        <td>{{ order.order.createdAt|date('d.m.y H:i') }}</td>
-                        <td>{{ order.order.updateAt|date('d.m.y H:i') }}</td>
-                        <td>{{ order.order.status }}</td>
-                        <td>
-                            {% if order.order.side == 'buy' %}
-                                <i class="fas fa-chevron-circle-up text-success"></i>
-                            {% elseif order.order.side == 'sell' %}
-                                <i class="fas fa-chevron-circle-down text-danger"></i>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a title="cancel" href="/order/{{ order.exchange }}/{{ order.order.id }}"><i class="fas fa-window-close text-dark"></i></a>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <!-- /.content -->
     </div>
+    <!-- /.content-wrapper -->
 {% endblock %}
