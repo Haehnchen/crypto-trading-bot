@@ -3,7 +3,7 @@
 {% block title %}Backtesting Results | Crypto Bot{% endblock %}
 
 {% block stylesheet %}
-    <link rel="stylesheet" href="{{ '/backtest.css?v=' }}{{ asset_version() }}">
+    <link rel="stylesheet" href="/css/backtest.css?v={{ asset_version() }}">
 {% endblock %}
 
 {% block content %}
@@ -154,5 +154,5 @@
 {% block javascript %}
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/techan.js/0.8.0/techan.min.js"></script>
-<script src="/backtest.js?v={{ asset_version() }}"></script>
+<script src="/js/backtest.js?v={{ asset_version() }}"></script>
 {% endblock %}
