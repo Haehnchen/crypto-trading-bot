@@ -34,9 +34,9 @@
                                     </tr>
 
                                     <tr>
-                                        <th scope="col">Symbol</th>
-                                        <th scope="col">Price</th>
-                                        <th scope="col">24h</th>
+                                        <th scope="col" style="border-top-width: 1px">Symbol</th>
+                                        <th scope="col" style="border-top-width: 1px">Price</th>
+                                        <th scope="col" style="border-top-width: 1px">24h</th>
 
                                         {% for period in periods %}
                                             <th class="text-uppercase" colspan="2" scope="col">s200</th>
@@ -70,18 +70,18 @@
                                                 <td data-toggle="tooltip" title="{{ ta.ema_55.value|price_format }}"  class="{{ row.ticker.bid > ta.ema_55.value ? 'text-success' : 'text-danger' }}"><i class="fas {{ row.ticker.bid > ta.ema_55.value ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i></td>
                                                 <td data-toggle="tooltip" title="{{ ta.ema_200.value|price_format }}"  class="{{ row.ticker.bid > ta.ema_200.value ? 'text-success' : 'text-danger' }}"><i class="fas {{ row.ticker.bid > ta.ema_200.value ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i></td>
                                                 <td class="
-                {% if ta.rsi.value >= 80 or ta.rsi.value <= 20 %}font-weight-bold {% endif %}
-                {% if ta.rsi.value <= 30 %}text-success{% endif %}
-                {% if ta.rsi.value >= 70 %}text-danger{% endif %}
-                {% if ta.rsi.value > 30 and ta.rsi.value < 50 %}text-warning{% endif %}
-                {% if ta.rsi.value > 50 and ta.rsi.value < 70 %}text-orange{% endif %}
-            ">{{ ta.rsi.value|round(2) }}</td>
-                                                <td class="
-                {% if ta.cci.value >= 250 or ta.cci.value <= -250 %}font-weight-bold {% endif %}
-                {% if ta.cci.value <= -100 %}text-success{% endif %}
-                {% if ta.cci.value >= 100 %}text-danger{% endif %}
-                {% if ta.cci.value > -100 and ta.rsi.value < 100 %}text-warning{% endif %}
-            ">{{ ta.cci.value|round(2) }}</td>
+                                                    {% if ta.rsi.value >= 80 or ta.rsi.value <= 20 %}font-weight-bold {% endif %}
+                                                    {% if ta.rsi.value <= 30 %}text-success{% endif %}
+                                                    {% if ta.rsi.value >= 70 %}text-danger{% endif %}
+                                                    {% if ta.rsi.value > 30 and ta.rsi.value < 50 %}text-warning{% endif %}
+                                                    {% if ta.rsi.value > 50 and ta.rsi.value < 70 %}text-orange{% endif %}
+                                                ">{{ ta.rsi.value|round(2) }}</td>
+                                                                                    <td class="
+                                                    {% if ta.cci.value >= 250 or ta.cci.value <= -250 %}font-weight-bold {% endif %}
+                                                    {% if ta.cci.value <= -100 %}text-success{% endif %}
+                                                    {% if ta.cci.value >= 100 %}text-danger{% endif %}
+                                                    {% if ta.cci.value > -100 and ta.rsi.value < 100 %}text-warning{% endif %}
+                                                ">{{ ta.cci.value|round(2) }}</td>
                                                 <td>
                                                     {% if ta.stoch_rsi.value.k >= 80 and ta.stoch_rsi.value.d >= 80 %}
                                                         <i data-toggle="tooltip" title="{{ ta.stoch_rsi.value.k|round(2) }}" class="far fa-circle text-danger"></i>
@@ -98,17 +98,17 @@
                                                     <i data-toggle="tooltip" title="{{ ta.macd.crossed }}m ago" class="far fa-arrow-alt-circle-up {{ ta.macd.trend == 'up' ? 'trend-up' : 'trend-down' }} {% if (ta.macd.value.histogram > 0 and ta.macd.trend == 'down') or (ta.macd.value.histogram < 0 and ta.macd.trend == 'up') %}font-weight-bold{% endif %} {% if ta.macd.crossed_index < 5 %}blink{% endif %}"></i>
                                                 </td>
                                                 <td class="
-                {% if ta.mfi.value <= 20 %}text-success{% endif %}
-                {% if ta.mfi.value >= 80 %}text-danger{% endif %}
-                {% if ta.mfi.value > 20 and ta.rsi.value < 80 %}text-warning{% endif %}
-            ">{{ ta.mfi.value|round(2) }}</td>
-                                                <td style="white-space: nowrap" class="
-                {% if ta.bollinger_bands.percent >= 95 or ta.bollinger_bands.percent <= 5 %}font-weight-bold {% endif %}
-                {% if ta.bollinger_bands.percent <= 5 %}text-success{% endif %}
-                {% if ta.bollinger_bands.percent >= 95 %}text-danger{% endif %}
-                {% if ta.bollinger_bands.percent > 5 and ta.bollinger_bands.percent < 50 %}text-warning{% endif %}
-                {% if ta.bollinger_bands.percent > 50 and ta.bollinger_bands.percent < 95 %}text-orange{% endif %}
-                ">{{ ta.bollinger_bands.percent|round }} % </td>
+                                                    {% if ta.mfi.value <= 20 %}text-success{% endif %}
+                                                    {% if ta.mfi.value >= 80 %}text-danger{% endif %}
+                                                    {% if ta.mfi.value > 20 and ta.rsi.value < 80 %}text-warning{% endif %}
+                                                ">{{ ta.mfi.value|round(2) }}</td>
+                                                                                    <td style="white-space: nowrap" class="
+                                                    {% if ta.bollinger_bands.percent >= 95 or ta.bollinger_bands.percent <= 5 %}font-weight-bold {% endif %}
+                                                    {% if ta.bollinger_bands.percent <= 5 %}text-success{% endif %}
+                                                    {% if ta.bollinger_bands.percent >= 95 %}text-danger{% endif %}
+                                                    {% if ta.bollinger_bands.percent > 5 and ta.bollinger_bands.percent < 50 %}text-warning{% endif %}
+                                                    {% if ta.bollinger_bands.percent > 50 and ta.bollinger_bands.percent < 95 %}text-orange{% endif %}
+                                                    ">{{ ta.bollinger_bands.percent|round }} % </td>
                                             {% endfor %}
                                         </tr>
                                     {% endfor %}
