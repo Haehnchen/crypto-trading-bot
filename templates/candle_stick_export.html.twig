@@ -3,103 +3,157 @@
 {% block title %}Candles | Crypto Bot{% endblock %}
 
 {% block content %}
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-6">
-                <h2>Export</h2>
-
-                <form method="get" class="form">
-
-                    <div class="form-group mb-2">
-                        <label for="form-pair">Pair</label>
-                        <select class="form-control" id="form-pair" name="pair" required>
-                            {% for pair in pairs|default([]) %}
-                                <option value="{{ pair.exchange }}.{{ pair.symbol }}" {% if pair.symbol == symbol|default and pair.exchange == exchange|default %}selected{% endif %}>{{ pair.exchange|capitalize }}.{{ pair.symbol }}</option>
-                            {% endfor %}
-                        </select>
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <div class="container">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1>Candles</h1>
                     </div>
-
-                    <div class="form-group mb-2">
-                        <label for="form-candle-period">Candle Period</label>
-                        <select class="form-control" id="form-candle-period" name="period" required>
-                            {% for period_option in ['1m', '5m', '15m', '1h', '4h'] %}
-                                <option value="{{ period_option }}" {% if period_option == period|default('15m') %}selected{% endif %}>{{ period_option }}</option>
-                            {% endfor %}
-                        </select>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="{{ '/' }}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Candles</li>
+                        </ol>
                     </div>
-
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="metadata" name="metadata" checked>
-                        <label for="metadata">Include Metadata (Exchange, Symbol)</label>
-                    </div>
-
-                    <div class="form-group mb-2">
-                        <label for="form-start">Time Start</label>
-                        <input id="form-start" name="start" type="text" class="form-control" value="{{ start|date('Y-m-d H:i') }}">
-                    </div>
-
-                    <div class="form-group mb-2">
-                        <label for="form-end">Time End</label>
-                        <input id="form-end" name="end" type="text" class="form-control" value="{{ end|date('Y-m-d H:i') }}">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary mb-2">Export</button>
-                </form>
-            </div>
-
-            <div class="col-md-6">
-                <h2>Import</h2>
-
-                <form method="post" class="form">
-                    <div class="form-group">
-                        <label for="json_import">JSON from export</label>
-                        <textarea class="form-control" id="json_import" name="json" rows="5"></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary mb-2">Import</button>
-                </form>
-            </div>
-        </div>
-
-        {% if candles is defined %}
-            <h2>{{ exchange }} {{ symbol }} - {{ period }}</h2>
-
-            <div class="form-group">
-                <h6>JSON ({{ candles|length }})</h6>
-                <textarea class="form-control" style="width:100%; height: 150px">
-                    {{ candles_json }}
-                </textarea>
-            </div>
-
-            <div class="form-group">
-                <h6>Overview ({{ candles|length }})</h6>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-sm table-hover">
-                        <thead>
-                        <tr>
-                            <th scope="col">Time</th>
-                            <th scope="col">Open</th>
-                            <th scope="col">High</th>
-                            <th scope="col">Low</th>
-                            <th scope="col">Close</th>
-                            <th scope="col">Volume</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for candle in candles %}
-                            <tr>
-                                <td>{{ candle.time|date('y-m-d H:i:s') }}</td>
-                                <td>{{ candle.open }}</td>
-                                <td>{{ candle.high }}</td>
-                                <td>{{ candle.low }}</td>
-                                <td>{{ candle.close }}</td>
-                                <td>{{ candle.volume }}</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
                 </div>
-            </div>
-        {% endif %}
+            </div><!-- /.container-fluid -->
+        </section>
+        <!-- /.Content Header (Page header) -->
+
+        <!-- Main content -->
+        <div class="content">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Export</h3>
+                            </div>
+                            <!-- /.card-header -->
+                            <div class="card-body">
+                                <form method="get" class="form">
+
+                                    <div class="form-group mb-2">
+                                        <label for="form-pair">Pair</label>
+                                        <select class="form-control" id="form-pair" name="pair" required>
+                                            {% for pair in pairs|default([]) %}
+                                                <option value="{{ pair.exchange }}.{{ pair.symbol }}" {% if pair.symbol == symbol|default and pair.exchange == exchange|default %}selected{% endif %}>{{ pair.exchange|capitalize }}.{{ pair.symbol }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group mb-2">
+                                        <label for="form-candle-period">Candle Period</label>
+                                        <select class="form-control" id="form-candle-period" name="period" required>
+                                            {% for period_option in ['1m', '5m', '15m', '1h', '4h'] %}
+                                                <option value="{{ period_option }}" {% if period_option == period|default('15m') %}selected{% endif %}>{{ period_option }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="metadata" name="metadata" checked>
+                                        <label for="metadata">Include Metadata (Exchange, Symbol)</label>
+                                    </div>
+
+                                    <div class="form-group mb-2">
+                                        <label for="form-start">Time Start</label>
+                                        <input id="form-start" name="start" type="text" class="form-control" value="{{ start|date('Y-m-d H:i') }}">
+                                    </div>
+
+                                    <div class="form-group mb-2">
+                                        <label for="form-end">Time End</label>
+                                        <input id="form-end" name="end" type="text" class="form-control" value="{{ end|date('Y-m-d H:i') }}">
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary mb-2">Export</button>
+                                </form>
+                            </div>
+                            <!-- /.card-body -->
+                        </div>
+                        <!-- /.card -->
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Import</h3>
+                            </div>
+                            <!-- /.card-header -->
+                            <div class="card-body">
+                                <form method="post" class="form">
+                                    <div class="form-group">
+                                        <label for="json_import">JSON from export</label>
+                                        <textarea class="form-control" id="json_import" name="json" rows="5"></textarea>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary mb-2">Import</button>
+                                </form>
+                            </div>
+                            <!-- /.card-body -->
+                        </div>
+                        <!-- /.card -->
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        {% if candles is defined %}
+                                            <h2>{{ exchange }} {{ symbol }} - {{ period }}</h2>
+
+                                            <div class="form-group">
+                                                <h6>JSON ({{ candles|length }})</h6>
+                                                <textarea class="form-control" style="width:100%; height: 150px">{{ candles_json }}</textarea>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <h6>Overview ({{ candles|length }})</h6>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered table-sm table-hover">
+                                                        <thead>
+                                                        <tr>
+                                                            <th scope="col">Time</th>
+                                                            <th scope="col">Open</th>
+                                                            <th scope="col">High</th>
+                                                            <th scope="col">Low</th>
+                                                            <th scope="col">Close</th>
+                                                            <th scope="col">Volume</th>
+                                                        </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        {% for candle in candles %}
+                                                            <tr>
+                                                                <td>{{ candle.time|date('y-m-d H:i:s') }}</td>
+                                                                <td>{{ candle.open }}</td>
+                                                                <td>{{ candle.high }}</td>
+                                                                <td>{{ candle.low }}</td>
+                                                                <td>{{ candle.close }}</td>
+                                                                <td>{{ candle.volume }}</td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- /.card-body -->
+                        </div>
+                        <!-- /.card -->
+                    </div>
+                </div>
+                <!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+        <!-- /.content -->
     </div>
+    <!-- /.content-wrapper -->
 {% endblock %}

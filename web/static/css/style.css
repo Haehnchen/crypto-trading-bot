@@ -1,0 +1,56 @@
+body {
+    font-size: 0.9rem;
+}
+
+nav {
+    font-size: initial;
+}
+
+.content-wrapper > .content {
+    padding: 0;
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+    .span-md {
+        word-break: break-all;
+    }
+}
+
+
+/*base*/
+.text-orange {
+    color: #b35900
+}
+
+.trend-up {
+    transform: rotate(45deg);
+}
+
+.trend-down {
+    transform: rotate(135deg);
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.blink {
+    animation: blink 1s step-start 0s infinite;
+    animation-timing-function: ease-in-out;
+}
+
+.period-start {
+    border-left: 1px solid #dee2e6
+}
+
+.th-hidden {
+    border: 0 !important;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+/*end base*/

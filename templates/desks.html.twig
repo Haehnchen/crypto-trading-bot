@@ -29,28 +29,67 @@ new TradingView.widget(
 {% endblock javascript %}
 
 {% block content %}
-    <div class="container-fluid">
-        <strong>{{ desk.name }}</strong>
-
-        {% if desk.intervals|length > 0 %}
-            {% for interval in desk.intervals|default([]) %}
-                <a href="/desks/{{ id }}?interval={{ interval }}">{{ interval }}</a>
-            {% endfor %}
-        {% endif %}
-
-        {% set i = 1 %}
-        {% for row in desk.pairs|batch(desk.grid|default(4), "empty") %}
-            <div class="row">
-                {% for pair in row %}
-                    <div class="col-sm">
-                        {% if pair.symbol %}
-                            <div id="tradingview_{{ i }}" style="width: 100%; height: {{ desk.height|default(300) }}px"></div>
-                        {% endif %}
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1>Chart</h1>
                     </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="{{ '/' }}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Chart</li>
+                        </ol>
+                    </div>
+                </div>
+            </div><!-- /.container-fluid -->
+        </section>
+        <!-- /.Content Header (Page header) -->
 
-                    {% set i = i + 1 %}
-                {% endfor %}
-            </div>
-        {% endfor %}
+        <!-- Main content -->
+        <div class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title mr-2">{{ desk.name }}</h3>
+
+                                {% if desk.intervals|length > 0 %}
+                                    {% for interval in desk.intervals|default([]) %}
+                                        <a href="/desks/{{ id }}?interval={{ interval }}" class="badge bg-primary">{{ interval }}</a>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <!-- /.card-header -->
+                            <div class="card-body">
+                                {% set i = 1 %}
+                                {% for row in desk.pairs|batch(desk.grid|default(4), "empty") %}
+                                    <div class="row">
+                                        {% for pair in row %}
+                                            <div class="col-sm">
+                                                {% if pair.symbol %}
+                                                    <div id="tradingview_{{ i }}" style="width: 100%; height: {{ desk.height|default(300) }}px"></div>
+                                                {% endif %}
+                                            </div>
+
+                                            {% set i = i + 1 %}
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <!-- /.card-body -->
+                        </div>
+                        <!-- /.card -->
+                    </div>
+                </div>
+                <!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+        <!-- /.content -->
     </div>
+    <!-- /.content-wrapper -->
 {% endblock content %}

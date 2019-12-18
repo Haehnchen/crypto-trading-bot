@@ -1,99 +1,111 @@
 <!DOCTYPE html>
+<!--
+This is a starter template page. Use this page to start your new project from
+scratch. This page gets rid of all links and provides the needed markup only.
+-->
 <html lang="en">
 <head>
-    <title>{% block title %}Dashboard | Crypto Bot{% endblock %}</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="/favicon.ico"/>
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
 
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+    <title>{% block title %}Dashboard | Crypto Bot{% endblock %}</title>
+
+    <link rel="icon" href="{{ '/favicon.ico' }}"/>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="{{ '/css/adminlte.min.css' }}">
+    <!-- style -->
+    <link rel="stylesheet" href="{{ '/css/style.css' }}">
+    <!-- Google Font: Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
 
     {% block stylesheet %}{% endblock stylesheet %}
-
-    <style>
-        body {
-            font-size: 0.8em;
-            padding-top: 70px;
-        }
-
-        nav {
-            font-size: initial;
-        }
-
-        .table td,
-        .table th {
-            padding: .5rem;
-        }
-
-        /* Medium devices (tablets, 768px and up) */
-        @media (min-width: 768px) {
-            .span-md {
-                word-break: break-all;
-            }
-        }
-    </style>
 
     {% block head %}
     {% endblock head %}
 </head>
-<body>
+<body class="hold-transition layout-top-nav layout-navbar-fixed">
+<div class="wrapper">
+    <!-- Navbar -->
+    <nav class="main-header navbar navbar-expand-md navbar-light navbar-white">
+        <div class="container">
+            <a href="{{ '/' }}" class="navbar-brand">
+                <img src="{{ '/img/bitcoin.svg' }}" alt="Crypto Trading Bot Logo" class="brand-image img-circle elevation-1"
+                     style="opacity: .8">
+                <span class="brand-text font-weight-light">Crypto-Bot</span>
+            </a>
+            <button class="navbar-toggler order-1" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-<nav class="navbar fixed-top navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="{{ '/' }}">Crypto-Bot</a>
+            <div class="collapse navbar-collapse order-3" id="navbarCollapse">
+                <!-- Left navbar links -->
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a href="{{ '/' }}" class="nav-link">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ '/signals' }}" class="nav-link">Signals</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ '/backtest' }}" class="nav-link">Backtest</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ '/trades' }}" class="nav-link">Trades</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ '/pairs' }}" class="nav-link">Pairs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ '/tools/candles' }}" class="nav-link">Candles</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ '/logs' }}" class="nav-link">Logs</a>
+                    </li>
 
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
+                    {% set desks = desks() %}
+                    {% if desks|length > 0 %}
+                        <li class="nav-item dropdown">
+                            <a id="dropdownSubMenu1" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link dropdown-toggle">Desks</a>
+                            <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
+                                {% for desk in desks %}
+                                    <li><a href="/desks/{{ loop.index - 1 }}" class="dropdown-item">{{ desk }} </a></li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- /.navbar -->
 
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav mr-auto">
-            <li class="nav-item">
-                <a class="nav-link" href="{{ '/' }}">Dashboard</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ '/signals' }}">Signals</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ '/backtest' }}">Backtest</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ '/trades' }}">Trades</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ '/pairs' }}">Pairs</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ '/tools/candles' }}">Candles</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ '/logs' }}">Logs</a>
-            </li>
+    {% block content %}
+    {% endblock content %}
 
-            {% set desks = desks() %}
-            {% if desks|length > 0 %}
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Desks
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        {% for desk in desks %}
-                            <a class="dropdown-item" href="/desks/{{ loop.index - 1 }}">{{ desk }}</a>
-                        {% endfor %}
-                    </div>
-                </li>
-            {% endif %}
-        </ul>
-    </div>
-</nav>
+    <!-- Main Footer -->
+    <footer class="main-footer">
+        <!-- To the right -->
+        <div class="float-right d-none d-sm-inline">
+            1.0.0
+        </div>
+        <!-- Default to the left -->
+        <strong>Copyright &copy; 2018-2019 <a href="https://github.com/Haehnchen">Haehnchen</a>.</strong> All rights reserved.
+    </footer>
+</div>
+<!-- ./wrapper -->
 
-{% block content %}
-{% endblock content %}
+<!-- REQUIRED SCRIPTS -->
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.bundle.min.js"></script>
-
+<!-- jQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+<!-- AdminLTE App -->
+<script src="{{ '/js/adminlte.min.js' }}"></script>
 <script>
     // Add Active Navigation Class Based on URL to Menu Item
     $(function () {
