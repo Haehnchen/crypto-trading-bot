@@ -3,64 +3,105 @@
 {% block title %}Backtesting | Crypto Bot{% endblock %}
 
 {% block content %}
-    <form action="/backtest/submit" method="post" class="backtest-form">
-
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-sm">
-                    <div class="form-group">
-                        <label for="form-pair">Pair</label>
-                        <select class="form-control" id="form-pair" name="pair" required>
-                            {% for pair in pairs %}
-                                <option>{{ pair }}</option>
-                            {% endfor %}
-                        </select>
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1>Backtesting</h1>
                     </div>
-
-                    <div class="form-group">
-                        <label for="form-strategies">Strategy</label>
-                        <select class="form-control" id="form-strategies" name="strategy" required>
-                            <option disabled selected value> -- select an option -- </option>
-                            {% for strategy in strategies %}
-                                <option data-options="{% if strategy.options %}{{ strategy.options|format_json|escape('html') }}{% endif %}">{{ strategy.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="form-candle-period">Candle Period</label>
-                        <select class="form-control" id="form-candle-period" name="candle_period" required>
-                            {% for period in ['1m', '5m', '15m', '1h', '4h'] %}
-                                <option value="{{ period }}" {% if period == '15m' %}selected{% endif %}>{{ period }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="form-hours">Last Hours</label>
-                        <input class="form-control" id="form-hours" name="hours" value="168" required>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="{{ '/' }}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Backtesting</li>
+                        </ol>
                     </div>
                 </div>
+            </div><!-- /.container-fluid -->
+        </section>
+        <!-- /.Content Header (Page header) -->
 
-                <div class="col-sm">
-                    <div class="form-group">
-                        <label for="form-tick-interval">Signal Tick Interval (in minutes)</label>
-                        <input class="form-control" id="form-tick-interval" name="ticker_interval" value="15" required>
-                    </div>
+        <!-- Main content -->
+        <div class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <!-- /.card-header -->
+                            <div class="card-body">
+                                <form action="{{ '/backtest/submit' }}" method="post" class="backtest-form">
 
-                    <div class="form-group">
-                        <label for="form-options">Strategy Options</label>
-                        <textarea class="form-control" id="form-options" rows="6" name="options"></textarea>
+                                    <div class="container-fluid">
+                                        <div class="row">
+                                            <div class="col-sm">
+                                                <div class="form-group">
+                                                    <label for="form-pair">Pair</label>
+                                                    <select class="form-control" id="form-pair" name="pair" required>
+                                                        {% for pair in pairs %}
+                                                            <option>{{ pair }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label for="form-strategies">Strategy</label>
+                                                    <select class="form-control" id="form-strategies" name="strategy" required>
+                                                        <option disabled selected value> -- select an option -- </option>
+                                                        {% for strategy in strategies %}
+                                                            <option data-options="{% if strategy.options %}{{ strategy.options|format_json|escape('html') }}{% endif %}">{{ strategy.name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label for="form-candle-period">Candle Period</label>
+                                                    <select class="form-control" id="form-candle-period" name="candle_period" required>
+                                                        {% for period in ['1m', '5m', '15m', '1h', '4h'] %}
+                                                            <option value="{{ period }}" {% if period == '15m' %}selected{% endif %}>{{ period }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label for="form-hours">Last Hours</label>
+                                                    <input class="form-control" id="form-hours" name="hours" value="168" required>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-sm">
+                                                <div class="form-group">
+                                                    <label for="form-tick-interval">Signal Tick Interval (in minutes)</label>
+                                                    <input class="form-control" id="form-tick-interval" name="ticker_interval" value="15" required>
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label for="form-options">Strategy Options</label>
+                                                    <textarea class="form-control" id="form-options" rows="6" name="options"></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-primary">Submit</button>
+                                    </div>
+
+                                </form>
+                            </div>
+                            <!-- /.card-body -->
+                        </div>
+                        <!-- /.card -->
                     </div>
                 </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Submit</button>
+                <!-- /.row -->
+            </div><!-- /.container-fluid -->
         </div>
+        <!-- /.content -->
+    </div>
+    <!-- /.content-wrapper -->
 
-    </form>
 {% endblock %}
 
 {% block javascript %}
-<script src="/backtest-form.js?v={{ asset_version() }}"></script>
+<script src="/js/backtest-form.js?v={{ asset_version() }}"></script>
 {% endblock %}
