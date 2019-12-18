@@ -1,72 +1,68 @@
-'use strict';
-
-let ExchangeOrder = require('../../dict/exchange_order')
+const ExchangeOrder = require('../../dict/exchange_order');
 
 module.exports = class OrderBag {
-    constructor() {
-        this.orders = {}
+  constructor() {
+    this.orders = {};
+  }
+
+  /**
+   * Force an order update only if order is "not closed" for any reason already by exchange
+   *
+   * @param order
+   */
+  triggerOrder(order) {
+    if (!(order instanceof ExchangeOrder)) {
+      throw 'Invalid order given';
     }
 
-    /**
-     * Force an order update only if order is "not closed" for any reason already by exchange
-     *
-     * @param order
-     */
-    triggerOrder(order) {
-        if (!(order instanceof ExchangeOrder)) {
-            throw 'Invalid order given'
+    // dont overwrite state closed order
+    if (order.id in this.orders && ['done', 'canceled'].includes(this.orders[order.id].status)) {
+      delete this.orders[order.id];
+      return;
+    }
+
+    this.orders[order.id] = order;
+  }
+
+  getOrders() {
+    return new Promise(resolve => {
+      const orders = [];
+
+      for (const key in this.orders) {
+        if (this.orders[key].status === 'open') {
+          orders.push(this.orders[key]);
         }
+      }
 
-        // dont overwrite state closed order
-        if (order.id in this.orders && ['done', 'canceled'].includes(this.orders[order.id].status)) {
-            delete this.orders[order.id]
-            return
-        }
+      resolve(orders);
+    });
+  }
 
-        this.orders[order.id] = order
-    }
+  findOrderById(id) {
+    return new Promise(async resolve => {
+      resolve((await this.getOrders()).find(order => order.id === id || order.id == id));
+    });
+  }
 
-    getOrders() {
-        return new Promise(resolve => {
-            let orders = []
+  getOrdersForSymbol(symbol) {
+    return new Promise(async resolve => {
+      resolve((await this.getOrders()).filter(order => order.symbol === symbol));
+    });
+  }
 
-            for (let key in this.orders){
-                if (this.orders[key].status === 'open') {
-                    orders.push(this.orders[key])
-                }
-            }
+  delete(id) {
+    delete this.orders[id];
+  }
 
-            resolve(orders)
-        })
-    }
+  set(orders) {
+    this.orders = orders;
+  }
 
-    findOrderById(id) {
-        return new Promise(async resolve => {
-            resolve((await this.getOrders()).find(order =>
-                order.id === id || order.id == id
-            ))
-        })
-    }
+  get(id) {
+    return this.orders[id];
+  }
 
-    getOrdersForSymbol(symbol) {
-        return new Promise(async resolve => {
-            resolve((await this.getOrders()).filter(order => order.symbol === symbol))
-        })
-    }
-
-    delete(id) {
-        delete this.orders[id]
-    }
-
-    set(orders) {
-        this.orders = orders
-    }
-
-    get(id) {
-        return this.orders[id]
-    }
-
-    all() {
-        return this.orders
-    }
-}
+  all() {
+    return this.orders;
+  }
+};

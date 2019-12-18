@@ -1,11 +1,9 @@
-'use strict';
-
 module.exports = class SignalHttp {
-    constructor(signalRepository) {
-        this.signalRepository = signalRepository
-    }
+  constructor(signalRepository) {
+    this.signalRepository = signalRepository;
+  }
 
-    async getSignals(since) {
-        return await this.signalRepository.getSignals(since);
-    }
+  async getSignals(since) {
+    return await this.signalRepository.getSignals(since);
+  }
 };

@@ -1,55 +1,53 @@
-'use strict';
-
-let _ = require('lodash')
+const _ = require('lodash');
 
 module.exports = class SignalResult {
-    constructor() {
-        this._debug = {}
-        this._signal = undefined
+  constructor() {
+    this._debug = {};
+    this._signal = undefined;
+  }
+
+  mergeDebug(debug) {
+    this._debug = _.merge(this._debug, debug);
+  }
+
+  setSignal(signal) {
+    if (!['long', 'short', 'close'].includes(signal)) {
+      throw `Invalid signal:${signal}`;
     }
 
-    mergeDebug(debug) {
-        this._debug = _.merge(this._debug, debug)
+    this._signal = signal;
+  }
+
+  addDebug(key, value) {
+    if (typeof key !== 'string') {
+      throw 'Invalid key';
     }
 
-    setSignal(signal) {
-        if (!['long', 'short', 'close'].includes(signal)) {
-            throw 'Invalid signal:' + signal
-        }
+    this._debug[key] = value;
+  }
 
-        this._signal = signal
-    }
+  getDebug() {
+    return this._debug;
+  }
 
-    addDebug(key, value) {
-        if (typeof key !== 'string') {
-            throw 'Invalid key'
-        }
+  getSignal() {
+    return this._signal;
+  }
 
-        this._debug[key] = value
-    }
+  static createSignal(signal, debug = {}) {
+    const result = new SignalResult();
 
-    getDebug() {
-        return this._debug
-    }
+    result.setSignal(signal);
+    result.mergeDebug(debug);
 
-    getSignal() {
-        return this._signal;
-    }
+    return result;
+  }
 
-    static createSignal(signal, debug = {}) {
-        let result = new SignalResult()
+  static createEmptySignal(debug = {}) {
+    const result = new SignalResult();
 
-        result.setSignal(signal)
-        result.mergeDebug(debug)
+    result.mergeDebug(debug);
 
-        return result
-    }
-
-    static createEmptySignal(debug = {}) {
-        let result = new SignalResult()
-
-        result.mergeDebug(debug)
-
-        return result
-    }
-}
+    return result;
+  }
+};

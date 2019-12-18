@@ -1,30 +1,28 @@
-'use strict';
-
-let Position = require('./position')
+const Position = require('./position');
 
 module.exports = class ExchangePosition {
-    constructor(exchange, position) {
-        if (!(position instanceof Position)) {
-            throw 'TypeError: invalid position';
-        }
-
-        this._exchange = exchange;
-        this._position = position;
+  constructor(exchange, position) {
+    if (!(position instanceof Position)) {
+      throw 'TypeError: invalid position';
     }
 
-    getKey() {
-        return this._exchange + this._position.symbol;
-    }
+    this._exchange = exchange;
+    this._position = position;
+  }
 
-    getExchange() {
-        return this._exchange;
-    }
+  getKey() {
+    return this._exchange + this._position.symbol;
+  }
 
-    getPosition() {
-        return this._position;
-    }
+  getExchange() {
+    return this._exchange;
+  }
 
-    getSymbol() {
-        return this._position.symbol;
-    }
+  getPosition() {
+    return this._position;
+  }
+
+  getSymbol() {
+    return this._position.symbol;
+  }
 };

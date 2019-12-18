@@ -1,7 +1,5 @@
-'use strict';
-
 module.exports = class StopLoss {
-    constructor(target) {
-        this.target = target
-    }
-}
+  constructor(target) {
+    this.target = target;
+  }
+};

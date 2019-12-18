@@ -42,8 +42,6 @@
     "queue-promise": "^1.3.0",
     "request": "^2.88.0",
     "sendmail": "^1.4.1",
-    "sqlite3": "^4.0.3",
-    "sqlite3-transactions": "0.0.5",
     "talib": "^1.0.5",
     "technicalindicators": "^2.0.9",
     "telegraf": "^3.29.0",
@@ -82,6 +80,21 @@
   "scripts": {
     "start": "node index.js trade",
     "postinstall": "patch-package",
-    "test": "mocha 'test/**/*.test.js'"
+    "test": "mocha 'test/**/*.test.js'",
+    "setup": "pm2 deploy ecosystem.config.js production setup",
+    "deploy": "pm2 deploy ecosystem.config.js production"
+  },
+  "devDependencies": {
+    "eslint": "^6.7.2",
+    "eslint-config-airbnb": "^18.0.1",
+    "eslint-config-node": "^4.0.0",
+    "eslint-config-prettier": "^6.7.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-prettier": "^3.1.1",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-react": "^7.17.0",
+    "prettier": "^1.19.1"
   }
 }

@@ -1,9 +1,7 @@
-'use strict';
-
 module.exports = class TickerEvent {
-    constructor(exchange, symbol, ticker) {
-        this.exchange = exchange;
-        this.symbol = symbol;
-        this.ticker = ticker;
-    }
+  constructor(exchange, symbol, ticker) {
+    this.exchange = exchange;
+    this.symbol = symbol;
+    this.ticker = ticker;
+  }
 };

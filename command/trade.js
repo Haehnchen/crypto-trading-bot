@@ -1,13 +1,10 @@
-'use strict';
-
-let services = require('../modules/services')
+const services = require('../modules/services');
 
 module.exports = class TradeCommand {
-    constructor() {
-    }
+  constructor() {}
 
-    execute() {
-        services.createTradeInstance().start()
-        services.createWebserverInstance().start()
-    }
+  execute() {
+    services.createTradeInstance().start();
+    services.createWebserverInstance().start();
+  }
 };

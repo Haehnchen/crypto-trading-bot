@@ -1,25 +1,23 @@
-'use strict';
-
-let _ = require('lodash');
+const _ = require('lodash');
 
 module.exports = class TickerDatabaseListener {
-    constructor(tickerRepository) {
-        this.trottle = {}
+  constructor(tickerRepository) {
+    this.trottle = {};
 
-        setInterval(async () => {
-            let tickers = Object.values(this.trottle)
-            this.trottle = {}
+    setInterval(async () => {
+      const tickers = Object.values(this.trottle);
+      this.trottle = {};
 
-            if (tickers.length > 0) {
-                for (let chunk of _.chunk(tickers, 100)) {
-                    await tickerRepository.insertTickers(chunk)
-                }
-            }
-        }, 1000 * 15)
-    }
+      if (tickers.length > 0) {
+        for (const chunk of _.chunk(tickers, 100)) {
+          await tickerRepository.insertTickers(chunk);
+        }
+      }
+    }, 1000 * 15);
+  }
 
-    onTicker(tickerEvent) {
-        let ticker = tickerEvent.ticker
-        this.trottle[ticker.symbol + ticker.exchange] = ticker
-    }
+  onTicker(tickerEvent) {
+    const { ticker } = tickerEvent;
+    this.trottle[ticker.symbol + ticker.exchange] = ticker;
+  }
 };

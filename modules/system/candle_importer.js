@@ -1,67 +1,64 @@
-'use strict';
-
-let _ = require('lodash')
+const _ = require('lodash');
 
 module.exports = class CandleImporter {
-    constructor(candlestickRepository) {
-        this.candlestickRepository = candlestickRepository
-        this.trottle = {}
-        this.promises = []
+  constructor(candlestickRepository) {
+    this.candlestickRepository = candlestickRepository;
+    this.trottle = {};
+    this.promises = [];
 
-        setInterval(async () => {
-            let candles = Object.values(this.trottle)
-            this.trottle = {}
+    setInterval(async () => {
+      const candles = Object.values(this.trottle);
+      this.trottle = {};
 
-            let promises = this.promises.slice()
-            this.promises = []
+      const promises = this.promises.slice();
+      this.promises = [];
 
-            // on init we can have a lot or REST api we can have a lot of candles
-            // reduce database locking time by split them
-            if (candles.length > 0) {
-                for (let chunk of _.chunk(candles, 1000)) {
-                    await this.insertCandles(chunk)
-                }
-            }
-
-            promises.forEach(resolve => {
-                resolve()
-            })
-
-        }, 1000 * 5)
-    }
-
-    async insertCandles(candles) {
-        return this.candlestickRepository.insertCandles(candles)
-    }
-
-    /**
-     * We have spikes in each exchange on possible every full minute, collect them for a time range the candles and fire them at once
-     *
-     * @param candles
-     * @returns {Promise<void>}
-     */
-    async insertThrottledCandles(candles) {
-        for (let candle of candles) {
-            this.trottle[candle.exchange + candle.symbol + candle.period + candle.time] = candle
+      // on init we can have a lot or REST api we can have a lot of candles
+      // reduce database locking time by split them
+      if (candles.length > 0) {
+        for (const chunk of _.chunk(candles, 1000)) {
+          await this.insertCandles(chunk);
         }
+      }
 
-        const {promise, resolve} = this.getPromise();
+      promises.forEach(resolve => {
+        resolve();
+      });
+    }, 1000 * 5);
+  }
 
-        this.promises.push(resolve)
+  async insertCandles(candles) {
+    return this.candlestickRepository.insertCandles(candles);
+  }
 
-        return promise
+  /**
+   * We have spikes in each exchange on possible every full minute, collect them for a time range the candles and fire them at once
+   *
+   * @param candles
+   * @returns {Promise<void>}
+   */
+  async insertThrottledCandles(candles) {
+    for (const candle of candles) {
+      this.trottle[candle.exchange + candle.symbol + candle.period + candle.time] = candle;
     }
 
-    /**
-     * @private
-     */
-    getPromise() {
-        let resolve;
+    const { promise, resolve } = this.getPromise();
 
-        const promise = new Promise(res => {
-            resolve = res;
-        });
+    this.promises.push(resolve);
 
-        return { promise, resolve};
-    }
-}
+    return promise;
+  }
+
+  /**
+   * @private
+   */
+  getPromise() {
+    let resolve;
+
+    const promise = new Promise(res => {
+      resolve = res;
+    });
+
+    return { promise, resolve };
+  }
+};

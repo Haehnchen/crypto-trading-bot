@@ -1,18 +1,14 @@
-'use strict';
-
 /**
  * An dummy exchange
  *
  * @type {module.Noop}
  */
 module.exports = class Noop {
-    constructor() {
-    }
+  constructor() {}
 
-    start(config, symbols) {
-    }
+  start(config, symbols) {}
 
-    getName() {
-        return 'noop'
-    }
-}
+  getName() {
+    return 'noop';
+  }
+};

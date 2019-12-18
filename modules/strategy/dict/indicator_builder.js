@@ -1,26 +1,24 @@
-'use strict';
-
 module.exports = class IndicatorBuilder {
-    constructor() {
-        this.indicators = {};
+  constructor() {
+    this.indicators = {};
+  }
+
+  add(key, indicator, period, options) {
+    this.indicators[key] = {
+      indicator: indicator,
+      key: key,
+      period: period,
+      options: options || {}
+    };
+  }
+
+  all() {
+    const indicators = [];
+
+    for (const key in this.indicators) {
+      indicators.push(this.indicators[key]);
     }
 
-    add(key, indicator, period , options) {
-        this.indicators[key] = {
-            'indicator': indicator,
-            'key': key,
-            'period': period,
-            'options': options || {},
-        }
-    }
-
-    all() {
-        let indicators = []
-
-        for (let key in this.indicators) {
-            indicators.push(this.indicators[key])
-        }
-
-        return indicators
-    }
-}
+    return indicators;
+  }
+};
