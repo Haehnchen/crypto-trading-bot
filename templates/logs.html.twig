@@ -3,51 +3,89 @@
 {% block title %}Logs | Crypto Bot{% endblock %}
 
 {% block content %}
-    <div class="container-fluid">
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1>Logs</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="{{ '/' }}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Logs</li>
+                        </ol>
+                    </div>
+                </div>
+            </div><!-- /.container-fluid -->
+        </section>
+        <!-- /.Content Header (Page header) -->
 
-        <strong>Filters</strong>
-        <form method="get">
+        <!-- Main content -->
+        <div class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <strong>Filters</strong>
+                                <form method="get">
 
-            <ul class="list-inline">
-                <li class="list-inline-item">Exclude:</li>
-                {% for key,level in levels %}
-                    <li class="list-inline-item">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" name="exclude_levels[]" value="{{ level }}" id="level_{{ index }}" onChange="this.form.submit()" {% if level in form.excludeLevels %}checked{% endif %}>
-                            <label class="form-check-label" for="level_{{ index }}">{{ level }}</label>
+                                    <ul class="list-inline">
+                                        <li class="list-inline-item">Exclude:</li>
+                                        {% for key,level in levels %}
+                                            <li class="list-inline-item">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input" name="exclude_levels[]" value="{{ level }}" id="level_{{ index }}" onChange="this.form.submit()" {% if level in form.excludeLevels %}checked{% endif %}>
+                                                    <label class="form-check-label" for="level_{{ index }}">{{ level }}</label>
+                                                </div>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </form>
+                            </div>
+                            <!-- /.card-header -->
+
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm table-hover">
+                                        <thead>
+                                        <tr>
+                                            <th scope="col">Level</th>
+                                            <th scope="col">Message</th>
+                                            <th scope="col">CreatedAt</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for log in logs %}
+                                            <tr>
+                                                <td>
+                                                    {% if log.level == 'debug' %}
+                                                        <span class="text-muted">{{ log.level }}</span>
+                                                    {% elseif log.level == 'info' %}
+                                                        <span class="text-info">{{ log.level }}</span>
+                                                    {% elseif log.level == 'error' %}
+                                                        <span class="text-danger"><strong>{{ log.level }}</strong></span>
+                                                    {% endif %}
+                                                </td>
+                                                <td style="word-break: break-all;">{{ log.message|escape('html') }}</td>
+                                                <td style="white-space: nowrap">{{ log.created_at|date('y-m-d H:i:s') }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- /.card-body -->
                         </div>
-                    </li>
-                {% endfor %}
-            </ul>
-        </form>
-
-        <div class="table-responsive">
-            <table class="table table-bordered table-sm table-hover">
-                <thead>
-                <tr>
-                    <th scope="col">Level</th>
-                    <th scope="col">Message</th>
-                    <th scope="col">CreatedAt</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for log in logs %}
-                    <tr>
-                        <td>
-                            {% if log.level == 'debug' %}
-                                <span class="text-muted">{{ log.level }}</span>
-                            {% elseif log.level == 'info' %}
-                                <span class="text-info">{{ log.level }}</span>
-                            {% elseif log.level == 'error' %}
-                                <span class="text-danger"><strong>{{ log.level }}</strong></span>
-                            {% endif %}
-                        </td>
-                        <td style="word-break: break-all;">{{ log.message|escape('html') }}</td>
-                        <td style="white-space: nowrap">{{ log.created_at|date('y-m-d H:i:s') }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                    </div>
+                </div>
+                <!-- /.row -->
+            </div><!-- /.container-fluid -->
         </div>
+        <!-- /.content -->
     </div>
+    <!-- /.content-wrapper -->
 {% endblock %}
