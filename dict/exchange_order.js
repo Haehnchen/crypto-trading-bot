@@ -170,12 +170,17 @@ module.exports = class ExchangeOrder {
     );
   }
 
-  static createRejectedFromOrder(order) {
+  static createRejectedFromOrder(order, message = undefined) {
     let { side } = order;
     if (order.side === 'long') {
       side = 'buy';
     } else if (order.side === 'short') {
       side = 'sell';
+    }
+
+    const raw = {};
+    if (message) {
+      raw.message = message;
     }
 
     return new ExchangeOrder(
@@ -187,7 +192,8 @@ module.exports = class ExchangeOrder {
       false,
       order.ourId,
       side,
-      order.type
+      order.type,
+      raw
     );
   }
 };

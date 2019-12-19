@@ -314,7 +314,7 @@ module.exports = class PairStateExecution {
         ? Order.createMarketOrder(symbol, orderSize)
         : Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, orderSize);
 
-    return await this.orderExecutor.executeOrder(exchangeName, myOrder);
+    return this.orderExecutor.executeOrder(exchangeName, myOrder);
   }
 
   async executeCloseOrder(exchangeName, symbol, orderSize, options) {

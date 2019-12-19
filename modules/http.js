@@ -15,7 +15,8 @@ module.exports = class Http {
     pairsHttp,
     logsHttp,
     candleExportHttp,
-    candleImporter
+    candleImporter,
+    ordersHttp
   ) {
     this.systemUtil = systemUtil;
     this.ta = ta;
@@ -26,6 +27,7 @@ module.exports = class Http {
     this.logsHttp = logsHttp;
     this.candleExportHttp = candleExportHttp;
     this.candleImporter = candleImporter;
+    this.ordersHttp = ordersHttp;
   }
 
   start() {
@@ -233,6 +235,84 @@ module.exports = class Http {
       }
 
       res.redirect('/trades');
+    });
+
+    app.get('/orders', async (req, res) => {
+      res.render('../templates/orders/index.html.twig', {
+        pairs: this.ordersHttp.getPairs()
+      });
+    });
+
+    app.get('/orders/:pair', async (req, res) => {
+      const { pair } = req.params;
+      const tradingview = pair.split('.');
+
+      const ticker = this.ordersHttp.getTicker(pair);
+
+      res.render('../templates/orders/orders.html.twig', {
+        pair: pair,
+        pairs: this.ordersHttp.getPairs(),
+        orders: this.ordersHttp.getOrders(pair),
+        ticker: ticker,
+        tradingview: `${tradingview[0]}:${tradingview[1]}`
+          .replace('-', '')
+          .replace('coinbase_pro', 'coinbase')
+          .toUpperCase(),
+        form: {
+          price: ticker ? ticker.bid : undefined
+        }
+      });
+    });
+
+    app.post('/orders/:pair', async (req, res) => {
+      const { pair } = req.params;
+      const tradingview = pair.split('.');
+
+      const ticker = this.ordersHttp.getTicker(pair);
+      const form = req.body;
+
+      let success = true;
+      let message;
+      let result;
+
+      try {
+        result = await this.ordersHttp.createOrder(pair, form);
+        message = JSON.stringify(result);
+
+        if (result.shouldCancelOrderProcess()) {
+          success = false;
+        }
+      } catch (e) {
+        success = false;
+        message = String(e);
+      }
+
+      res.render('../templates/orders/orders.html.twig', {
+        pair: pair,
+        pairs: this.ordersHttp.getPairs(),
+        orders: this.ordersHttp.getOrders(pair),
+        ticker: ticker,
+        form: form,
+        tradingview: `${tradingview[0]}:${tradingview[1]}`
+          .replace('-', '')
+          .replace('coinbase_pro', 'coinbase')
+          .toUpperCase(),
+        alert: {
+          title: success ? 'Order Placed' : 'Place Error',
+          type: success ? 'success' : 'danger',
+          message: message
+        }
+      });
+    });
+
+    app.get('/orders/:pair/cancel/:id', async (req, res) => {
+      const foo = await this.ordersHttp.cancel(req.params.pair, req.params.id);
+      res.redirect(`/orders/${req.params.pair}`);
+    });
+
+    app.get('/orders/:pair/cancel-all', async (req, res) => {
+      await this.ordersHttp.cancelAll(req.params.pair);
+      res.redirect(`/orders/${req.params.pair}`);
     });
 
     app.get('/trades', async (req, res) => {
