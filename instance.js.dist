@@ -2,6 +2,12 @@ var c = module.exports = {}
 
 c.symbols = []
 
+// FTX: init helper
+// const InstanceUtil = require('./utils/instance_util');
+// c.init = async () => {
+//     c.symbols.push(...(await InstanceUtil.ftxInitPerp()))
+// }
+
 /*
 // external loading; lazy init
 c.init = () => {

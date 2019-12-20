@@ -122,7 +122,7 @@ module.exports = class Ftx {
         const data = JSON.parse(event.data);
 
         if (data.type === 'subscribed') {
-          logger.debug(`FTX: subscribed to channel: ${data.channel}`);
+          logger.debug(`FTX: subscribed to channel: ${data.channel} - ${event.data}`);
           return;
         }
         if (data.type === 'error') {
