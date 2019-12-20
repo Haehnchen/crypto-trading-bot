@@ -61,6 +61,8 @@ const ExchangeCandleCombine = require('../modules/exchange/exchange_candle_combi
 const CandleExportHttp = require('../modules/system/candle_export_http');
 const CandleImporter = require('../modules/system/candle_importer');
 
+const OrdersHttp = require('../modules/orders/orders_http');
+
 let db;
 let instances;
 let config;
@@ -107,6 +109,7 @@ let exchangeCandleCombine;
 let candleExportHttp;
 let exchangePositionWatcher;
 let tickerRepository;
+let ordersHttp;
 
 module.exports = {
   boot: async function() {
@@ -357,7 +360,8 @@ module.exports = {
       this.getHttpPairs(),
       this.getLogsHttp(),
       this.getCandleExportHttp(),
-      this.getCandleImporter()
+      this.getCandleImporter(),
+      this.getOrdersHttp()
     );
   },
 
@@ -514,6 +518,14 @@ module.exports = {
     }
 
     return (candleExportHttp = new CandleExportHttp(this.getCandlestickRepository()));
+  },
+
+  getOrdersHttp: function() {
+    if (ordersHttp) {
+      return ordersHttp;
+    }
+
+    return (ordersHttp = new OrdersHttp(this.getBacktest(), this.getTickers(), this.getOrderExecutor(), this.getExchangeManager()));
   },
 
   getExchangeCandleCombine: function() {

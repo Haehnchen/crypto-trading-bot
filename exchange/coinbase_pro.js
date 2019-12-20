@@ -524,7 +524,7 @@ module.exports = class CoinbasePro {
           e.message.toLowerCase().includes('size is too accurate') ||
           e.message.toLowerCase().includes('size is too small'))
       ) {
-        return ExchangeOrder.createRejectedFromOrder(order);
+        return ExchangeOrder.createRejectedFromOrder(order, e.message);
       }
 
       return;

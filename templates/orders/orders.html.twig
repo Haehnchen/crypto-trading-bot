@@ -1,0 +1,145 @@
+{% extends './layout.html.twig' %}
+
+{% block page_content %}
+    <div class="col-md-5">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Order - {{ pair }}</h3>
+            </div>
+
+            <form action="/orders/{{ pair|url_encode }}" method="post" role="form">
+                <div class="card-body">
+                    {% if alert is defined %}
+                        {% include '../components/alert.html.twig' with {'alert': alert} %}
+                    {% endif %}
+
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Price" aria-label="Price" name="price" aria-describedby="basic-addon2" value="{{ form.price|default }}">
+                            <div class="input-group-append percent-input-group">
+                                <button class="btn btn-outline-secondary" type="button" value="0.5">+0.5%</button>
+                                <button class="btn btn-outline-secondary" type="button" value="1">+1%</button>
+                                <button class="btn btn-outline-secondary" type="button" value="-0.5">-0.5%</button>
+                                <button class="btn btn-outline-secondary" type="button" value="-1">-1%</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row form-group-amount" data-asset-price="{{ form.price|default }}">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="amount">Amount (Asset)</label>
+                                <input type="text" class="form-control" id="amount" aria-label="Amount" name="amount" aria-describedby="basic-addon2" value="{{ form.amount|default }}">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="amount">Amount (Currency)</label>
+                                <input type="text" class="form-control" id="amount_currency" aria-label="Amount" name="amount_currency" aria-describedby="basic-addon2" value="{{ form.amount_currency|default }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-success" name="side" value="long"><i class="fas fa-shopping-cart"></i> Buy</button>
+                    &nbsp;
+                    <button type="submit" class="btn btn-danger" name="side" value="short"><i class="far fa-trash-alt"></i> Sell</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>{% if ticker is defined %}{{ ticker.ask|price_format }} / {{ ticker.bid|price_format }}{% else %}{% endif %}</h3>
+                <p>Price{% if ticker is defined %} - {{ ticker.createdAt|date('y-m-d H:i:s') }}{% endif %}</p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-bag"></i>
+            </div>
+        </div>
+
+        {% if orders|default([])|length > 0 %}
+            <div class="card">
+                <div class="card-header border-0">
+                    <h3 class="card-title">Orders</h3>
+                    <div class="card-tools">
+                        <a href="/orders/{{ pair|url_encode }}/cancel-all" class="btn btn-tool btn-sm" title="Cancel All">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-striped table-valign-middle">
+                        <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Price</th>
+                            <th>Amount</th>
+                            <th>Side</th>
+                            <th>Cancel</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for order in orders %}
+                            <tr>
+                                <td>{{ order.type }}</td>
+                                <td>{{ order.price|price_format }}</td>
+                                <td>{{ order.amount }}</td>
+                                <td>
+                                    {% if order.side == 'buy' %}
+                                        <i class="fas fa-chevron-circle-up text-success"></i>
+                                    {% elseif order.side == 'sell' %}
+                                        <i class="fas fa-chevron-circle-down text-danger"></i>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/orders/{{ pair|url_encode }}/cancel/{{ order.id|url_encode }}" class="btn btn-tool btn-sm" title="Cancel">
+                                        <i class="fas fa-window-close text-dark"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card card-primary">
+            <div class="card-body">
+                <div id="tradingview" style="width: 100%; height: 400px"></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+<script type="text/javascript" src="/js/orders.js"></script>
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+
+  <script type="text/javascript">
+  new TradingView.widget(
+    {
+      "autosize": true,
+      "symbol": "{{ tradingview }}",
+            "interval": "15",
+            "theme": "Light",
+            "style": "60",
+            "locale": "en",
+            "toolbar_bg": "#f1f3f6",
+            "enable_publishing": false,
+            "allow_symbol_change": true,
+            "container_id": "tradingview",
+            "studies": [
+                "BB@tv-basicstudies",
+                "MACD@tv-basicstudies",
+                "MAExp@tv-basicstudies",
+                "RSI@tv-basicstudies",
+            ],
+        }
+    );
+</script>
+{% endblock javascript %}
