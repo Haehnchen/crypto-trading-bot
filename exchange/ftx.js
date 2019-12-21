@@ -1,18 +1,11 @@
 const WebSocket = require('ws');
-const querystring = require('querystring');
 const ccxt = require('ccxt');
 const moment = require('moment');
-const request = require('request');
 const crypto = require('crypto');
-const _ = require('lodash');
-const Candlestick = require('./../dict/candlestick');
 const Ticker = require('./../dict/ticker');
 const TickerEvent = require('./../event/ticker_event');
-const Orderbook = require('./../dict/orderbook');
-const Order = require('./../dict/order');
 const ExchangeCandlestick = require('../dict/exchange_candlestick');
 
-const Resample = require('./../utils/resample');
 const CandlesFromTrades = require('./utils/candles_from_trades');
 
 const Position = require('../dict/position');
