@@ -49,6 +49,22 @@ module.exports = class Order {
     );
   }
 
+  static createStopOrder(symbol, side, price, amount, options) {
+    if (side !== 'long' && side !== 'short') {
+      throw `Invalid order side:${side} - ${JSON.stringify([symbol, side, price, amount, options])}`;
+    }
+
+    return new Order(
+      Math.round(new Date().getTime().toString() * Math.random()),
+      symbol,
+      side,
+      price,
+      amount,
+      'stop',
+      options
+    );
+  }
+
   static createLimitPostOnlyOrderAutoSide(symbol, price, amount, options) {
     return new Order(
       Math.round(new Date().getTime().toString() * Math.random()),

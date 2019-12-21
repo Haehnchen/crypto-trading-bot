@@ -259,7 +259,8 @@ module.exports = class Http {
           .replace('coinbase_pro', 'coinbase')
           .toUpperCase(),
         form: {
-          price: ticker ? ticker.bid : undefined
+          price: ticker ? ticker.bid : undefined,
+          type: 'limit'
         }
       });
     });
@@ -279,7 +280,7 @@ module.exports = class Http {
         result = await this.ordersHttp.createOrder(pair, form);
         message = JSON.stringify(result);
 
-        if (result.shouldCancelOrderProcess()) {
+        if (!result || result.shouldCancelOrderProcess()) {
           success = false;
         }
       } catch (e) {

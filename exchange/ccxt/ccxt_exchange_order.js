@@ -30,6 +30,7 @@ module.exports = class CcxtExchangeOrder {
 
     let promise;
     switch (order.type) {
+      case 'stop':
       case 'limit':
         promise = this.ccxtClient.createOrder(order.symbol, order.type, side, Math.abs(order.amount), order.price);
         break;

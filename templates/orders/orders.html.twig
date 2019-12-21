@@ -13,14 +13,28 @@
                         {% include '../components/alert.html.twig' with {'alert': alert} %}
                     {% endif %}
 
-                    <div class="form-group">
-                        <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Price" aria-label="Price" name="price" aria-describedby="basic-addon2" value="{{ form.price|default }}">
-                            <div class="input-group-append percent-input-group">
-                                <button class="btn btn-outline-secondary" type="button" value="0.5">+0.5%</button>
-                                <button class="btn btn-outline-secondary" type="button" value="1">+1%</button>
-                                <button class="btn btn-outline-secondary" type="button" value="-0.5">-0.5%</button>
-                                <button class="btn btn-outline-secondary" type="button" value="-1">-1%</button>
+                    <div class="row">
+                        <div class="col-8">
+                            <div class="form-group">
+                                <label for="price">Price</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="price" placeholder="Price" aria-label="Price" name="price" aria-describedby="basic-addon2" value="{{ form.price|default }}">
+                                    <div class="input-group-append percent-input-group">
+                                        <button class="btn btn-outline-secondary" type="button" value="0.5">+0.5%</button>
+                                        <button class="btn btn-outline-secondary" type="button" value="1">+1%</button>
+                                        <button class="btn btn-outline-secondary" type="button" value="-0.5">-0.5%</button>
+                                        <button class="btn btn-outline-secondary" type="button" value="-1">-1%</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label for="order_type">Type</label>
+                                <select class="form-control" id="order_type" name="type">
+                                    <option value="limit" {% if form.type is not defined or form.type|default == 'limit' %}selected{% endif %}>limit</option>
+                                    <option value="stop" {% if form.type|default == 'stop' %}selected{% endif %}>stop</option>
+                                </select>
                             </div>
                         </div>
                     </div>

@@ -55,7 +55,12 @@ module.exports = class OrdersHttp {
       orderPrice = price;
     }
 
-    const ourOrder = Order.createLimitPostOnlyOrder(res[1], order.side, orderPrice, orderAmount);
+    let ourOrder;
+    if (order.type && order.type === 'stop') {
+      ourOrder = Order.createStopOrder(res[1], order.side, orderPrice, orderAmount);
+    } else {
+      ourOrder = Order.createLimitPostOnlyOrder(res[1], order.side, orderPrice, orderAmount);
+    }
 
     return this.orderExecutor.executeOrder(res[0], ourOrder);
   }
