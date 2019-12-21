@@ -46,13 +46,13 @@ module.exports = class OrdersHttp {
     let orderAmount = parseFloat(order.amount);
     const amount = this.exchangeManager.get(res[0]).calculateAmount(orderAmount, res[1]);
     if (amount) {
-      orderAmount = amount;
+      orderAmount = parseFloat(amount);
     }
 
     let orderPrice = parseFloat(order.price);
     const price = this.exchangeManager.get(res[0]).calculatePrice(orderPrice, res[1]);
     if (price) {
-      orderPrice = price;
+      orderPrice = parseFloat(price);
     }
 
     let ourOrder;
