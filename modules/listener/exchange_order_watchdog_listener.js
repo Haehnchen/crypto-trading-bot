@@ -191,7 +191,7 @@ module.exports = class ExchangeOrderWatchdogListener {
         try {
           await exchange.updateOrder(order.id, { amount: order.amount });
         } catch (e) {
-          logger.info(
+          logger.error(
             `Risk Reward: order update error: ${JSON.stringify({
               order: order,
               symbol: position.symbol,
