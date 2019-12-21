@@ -111,39 +111,50 @@ module.exports = class ExchangeOrderWatchdogListener {
         })}`
       );
 
+      // update
       if (orderChange.id) {
-        // update
-        exchange.updateOrder(orderChange.id, {
-          amount: orderChange.amount
-        });
-      } else {
-        // create
-
-        let price = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss);
-        if (!price) {
-          console.log('Stop loss: auto price skipping');
-          return;
-        }
-
-        price = exchange.calculatePrice(price, position.symbol);
-        if (!price) {
-          console.log('Stop loss: auto price skipping');
-          return;
-        }
-
-        const order = Order.createStopLossOrder(position.symbol, price, orderChange.amount);
-
         try {
-          await exchange.order(order);
+          await exchange.updateOrder(orderChange.id, {
+            amount: orderChange.amount
+          });
         } catch (e) {
-          const msg = `Stoploss create${JSON.stringify({
+          const msg = `Stoploss update error${JSON.stringify({
             error: e,
-            order: order
+            orderChange: orderChange
           })}`;
 
           logger.error(msg);
           console.error(msg);
         }
+
+        return;
+      }
+
+      // create
+      let price = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss);
+      if (!price) {
+        console.log('Stop loss: auto price skipping');
+        return;
+      }
+
+      price = exchange.calculatePrice(price, position.symbol);
+      if (!price) {
+        console.log('Stop loss: auto price skipping');
+        return;
+      }
+
+      const order = Order.createStopLossOrder(position.symbol, price, orderChange.amount);
+
+      try {
+        await exchange.order(order);
+      } catch (e) {
+        const msg = `Stoploss create${JSON.stringify({
+          error: e,
+          order: order
+        })}`;
+
+        logger.error(msg);
+        console.error(msg);
       }
     });
   }

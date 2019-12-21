@@ -6,7 +6,8 @@ module.exports = {
   },
 
   syncStopLossOrder: (position, orders) => {
-    if (orders.filter(order => order.type === ExchangeOrder.TYPE_STOP).length === 0) {
+    const stopOrders = orders.filter(order => order.type === ExchangeOrder.TYPE_STOP);
+    if (stopOrders.length === 0) {
       return [
         {
           amount: Math.abs(position.amount)
@@ -14,11 +15,16 @@ module.exports = {
       ];
     }
 
-    const stopOrder = orders.find(order => order.type === ExchangeOrder.TYPE_STOP);
-
+    const stopOrder = stopOrders[0];
     const difference = Math.abs(position.amount) - Math.abs(stopOrder.amount);
 
-    if (difference !== 0) {
+    if (difference === 0) {
+      return [];
+    }
+
+    // only update if we 1 % out of range; to get not unit amount lot size issues
+    const differencePercent = Math.abs(((Math.abs(position.amount) - Math.abs(difference)) / position.amount) * 100);
+    if (differencePercent >= 1) {
       return [
         {
           id: stopOrder.id,
