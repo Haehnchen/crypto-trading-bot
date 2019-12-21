@@ -503,14 +503,7 @@ module.exports = class Binance {
       return;
     }
 
-    const myOrders = Binance.createOrders(...openOrders);
-
-    const orders = {};
-    myOrders.forEach(o => {
-      orders[o.id] = o;
-    });
-
-    this.orderbag.set(orders);
+    this.orderbag.set(Binance.createOrders(...openOrders));
   }
 
   async syncBalances() {
