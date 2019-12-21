@@ -171,12 +171,38 @@ module.exports = class ExchangeOrderWatchdogListener {
 
     orderChanges.forEach(async order => {
       logger.info(
-        `Risk Reward: order update: ${JSON.stringify({
+        `Risk Reward: order change: ${JSON.stringify({
           order: order,
           symbol: position.symbol,
           exchange: exchange.getName()
         })}`
       );
+
+      // update
+      if (order.id && order.id.length > 0) {
+        logger.info(
+          `Risk Reward: order update: ${JSON.stringify({
+            order: order,
+            symbol: position.symbol,
+            exchange: exchange.getName()
+          })}`
+        );
+
+        try {
+          await exchange.updateOrder(order.id, { amount: order.amount });
+        } catch (e) {
+          logger.info(
+            `Risk Reward: order update error: ${JSON.stringify({
+              order: order,
+              symbol: position.symbol,
+              exchange: exchange.getName(),
+              message: e
+            })}`
+          );
+        }
+
+        return;
+      }
 
       const price = exchange.calculatePrice(order.price, order.symbol);
       if (!price) {
@@ -193,6 +219,14 @@ module.exports = class ExchangeOrderWatchdogListener {
 
       // we need to normalize the price here: more general solution?
       order.price = price;
+
+      logger.info(
+        `Risk Reward: order create: ${JSON.stringify({
+          order: order,
+          symbol: position.symbol,
+          exchange: exchange.getName()
+        })}`
+      );
 
       await this.orderExecutor.executeOrder(exchange.getName(), order);
     });

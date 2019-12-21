@@ -58,7 +58,7 @@ describe('#risk reward order calculation', function() {
     assert.deepEqual(
       await calculator.syncRatioRewardOrders(
         position,
-        [new ExchangeOrder('foobar', 'BTUSD', 'open', 1337, 3, false, 'our_id', 'buy', 'stop')],
+        [new ExchangeOrder('foobar', 'BTUSD', 'open', 1337, 0.15, false, 'our_id', 'buy', 'stop')],
         { stop_percent: 0.5, target_percent: 0.25 }
       ),
       {
@@ -73,7 +73,7 @@ describe('#risk reward order calculation', function() {
     assert.deepEqual(
       await calculator.syncRatioRewardOrders(
         position,
-        [new ExchangeOrder('foobar', 'BTUSD', 'open', 1337, 3, false, 'our_id', 'buy', 'limit')],
+        [new ExchangeOrder('foobar', 'BTUSD', 'open', 1337, 0.15, false, 'our_id', 'buy', 'limit')],
         { stop_percent: 0.5, target_percent: 0.25 }
       ),
       {
@@ -83,6 +83,44 @@ describe('#risk reward order calculation', function() {
         }
       }
     );
+  });
+
+  it('update risk reward ratio changeset orders (long)', async () => {
+    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+
+    const position = new Position('BTCUSD', 'long', 0.15, 0, new Date(), 6501.76);
+    const orders = [
+      new ExchangeOrder(
+        '12345-12345',
+        undefined,
+        undefined,
+        6601.76,
+        0.2,
+        undefined,
+        undefined,
+        'sell',
+        ExchangeOrder.TYPE_STOP
+      ),
+      new ExchangeOrder(
+        '54321-54321',
+        undefined,
+        undefined,
+        6401.76,
+        0.2,
+        undefined,
+        undefined,
+        'buy',
+        ExchangeOrder.TYPE_LIMIT
+      )
+    ];
+
+    const result = await calculator.syncRatioRewardOrders(position, orders, {
+      stop_percent: 0.5,
+      target_percent: 0.25
+    });
+
+    assert.deepEqual(result.stop, { amount: 0.15, id: '12345-12345' });
+    assert.deepEqual(result.target, { amount: 0.15, id: '54321-54321' });
   });
 
   it('create risk reward ratio changeset orders (short)', async () => {
@@ -99,7 +137,7 @@ describe('#risk reward order calculation', function() {
     assert.deepEqual(
       await calculator.syncRatioRewardOrders(
         position,
-        [new ExchangeOrder('foobar', 'BTUSD', 'open', 1337, 3, false, 'our_id', 'buy', 'stop')],
+        [new ExchangeOrder('foobar', 'BTUSD', 'open', 1337, 0.15, false, 'our_id', 'buy', 'stop')],
         { stop_percent: 0.5, target_percent: 0.25 }
       ),
       {
@@ -114,7 +152,7 @@ describe('#risk reward order calculation', function() {
     assert.deepEqual(
       await calculator.syncRatioRewardOrders(
         position,
-        [new ExchangeOrder('foobar', 'BTUSD', 'open', 1337, 3, false, 'our_id', 'buy', 'limit')],
+        [new ExchangeOrder('foobar', 'BTUSD', 'open', 1337, 0.15, false, 'our_id', 'buy', 'limit')],
         { stop_percent: 0.5, target_percent: 0.25 }
       ),
       {
@@ -124,6 +162,44 @@ describe('#risk reward order calculation', function() {
         }
       }
     );
+  });
+
+  it('update risk reward ratio changeset orders (short)', async () => {
+    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+
+    const position = new Position('BTCUSD', 'short', -0.15, 0, new Date(), 6501.76);
+    const orders = [
+      new ExchangeOrder(
+        '12345-12345',
+        undefined,
+        undefined,
+        6401.76,
+        0.01,
+        undefined,
+        undefined,
+        'sell',
+        ExchangeOrder.TYPE_STOP
+      ),
+      new ExchangeOrder(
+        '54321-54321',
+        undefined,
+        undefined,
+        6601.76,
+        0.9,
+        undefined,
+        undefined,
+        'buy',
+        ExchangeOrder.TYPE_LIMIT
+      )
+    ];
+
+    const result = await calculator.syncRatioRewardOrders(position, orders, {
+      stop_percent: 0.5,
+      target_percent: 0.25
+    });
+
+    assert.deepEqual(result.stop, { amount: 0.15, id: '12345-12345' });
+    assert.deepEqual(result.target, { amount: 0.15, id: '54321-54321' });
   });
 
   it('create risk reward ratio orders (long)', async () => {
