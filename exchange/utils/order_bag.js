@@ -55,7 +55,13 @@ module.exports = class OrderBag {
   }
 
   set(orders) {
-    this.orders = orders;
+    const ourOrder = {};
+
+    orders.forEach(o => {
+      ourOrder[o.id] = o;
+    });
+
+    this.orders = ourOrder;
   }
 
   get(id) {

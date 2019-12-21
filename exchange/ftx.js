@@ -53,7 +53,43 @@ module.exports = class Ftx {
       secret: config.secret
     }));
 
-    this.ccxtExchangeOrder = new CcxtExchangeOrder(ccxtClient, this.symbols, this.logger);
+    // conditional orders are not supported by ccxt
+    const CcxtExchangeOrderExtends = class extends CcxtExchangeOrder {
+      async cancelOrder(id) {
+        const order = await this.findOrderById(id);
+        if (order && order.type.includes(ExchangeOrder.TYPE_STOP, ExchangeOrder.TYPE_STOP_LIMIT)) {
+          let result;
+          try {
+            result = await this.ccxtClient.privateDeleteConditionalOrdersOrderId({ order_id: id });
+          } catch (e) {
+            this.logger.error(
+              `FTX: can not cancel trigger order${JSON.stringify({ message: String(e), order: order })}`
+            );
+
+            return undefined;
+          }
+
+          if (!result || !result.success) {
+            this.logger.error(`FTX: can not cancel trigger order${JSON.stringify({ response: result })}`);
+            return undefined;
+          }
+
+          this.orderbag.delete(id);
+          return ExchangeOrder.createCanceled(order);
+        }
+
+        return super.cancelOrder(id);
+      }
+    };
+
+    // stop order (trigger orders) are not supported by ccxt
+    this.ccxtExchangeOrder = new CcxtExchangeOrderExtends(ccxtClient, this.symbols, this.logger, {
+      syncOrders: async client => {
+        return CcxtUtil.createExchangeOrders(
+          (await client.privateGetConditionalOrders()).result.map(r => client.parseOrder(r))
+        );
+      }
+    });
 
     this.intervals = [];
 
@@ -273,19 +309,6 @@ module.exports = class Ftx {
     return price; // done by ccxt
   }
 
-  /**
-   * Force an order update only if order is "not closed" for any reason already by exchange
-   *
-   * @param order
-   */
-  async triggerOrder(order) {
-    if (!(order instanceof ExchangeOrder)) {
-      throw 'Invalid order given';
-    }
-
-    await this.ccxtExchangeOrder.triggerOrder(order);
-  }
-
   calculateAmount(amount, symbol) {
     return amount; // done by ccxt
   }
@@ -310,11 +333,15 @@ module.exports = class Ftx {
   async updateLeverage(symbol) {}
 
   async cancelOrder(id) {
-    return this.ccxtExchangeOrder.cancelOrder(id);
+    const result = this.ccxtExchangeOrder.cancelOrder(id);
+    await this.ccxtExchangeOrder.syncOrders();
+    return result;
   }
 
   async cancelAll(symbol) {
-    return this.ccxtExchangeOrder.cancelAll(symbol);
+    const result = this.ccxtExchangeOrder.cancelAll(symbol);
+    await this.ccxtExchangeOrder.syncOrders();
+    return result;
   }
 
   async updateOrder(id, order) {
@@ -322,7 +349,9 @@ module.exports = class Ftx {
       throw 'Invalid amount / price for update';
     }
 
-    return this.ccxtExchangeOrder.updateOrder(id, order);
+    const result = this.ccxtExchangeOrder.updateOrder(id, order);
+    await this.ccxtExchangeOrder.syncOrders();
+    return result;
   }
 
   /**

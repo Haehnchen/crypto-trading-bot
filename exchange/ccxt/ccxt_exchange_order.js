@@ -5,11 +5,12 @@ const ExchangeOrder = require('../../dict/exchange_order');
 const CcxtUtil = require('../utils/ccxt_util');
 
 module.exports = class CcxtExchangeOrder {
-  constructor(ccxtClient, symbols, logger) {
+  constructor(ccxtClient, symbols, logger, callbacks) {
     this.orderbag = new OrderBag();
     this.symbols = symbols;
     this.logger = logger;
     this.ccxtClient = ccxtClient;
+    this.callbacks = callbacks;
   }
 
   async createOrder(order) {
@@ -64,7 +65,16 @@ module.exports = class CcxtExchangeOrder {
 
   async syncOrders() {
     const result = CcxtUtil.createExchangeOrders(await this.ccxtClient.fetchOpenOrders());
-    result.forEach(order => this.triggerOrder(order));
+
+    if ('syncOrders' in this.callbacks) {
+      const custom = await this.callbacks.syncOrders(this.ccxtClient);
+
+      if (custom) {
+        result.push(...custom);
+      }
+    }
+
+    this.orderbag.set(result);
     return result;
   }
 
