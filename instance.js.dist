@@ -119,7 +119,7 @@ x.forEach((pair) => {
 
 // bitmex
 let y = [
-    'XBTUSD', 'ETHUSD', 'XBTM19', 'ETHM19', 'ADAM19', 'TRXM19', 'XRPM19'
+    'XBTUSD', 'ETHUSD', 'XBTH20', 'ETHH20', 'ADAH20', 'TRXH20', 'XRPH20'
 ]
 
 y.forEach((pair) => {
