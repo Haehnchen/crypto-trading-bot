@@ -389,4 +389,8 @@ module.exports = class Ftx {
     const positions = response.result.filter(position => position.size > 0);
     this.fullPositionsUpdate(Ftx.createPositions(positions));
   }
+
+  isInverseSymbol(symbol) {
+    return false;
+  }
 };

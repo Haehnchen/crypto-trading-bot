@@ -625,4 +625,8 @@ module.exports = class Binance {
     this.logger.info(`Binance: pairs synced: ${pairs.symbols.length}`);
     this.exchangePairs = exchangePairs;
   }
+
+  isInverseSymbol(symbol) {
+    return false;
+  }
 };

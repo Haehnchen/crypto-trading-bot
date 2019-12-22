@@ -1100,4 +1100,8 @@ module.exports = class Bybit {
   getBaseUrl() {
     return 'https://api.bybit.com';
   }
+
+  isInverseSymbol(symbol) {
+    return true;
+  }
 };

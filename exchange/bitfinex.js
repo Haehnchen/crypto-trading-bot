@@ -606,4 +606,8 @@ module.exports = class Bitfinex {
   static formatSymbol(symbol) {
     return symbol.substring(0, 1) === 't' ? symbol.substring(1) : symbol;
   }
+
+  isInverseSymbol(symbol) {
+    return false;
+  }
 };

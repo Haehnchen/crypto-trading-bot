@@ -741,7 +741,7 @@ module.exports = class Bitmex {
       const orders = JSON.parse(body);
 
       if (orders.error) {
-        logger.error(`Bitmex: Invalid cancel order  response:${order}`);
+        logger.error(`Bitmex: Invalid cancel order response:${orders}`);
         reject();
         return;
       }
@@ -1205,5 +1205,9 @@ module.exports = class Bitmex {
 
   getBaseUrl() {
     return 'https://www.bitmex.com';
+  }
+
+  isInverseSymbol(symbol) {
+    return ['XBTUSD', 'XBTUSD'].includes(symbol);
   }
 };

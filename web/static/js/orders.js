@@ -26,8 +26,8 @@ $(function() {
 
     const id = $(this).attr('id');
 
-    const scope = $(this).closest('.form-group-amount');
-    const assetPrice = scope.data('asset-price');
+    const scope = $(this).closest('form');
+    const assetPrice = scope.find('#price').val();
 
     if (id === 'amount') {
       scope.find('#amount_currency').val((value * assetPrice).toFixed(getPrecision(parseFloat(assetPrice))));

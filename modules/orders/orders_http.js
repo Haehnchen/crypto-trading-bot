@@ -43,14 +43,22 @@ module.exports = class OrdersHttp {
   async createOrder(pair, order) {
     const res = pair.split('.');
 
+    const exchangeInstance = this.exchangeManager.get(res[0]);
+
     let orderAmount = parseFloat(order.amount);
-    const amount = this.exchangeManager.get(res[0]).calculateAmount(orderAmount, res[1]);
+
+    // support inverse contracts
+    if (exchangeInstance.isInverseSymbol(res[1])) {
+      orderAmount = parseFloat(order.amount_currency);
+    }
+
+    const amount = exchangeInstance.calculateAmount(orderAmount, res[1]);
     if (amount) {
       orderAmount = parseFloat(amount);
     }
 
     let orderPrice = parseFloat(order.price);
-    const price = this.exchangeManager.get(res[0]).calculatePrice(orderPrice, res[1]);
+    const price = exchangeInstance.calculatePrice(orderPrice, res[1]);
     if (price) {
       orderPrice = parseFloat(price);
     }

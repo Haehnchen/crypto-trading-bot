@@ -700,4 +700,8 @@ module.exports = class CoinbasePro {
   getName() {
     return 'coinbase_pro';
   }
+
+  isInverseSymbol(symbol) {
+    return false;
+  }
 };
