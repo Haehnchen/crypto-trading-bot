@@ -10,8 +10,8 @@ module.exports = class Order {
     this.id = id;
     this.symbol = symbol;
     this.side = side;
-    this.price = parseFloat(price);
-    this.amount = parseFloat(amount);
+    this.price = price;
+    this.amount = amount;
     this.type = type;
     this.options = options;
   }
