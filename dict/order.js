@@ -2,10 +2,32 @@ const _ = require('lodash');
 
 /**
  * The order that should place from our side and sending to remote
- *
- * @type {module.Order}
  */
 module.exports = class Order {
+  static get SIDE_LONG() {
+    return 'long';
+  }
+
+  static get SIDE_SHORT() {
+    return 'short';
+  }
+
+  static get TYPE_LIMIT() {
+    return 'limit';
+  }
+
+  static get TYPE_STOP() {
+    return 'stop';
+  }
+
+  static get TYPE_MARKET() {
+    return 'market';
+  }
+
+  static get OPTION_POST_ONLY() {
+    return 'post_only';
+  }
+
   constructor(id, symbol, side, price, amount, type, options = {}) {
     this.id = id;
     this.symbol = symbol;
@@ -20,11 +42,43 @@ module.exports = class Order {
     return this.options.adjust_price === true;
   }
 
+  getId() {
+    return this.id;
+  }
+
+  getSymbol() {
+    return this.symbol;
+  }
+
+  isShort() {
+    return this.side === Order.SIDE_SHORT;
+  }
+
+  isLong() {
+    return this.side === Order.SIDE_LONG;
+  }
+
+  getPrice() {
+    return Math.abs(this.price);
+  }
+
+  getAmount() {
+    return Math.abs(this.amount);
+  }
+
+  getType() {
+    return this.type;
+  }
+
+  isPostOnly() {
+    return this.options && this.options.post_only === true;
+  }
+
   static createMarketOrder(symbol, amount) {
     return new Order(
       Math.round(new Date().getTime().toString() * Math.random()),
       symbol,
-      amount > 0 ? 'long' : 'short',
+      amount > 0 ? Order.SIDE_LONG : Order.SIDE_SHORT,
       amount > 0 ? 0.000001 : -0.000001, // fake prices
       amount,
       'market'
@@ -32,7 +86,7 @@ module.exports = class Order {
   }
 
   static createLimitPostOnlyOrder(symbol, side, price, amount, options) {
-    if (side !== 'long' && side !== 'short') {
+    if (![Order.SIDE_SHORT, Order.SIDE_LONG].includes(side)) {
       throw `Invalid order side:${side} - ${JSON.stringify([symbol, side, price, amount, options])}`;
     }
 
@@ -42,7 +96,7 @@ module.exports = class Order {
       side,
       price,
       amount,
-      'limit',
+      Order.TYPE_LIMIT,
       _.merge(options, {
         post_only: true
       })
@@ -50,7 +104,7 @@ module.exports = class Order {
   }
 
   static createStopOrder(symbol, side, price, amount, options) {
-    if (side !== 'long' && side !== 'short') {
+    if (![Order.SIDE_SHORT, Order.SIDE_LONG].includes(side)) {
       throw `Invalid order side:${side} - ${JSON.stringify([symbol, side, price, amount, options])}`;
     }
 
@@ -60,7 +114,7 @@ module.exports = class Order {
       side,
       price,
       amount,
-      'stop',
+      Order.TYPE_STOP,
       options
     );
   }
@@ -69,10 +123,10 @@ module.exports = class Order {
     return new Order(
       Math.round(new Date().getTime().toString() * Math.random()),
       symbol,
-      price < 0 ? 'short' : 'long',
+      price < 0 ? Order.SIDE_SHORT : Order.SIDE_LONG,
       price,
       amount,
-      'limit',
+      Order.TYPE_LIMIT,
       _.merge(options, {
         post_only: true
       })
@@ -83,7 +137,7 @@ module.exports = class Order {
     return new Order(
       Math.round(new Date().getTime().toString() * Math.random()),
       symbol,
-      price < 0 ? 'short' : 'long',
+      price < 0 ? Order.SIDE_SHORT : Order.SIDE_LONG,
       price,
       amount,
       'limit',
@@ -97,7 +151,7 @@ module.exports = class Order {
   static createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, amount, options = {}) {
     return Order.createLimitPostOnlyOrder(
       symbol,
-      amount < 0 ? 'short' : 'long',
+      amount < 0 ? Order.SIDE_SHORT : Order.SIDE_LONG,
       undefined,
       amount,
       _.merge(options, {
@@ -111,7 +165,7 @@ module.exports = class Order {
       throw 'TypeError: no Order';
     }
 
-    if (order.side !== 'long' && order.side !== 'short') {
+    if (![Order.SIDE_SHORT, Order.SIDE_LONG].includes(order.side)) {
       throw `Invalid order side:${order.side} - ${JSON.stringify(order)}`;
     }
 
@@ -119,7 +173,7 @@ module.exports = class Order {
     if (typeof amount !== 'undefined') {
       orderAmount = Math.abs(amount);
 
-      if (order.side === 'short') {
+      if (order.side === Order.SIDE_SHORT) {
         orderAmount *= -1;
       }
     }
@@ -140,7 +194,7 @@ module.exports = class Order {
       throw 'TypeError: no Order';
     }
 
-    if (order.side !== 'long' && order.side !== 'short') {
+    if (![Order.SIDE_SHORT, Order.SIDE_LONG].includes(order.side)) {
       throw `Invalid order side:${order.side} - ${JSON.stringify(order)}`;
     }
 
@@ -163,7 +217,7 @@ module.exports = class Order {
     return new Order(
       Math.round(new Date().getTime().toString() * Math.random()),
       symbol,
-      undefined,
+      price < 0 || amount < 0 ? Order.SIDE_SHORT : Order.SIDE_LONG,
       price,
       amount,
       'stop',

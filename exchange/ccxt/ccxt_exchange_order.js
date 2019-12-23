@@ -14,31 +14,25 @@ module.exports = class CcxtExchangeOrder {
   }
 
   async createOrder(order) {
-    let side;
-    switch (order.side) {
-      case 'buy':
-      case 'long':
-        side = 'buy';
-        break;
-      case 'sell':
-      case 'short':
-        side = 'sell';
-        break;
-      default:
-        throw `Not supported order side:${order.side}`;
-    }
+    const side = order.isShort() ? 'sell' : 'buy';
 
     let promise;
-    switch (order.type) {
+    switch (order.getType()) {
       case 'stop':
       case 'limit':
-        promise = this.ccxtClient.createOrder(order.symbol, order.type, side, Math.abs(order.amount), order.price);
+        promise = this.ccxtClient.createOrder(
+          order.getSymbol(),
+          order.getType(),
+          side,
+          order.getAmount(),
+          order.getPrice()
+        );
         break;
       case 'market':
-        promise = this.ccxtClient.createOrder(order.symbol, order.type, side, Math.abs(order.amount));
+        promise = this.ccxtClient.createOrder(order.getSymbol(), order.getType(), side, order.getAmount());
         break;
       default:
-        throw `Not supported order type:${order.type}`;
+        throw `Ccxt order converter unsupported order type:${order.getType()}`;
     }
 
     let placedOrder;

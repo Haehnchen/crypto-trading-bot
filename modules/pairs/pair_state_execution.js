@@ -330,7 +330,7 @@ module.exports = class PairStateExecution {
         ? Order.createMarketOrder(symbol, exchangeOrderSize)
         : Order.createCloseOrderWithPriceAdjustment(symbol, exchangeOrderSize);
 
-    return await this.orderExecutor.executeOrder(exchangeName, order);
+    return this.orderExecutor.executeOrder(exchangeName, order);
   }
 
   async onTerminate() {

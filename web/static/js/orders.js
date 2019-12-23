@@ -29,6 +29,10 @@ $(function() {
     const scope = $(this).closest('form');
     const assetPrice = scope.find('#price').val();
 
+    if (!assetPrice) {
+      return;
+    }
+
     if (id === 'amount') {
       scope.find('#amount_currency').val((value * assetPrice).toFixed(getPrecision(parseFloat(assetPrice))));
     } else {

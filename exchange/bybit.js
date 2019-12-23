@@ -1039,18 +1039,20 @@ module.exports = class Bybit {
    * @returns {{symbol: *, orderQty: *, ordType: undefined, text: string}}
    */
   static createOrderBody(order) {
-    if (!order.amount && !order.price && !order.symbol) {
+    if (!order.getAmount() && !order.getPrice() && !order.getSymbol()) {
       throw 'Invalid amount for update';
     }
 
     let orderType;
-    if (!order.type) {
+
+    const ourOrderType = order.getType();
+    if (!ourOrderType) {
       orderType = 'Limit';
-    } else if (order.type === 'limit') {
+    } else if (ourOrderType === 'limit') {
       orderType = 'Limit';
-    } else if (order.type === 'stop') {
+    } else if (ourOrderType === 'stop') {
       orderType = 'Stop';
-    } else if (order.type === 'market') {
+    } else if (ourOrderType === 'market') {
       orderType = 'Market';
     }
 
@@ -1059,13 +1061,13 @@ module.exports = class Bybit {
     }
 
     const body = {
-      symbol: order.symbol,
-      qty: Math.abs(order.amount),
+      symbol: order.getSymbol(),
+      qty: order.getAmount(),
       order_type: orderType,
       time_in_force: 'GoodTillCancel'
     };
 
-    if (order.options && order.options.post_only === true) {
+    if (order.isPostOnly()) {
       body.time_in_force = 'PostOnly';
     }
 
@@ -1078,15 +1080,15 @@ module.exports = class Bybit {
     }
 
     if (orderType === 'Stop') {
-      body.stop_px = Math.abs(order.price);
+      body.stop_px = order.getPrice();
     } else if (orderType === 'Limit') {
-      body.price = Math.abs(order.price);
+      body.price = order.getPrice();
     }
 
-    body.side = order.price < 0 ? 'Sell' : 'Buy';
+    body.side = order.isShort() ? 'Sell' : 'Buy';
 
     if (order.id) {
-      body.order_link_id = order.id;
+      body.order_link_id = order.getId();
     }
 
     // conditional stop is market

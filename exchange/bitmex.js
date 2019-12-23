@@ -6,16 +6,14 @@ const _ = require('lodash');
 const querystring = require('querystring');
 const Candlestick = require('./../dict/candlestick');
 const Ticker = require('./../dict/ticker');
-const Orderbook = require('./../dict/orderbook');
 const ExchangeCandlestick = require('../dict/exchange_candlestick');
 
-const CandlestickEvent = require('./../event/candlestick_event');
 const TickerEvent = require('./../event/ticker_event');
-const OrderbookEvent = require('./../event/orderbook_event');
 
 const resample = require('./../utils/resample');
 
 const Position = require('../dict/position');
+const Order = require('../dict/order');
 const ExchangeOrder = require('../dict/exchange_order');
 
 const orderUtil = require('../utils/order_util');
@@ -1140,18 +1138,19 @@ module.exports = class Bitmex {
    * @returns {{symbol: *, orderQty: *, ordType: undefined, text: string}}
    */
   static createOrderBody(order) {
-    if (!order.amount && !order.price && !order.symbol) {
+    if (!order.getAmount() && !order.getPrice() && !order.getSymbol()) {
       throw 'Invalid amount for update';
     }
 
     let orderType;
-    if (!order.type) {
+    var ourOrderType = order.getType();
+    if (!ourOrderType) {
       orderType = 'Limit';
-    } else if (order.type === 'limit') {
+    } else if (ourOrderType === Order.TYPE_LIMIT) {
       orderType = 'Limit';
-    } else if (order.type === 'stop') {
+    } else if (ourOrderType === Order.TYPE_STOP) {
       orderType = 'Stop';
-    } else if (order.type === 'market') {
+    } else if (ourOrderType === Order.TYPE_MARKET) {
       orderType = 'Market';
     }
 
@@ -1160,8 +1159,8 @@ module.exports = class Bitmex {
     }
 
     const body = {
-      symbol: order.symbol,
-      orderQty: order.amount,
+      symbol: order.getSymbol(),
+      orderQty: order.getAmount(),
       ordType: orderType,
       text: 'Powered by your awesome crypto-bot watchdog'
     };
@@ -1180,7 +1179,7 @@ module.exports = class Bitmex {
       execInst.push('LastPrice');
     }
 
-    if (order.options && order.options.post_only === true) {
+    if (order.isPostOnly()) {
       execInst.push('ParticipateDoNotInitiate');
     }
 
@@ -1189,15 +1188,15 @@ module.exports = class Bitmex {
     }
 
     if (orderType === 'Stop') {
-      body.stopPx = Math.abs(order.price);
+      body.stopPx = order.getPrice();
     } else if (orderType === 'Limit') {
-      body.price = Math.abs(order.price);
+      body.price = order.getPrice();
     }
 
-    body.side = order.price < 0 ? 'Sell' : 'Buy';
+    body.side = order.isShort() ? 'Sell' : 'Buy';
 
-    if (order.id) {
-      body.clOrdID = order.id;
+    if (order.getId()) {
+      body.clOrdID = order.getId();
     }
 
     return body;
