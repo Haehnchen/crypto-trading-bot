@@ -909,7 +909,7 @@ module.exports = class Bybit {
             }
 
             const json = JSON.parse(body);
-            if (!'result' in json) {
+            if (!('result' in json)) {
               this.logger.error(
                 `Bybit: Invalid orders json:${JSON.stringify({ body: body, orderStatus: orderStatus })}`
               );
