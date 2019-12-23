@@ -67,9 +67,21 @@
                                                         <span class="{{ position.position.profit < 0 ? 'text-danger' : 'text-success' }}">{{ position.position.profit|round(2) }} %</span>
                                                     {% endif %}
                                                 </td>
-                                                <td>{{ position.position.entry|price_format }}</td>
-                                                <td>{{ position.position.updatedAt|date('d.m.y H:i') }}</td>
-                                                <td>{{ position.position.createdAt|date('d.m.y H:i') }}</td>
+                                                <td>
+                                                    {% if position.position.entry %}
+                                                        {{ position.position.entry|price_format }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if position.position.updatedAt %}
+                                                        {{ position.position.updatedAt|date('d.m.y H:i') }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if position.position.createdAt %}
+                                                        {{ position.position.createdAt|date('d.m.y H:i') }}
+                                                    {% endif %}
+                                                </td>
                                                 <td>
                                                     {% if position.position.side == 'short' %}
                                                         <i class="fas fa-chevron-circle-down text-danger"></i>

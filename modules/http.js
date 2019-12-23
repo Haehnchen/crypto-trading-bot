@@ -253,6 +253,7 @@ module.exports = class Http {
         pair: pair,
         pairs: this.ordersHttp.getPairs(),
         orders: this.ordersHttp.getOrders(pair),
+        position: await this.exchangeManager.getPosition(tradingview[0], tradingview[1]),
         ticker: ticker,
         tradingview: `${tradingview[0]}:${tradingview[1]}`
           .replace('-', '')
@@ -293,6 +294,7 @@ module.exports = class Http {
         pairs: this.ordersHttp.getPairs(),
         orders: this.ordersHttp.getOrders(pair),
         ticker: ticker,
+        position: await this.exchangeManager.getPosition(tradingview[0], tradingview[1]),
         form: form,
         tradingview: `${tradingview[0]}:${tradingview[1]}`
           .replace('-', '')
@@ -358,7 +360,11 @@ module.exports = class Http {
 
       res.render('../templates/trades.html.twig', {
         orders: orders,
-        positions: positions.sort((a, b) => a.position.createdAt.getTime() - b.position.createdAt.getTime())
+        positions: positions.sort(
+          (a, b) =>
+            (!a.position.createdAt ? 0 : a.position.createdAt.getTime()) -
+            (!b.position.createdAt ? 0 : b.position.createdAt.getTime())
+        )
       });
     });
 
