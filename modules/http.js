@@ -76,7 +76,7 @@ module.exports = class Http {
     app.use(express.urlencoded({ limit: '12mb', extended: true, parameterLimit: 50000 }));
     app.use(cookieParser());
     app.use(compression());
-    app.use(express.static(`${__dirname}/../web/static`));
+    app.use(express.static(`${__dirname}/../web/static`, { maxAge: 3600000 * 24 }));
 
     const username = this.systemUtil.getConfig('webserver.username');
     const password = this.systemUtil.getConfig('webserver.password');
