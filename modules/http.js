@@ -1,3 +1,4 @@
+const compression = require('compression');
 const express = require('express');
 const twig = require('twig');
 const auth = require('basic-auth');
@@ -74,6 +75,7 @@ module.exports = class Http {
 
     app.use(express.urlencoded({ limit: '12mb', extended: true, parameterLimit: 50000 }));
     app.use(cookieParser());
+    app.use(compression());
     app.use(express.static(`${__dirname}/../web/static`));
 
     const username = this.systemUtil.getConfig('webserver.username');
