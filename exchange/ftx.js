@@ -368,7 +368,7 @@ module.exports = class Ftx {
         amount,
         undefined,
         new Date(),
-        position.entryPrice, // @TODO: its not clear how to calculate this
+        position.recentAverageOpenPrice ? position.recentAverageOpenPrice : undefined,
         undefined
       );
     });
@@ -380,7 +380,7 @@ module.exports = class Ftx {
   async syncPositionViaRestApi() {
     let response;
     try {
-      response = await this.exchange.privateGetPositions();
+      response = await this.exchange.privateGetPositions({ showAvgPrice: true });
     } catch (e) {
       this.logger.error(`FTX: error getting positions:${e}`);
       return;
