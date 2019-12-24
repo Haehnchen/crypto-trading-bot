@@ -59,10 +59,24 @@ module.exports = class CcxtExchangeOrder {
   }
 
   async syncOrders() {
-    const result = CcxtUtil.createExchangeOrders(await this.ccxtClient.fetchOpenOrders());
+    let orders;
+    try {
+      orders = await this.ccxtClient.fetchOpenOrders();
+    } catch (e) {
+      this.logger.err(`SyncOrder timeout: ${String(e)}`);
+      return undefined;
+    }
+
+    const result = CcxtUtil.createExchangeOrders(orders);
 
     if ('syncOrders' in this.callbacks) {
-      const custom = await this.callbacks.syncOrders(this.ccxtClient);
+      let custom;
+      try {
+        custom = await this.callbacks.syncOrders(this.ccxtClient);
+      } catch (e) {
+        this.logger.err(`SyncOrder callback error: ${String(e)}`);
+        return undefined;
+      }
 
       if (custom) {
         result.push(...custom);
