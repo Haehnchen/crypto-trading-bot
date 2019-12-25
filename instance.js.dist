@@ -146,7 +146,7 @@ x.forEach((pair) => {
 
 // bitmex
 let y = [
-    'XBTUSD', 'ETHUSD', 'XBTH20', 'ETHH20', 'ADAH20', 'TRXH20', 'XRPH20'
+    'XBTUSD', 'ETHUSD'
 ]
 
 y.forEach((pair) => {
@@ -159,7 +159,10 @@ y.forEach((pair) => {
             'bitmex_leverage': 5,
             'bitmex_rest_order_sync': 45000
         },
-        // 'watchdogs': [
+        //'trade': {
+        //    'currency_capital': 1 // trade with 1 USD dollar
+        //},
+        //'watchdogs': [
         //    {
         //        'name': 'stoploss',
         //        'percent': 3,
