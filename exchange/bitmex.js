@@ -353,10 +353,9 @@ module.exports = class Bitmex {
     for (const position of positions) {
       if (position.symbol in this.positions && position.isOpen !== true) {
         delete this.positions[position.symbol];
-        continue;
+      } else {
+        openPositions.push(position);
       }
-
-      openPositions.push(position);
     }
 
     const currentPositions = {};
@@ -393,10 +392,9 @@ module.exports = class Bitmex {
     for (const position of positions) {
       if (position.symbol in this.positions && position.isOpen !== true) {
         delete this.positions[position.symbol];
-        continue;
+      } else {
+        openPositions.push(position);
       }
-
-      openPositions.push(position);
     }
 
     for (const position of Bitmex.createPositionsWithOpenStateOnly(openPositions)) {
