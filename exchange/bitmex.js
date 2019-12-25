@@ -1211,6 +1211,6 @@ module.exports = class Bitmex {
   }
 
   isInverseSymbol(symbol) {
-    return ['XBTUSD', 'XBTUSD'].includes(symbol) || this.inversedSymboles.includes(symbol);
+    return ['XBTUSD', 'ETHUSD'].includes(symbol) || this.inversedSymboles.includes(symbol);
   }
 };

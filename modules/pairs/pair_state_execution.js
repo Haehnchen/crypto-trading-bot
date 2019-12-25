@@ -298,10 +298,10 @@ module.exports = class PairStateExecution {
   async executeOrder(exchangeName, symbol, side, options) {
     let orderSize = await this.orderCalculator.calculateOrderSize(exchangeName, symbol);
     if (!orderSize) {
-      console.error(`Invalid order size: ${JSON.stringify([exchangeName, symbol, side])}`);
-      this.logger.error(`Invalid order size: ${JSON.stringify([exchangeName, symbol, side])}`);
+      console.error(`Invalid order size: ${JSON.stringify([exchangeName, symbol, side, orderSize])}`);
+      this.logger.error(`Invalid order size: ${JSON.stringify([exchangeName, symbol, side, orderSize])}`);
 
-      return {};
+      return undefined;
     }
 
     // inverse price for short

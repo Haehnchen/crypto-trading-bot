@@ -15,7 +15,7 @@ module.exports = class OrderCalculator {
   async calculateOrderSize(exchangeName, symbol) {
     const capital = this.pairConfig.getSymbolCapital(exchangeName, symbol);
     if (!capital) {
-      this.logger.error(`No capital: ${JSON.stringify([exchangeName, symbol])}`);
+      this.logger.error(`No capital: ${JSON.stringify([exchangeName, symbol, capital])}`);
       return undefined;
     }
 
