@@ -63,7 +63,7 @@ module.exports = class CcxtExchangeOrder {
     try {
       orders = await this.ccxtClient.fetchOpenOrders();
     } catch (e) {
-      this.logger.err(`SyncOrder timeout: ${String(e)}`);
+      this.logger.error(`SyncOrder timeout: ${String(e)}`);
       return undefined;
     }
 
@@ -74,7 +74,7 @@ module.exports = class CcxtExchangeOrder {
       try {
         custom = await this.callbacks.syncOrders(this.ccxtClient);
       } catch (e) {
-        this.logger.err(`SyncOrder callback error: ${String(e)}`);
+        this.logger.error(`SyncOrder callback error: ${String(e)}`);
         return undefined;
       }
 
