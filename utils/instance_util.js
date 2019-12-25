@@ -49,7 +49,7 @@ module.exports = {
   },
 
   /**
-   * Init helper for FTX exchange to fetch usd based "perp" contract pairs with a callback to ignore and add trading options
+   * Init helper for Binance to fetch all USDT pairs
    * @param callback
    * @returns {Promise<unknown>}
    */
@@ -77,6 +77,42 @@ module.exports = {
               symbol: pair.symbol,
               periods: ['1m', '15m', '1h'],
               exchange: 'binance',
+              state: 'watch'
+            };
+
+            if (callback) {
+              result = callback(result, pair);
+            }
+
+            if (result) {
+              pairs.push(result);
+            }
+          });
+
+        resolve(pairs);
+      });
+    });
+  },
+
+  /**
+   * Init helper for Bitmex exchange to fetch only contracts; not this option like pair or weekly / daily pairs
+   * @param callback
+   * @returns {Promise<unknown>}
+   */
+  bitmexInit: async function(callback) {
+    return new Promise(resolve => {
+      request('https://www.bitmex.com/api/v1/instrument/active', (_error, _res, body) => {
+        const pairs = [];
+
+        const content = JSON.parse(body);
+
+        content
+          .filter(p => ['FFCCSX', 'FFWCSX'].includes(p.typ))
+          .forEach(pair => {
+            let result = {
+              symbol: pair.symbol,
+              periods: ['1m', '15m', '1h'],
+              exchange: 'bitmex',
               state: 'watch'
             };
 

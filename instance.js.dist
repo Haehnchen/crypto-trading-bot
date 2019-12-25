@@ -5,6 +5,33 @@ c.symbols = []
 /*
 const InstanceUtil = require('./utils/instance_util');
 c.init = async () => {
+    // Bitmex contracts + examples
+  c.symbols.push(
+    ...(await InstanceUtil.bitmexInit(pair => {
+      // inverse contracts; trade with 1 USD
+      // you can also provide a "capital" instead for trade with fixed BTC or ETH
+      if (['XBTUSD', 'ETHUSD'].includes(pair.symbol) || pair.symbol.startsWith('XBT')) {
+        pair.trade = { currency_capital: 1 };
+        return pair;
+      }
+
+      // trade with 1 ETH on "BTC-ETH" contract, but ignore USD pair
+      if (pair.symbol.startsWith('ETH') && !pair.symbol.includes('USD')) {
+        pair.trade = { capital: 1 };
+        return pair;
+      }
+
+      // trade ADA-BTC; as ADA is low priced BTC; good for testing
+      if (pair.symbol.startsWith('ADA')) {
+        pair.trade = { capital: 1 };
+        return pair;
+      }
+
+      // remove others; we can not use all pairs in one instance; (only on when we not in quarterly contract change window)
+      return undefined;
+    }))
+  );
+
     // FTX all "perp" / futures contracts
     c.symbols.push(...(await InstanceUtil.ftxInitPerp()));
 
