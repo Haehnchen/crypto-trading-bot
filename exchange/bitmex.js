@@ -39,6 +39,8 @@ module.exports = class Bitmex {
     this.orders = {};
     this.tickers = {};
     this.symbols = [];
+
+    this.inversedSymboles = [];
   }
 
   backfill(symbol, period, start) {
@@ -253,6 +255,10 @@ module.exports = class Bitmex {
         instruments.forEach(instrument => {
           tickSizes[symbol.symbol] = instrument.tickSize;
           lotSizes[symbol.symbol] = instrument.lotSize;
+
+          if (instrument.isInverse && !this.inversedSymboles.includes(symbol.symbol)) {
+            this.inversedSymboles.push(symbol.symbol);
+          }
 
           eventEmitter.emit(
             'ticker',
@@ -1143,7 +1149,7 @@ module.exports = class Bitmex {
     }
 
     let orderType;
-    var ourOrderType = order.getType();
+    const ourOrderType = order.getType();
     if (!ourOrderType) {
       orderType = 'Limit';
     } else if (ourOrderType === Order.TYPE_LIMIT) {
@@ -1207,6 +1213,6 @@ module.exports = class Bitmex {
   }
 
   isInverseSymbol(symbol) {
-    return ['XBTUSD', 'XBTUSD'].includes(symbol);
+    return ['XBTUSD', 'XBTUSD'].includes(symbol) || this.inversedSymboles.includes(symbol);
   }
 };
