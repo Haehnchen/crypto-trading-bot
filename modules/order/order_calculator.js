@@ -1,48 +1,43 @@
-const _ = require('lodash');
-
 module.exports = class OrderCalculator {
-  constructor(instances, tickers, logger, exchangeManager) {
-    this.instances = instances;
+  /**
+   * @param tickers {Tickers}
+   * @param logger {Logger}
+   * @param exchangeManager {ExchangeManager}
+   * @param pairConfig {PairConfig}
+   */
+  constructor(tickers, logger, exchangeManager, pairConfig) {
     this.tickers = tickers;
     this.logger = logger;
     this.exchangeManager = exchangeManager;
+    this.pairConfig = pairConfig;
   }
 
   async calculateOrderSize(exchangeName, symbol) {
-    const orderSizeCalculated = await this.getSymbolCapital(exchangeName, symbol);
-    if (!orderSizeCalculated) {
-      return;
+    const capital = this.pairConfig.getSymbolCapital(exchangeName, symbol);
+    if (!capital) {
+      this.logger.error(`No capital: ${JSON.stringify([exchangeName, symbol])}`);
+      return undefined;
     }
 
-    // normalize the size to allowed size
-    const orderSize = this.exchangeManager.get(exchangeName).calculateAmount(orderSizeCalculated, symbol);
-    if (!orderSize) {
-      this.logger.error(`Can no normalize buy price: ${JSON.stringify([exchangeName, symbol, orderSize])}`);
+    const exchange = this.exchangeManager.get(exchangeName);
 
-      return;
+    // spot exchanges wants to buy assets
+    if (!exchange.isInverseSymbol(symbol)) {
+      if (capital.asset) {
+        return exchange.calculateAmount(capital.asset, symbol);
+      }
+
+      const amount = await this.convertCurrencyToAsset(exchangeName, symbol, capital.currency);
+      return amount ? exchange.calculateAmount(amount) : undefined;
     }
 
-    return orderSize;
-  }
-
-  async getSymbolCapital(exchange, symbol) {
-    const capital = this.instances.symbols.find(
-      instance =>
-        instance.exchange === exchange && instance.symbol === symbol && _.get(instance, 'trade.capital', 0) > 0
-    );
-
-    if (capital) {
-      return capital.trade.capital;
+    // contracts exchange / pairs need inverse
+    if (capital.currency) {
+      return exchange.calculateAmount(capital.currency, symbol);
     }
 
-    const capitalCurrency = this.instances.symbols.find(
-      instance =>
-        instance.exchange === exchange && instance.symbol === symbol && _.get(instance, 'trade.currency_capital', 0) > 0
-    );
-
-    if (capitalCurrency) {
-      return await this.convertCurrencyToAsset(exchange, symbol, capitalCurrency.trade.currency_capital);
-    }
+    const amount = await this.convertAssetToCurrency(exchangeName, symbol, capital.asset);
+    return amount ? exchange.calculateAmount(amount, symbol) : undefined;
   }
 
   /**
@@ -59,9 +54,29 @@ module.exports = class OrderCalculator {
       this.logger.error(
         `Invalid ticker for calculate currency capital:${JSON.stringify([exchangeName, symbol, currencyAmount])}`
       );
-      return;
+      return undefined;
     }
 
     return currencyAmount / ticker.bid;
+  }
+
+  /**
+   * If you want to trade with 0.25 BTC this calculated the asset amount which are available to buy
+   *
+   * @param exchangeName
+   * @param symbol
+   * @param currencyAmount
+   * @returns {Promise<number>}
+   */
+  async convertAssetToCurrency(exchangeName, symbol, currencyAmount) {
+    const ticker = this.tickers.get(exchangeName, symbol);
+    if (!ticker || !ticker.bid) {
+      this.logger.error(
+        `Invalid ticker for calculate currency capital:${JSON.stringify([exchangeName, symbol, currencyAmount])}`
+      );
+      return undefined;
+    }
+
+    return ticker.bid * currencyAmount;
   }
 };

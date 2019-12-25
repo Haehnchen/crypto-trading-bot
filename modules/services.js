@@ -37,6 +37,7 @@ const OrderExecutor = require('../modules/order/order_executor');
 const OrderCalculator = require('../modules/order/order_calculator');
 const PairStateManager = require('../modules/pairs/pair_state_manager');
 const PairStateExecution = require('../modules/pairs/pair_state_execution');
+const PairConfig = require('../modules/pairs/pair_config');
 const SystemUtil = require('../modules/system/system_util');
 const TechnicalAnalysisValidator = require('../utils/technical_analysis_validator');
 const WinstonSqliteTransport = require('../utils/winston_sqlite_transport');
@@ -110,6 +111,7 @@ let candleExportHttp;
 let exchangePositionWatcher;
 let tickerRepository;
 let ordersHttp;
+let pairConfig;
 
 module.exports = {
   boot: async function() {
@@ -398,10 +400,10 @@ module.exports = {
     }
 
     return (orderCalculator = new OrderCalculator(
-      this.getInstances(),
       this.getTickers(),
       this.getLogger(),
-      this.getExchangeManager()
+      this.getExchangeManager(),
+      this.getPairConfig()
     ));
   },
 
@@ -416,6 +418,14 @@ module.exports = {
       this.getPairStateManager(),
       this.getEventEmitter()
     ));
+  },
+
+  getPairConfig: function() {
+    if (pairConfig) {
+      return pairConfig;
+    }
+
+    return (pairConfig = new PairConfig(this.getInstances()));
   },
 
   getPairStateManager: function() {
@@ -525,7 +535,12 @@ module.exports = {
       return ordersHttp;
     }
 
-    return (ordersHttp = new OrdersHttp(this.getBacktest(), this.getTickers(), this.getOrderExecutor(), this.getExchangeManager()));
+    return (ordersHttp = new OrdersHttp(
+      this.getBacktest(),
+      this.getTickers(),
+      this.getOrderExecutor(),
+      this.getExchangeManager()
+    ));
   },
 
   getExchangeCandleCombine: function() {
