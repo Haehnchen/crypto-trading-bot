@@ -36,7 +36,7 @@
     "moment": "^2.22.2",
     "nodemailer": "^6.1.1",
     "numbro": "^2.1.1",
-    "p-queue": "^5.0.0",
+    "p-queue": "^6.2.1",
     "patch-package": "^6.1.2",
     "percent": "^2.0.0",
     "queue": "^6.0.1",
