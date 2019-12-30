@@ -86,7 +86,7 @@
     "deploy": "pm2 deploy ecosystem.config.js production"
   },
   "devDependencies": {
-    "eslint": "^6.7.2",
+    "eslint": "^6.8.0",
     "eslint-config-airbnb": "^18.0.1",
     "eslint-config-node": "^4.0.0",
     "eslint-config-prettier": "^6.7.0",
