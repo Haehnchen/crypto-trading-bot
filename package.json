@@ -44,7 +44,7 @@
     "request": "^2.88.0",
     "sendmail": "^1.4.1",
     "talib": "^1.0.5",
-    "technicalindicators": "^2.0.9",
+    "technicalindicators": "^3.0.0",
     "telegraf": "^3.29.0",
     "tulind": "^0.8.15",
     "twig": "^1.13.3",
