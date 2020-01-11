@@ -1,4 +1,5 @@
 const ccxt = require('ccxt');
+const _ = require('lodash');
 const OrderBag = require('../utils/order_bag');
 const Order = require('../../dict/order');
 const ExchangeOrder = require('../../dict/exchange_order');
@@ -16,19 +17,30 @@ module.exports = class CcxtExchangeOrder {
   async createOrder(order) {
     const side = order.isShort() ? 'sell' : 'buy';
 
+    let parameters = {};
+
+    if (this.callbacks && 'createOrder' in this.callbacks) {
+      const custom = this.callbacks.createOrder(order);
+
+      if (custom) {
+        parameters = _.merge(parameters, custom);
+      }
+    }
+
     let promise;
     switch (order.getType()) {
-      case 'stop':
-      case 'limit':
+      case Order.TYPE_STOP:
+      case Order.TYPE_LIMIT:
         promise = this.ccxtClient.createOrder(
           order.getSymbol(),
           order.getType(),
           side,
           order.getAmount(),
-          order.getPrice()
+          order.getPrice(),
+          parameters.args || undefined
         );
         break;
-      case 'market':
+      case Order.TYPE_MARKET:
         promise = this.ccxtClient.createOrder(order.getSymbol(), order.getType(), side, order.getAmount());
         break;
       default:
@@ -46,14 +58,7 @@ module.exports = class CcxtExchangeOrder {
       throw e;
     }
 
-    let exchangeOrder;
-    try {
-      exchangeOrder = await CcxtUtil.createExchangeOrder(placedOrder);
-    } catch (e) {
-      this.logger.error(`CCXT order place issue: ${JSON.stringify(e)}`);
-      return undefined;
-    }
-
+    const exchangeOrder = this.convertOrder(placedOrder);
     this.triggerOrder(exchangeOrder);
     return exchangeOrder;
   }
@@ -69,7 +74,7 @@ module.exports = class CcxtExchangeOrder {
 
     const result = CcxtUtil.createExchangeOrders(orders);
 
-    if ('syncOrders' in this.callbacks) {
+    if (this.callbacks && 'syncOrders' in this.callbacks) {
       let custom;
       try {
         custom = await this.callbacks.syncOrders(this.ccxtClient);
@@ -115,26 +120,40 @@ module.exports = class CcxtExchangeOrder {
 
     const currentOrder = await this.findOrderById(id);
     if (!currentOrder) {
-      return;
+      return undefined;
     }
 
     // cancel order; mostly it can already be canceled
     await this.cancelOrder(id);
 
-    return await this.createOrder(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
+    return this.createOrder(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
   }
 
   async cancelOrder(id) {
     const order = await this.findOrderById(id);
     if (!order) {
-      return;
+      return undefined;
+    }
+
+    let args = {
+      id: id,
+      symbol: order.symbol,
+      order: order
+    };
+
+    if (this.callbacks && 'cancelOrder' in this.callbacks) {
+      const custom = this.callbacks.cancelOrder(this.ccxtClient, args);
+
+      if (custom) {
+        args = _.merge(args, custom);
+      }
     }
 
     try {
-      await this.ccxtClient.cancelOrder(id);
+      await this.ccxtClient.cancelOrder(args.id, args.symbol);
     } catch (e) {
       this.logger.error(`${this.ccxtClient.name}: cancel order error: ${e}`);
-      return;
+      return undefined;
     }
 
     this.orderbag.delete(id);
@@ -150,5 +169,20 @@ module.exports = class CcxtExchangeOrder {
     }
 
     return orders;
+  }
+
+  triggerPlainOrder(plainOrder) {
+    const ccxtOrder = this.ccxtClient.parseOrder(plainOrder);
+    const exchangeOrder = this.convertOrder(ccxtOrder);
+
+    this.triggerOrder(exchangeOrder);
+  }
+
+  convertOrder(ccxtOrder) {
+    if (this.callbacks && 'convertOrder' in this.callbacks) {
+      this.callbacks.convertOrder(this.ccxtClient, ccxtOrder);
+    }
+
+    return CcxtUtil.createExchangeOrder(ccxtOrder);
   }
 };

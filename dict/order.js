@@ -74,6 +74,10 @@ module.exports = class Order {
     return this.options && this.options.post_only === true;
   }
 
+  isReduceOnly() {
+    return this.options && this.options.close === true;
+  }
+
   static createMarketOrder(symbol, amount) {
     return new Order(
       Math.round(new Date().getTime().toString() * Math.random()),

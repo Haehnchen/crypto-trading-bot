@@ -6,7 +6,7 @@ module.exports = {
    * @param callback
    * @returns {Promise<unknown>}
    */
-  ftxInitPerp: async function(callback) {
+  ftxInitPerp: async callback => {
     return new Promise(resolve => {
       request('https://ftx.com/api/markets', (_error, _res, body) => {
         if (_error) {
@@ -53,7 +53,7 @@ module.exports = {
    * @param callback
    * @returns {Promise<unknown>}
    */
-  binanceInitUsd: async function(callback) {
+  binanceInitUsd: async callback => {
     return new Promise(resolve => {
       request('https://api.binance.com/api/v1/exchangeInfo', (_error, _res, body) => {
         const pairs = [];
@@ -99,7 +99,7 @@ module.exports = {
    * @param callback
    * @returns {Promise<unknown>}
    */
-  bitmexInit: async function(callback) {
+  bitmexInit: async callback => {
     return new Promise(resolve => {
       request('https://www.bitmex.com/api/v1/instrument/active', (_error, _res, body) => {
         const pairs = [];
@@ -113,6 +113,42 @@ module.exports = {
               symbol: pair.symbol,
               periods: ['1m', '15m', '1h'],
               exchange: 'bitmex',
+              state: 'watch'
+            };
+
+            if (callback) {
+              result = callback(result, pair);
+            }
+
+            if (result) {
+              pairs.push(result);
+            }
+          });
+
+        resolve(pairs);
+      });
+    });
+  },
+
+  /**
+   * Init helper for Binance futures exchange to fetch active contracts
+   * @param callback
+   * @returns {Promise<unknown>}
+   */
+  binanceFuturesInit: async callback => {
+    return new Promise(resolve => {
+      request('https://fapi.binance.com/fapi/v1/exchangeInfo', (_error, _res, body) => {
+        const pairs = [];
+
+        const content = JSON.parse(body);
+
+        content.symbols
+          .filter(p => p.status.toUpperCase() === 'TRADING')
+          .forEach(pair => {
+            let result = {
+              symbol: pair.symbol,
+              periods: ['1m', '15m', '1h'],
+              exchange: 'binance_futures',
               state: 'watch'
             };
 
