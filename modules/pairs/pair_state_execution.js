@@ -17,13 +17,15 @@ module.exports = class PairStateExecution {
    * @param orderCalculator
    * @param orderExecutor
    * @param logger
+   * @param ticker
    */
-  constructor(pairStateManager, exchangeManager, orderCalculator, orderExecutor, logger) {
+  constructor(pairStateManager, exchangeManager, orderCalculator, orderExecutor, logger, ticker) {
     this.pairStateManager = pairStateManager;
     this.exchangeManager = exchangeManager;
     this.orderCalculator = orderCalculator;
     this.orderExecutor = orderExecutor;
     this.logger = logger;
+    this.ticker = ticker;
     this.lastRunAt = undefined;
   }
 
@@ -56,14 +58,8 @@ module.exports = class PairStateExecution {
         }
         */
 
-    const exchangeOrderStored = pairState.getExchangeOrder();
-    if (
-      exchangeOrderStored &&
-      !(await this.exchangeManager.findOrderById(pairState.getExchange(), exchangeOrderStored.id))
-    ) {
-      pairState.setExchangeOrder(null);
-      this.logger.info(`Pair State: Clearing unknown stored exchangeOrder: ${JSON.stringify([exchangeOrderStored])}`);
-    } else if (!exchangeOrderStored) {
+    const exchangeOrderStored = await this.managedPairStateOrder(pairState);
+    if (!exchangeOrderStored) {
       this.logger.info(
         `Pair State: Create position open order: ${JSON.stringify([pair.exchange, pair.symbol, side, pair.options])}`
       );
@@ -115,14 +111,18 @@ module.exports = class PairStateExecution {
     // we also reset our managed order here
     const newOrders = await this.exchangeManager.getOrders(pair.exchange, pair.symbol);
     if (newOrders.length > 1) {
-      this.logger.error(`Pair State: Clear invalid orders:${JSON.stringify([newOrders.length])}`);
-
-      for (const key in newOrders) {
-        if (pairState.getExchangeOrder() && pairState.getExchangeOrder().id === newOrders[key].id) {
-          continue;
-        }
-
-        await this.orderExecutor.cancelOrder(pair.exchange, newOrders[key].id);
+      const state = pairState.getExchangeOrder();
+      if (state) {
+        newOrders
+          .filter(o => state.id !== o.id && state.id != o.id)
+          .forEach(async order => {
+            this.logger.error(`Pair State: Clear invalid orders:${JSON.stringify([order])}`);
+            try {
+              await this.orderExecutor.cancelOrder(pair.exchange, order.id);
+            } catch (e) {
+              console.log(e);
+            }
+          });
       }
     }
   }
@@ -162,14 +162,8 @@ module.exports = class PairStateExecution {
         }
         */
 
-    const exchangeOrderStored = pairState.getExchangeOrder();
-    if (
-      exchangeOrderStored &&
-      !(await this.exchangeManager.findOrderById(pairState.getExchange(), exchangeOrderStored.id))
-    ) {
-      pairState.setExchangeOrder(null);
-      this.logger.info(`Pair State: Clearing unknown stored exchangeOrder: ${JSON.stringify([exchangeOrderStored])}`);
-    } else if (!exchangeOrderStored) {
+    const exchangeOrderStored = await this.managedPairStateOrder(pairState);
+    if (!exchangeOrderStored) {
       this.logger.info(`Pair State: Create position close order: ${JSON.stringify([pair.exchange])}`);
 
       const amount = Math.abs(position.amount);
@@ -227,14 +221,18 @@ module.exports = class PairStateExecution {
     // we also reset or managed order here
     const newOrders = await this.exchangeManager.getOrders(pair.exchange, pair.symbol);
     if (newOrders.length > 1) {
-      this.logger.error(`Pair State: Clear invalid orders:${JSON.stringify([newOrders.length])}`);
-
-      for (const key in newOrders) {
-        if (exchangeOrderStored && exchangeOrderStored.id === newOrders[key].id) {
-          continue;
-        }
-
-        await this.orderExecutor.cancelOrder(pair.exchange, newOrders[key].id);
+      const state = pairState.getExchangeOrder();
+      if (state) {
+        newOrders
+          .filter(o => state.id !== o.id && state.id != o.id)
+          .forEach(async order => {
+            this.logger.error(`Pair State: Clear invalid orders:${JSON.stringify([order])}`);
+            try {
+              await this.orderExecutor.cancelOrder(pair.exchange, order.id);
+            } catch (e) {
+              console.log(e);
+            }
+          });
       }
     }
   }
@@ -344,5 +342,86 @@ module.exports = class PairStateExecution {
 
       await this.onCancelPair(pair);
     }
+  }
+
+  async extractManagedPairStateOrderFromOrders(pairState) {
+    const orders = await this.exchangeManager.getOrders(pairState.getExchange(), pairState.getSymbol());
+    const position = await this.exchangeManager.getPosition(pairState.getExchange(), pairState.getSymbol());
+
+    const matchingOrder = orders.filter(o => {
+      if (o.getType() !== Order.TYPE_LIMIT) {
+        return false;
+      }
+
+      if (o.getLongOrShortSide() === 'short' && pairState.getState() === 'short') {
+        return true;
+      }
+
+      if (o.getLongOrShortSide() === 'long' && pairState.getState() === 'long') {
+        return true;
+      }
+
+      if (pairState.getState() === 'close') {
+        if (position.isShort() && o.getLongOrShortSide() === 'long') {
+          return true;
+        }
+
+        if (position.isLong() && o.getLongOrShortSide() === 'short') {
+          return true;
+        }
+      }
+
+      return false;
+    });
+
+    if (matchingOrder.length > 0) {
+      const ticker = this.ticker.get(pairState.getExchange(), pairState.getSymbol());
+      if (ticker) {
+        for (const order of matchingOrder) {
+          const diff = Math.abs(((order.price - ticker.bid) / ticker.bid) * 100);
+          if (diff <= 0.45) {
+            this.logger.info(`Pair State: reuse managed order: ${JSON.stringify([diff, order])}`);
+            return order;
+          }
+        }
+      }
+    }
+
+    return undefined;
+  }
+
+  async managedPairStateOrder(pairState) {
+    const exchangeOrderStored = pairState.getExchangeOrder();
+    if (!exchangeOrderStored) {
+      const m = await this.extractManagedPairStateOrderFromOrders(pairState);
+      if (m) {
+        pairState.setExchangeOrder(m);
+        return m;
+      }
+
+      return undefined;
+    }
+
+    const currentOrder = await this.exchangeManager.findOrderById(pairState.getExchange(), exchangeOrderStored.id);
+    if (currentOrder) {
+      return currentOrder;
+    }
+
+    const m = await this.extractManagedPairStateOrderFromOrders(pairState);
+    if (m) {
+      pairState.setExchangeOrder(m);
+      return m;
+    }
+
+    this.logger.info(
+      `Pair State: Clearing unknown stored exchangeOrder: ${JSON.stringify([
+        exchangeOrderStored.id,
+        exchangeOrderStored
+      ])}`
+    );
+
+    pairState.setExchangeOrder(null);
+
+    return undefined;
   }
 };

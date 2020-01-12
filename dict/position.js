@@ -30,6 +30,14 @@ module.exports = class Position {
     this.createdAt = createdAt;
   }
 
+  isShort() {
+    return this.side === 'short';
+  }
+
+  isLong() {
+    return this.side === 'long';
+  }
+
   static createProfitUpdate(position, profit) {
     return new Position(
       position.symbol,
