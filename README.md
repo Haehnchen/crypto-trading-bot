@@ -105,11 +105,13 @@ For initialize the configuration once
 ```
 After this you can use `docker-compose` which will give you a running bot via <http://127.0.0.1:8080>
 
-#### Setting Up Telegram Bot
+## Setting Up Telegram Bot
+
 First, you'll need to create a bot for Telegram. Just talk to [BotFather](https://telegram.me/botfather) and follow simple steps until it gives you a token for it.
 You'll also need to create a Telegram group, the place where you and crypto-trading-bot will communicate. After creating it, add the bot as administrator (make sure to uncheck "All Members Are Admins").
 
-##### Retrieving Chat IDs
+### Retrieving Chat IDs
+
 Invite ```@RawDataBot``` to your group and get your group id in sended chat id field
 
 ```text
@@ -171,18 +173,23 @@ webserver.ip: 127.0.0.1
 
 ```
 
+## Web UI
+
+### Dashboard
+
 ![Webserver UI](documentation/cryptobot.png "Webserver UI")
 
-## Backtesting
+### Backtesting
 
 Currently there is a the UI for backtesting
 
-### Result Page
-
 ![Webserver UI](documentation/backtest_result.png "Backtest Result")
 
+### Manual Orders
 
-### Fill data
+![Webserver UI](documentation/manual_order.png "Manual Orders")
+
+## Fill data
 
 ```
 node index.js backfill -e bitmex -p 1m -s XRPZ18
