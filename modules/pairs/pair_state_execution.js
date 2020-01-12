@@ -361,7 +361,7 @@ module.exports = class PairStateExecution {
         return true;
       }
 
-      if (pairState.getState() === 'close') {
+      if (position && pairState.getState() === 'close') {
         if (position.isShort() && o.getLongOrShortSide() === 'long') {
           return true;
         }
