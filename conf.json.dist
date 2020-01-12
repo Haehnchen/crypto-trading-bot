@@ -12,6 +12,10 @@
             "key": null,
             "secret": null
         },
+        "binance_futures": {
+            "key": null,
+            "secret": null
+        },
         "coinbase_pro": {
             "key": null,
             "secret": null,

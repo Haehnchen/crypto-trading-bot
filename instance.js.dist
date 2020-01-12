@@ -37,6 +37,17 @@ c.init = async () => {
 
     // Binance all USDT pairs
     c.symbols.push(...(await InstanceUtil.binanceInitUsd()));
+
+    // Binance futures
+    c.symbols.push(...(await InstanceUtil.binanceFuturesInit()));
+
+    // Binance futures or trade with 2 USD
+    c.symbols.push(
+      ...(await InstanceUtil.binanceFuturesInit(pair => {
+        pair.trade = { currency_capital: 2 };
+        return pair;
+      }))
+    );
 };
 */
 
