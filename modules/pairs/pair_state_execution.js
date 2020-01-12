@@ -56,14 +56,8 @@ module.exports = class PairStateExecution {
         }
         */
 
-    const exchangeOrderStored = pairState.getExchangeOrder();
-    if (
-      exchangeOrderStored &&
-      !(await this.exchangeManager.findOrderById(pairState.getExchange(), exchangeOrderStored.id))
-    ) {
-      pairState.setExchangeOrder(null);
-      this.logger.info(`Pair State: Clearing unknown stored exchangeOrder: ${JSON.stringify([exchangeOrderStored])}`);
-    } else if (!exchangeOrderStored) {
+    const exchangeOrderStored = await this.managedPairStateOrder(pairState);
+    if (!exchangeOrderStored) {
       this.logger.info(
         `Pair State: Create position open order: ${JSON.stringify([pair.exchange, pair.symbol, side, pair.options])}`
       );
@@ -115,14 +109,18 @@ module.exports = class PairStateExecution {
     // we also reset our managed order here
     const newOrders = await this.exchangeManager.getOrders(pair.exchange, pair.symbol);
     if (newOrders.length > 1) {
-      this.logger.error(`Pair State: Clear invalid orders:${JSON.stringify([newOrders.length])}`);
-
-      for (const key in newOrders) {
-        if (pairState.getExchangeOrder() && pairState.getExchangeOrder().id === newOrders[key].id) {
-          continue;
-        }
-
-        await this.orderExecutor.cancelOrder(pair.exchange, newOrders[key].id);
+      const state = pairState.getExchangeOrder();
+      if (state) {
+        newOrders
+          .filter(o => state.id !== o.id && state.id != o.id)
+          .forEach(async order => {
+            this.logger.error(`Pair State: Clear invalid orders:${JSON.stringify([order])}`);
+            try {
+              await this.orderExecutor.cancelOrder(pair.exchange, order.id);
+            } catch (e) {
+              console.log(e);
+            }
+          });
       }
     }
   }
@@ -162,14 +160,8 @@ module.exports = class PairStateExecution {
         }
         */
 
-    const exchangeOrderStored = pairState.getExchangeOrder();
-    if (
-      exchangeOrderStored &&
-      !(await this.exchangeManager.findOrderById(pairState.getExchange(), exchangeOrderStored.id))
-    ) {
-      pairState.setExchangeOrder(null);
-      this.logger.info(`Pair State: Clearing unknown stored exchangeOrder: ${JSON.stringify([exchangeOrderStored])}`);
-    } else if (!exchangeOrderStored) {
+    const exchangeOrderStored = await this.managedPairStateOrder(pairState);
+    if (!exchangeOrderStored) {
       this.logger.info(`Pair State: Create position close order: ${JSON.stringify([pair.exchange])}`);
 
       const amount = Math.abs(position.amount);
@@ -227,14 +219,18 @@ module.exports = class PairStateExecution {
     // we also reset or managed order here
     const newOrders = await this.exchangeManager.getOrders(pair.exchange, pair.symbol);
     if (newOrders.length > 1) {
-      this.logger.error(`Pair State: Clear invalid orders:${JSON.stringify([newOrders.length])}`);
-
-      for (const key in newOrders) {
-        if (exchangeOrderStored && exchangeOrderStored.id === newOrders[key].id) {
-          continue;
-        }
-
-        await this.orderExecutor.cancelOrder(pair.exchange, newOrders[key].id);
+      const state = pairState.getExchangeOrder();
+      if (state) {
+        newOrders
+          .filter(o => state.id !== o.id && state.id != o.id)
+          .forEach(async order => {
+            this.logger.error(`Pair State: Clear invalid orders:${JSON.stringify([order])}`);
+            try {
+              await this.orderExecutor.cancelOrder(pair.exchange, order.id);
+            } catch (e) {
+              console.log(e);
+            }
+          });
       }
     }
   }
@@ -344,5 +340,28 @@ module.exports = class PairStateExecution {
 
       await this.onCancelPair(pair);
     }
+  }
+
+  async managedPairStateOrder(pairState) {
+    const exchangeOrderStored = pairState.getExchangeOrder();
+    if (!exchangeOrderStored) {
+      return undefined;
+    }
+
+    const currentOrder = await this.exchangeManager.findOrderById(pairState.getExchange(), exchangeOrderStored.id);
+    if (currentOrder) {
+      return currentOrder;
+    }
+
+    this.logger.info(
+      `Pair State: Clearing unknown stored exchangeOrder: ${JSON.stringify([
+        exchangeOrderStored.id,
+        exchangeOrderStored
+      ])}`
+    );
+
+    pairState.setExchangeOrder(null);
+
+    return undefined;
   }
 };
