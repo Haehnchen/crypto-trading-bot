@@ -17,13 +17,15 @@ module.exports = class PairStateExecution {
    * @param orderCalculator
    * @param orderExecutor
    * @param logger
+   * @param ticker
    */
-  constructor(pairStateManager, exchangeManager, orderCalculator, orderExecutor, logger) {
+  constructor(pairStateManager, exchangeManager, orderCalculator, orderExecutor, logger, ticker) {
     this.pairStateManager = pairStateManager;
     this.exchangeManager = exchangeManager;
     this.orderCalculator = orderCalculator;
     this.orderExecutor = orderExecutor;
     this.logger = logger;
+    this.ticker = ticker;
     this.lastRunAt = undefined;
   }
 
@@ -342,15 +344,73 @@ module.exports = class PairStateExecution {
     }
   }
 
+  async extractManagedPairStateOrderFromOrders(pairState) {
+    const orders = await this.exchangeManager.getOrders(pairState.getExchange(), pairState.getSymbol());
+    const position = await this.exchangeManager.getPosition(pairState.getExchange(), pairState.getSymbol());
+
+    const matchingOrder = orders.filter(o => {
+      if (o.getType() !== Order.TYPE_LIMIT) {
+        return false;
+      }
+
+      if (o.getLongOrShortSide() === 'short' && pairState.getState() === 'short') {
+        return true;
+      }
+
+      if (o.getLongOrShortSide() === 'long' && pairState.getState() === 'long') {
+        return true;
+      }
+
+      if (pairState.getState() === 'close') {
+        if (position.isShort() && o.getLongOrShortSide() === 'long') {
+          return true;
+        }
+
+        if (position.isLong() && o.getLongOrShortSide() === 'short') {
+          return true;
+        }
+      }
+
+      return false;
+    });
+
+    if (matchingOrder.length > 0) {
+      const ticker = this.ticker.get(pairState.getExchange(), pairState.getSymbol());
+      if (ticker) {
+        for (const order of matchingOrder) {
+          const diff = Math.abs(((order.price - ticker.bid) / ticker.bid) * 100);
+          if (diff <= 0.45) {
+            this.logger.info(`Pair State: reuse managed order: ${JSON.stringify([diff, order])}`);
+            return order;
+          }
+        }
+      }
+    }
+
+    return undefined;
+  }
+
   async managedPairStateOrder(pairState) {
     const exchangeOrderStored = pairState.getExchangeOrder();
     if (!exchangeOrderStored) {
+      const m = await this.extractManagedPairStateOrderFromOrders(pairState);
+      if (m) {
+        pairState.setExchangeOrder(m);
+        return m;
+      }
+
       return undefined;
     }
 
     const currentOrder = await this.exchangeManager.findOrderById(pairState.getExchange(), exchangeOrderStored.id);
     if (currentOrder) {
       return currentOrder;
+    }
+
+    const m = await this.extractManagedPairStateOrderFromOrders(pairState);
+    if (m) {
+      pairState.setExchangeOrder(m);
+      return m;
     }
 
     this.logger.info(

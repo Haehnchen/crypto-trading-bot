@@ -447,7 +447,8 @@ module.exports = {
       this.getExchangeManager(),
       this.getOrderCalculator(),
       this.getOrderExecutor(),
-      this.getLogger()
+      this.getLogger(),
+      this.getTickers()
     ));
   },
 

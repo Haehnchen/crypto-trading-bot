@@ -171,7 +171,7 @@ module.exports = class OrderExecutor {
   async cancelOrder(exchangeName, orderId) {
     const exchange = this.exchangeManager.get(exchangeName);
     if (!exchange) {
-      console.error(`Invalid exchange: ${exchangeName}`);
+      console.error(`CancelOrder: Invalid exchange: ${exchangeName}`);
       return;
     }
 
@@ -207,7 +207,7 @@ module.exports = class OrderExecutor {
 
     const exchange = this.exchangeManager.get(exchangeName);
     if (!exchange) {
-      console.error(`Invalid exchange: ${exchangeName}`);
+      console.error(`triggerOrder: Invalid exchange: ${exchangeName}`);
 
       resolve();
       return;

@@ -93,6 +93,10 @@ module.exports = class ExchangeOrder {
     this.options = options;
   }
 
+  getType() {
+    return this.type;
+  }
+
   isReduceOnly() {
     return this.options.reduce_only && this.options.reduce_only === true;
   }
