@@ -1,6 +1,6 @@
 const moment = require('moment');
 const _ = require('lodash');
-const PQueue = require('p-queue');
+const { default: PQueue } = require('p-queue');
 const StrategyContext = require('../../dict/strategy_context');
 
 module.exports = class TickListener {
