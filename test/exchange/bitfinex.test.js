@@ -329,7 +329,7 @@ describe('#bitfinex exchange implementation', function() {
       }
     };
 
-    const exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createPriceUpdateOrder(121212, 12));
+    const exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createPriceUpdateOrder(121212, 12, 'long'));
 
     assert.strictEqual(exchangeOrder.symbol, 'BCHBTC');
     assert.deepStrictEqual(myChanges, { id: 12345, price: '12' });
@@ -348,7 +348,7 @@ describe('#bitfinex exchange implementation', function() {
       }
     };
 
-    const exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createPriceUpdateOrder(121212, -12));
+    const exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createPriceUpdateOrder(121212, -12, 'long'));
 
     assert.strictEqual(exchangeOrder.symbol, 'BCHBTC');
     assert.deepStrictEqual(myChanges, { id: 12345, price: '12' });

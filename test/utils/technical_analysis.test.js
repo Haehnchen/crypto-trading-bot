@@ -139,6 +139,10 @@ describe('#technical_analysis for candles', () => {
       {
         indicator: 'volume_profile',
         key: 'volume_profile'
+      },
+      {
+        indicator: 'ichimoku_cloud',
+        key: 'ichimoku_cloud'
       }
     ]);
 
@@ -220,7 +224,13 @@ describe('#technical_analysis for candles', () => {
 
     assert.equal(result.zigzag.filter(v => v.turningPoint == true).length > 0, true);
 
-    assert.equal(result.volume_profile[0].length, 14);
+    assert.equal(result.volume_profile.length, 14);
+
+    const ichimokuCloud = Object.keys(result.ichimoku_cloud[0]);
+    assert.equal(ichimokuCloud.includes('base'), true);
+    assert.equal(ichimokuCloud.includes('conversion'), true);
+    assert.equal(ichimokuCloud.includes('spanA'), true);
+    assert.equal(ichimokuCloud.includes('spanB'), true);
   });
 
   it('technical_analysis for bollinger percent', () => {

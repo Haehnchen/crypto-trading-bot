@@ -696,7 +696,7 @@ module.exports = {
               const results = f.getResult();
 
               resolve({
-                [indicatorKey]: [results]
+                [indicatorKey]: results
               });
             })
           );
@@ -756,6 +756,32 @@ module.exports = {
 
               resolve({
                 [indicatorKey]: turningPoints
+              });
+            })
+          );
+        } else if (indicatorName === 'ichimoku_cloud') {
+          calculations.push(
+            new Promise(resolveIndicator => {
+              const conversionPeriod = options.conversionPeriod || 9;
+              const basePeriod = options.basePeriod || 26;
+              const spanPeriod = options.spanPeriod || 52;
+              const displacement = options.displacement || 26;
+
+              const { IchimokuCloud } = require('technicalindicators');
+
+              const f = new IchimokuCloud({
+                high: marketData.high.slice(),
+                low: marketData.low.slice(),
+                conversionPeriod: conversionPeriod,
+                basePeriod: basePeriod,
+                spanPeriod: spanPeriod,
+                displacement: displacement
+              });
+
+              const results = f.getResult();
+
+              resolveIndicator({
+                [indicatorKey]: results
               });
             })
           );

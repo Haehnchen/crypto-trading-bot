@@ -77,7 +77,7 @@ module.exports = class OrderExecutor {
             exchangeOrder.id,
             pairState.getExchange(),
             pairState.getSymbol(),
-            order.side
+            exchangeOrder.getLongOrShortSide()
           ])}`
         );
 
@@ -86,7 +86,7 @@ module.exports = class OrderExecutor {
         return;
       }
 
-      const orderUpdate = Order.createPriceUpdateOrder(exchangeOrder.id, price);
+      const orderUpdate = Order.createPriceUpdateOrder(exchangeOrder.id, price, exchangeOrder.getLongOrShortSide());
 
       // normalize prices for positions compare; we can have negative prices depending on "side"
       if (Math.abs(lastExchangeOrder.price) === Math.abs(price)) {

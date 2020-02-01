@@ -29,6 +29,10 @@ module.exports = class Order {
   }
 
   constructor(id, symbol, side, price, amount, type, options = {}) {
+    if (![Order.SIDE_LONG, Order.SIDE_SHORT].includes(side)) {
+      throw `Invalid order side given: ${side}`;
+    }
+
     this.id = id;
     this.symbol = symbol;
     this.side = side;
@@ -213,8 +217,8 @@ module.exports = class Order {
     );
   }
 
-  static createPriceUpdateOrder(id, price) {
-    return new Order(id, undefined, undefined, price, undefined, undefined, undefined);
+  static createPriceUpdateOrder(id, price, side) {
+    return new Order(id, undefined, side, price, undefined, undefined, undefined);
   }
 
   static createStopLossOrder(symbol, price, amount) {
@@ -233,15 +237,15 @@ module.exports = class Order {
     return Order.createLimitPostOnlyOrderAutoAdjustedPriceOrder(symbol, amount, { close: true });
   }
 
-  static createUpdateOrderOnCurrent(order, price = undefined, amount = undefined) {
+  static createUpdateOrderOnCurrent(exchangeOrder, price = undefined, amount = undefined) {
     return new Order(
       Math.round(new Date().getTime().toString() * Math.random()),
-      order.symbol,
-      order.side,
-      typeof price === 'undefined' ? order.price : price,
-      typeof amount === 'undefined' ? order.amount : amount,
-      order.type,
-      order.options
+      exchangeOrder.symbol,
+      exchangeOrder.getLongOrShortSide(),
+      typeof price === 'undefined' ? exchangeOrder.price : price,
+      typeof amount === 'undefined' ? exchangeOrder.amount : amount,
+      exchangeOrder.type,
+      exchangeOrder.options
     );
   }
 };
