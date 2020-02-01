@@ -222,7 +222,7 @@ describe('#bitmex exchange implementation', function() {
 
     let myOptions;
 
-    const order = await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'));
+    const order = await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar', 'long'));
 
     assert.equal(myOptions.method, 'PUT');
     assert.equal(
@@ -270,7 +270,7 @@ describe('#bitmex exchange implementation', function() {
 
     let err = 'foobar';
     try {
-      await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'));
+      await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar', 'long'));
     } catch (e) {
       err = e;
     }
@@ -299,7 +299,7 @@ describe('#bitmex exchange implementation', function() {
 
     let err = 'foobar';
     try {
-      await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'));
+      await bitmex.updateOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar', 'long'));
     } catch (e) {
       err = e;
     }
@@ -330,7 +330,7 @@ describe('#bitmex exchange implementation', function() {
 
     let myOptions;
 
-    const order = await bitmex.cancelOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'));
+    const order = await bitmex.cancelOrder('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar', 'long'));
 
     assert.equal(myOptions.method, 'DELETE');
     assert.equal(myOptions.body, '{"orderID":"0815foobar","text":"Powered by your awesome crypto-bot watchdog"}');
@@ -521,7 +521,7 @@ describe('#bitmex exchange implementation', function() {
 
     let myOptions;
 
-    await bitmex.syncOrdersViaRestApi('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'));
+    await bitmex.syncOrdersViaRestApi('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar', 'long'));
 
     const orders = await bitmex.getOrders();
 
@@ -571,7 +571,7 @@ describe('#bitmex exchange implementation', function() {
 
     let myOptions;
 
-    await bitmex.syncPositionViaRestApi('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar'));
+    await bitmex.syncPositionViaRestApi('0815foobar', Order.createPriceUpdateOrder('0815foobar', 'foobar', 'long'));
 
     const positions = await bitmex.getPositions();
 
