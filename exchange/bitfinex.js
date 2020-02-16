@@ -56,9 +56,13 @@ module.exports = class Bitfinex {
     });
 
     ws.on('close', () => {
-      myLogger.error('Bitfinex: Connection closed');
+      myLogger.error('Bitfinex: Connection closed; reconnecting soon');
 
-      ws.open();
+      // retry connecting after some second to not bothering on high load
+      setTimeout(() => {
+        myLogger.info('Bitfinex: Connection reconnect');
+        ws.open();
+      }, 10000);
     });
 
     ws.on('open', () => {
