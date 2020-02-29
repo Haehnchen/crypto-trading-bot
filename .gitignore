@@ -236,6 +236,7 @@ Temporary Items
 .apdisk
 
 # Project config
+/.idea
 /conf.json
 /instance.js
 /bot.db
