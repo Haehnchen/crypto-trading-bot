@@ -124,6 +124,8 @@ module.exports = {
         return undefined;
       }
 
+      result.exchange = 'binance_margin';
+
       if (!callback) {
         return result;
       }
