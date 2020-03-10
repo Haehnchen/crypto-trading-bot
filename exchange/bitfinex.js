@@ -563,7 +563,8 @@ module.exports = class Bitfinex {
     const orderOptions = {
       cid: order.id,
       symbol: `t${order.symbol}`,
-      amount: order.price < 0 ? amount * -1 : amount
+      amount: order.price < 0 ? amount * -1 : amount,
+      meta: { aff_code: 'kDLceRHa' }
     };
 
     if (!order.type || order.type === 'limit') {
