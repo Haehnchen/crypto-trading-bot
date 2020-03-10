@@ -291,22 +291,30 @@ module.exports = class BinanceMargin {
           continue;
         }
 
-        // let entry;
-        // let createdAt = new Date();
+        let entry;
+        let createdAt = new Date();
 
         // try to find a entry price, based on trade history
-        // if (this.trades[pair] && this.trades[pair].side === 'buy') {
-        //  entry = parseFloat(this.trades[pair].price);
-        //  createdAt = this.trades[pair].time;
-        // }
+        const side = balance.available < 0 ? 'sell' : 'buy';
 
-        // calulcate profit based on the ticket price
-        // let profit;
-        // if (entry && this.tickers[pair]) {
-        //  profit = (this.tickers[pair].bid / entry - 1) * 100;
-        // }
+        const trade = this.trades[pair];
+        if (trade && trade.side === side) {
+          entry = parseFloat(trade.price);
+          createdAt = trade.time;
+        }
 
-        positions.push(Position.create(pair, balance.available, new Date()));
+        // calculate profit based on the ticker price
+        let profit;
+        if (entry && this.tickers[pair]) {
+          profit = (this.tickers[pair].bid / entry - 1) * 100;
+
+          // inverse profit for short
+          if (side === 'sell') {
+            profit *= -1;
+          }
+        }
+
+        positions.push(Position.create(pair, balance.available, new Date(), createdAt, entry, profit));
       }
     }
 
