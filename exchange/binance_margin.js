@@ -152,8 +152,9 @@ module.exports = class BinanceMargin {
   async order(order) {
     const payload = Binance.createOrderBody(order);
 
-    // borrow or repay
-    payload.sideEffectType = order.isLong() ? 'MARGIN_BUY' : 'AUTO_REPAY';
+    // on open position for need to repay via AUTO_REPAY else be borrowing via MARGIN_BUY
+    const position = await this.getPositionForSymbol(order.getSymbol());
+    payload.sideEffectType = position ? 'AUTO_REPAY' : 'MARGIN_BUY';
 
     let result;
 
@@ -522,13 +523,10 @@ module.exports = class BinanceMargin {
     return balances
       .filter(b => parseFloat(b.netAsset) !== 0 && !['USDT', 'BUSD', 'USDC'].includes(b.asset))
       .map(balance => {
-        const netAsset = parseFloat(balance.netAsset);
-
         return {
-          available: netAsset > 0 ? parseFloat(balance.free) : balance.borrowed * -1,
+          available: parseFloat(balance.netAsset),
           locked: parseFloat(balance.locked),
-          asset: balance.asset,
-          netAsset: netAsset
+          asset: balance.asset
         };
       });
   }

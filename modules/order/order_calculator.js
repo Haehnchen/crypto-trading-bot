@@ -28,7 +28,7 @@ module.exports = class OrderCalculator {
       }
 
       const amount = await this.convertCurrencyToAsset(exchangeName, symbol, capital.currency);
-      return amount ? exchange.calculateAmount(amount) : undefined;
+      return amount ? exchange.calculateAmount(amount, symbol) : undefined;
     }
 
     // contracts exchange / pairs need inverse
