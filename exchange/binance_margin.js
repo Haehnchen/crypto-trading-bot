@@ -161,9 +161,16 @@ module.exports = class BinanceMargin {
     try {
       result = await this.client.marginOrder(payload);
     } catch (e) {
-      this.logger.error(`Binance: order create error: ${JSON.stringify(e.message, order, payload)}`);
+      this.logger.error(`Binance: order create error: ${JSON.stringify([e.code, e.message, order, payload])}`);
 
-      if ((e.message && e.message.toLowerCase().includes('insufficient balance')) || (e.code && e.code === -2010)) {
+      // -2010: insufficient balance
+      // -XXXX: borrow amount has exceed
+      if (
+        (e.message &&
+          (e.message.toLowerCase().includes('insufficient balance') ||
+            e.message.toLowerCase().includes('borrow amount has exceed'))) ||
+        (e.code && e.code === -2010)
+      ) {
         return ExchangeOrder.createRejectedFromOrder(order, `${e.code} - ${e.message}`);
       }
 
