@@ -908,8 +908,14 @@ module.exports = class Bybit {
               return;
             }
 
-            const json = JSON.parse(body);
-            if (!('result' in json)) {
+            let json;
+            try {
+              json = JSON.parse(body);
+            } catch (e) {
+              json = [];
+            }
+
+            if (!json.result) {
               this.logger.error(
                 `Bybit: Invalid orders json:${JSON.stringify({ body: body, orderStatus: orderStatus })}`
               );
@@ -961,7 +967,13 @@ module.exports = class Bybit {
             return;
           }
 
-          const json = JSON.parse(body);
+          let json;
+          try {
+            json = JSON.parse(body);
+          } catch (e) {
+            json = [];
+          }
+
           if (!json.result || !json.result.data) {
             this.logger.error(`Bybit: Invalid stop-order json:${JSON.stringify({ body: body })}`);
             resolve([]);
