@@ -136,7 +136,7 @@
                                         {% for order in orders %}
                                             <tr>
                                                 <td>{{ order.exchange }}</td>
-                                                <td>{{ order.order.symbol }}</td>
+                                                <td><a target="blank" href="/tradingview/{{ order.exchange }}:{{ order.order.symbol }}">{{ order.order.symbol }}</a></td>
                                                 <td>{{ order.order.type }}</td>
                                                 <td>{{ order.order.id }}</td>
                                                 <td>{{ order.order.price }}</td>
