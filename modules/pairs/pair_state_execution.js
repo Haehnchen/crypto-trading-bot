@@ -164,7 +164,9 @@ module.exports = class PairStateExecution {
 
     const exchangeOrderStored = await this.managedPairStateOrder(pairState);
     if (!exchangeOrderStored) {
-      this.logger.info(`Pair State: Create position close order: ${JSON.stringify([pair.exchange])}`);
+      this.logger.info(
+        `Pair State: Create position close order: ${JSON.stringify([pair.exchange, pair.symbol, pair.position])}`
+      );
 
       const amount = Math.abs(position.amount);
 
