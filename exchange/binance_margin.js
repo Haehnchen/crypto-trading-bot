@@ -287,7 +287,7 @@ module.exports = class BinanceMargin {
     for (const balance of this.balances) {
       const { asset } = balance;
 
-      let assetPositions = [];
+      const assetPositions = [];
 
       for (const pair in capitals) {
         // just a hack to get matching pairs with capital eg: "BTCUSDT" needs a capital of "BTC"
@@ -336,7 +336,8 @@ module.exports = class BinanceMargin {
         // on multiple pair path orders with latest date wins
         const assetPositionsOrdered = assetPositions.sort(
           // order by latest
-          (a, b) => b.createdAt - a.createdAt
+          (a, b) =>
+            (b.createdAt ? b.createdAt : new Date('1970-01-01')) - (a.createdAt ? a.createdAt : new Date('1970-01-01'))
         );
 
         positions.push(assetPositionsOrdered[0]);
