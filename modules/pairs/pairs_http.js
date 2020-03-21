@@ -9,35 +9,39 @@ module.exports = class PairsHttp {
   }
 
   async getTradePairs() {
-    return new Promise(async resolve => {
-      const pairs = [];
+    const pairs = await Promise.all(
+      this.instances.symbols
+        .filter(symbol => !(_.get(symbol, 'trade.capital', 0) <= 0 && _.get(symbol, 'trade.currency_capital', 0) <= 0))
+        .map(async symbol => {
+          const position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
+          const state = await this.pairStateManager.get(symbol.exchange, symbol.symbol);
 
-      for (const symbol of this.instances.symbols) {
-        if (_.get(symbol, 'trade.capital', 0) <= 0 && _.get(symbol, 'trade.currency_capital', 0) <= 0) {
-          continue;
-        }
+          const item = {
+            exchange: symbol.exchange,
+            symbol: symbol.symbol,
+            watchdogs: symbol.watchdogs,
+            state: symbol.state,
+            has_position: position !== undefined,
+            capital: `${_.get(symbol, 'trade.capital', 0)} / ${_.get(symbol, 'trade.currency_capital', 0)}`,
+            strategies: symbol.trade.strategies || []
+          };
 
-        const position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
-        const state = await this.pairStateManager.get(symbol.exchange, symbol.symbol);
+          if (state && state.state) {
+            item.process = state.state;
+          }
 
-        const item = {
-          exchange: symbol.exchange,
-          symbol: symbol.symbol,
-          watchdogs: symbol.watchdogs,
-          state: symbol.state,
-          has_position: position !== undefined,
-          capital: `${_.get(symbol, 'trade.capital', 0)} / ${_.get(symbol, 'trade.currency_capital', 0)}`,
-          strategies: symbol.trade.strategies || []
-        };
+          return item;
+        })
+    );
 
-        if (state && state.state) {
-          item.process = state.state;
-        }
+    return pairs.sort((a, b) => {
+      // ordering:
+      //  - open position
+      //  - running process
+      const aValue = (a.has_position ? 0 : 2) + (a.process ? 1 : 0);
+      const bValue = (b.has_position ? 0 : 2) + (b.process ? 1 : 0);
 
-        pairs.push(item);
-      }
-
-      resolve(pairs);
+      return aValue - bValue;
     });
   }
 
