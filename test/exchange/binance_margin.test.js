@@ -1,6 +1,8 @@
 const assert = require('assert');
 const fs = require('fs');
+const moment = require('moment');
 const BinanceMargin = require('../../exchange/binance_margin');
+const Ticker = require('../../dict/ticker');
 
 describe('#binance_margin exchange implementation', function() {
   const getFixtures = function(file) {
@@ -33,5 +35,106 @@ describe('#binance_margin exchange implementation', function() {
 
     const ADA = balances.find(b => b.asset === 'ADA');
     assert.strictEqual(parseFloat(ADA.available.toFixed(2)), 9501.2);
+  });
+
+  it('test that positions are open based on websocket balances', async () => {
+    const binance = new BinanceMargin(undefined, { debug: () => {} });
+
+    binance.symbols = [
+      {
+        symbol: 'XRPUSDC',
+        trade: {
+          capital: 3000
+        }
+      },
+      {
+        symbol: 'XRPUSDT',
+        trade: {
+          capital: 3000
+        }
+      },
+      {
+        symbol: 'XRPBUSD',
+        trade: {
+          capital: 3000
+        }
+      }
+    ];
+
+    binance.tickers.XRPUSDT = new Ticker('foobar', 'XRPUSDT', undefined, 0.25429, 0.26429);
+
+    binance.client = {
+      marginAllOrders: async opts => {
+        const newVar = {
+          XRPUSDT: [
+            {
+              clientOrderId: 'web_2e31730aa5814006a6295c1779a68eab',
+              cummulativeQuoteQty: '499.97581200',
+              executedQty: '1822.80000000',
+              icebergQty: '0.00000000',
+              isWorking: true,
+              orderId: 278520093,
+              origQty: '1822.80000000',
+              price: '0.27429000',
+              side: 'SELL',
+              status: 'FILLED',
+              stopPrice: '0.00000000',
+              symbol: 'XRPUSDT',
+              time: new Date(),
+              timeInForce: 'GTC',
+              type: 'LIMIT',
+              updateTime: 1571933622396
+            }
+          ],
+          XRPUSDC: [
+            {
+              clientOrderId: 'web_2e31730aa5814006a6295c1779a68eab',
+              cummulativeQuoteQty: '499.97581200',
+              executedQty: '1822.80000000',
+              icebergQty: '0.00000000',
+              isWorking: true,
+              orderId: 278520093,
+              origQty: '1822.80000000',
+              price: '0.27429000',
+              side: 'SELL',
+              status: 'FILLED',
+              stopPrice: '0.00000000',
+              symbol: 'XRPUSDT',
+              time: new Date(moment().subtract(1, 'hour')),
+              timeInForce: 'GTC',
+              type: 'LIMIT',
+              updateTime: 1571933622396
+            }
+          ]
+        };
+
+        return newVar[opts.symbol] || [];
+      },
+      marginAccountInfo: async () => {
+        return {
+          userAssets: [
+            {
+              asset: 'XRP',
+              borrowed: '3000',
+              free: '0.00000000',
+              interest: '0.00000221',
+              locked: '0.00000000',
+              netAsset: '-3000'
+            }
+          ]
+        };
+      }
+    };
+
+    await binance.syncBalances();
+    await binance.syncTradesForEntries();
+
+    const positions = await binance.getPositions();
+    assert.equal(positions.length, 1);
+
+    const XRPUSDT = await binance.getPositionForSymbol('XRPUSDT');
+
+    assert.equal(XRPUSDT.amount, -3000);
+    assert.equal(XRPUSDT.profit > 7 && XRPUSDT.profit < 8, true);
   });
 });
