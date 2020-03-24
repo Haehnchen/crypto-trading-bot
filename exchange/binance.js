@@ -199,35 +199,36 @@ module.exports = class Binance {
   }
 
   static createOrderBody(order) {
-    if (!order.amount && !order.price && !order.symbol) {
-      throw 'Invalid amount for update';
+    if (!order.getAmount() && !order.getPrice() && !order.getSymbol()) {
+      throw Error('Invalid amount for update');
     }
 
     const myOrder = {
-      symbol: order.symbol,
-      side: order.price < 0 ? 'SELL' : 'BUY',
-      quantity: Math.abs(order.amount)
+      symbol: order.getSymbol(),
+      side: order.isShort() ? 'SELL' : 'BUY',
+      quantity: order.getAmount()
     };
 
     let orderType;
-    if (!order.type || order.type === 'limit') {
+    const type = order.getType();
+    if (!type || type === 'limit') {
       orderType = 'LIMIT';
-      myOrder.price = Math.abs(order.price);
-    } else if (order.type === 'stop') {
+      myOrder.price = order.getPrice();
+    } else if (type === 'stop') {
       orderType = 'STOP_LOSS';
-      myOrder.stopPrice = Math.abs(order.price);
-    } else if (order.type === 'market') {
+      myOrder.stopPrice = order.getPrice();
+    } else if (type === 'market') {
       orderType = 'MARKET';
     }
 
     if (!orderType) {
-      throw 'Invalid order type';
+      throw Error('Invalid order type');
     }
 
     myOrder.type = orderType;
 
     if (order.id) {
-      myOrder.newClientOrderId = order.id;
+      myOrder.newClientOrderId = order.getId();
     }
 
     return myOrder;

@@ -24,6 +24,23 @@ describe('#binance exchange implementation', function() {
     );
   });
 
+  it('limit order is created for negative values', () => {
+    const orders = Binance.createOrderBody(Order.createLimitPostOnlyOrder('BTCUSD', 'short', 1337, -0.5));
+
+    delete orders.newClientOrderId;
+
+    assert.deepEqual(
+      {
+        symbol: 'BTCUSD',
+        quantity: 0.5,
+        side: 'SELL',
+        price: 1337,
+        type: 'LIMIT'
+      },
+      orders
+    );
+  });
+
   it('market order is created', () => {
     const orders = Binance.createOrderBody(Order.createMarketOrder('BTCUSD', -1337));
 
