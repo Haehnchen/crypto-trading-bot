@@ -297,8 +297,7 @@ module.exports = class BinanceMargin {
 
         // 1% balance left indicate open position
         const pairCapital = capitals[pair];
-        const balanceUsed = parseFloat(Math.abs(balance.available)) + parseFloat(balance.locked);
-        if (Math.abs(balanceUsed / pairCapital) < 0.1) {
+        if (Math.abs(Math.abs(balance.available) / pairCapital) < 0.1) {
           continue;
         }
 
