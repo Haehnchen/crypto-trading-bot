@@ -155,7 +155,21 @@ module.exports = class BinanceMargin {
 
     // on open position for need to repay via AUTO_REPAY else be borrowing via MARGIN_BUY
     const position = await this.getPositionForSymbol(order.getSymbol());
-    payload.sideEffectType = position ? 'AUTO_REPAY' : 'MARGIN_BUY';
+
+    if (!position) {
+      // no position so open it with borrow
+      payload.sideEffectType = 'MARGIN_BUY';
+    } else {
+      // borrow: add to position
+      if ((order.isLong() && position.isLong()) || (order.isShort() && position.isShort())) {
+        payload.sideEffectType = 'MARGIN_BUY';
+      }
+
+      // repay: close position
+      if ((order.isLong() && position.isShort()) || (order.isShort() && position.isLong())) {
+        payload.sideEffectType = 'AUTO_REPAY';
+      }
+    }
 
     let result;
 

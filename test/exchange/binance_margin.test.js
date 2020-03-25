@@ -3,6 +3,8 @@ const fs = require('fs');
 const moment = require('moment');
 const BinanceMargin = require('../../exchange/binance_margin');
 const Ticker = require('../../dict/ticker');
+const Order = require('../../dict/order');
+const ExchangeOrder = require('../../dict/exchange_order');
 
 describe('#binance_margin exchange implementation', function() {
   const getFixtures = function(file) {
@@ -136,5 +138,203 @@ describe('#binance_margin exchange implementation', function() {
 
     assert.equal(XRPUSDT.amount, -3000);
     assert.equal(XRPUSDT.profit > 7 && XRPUSDT.profit < 8, true);
+  });
+
+  it('test that order payload for borrow and lending is generated for no position', async () => {
+    const binance = new BinanceMargin(undefined, { debug: () => {} });
+
+    let myOrder;
+    binance.client = {
+      marginOrder: async order => {
+        myOrder = order;
+
+        return new ExchangeOrder(
+          25035356,
+          'FOOUSD',
+          'open',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          'buy',
+          ExchangeOrder.TYPE_LIMIT
+        );
+      }
+    };
+
+    await binance.order(Order.createLimitPostOnlyOrder('BTCUSD', Order.SIDE_SHORT, 6666, 1));
+    assert.strictEqual(myOrder.sideEffectType, 'MARGIN_BUY');
+  });
+
+  it('test that order payload for borrow and lending is generated for short position', async () => {
+    const binance = new BinanceMargin(undefined, { debug: () => {} });
+
+    binance.symbols = [
+      {
+        symbol: 'XRPUSDT',
+        trade: {
+          capital: 3000
+        }
+      }
+    ];
+
+    let myOrder;
+    binance.client = {
+      marginOrder: async order => {
+        myOrder = order;
+
+        return new ExchangeOrder(
+          25035356,
+          'FOOUSD',
+          'open',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          'sell',
+          ExchangeOrder.TYPE_LIMIT
+        );
+      },
+      marginAllOrders: async opts => {
+        const newVar = {
+          XRPUSDT: [
+            {
+              clientOrderId: 'web_2e31730aa5814006a6295c1779a68eab',
+              cummulativeQuoteQty: '499.97581200',
+              executedQty: '1822.80000000',
+              icebergQty: '0.00000000',
+              isWorking: true,
+              orderId: 278520093,
+              origQty: '1822.80000000',
+              price: '0.27429000',
+              side: 'SELL',
+              status: 'FILLED',
+              stopPrice: '0.00000000',
+              symbol: 'XRPUSDT',
+              time: new Date(),
+              timeInForce: 'GTC',
+              type: 'LIMIT',
+              updateTime: 1571933622396
+            }
+          ]
+        };
+
+        return newVar[opts.symbol] || [];
+      },
+      marginAccountInfo: async () => {
+        return {
+          userAssets: [
+            {
+              asset: 'XRP',
+              borrowed: '3000',
+              free: '0.00000000',
+              interest: '0.00000221',
+              locked: '0.00000000',
+              netAsset: '-3000'
+            }
+          ]
+        };
+      }
+    };
+
+    await binance.syncBalances();
+    await binance.syncTradesForEntries();
+
+    const positions = await binance.getPositions();
+    assert.strictEqual(positions.length, 1);
+
+    // close position
+    await binance.order(Order.createLimitPostOnlyOrder('XRPUSDT', Order.SIDE_LONG, 6666, 1));
+    assert.strictEqual(myOrder.sideEffectType, 'AUTO_REPAY');
+
+    // add to position
+    await binance.order(Order.createLimitPostOnlyOrder('XRPUSDT', Order.SIDE_SHORT, 6666, 1));
+    assert.strictEqual(myOrder.sideEffectType, 'MARGIN_BUY');
+  });
+
+  it('test that order payload for borrow and lending is generated for long position', async () => {
+    const binance = new BinanceMargin(undefined, { debug: () => {} });
+
+    binance.symbols = [
+      {
+        symbol: 'XRPUSDT',
+        trade: {
+          capital: 3000
+        }
+      }
+    ];
+
+    let myOrder;
+    binance.client = {
+      marginOrder: async order => {
+        myOrder = order;
+
+        return new ExchangeOrder(
+          25035356,
+          'FOOUSD',
+          'open',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          'buy',
+          ExchangeOrder.TYPE_LIMIT
+        );
+      },
+      marginAllOrders: async opts => {
+        const newVar = {
+          XRPUSDT: [
+            {
+              clientOrderId: 'web_2e31730aa5814006a6295c1779a68eab',
+              cummulativeQuoteQty: '499.97581200',
+              executedQty: '1822.80000000',
+              icebergQty: '0.00000000',
+              isWorking: true,
+              orderId: 278520093,
+              origQty: '1822.80000000',
+              price: '0.27429000',
+              side: 'BUY',
+              status: 'FILLED',
+              stopPrice: '0.00000000',
+              symbol: 'XRPUSDT',
+              time: new Date(),
+              timeInForce: 'GTC',
+              type: 'LIMIT',
+              updateTime: 1571933622396
+            }
+          ]
+        };
+
+        return newVar[opts.symbol] || [];
+      },
+      marginAccountInfo: async () => {
+        return {
+          userAssets: [
+            {
+              asset: 'XRP',
+              borrowed: '3000',
+              free: '0.00000000',
+              interest: '0.00000221',
+              locked: '0.00000000',
+              netAsset: '3000'
+            }
+          ]
+        };
+      }
+    };
+
+    await binance.syncBalances();
+    await binance.syncTradesForEntries();
+
+    const positions = await binance.getPositions();
+    assert.strictEqual(positions.length, 1);
+
+    // close position
+    await binance.order(Order.createLimitPostOnlyOrder('XRPUSDT', Order.SIDE_LONG, 6666, 1));
+    assert.strictEqual(myOrder.sideEffectType, 'MARGIN_BUY');
+
+    // add to position
+    await binance.order(Order.createLimitPostOnlyOrder('XRPUSDT', Order.SIDE_SHORT, 6666, 1));
+    assert.strictEqual(myOrder.sideEffectType, 'AUTO_REPAY');
   });
 });
