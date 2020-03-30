@@ -9,6 +9,7 @@ const OrderUtil = require('../utils/order_util');
 const Position = require('../dict/position');
 const Order = require('../dict/order');
 const OrderBag = require('./utils/order_bag');
+const TradesUtil = require('./utils/trades_util');
 
 module.exports = class Binance {
   constructor(eventEmitter, logger, queue, candleImport) {
@@ -368,6 +369,8 @@ module.exports = class Binance {
     for (const balance of this.balances) {
       const { asset } = balance;
 
+      const assetPositions = [];
+
       for (const pair in capitals) {
         // just a hack to get matching pairs with capital eg: "BTCUSDT" needs a capital of "BTC"
         if (!pair.startsWith(asset)) {
@@ -376,27 +379,49 @@ module.exports = class Binance {
 
         // 1% balance left indicate open position
         const pairCapital = capitals[pair];
-        const balanceUsed = parseFloat(balance.available) + parseFloat(balance.locked);
-        if (Math.abs(balanceUsed / pairCapital) < 0.1) {
+        if (Math.abs(Math.abs(balance.available) / pairCapital) < 0.1) {
           continue;
         }
 
         let entry;
-        let createdAt = new Date();
+        let createdAt;
 
         // try to find a entry price, based on trade history
-        if (this.trades[pair] && this.trades[pair].side === 'buy') {
-          entry = parseFloat(this.trades[pair].price);
-          createdAt = this.trades[pair].time;
+        const side = balance.available < 0 ? 'short' : 'long';
+
+        const trades = this.trades[pair];
+        if (trades && trades.length > 0) {
+          const positionEntry = TradesUtil.findPositionEntryFromTrades(trades, Math.abs(balance.available), side);
+
+          if (positionEntry) {
+            entry = positionEntry.average_price;
+            createdAt = positionEntry.time;
+          }
         }
 
-        // calulcate profit based on the ticket price
+        // calculate profit based on the ticker price
         let profit;
         if (entry && this.tickers[pair]) {
           profit = (this.tickers[pair].bid / entry - 1) * 100;
+
+          // inverse profit for short
+          if (side === 'short') {
+            profit *= -1;
+          }
         }
 
-        positions.push(new Position(pair, 'long', balanceUsed, profit, new Date(), entry, createdAt));
+        assetPositions.push(Position.create(pair, balance.available, new Date(), createdAt, entry, profit));
+      }
+
+      if (assetPositions.length > 0) {
+        // on multiple pair path orders with latest date wins
+        const assetPositionsOrdered = assetPositions.sort(
+          // order by latest
+          (a, b) =>
+            (b.createdAt ? b.createdAt : new Date('1970-01-01')) - (a.createdAt ? a.createdAt : new Date('1970-01-01'))
+        );
+
+        positions.push(assetPositionsOrdered[0]);
       }
     }
 
@@ -441,25 +466,11 @@ module.exports = class Binance {
         this.orderbag.delete(event.orderId);
       }
 
-      // set last order price to our trades. so we have directly profit and entry prices
-      if (orderStatus === 'filled' && event.symbol && event.price && event.side && event.side.toLowerCase() === 'buy') {
-        this.trades[event.symbol] = {
-          side: event.side.toLowerCase(),
-          price: parseFloat(event.price),
-          symbol: event.symbol,
-          time: event.orderTime ? new Date(event.orderTime) : new Date()
-        };
-      }
-
       // sync all open orders and get entry based fire them in parallel
-      const promises = [];
-      promises.push(this.syncOrders());
+      await this.syncOrders();
 
-      if (event.symbol) {
-        promises.push(this.syncTradesForEntries([event.symbol]));
-      }
-
-      await Promise.all(promises);
+      // set last order price to our trades. so we have directly profit and entry prices
+      await this.syncTradesForEntries([event.symbol]);
     }
 
     // get balances and same them internally; allows to take open positions
@@ -552,49 +563,49 @@ module.exports = class Binance {
 
     this.logger.debug(`Binance: Sync trades for entries: ${symbols.length}`);
 
-    const promises = [];
+    const promises = symbols.map(symbol => {
+      return new Promise(async resolve => {
+        let symbolOrders;
 
-    for (const symbol of symbols) {
-      promises.push(
-        new Promise(async resolve => {
-          let symbolOrders;
+        try {
+          symbolOrders = await this.client.allOrders({
+            symbol: symbol,
+            limit: 10
+          });
+        } catch (e) {
+          this.logger.error(`Binance: Error on symbol order fetch: ${String(e)}`);
+          return resolve(undefined);
+        }
 
-          try {
-            symbolOrders = await this.client.allOrders({ symbol: symbol, limit: 150 });
-          } catch (e) {
-            this.logger.error(`Binance: Error on symbol order fetch: ${String(e)}`);
-            return resolve(undefined);
-          }
+        const orders = symbolOrders
+          .filter(
+            // filled order and fully closed but be have also partially_filled ones if ordering was no fully done
+            // in case order was canceled but executedQty is set we have a partially cancel
+            order =>
+              ['filled', 'partially_filled'].includes(order.status.toLowerCase()) ||
+              (order.status.toLowerCase() === 'canceled' && parseFloat(order.executedQty) > 0)
+          )
+          .sort(
+            // order by latest
+            (a, b) => b.time - a.time
+          )
+          .map(order => {
+            return {
+              side: order.side.toLowerCase(),
+              price: parseFloat(order.price),
+              symbol: order.symbol,
+              time: new Date(order.time),
+              size: parseFloat(order.executedQty)
+            };
+          });
 
-          const orders = symbolOrders
-            .filter(
-              // filled order and fully closed but be have also partially_filled ones if ordering was no fully done
-              // in case order was canceled but executedQty is set we have a partially cancel
-              order =>
-                ['filled', 'partially_filled'].includes(order.status.toLowerCase()) ||
-                (order.status.toLowerCase() === 'canceled' && parseFloat(order.executedQty) > 0)
-            )
-            .sort(
-              // order by latest
-              (a, b) => b.time - a.time
-            )
-            .map(order => {
-              return {
-                side: order.side.toLowerCase(),
-                price: parseFloat(order.price),
-                symbol: order.symbol,
-                time: new Date(order.time)
-              };
-            });
-
-          return resolve(orders.length > 0 ? orders[0] : undefined);
-        })
-      );
-    }
+        return resolve({ symbol: symbol, orders: orders });
+      });
+    });
 
     (await Promise.all(promises)).forEach(o => {
       if (o) {
-        this.trades[o.symbol] = o;
+        this.trades[o.symbol] = o.orders;
       }
     });
   }
