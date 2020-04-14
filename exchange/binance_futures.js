@@ -259,22 +259,28 @@ module.exports = class BinanceFutures {
     ws.onopen = function() {
       me.logger.info('Binance Futures: Public stream opened.');
 
-      symbols.forEach(symbol => {
-        const params = [
-          `${symbol.symbol.toLowerCase()}@bookTicker`,
-          ...symbol.periods.map(p => `${symbol.symbol.toLowerCase()}@kline_${p}`)
-        ];
+      // we are only allowed to send a websocket every 5 sec; wait for some init stuff and then run it
+      setTimeout(() => {
+        symbols.forEach((symbol, index) => {
+          // we are only allowed to send a request every 5 seconds
+          setTimeout(() => {
+            const params = [
+              `${symbol.symbol.toLowerCase()}@bookTicker`,
+              ...symbol.periods.map(p => `${symbol.symbol.toLowerCase()}@kline_${p}`)
+            ];
 
-        me.logger.debug(`Binance Futures: Public stream subscribing: ${JSON.stringify([symbol.symbol, params])}`);
+            me.logger.debug(`Binance Futures: Public stream subscribing: ${JSON.stringify([symbol.symbol, params])}`);
 
-        ws.send(
-          JSON.stringify({
-            method: 'SUBSCRIBE',
-            params: params,
-            id: Math.floor(Math.random() * Math.floor(100))
-          })
-        );
-      });
+            ws.send(
+              JSON.stringify({
+                method: 'SUBSCRIBE',
+                params: params,
+                id: Math.floor(Math.random() * Math.floor(100))
+              })
+            );
+          }, (index + 1) * 5500);
+        });
+      }, 10000);
     };
 
     ws.onmessage = async function(event) {
