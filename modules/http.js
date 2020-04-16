@@ -73,7 +73,7 @@ module.exports = class Http {
     app.set('views', `${this.projectDir}/templates`);
     app.set('twig options', {
       allow_async: true,
-      strict_variables: true
+      strict_variables: false
     });
 
     app.use(express.urlencoded({ limit: '12mb', extended: true, parameterLimit: 50000 }));
