@@ -64,5 +64,41 @@
     "updated_at": "2019-06-09T13:55:25.000Z",
     "stop_px": 6.9,
     "stop_order_id": "04463f4c-5021-443f-a794-e67e2a54a4bd"
+  },
+  {
+    "order_id": "6a1a7adf-30ac-49f9-b344-713ede405d2a",
+    "order_link_id": "",
+    "user_id": 500181,
+    "symbol": "BTCUSD",
+    "side": "Sell",
+    "order_type": "Market",
+    "price": "0",
+    "qty": 1,
+    "time_in_force": "ImmediateOrCancel",
+    "create_type": "CreateByStopOrder",
+    "cancel_type": "",
+    "order_status": "Untriggered",
+    "stop_order_type": "Stop",
+    "trigger_by": "LastPrice",
+    "trigger_price": "6800",
+    "timestamp": "2020-03-19T13:06:39.820Z"
+  },
+  {
+    "order_id": "5dca483c-bbd1-4965-99aa-aa0739e0b639",
+    "order_link_id": "",
+    "user_id": 500181,
+    "symbol": "BTCUSD",
+    "side": "Sell",
+    "order_type": "Market",
+    "price": "0",
+    "qty": 1,
+    "time_in_force": "ImmediateOrCancel",
+    "create_type": "CreateByStopOrder",
+    "cancel_type": "CancelByUser",
+    "order_status": "Deactivated",
+    "stop_order_type": "Stop",
+    "trigger_by": "LastPrice",
+    "trigger_price": "6800",
+    "timestamp": "2020-03-19T13:07:39.820Z"
   }
 ]
