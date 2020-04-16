@@ -297,7 +297,7 @@ module.exports = {
       format: format.combine(format.timestamp(), format.json()),
       transports: [
         new transports.File({
-          filename: './var/log/log.log',
+          filename: `${parameters.projectDir}/var/log/log.log`,
           level: 'debug'
         }),
         new transports.Console({

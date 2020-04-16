@@ -1,9 +1,9 @@
 const assert = require('assert');
-const AwesomeOscillatorCrossZero = require('../../../../modules/strategy/strategies/awesome_oscillator_cross_zero');
-const IndicatorBuilder = require('../../../../modules/strategy/dict/indicator_builder');
-const IndicatorPeriod = require('../../../../modules/strategy/dict/indicator_period');
-const StrategyContext = require('../../../../dict/strategy_context');
-const Ticker = require('../../../../dict/ticker');
+const AwesomeOscillatorCrossZero = require('../../../../src/modules/strategy/strategies/awesome_oscillator_cross_zero');
+const IndicatorBuilder = require('../../../../src/modules/strategy/dict/indicator_builder');
+const IndicatorPeriod = require('../../../../src/modules/strategy/dict/indicator_period');
+const StrategyContext = require('../../../../src/dict/strategy_context');
+const Ticker = require('../../../../src/dict/ticker');
 
 describe('#strategy AwesomeOscillatorCrossZero', () => {
   it('AwesomeOscillatorCrossZero indicator builder', async () => {

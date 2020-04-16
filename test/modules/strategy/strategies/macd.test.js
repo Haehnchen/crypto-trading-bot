@@ -1,9 +1,9 @@
 const assert = require('assert');
-const MACD = require('../../../../modules/strategy/strategies/macd');
-const IndicatorBuilder = require('../../../../modules/strategy/dict/indicator_builder');
-const IndicatorPeriod = require('../../../../modules/strategy/dict/indicator_period');
-const StrategyContext = require('../../../../dict/strategy_context');
-const Ticker = require('../../../../dict/ticker');
+const MACD = require('../../../../src/modules/strategy/strategies/macd');
+const IndicatorBuilder = require('../../../../src/modules/strategy/dict/indicator_builder');
+const IndicatorPeriod = require('../../../../src/modules/strategy/dict/indicator_period');
+const StrategyContext = require('../../../../src/dict/strategy_context');
+const Ticker = require('../../../../src/dict/ticker');
 
 describe('#strategy macd', () => {
   it('macd indicator builder', async () => {

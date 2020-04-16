@@ -1,5 +1,5 @@
 const assert = require('assert');
-const RequestClient = require('../../utils/request_client');
+const RequestClient = require('../../src/utils/request_client');
 
 describe('#request client', function() {
   it('test that retry is running with a final result', async () => {

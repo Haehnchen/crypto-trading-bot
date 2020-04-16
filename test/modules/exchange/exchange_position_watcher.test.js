@@ -1,8 +1,8 @@
 const assert = require('assert');
-const ExchangePositionWatcher = require('../../../modules/exchange/exchange_position_watcher');
-const ExchangePosition = require('../../../dict/exchange_position');
-const PositionStateChangeEvent = require('../../../event/position_state_change_event');
-const Position = require('../../../dict/position');
+const ExchangePositionWatcher = require('../../../src/modules/exchange/exchange_position_watcher');
+const ExchangePosition = require('../../../src/dict/exchange_position');
+const PositionStateChangeEvent = require('../../../src/event/position_state_change_event');
+const Position = require('../../../src/dict/position');
 
 describe('#exchange position watcher', () => {
   it('test that opened positions are triggered', async () => {

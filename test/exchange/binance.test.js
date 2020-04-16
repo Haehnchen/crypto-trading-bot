@@ -1,10 +1,10 @@
 const assert = require('assert');
 const fs = require('fs');
-const Binance = require('../../exchange/binance');
-const Order = require('../../dict/order');
-const Position = require('../../dict/position');
-const Ticker = require('../../dict/ticker');
-const ExchangeOrder = require('../../dict/exchange_order');
+const Binance = require('../../src/exchange/binance');
+const Order = require('../../src/dict/order');
+const Position = require('../../src/dict/position');
+const Ticker = require('../../src/dict/ticker');
+const ExchangeOrder = require('../../src/dict/exchange_order');
 
 describe('#binance exchange implementation', function() {
   it('limit order is created', () => {

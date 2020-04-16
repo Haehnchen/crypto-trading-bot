@@ -1,10 +1,10 @@
 const assert = require('assert');
 const { createLogger } = require('winston');
 const fs = require('fs');
-const StopLossCalculator = require('../../../modules/order/stop_loss_calculator');
-const Position = require('../../../dict/position');
-const Ticker = require('../../../dict/ticker');
-const Tickers = require('../../../storage/tickers');
+const StopLossCalculator = require('../../../src/modules/order/stop_loss_calculator');
+const Position = require('../../../src/dict/position');
+const Ticker = require('../../../src/dict/ticker');
+const Tickers = require('../../../src/storage/tickers');
 
 describe('#stop loss order calculation', function() {
   it('calculate stop lose for long', async () => {

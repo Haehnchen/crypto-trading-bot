@@ -1,10 +1,10 @@
 const program = require('commander');
-const TradeCommand = require('./command/trade.js');
-const ServerCommand = require('./command/server.js');
-const Backfill = require('./command/backfill.js');
+const TradeCommand = require('./src/command/trade.js');
+const ServerCommand = require('./src/command/server.js');
+const Backfill = require('./src/command/backfill.js');
 
 // init
-const services = require('./modules/services');
+const services = require('./src/modules/services');
 
 program
   .command('trade')
@@ -26,7 +26,7 @@ program
   .option('-d, --date <date>', 'days in past to collect start', '7')
   .action(async options => {
     if (!options.exchange || !options.symbol || !options.period || !options.date) {
-      throw 'Not all options are given';
+      throw new Error('Not all options are given');
     }
 
     await services.boot();
@@ -41,7 +41,7 @@ program
   .command('server')
   .description('')
   .option('-i, --instance <file>', 'Instance to start', 'instance.json')
-  .action(function(options) {
+  .action(options => {
     const cmd = new ServerCommand(options.instance);
     cmd.execute();
   });

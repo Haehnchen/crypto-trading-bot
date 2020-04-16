@@ -1,8 +1,8 @@
 const assert = require('assert');
-const ExchangeManager = require('../../../modules/exchange/exchange_manager');
-const Noop = require('../../../exchange/noop');
-const Position = require('../../../dict/position');
-const ExchangeOrder = require('../../../dict/exchange_order');
+const ExchangeManager = require('../../../src/modules/exchange/exchange_manager');
+const Noop = require('../../../src/exchange/noop');
+const Position = require('../../../src/dict/position');
+const ExchangeOrder = require('../../../src/dict/exchange_order');
 
 describe('#exchange manager', () => {
   it('test that exchanges are initialized', () => {

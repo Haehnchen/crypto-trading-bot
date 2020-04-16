@@ -1,5 +1,5 @@
 const assert = require('assert');
-const Order = require('../../dict/order');
+const Order = require('../../src/dict/order');
 
 describe('#order dict test', function() {
   it('test order dict creation (post only)', () => {

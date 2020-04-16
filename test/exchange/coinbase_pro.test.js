@@ -1,7 +1,7 @@
 const assert = require('assert');
-const CoinbasePro = require('../../exchange/coinbase_pro');
-const Ticker = require('../../dict/ticker');
-const Order = require('../../dict/order');
+const CoinbasePro = require('../../src/exchange/coinbase_pro');
+const Ticker = require('../../src/dict/ticker');
+const Order = require('../../src/dict/order');
 
 describe('#coinbase pro exchange implementation', function() {
   it('profits are calculated', () => {

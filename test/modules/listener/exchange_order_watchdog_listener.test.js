@@ -1,7 +1,7 @@
 const assert = require('assert');
-const ExchangeOrderWatchdogListener = require('../../../modules/listener/exchange_order_watchdog_listener');
-const Ticker = require('../../../dict/ticker');
-const Position = require('../../../dict/position');
+const ExchangeOrderWatchdogListener = require('../../../src/modules/listener/exchange_order_watchdog_listener');
+const Ticker = require('../../../src/dict/ticker');
+const Position = require('../../../src/dict/position');
 
 describe('#watchdogs are working', () => {
   it('watchdog for stoploss is working (long)', async () => {

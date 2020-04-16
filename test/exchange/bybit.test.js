@@ -1,7 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
-const Bybit = require('../../exchange/bybit');
-const Order = require('../../dict/order');
+const Bybit = require('../../src/exchange/bybit');
+const Order = require('../../src/dict/order');
 
 describe('#bitmex exchange implementation', function() {
   it('positions are extracted', () => {

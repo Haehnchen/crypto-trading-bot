@@ -1,5 +1,5 @@
 const assert = require('assert');
-const IndicatorPeriod = require('../../../../modules/strategy/dict/indicator_period');
+const IndicatorPeriod = require('../../../../src/modules/strategy/dict/indicator_period');
 
 describe('#test indicator', function() {
   it('test that yield visiting is possible', () => {
