@@ -204,5 +204,67 @@ module.exports = {
         resolve(pairs);
       });
     });
+  },
+
+  bitfinexUsdMarginInit: async callback => {
+    return new Promise(resolve => {
+      request('https://api.bitfinex.com/v1/symbols_details', (_error, _res, body) => {
+        const pairs = [];
+
+        const content = JSON.parse(body);
+
+        content
+          .filter(p => p.margin === true && p.pair.endsWith('usd') && !p.pair.startsWith('USD'))
+          .forEach(pair => {
+            let result = {
+              symbol: pair.pair.toUpperCase(),
+              periods: ['1m', '15m', '1h'],
+              exchange: 'bitfinex',
+              state: 'watch'
+            };
+
+            if (callback) {
+              result = callback(result, pair);
+            }
+
+            if (result) {
+              pairs.push(result);
+            }
+          });
+
+        resolve(pairs);
+      });
+    });
+  },
+
+  bybitInit: async callback => {
+    return new Promise(resolve => {
+      request('https://api.bybit.com/v2/public/symbols', (_error, _res, body) => {
+        const pairs = [];
+
+        const content = JSON.parse(body);
+
+        content.result
+          .filter(p => ['USD'].includes(p.quote_currency))
+          .forEach(pair => {
+            let result = {
+              symbol: pair.name,
+              periods: ['1m', '15m', '1h'],
+              exchange: 'bybit',
+              state: 'watch'
+            };
+
+            if (callback) {
+              result = callback(result, pair);
+            }
+
+            if (result) {
+              pairs.push(result);
+            }
+          });
+
+        resolve(pairs);
+      });
+    });
   }
 };
