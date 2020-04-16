@@ -17,7 +17,8 @@ module.exports = class Http {
     logsHttp,
     candleExportHttp,
     candleImporter,
-    ordersHttp
+    ordersHttp,
+    projectDir
   ) {
     this.systemUtil = systemUtil;
     this.ta = ta;
@@ -29,6 +30,7 @@ module.exports = class Http {
     this.candleExportHttp = candleExportHttp;
     this.candleImporter = candleImporter;
     this.ordersHttp = ordersHttp;
+    this.projectDir = projectDir;
   }
 
   start() {
@@ -68,6 +70,7 @@ module.exports = class Http {
 
     const app = express();
 
+    app.set('views', `${this.projectDir}/templates`);
     app.set('twig options', {
       allow_async: true,
       strict_variables: true
@@ -76,7 +79,7 @@ module.exports = class Http {
     app.use(express.urlencoded({ limit: '12mb', extended: true, parameterLimit: 50000 }));
     app.use(cookieParser());
     app.use(compression());
-    app.use(express.static(`${__dirname}/../web/static`, { maxAge: 3600000 * 24 }));
+    app.use(express.static(`${this.projectDir}/web/static`, { maxAge: 3600000 * 24 }));
 
     const username = this.systemUtil.getConfig('webserver.username');
     const password = this.systemUtil.getConfig('webserver.password');

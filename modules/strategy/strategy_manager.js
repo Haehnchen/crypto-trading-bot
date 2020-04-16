@@ -8,9 +8,10 @@ const Ticker = require('../../dict/ticker');
 const SignalResult = require('./dict/signal_result');
 
 module.exports = class StrategyManager {
-  constructor(technicalAnalysisValidator, exchangeCandleCombine, logger) {
+  constructor(technicalAnalysisValidator, exchangeCandleCombine, logger, projectDir) {
     this.technicalAnalysisValidator = technicalAnalysisValidator;
     this.exchangeCandleCombine = exchangeCandleCombine;
+    this.projectDir = projectDir;
 
     this.logger = logger;
     this.strategies = undefined;
@@ -23,7 +24,7 @@ module.exports = class StrategyManager {
 
     const strategies = [];
 
-    const dirs = [`${__dirname}/strategies`, `${__dirname}/../../var/strategies`];
+    const dirs = [`${__dirname}/strategies`, `${this.projectDir}/var/strategies`];
 
     dirs.forEach(dir => {
       if (!fs.existsSync(dir)) {

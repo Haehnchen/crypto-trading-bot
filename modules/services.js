@@ -4,12 +4,14 @@ const events = require('events');
 const { createLogger, transports, format } = require('winston');
 
 const _ = require('lodash');
+const Sqlite = require('better-sqlite3');
 const Notify = require('../notify/notify');
 const Slack = require('../notify/slack');
 const Mail = require('../notify/mail');
 const Telegram = require('../notify/telegram');
 
 const Tickers = require('../storage/tickers');
+const Ta = require('../modules/ta.js');
 
 const TickListener = require('../modules/listener/tick_listener');
 const CreateOrderListener = require('../modules/listener/create_order_listener');
@@ -115,14 +117,16 @@ let tickerRepository;
 let ordersHttp;
 let pairConfig;
 
+const parameters = {};
+
 module.exports = {
-  boot: async function() {
+  boot: async function(projectDir) {
+    parameters.projectDir = projectDir;
+
     try {
-      instances = require('../instance');
+      instances = require(`${parameters.projectDir}/instance`);
     } catch (e) {
-      throw `Invalid instance.js file. Please check${String(e)}`;
-      process.exit();
-      return;
+      throw new Error(`Invalid instance.js file. Please check: ${String(e)}`);
     }
 
     // boot instance eg to load pairs external
@@ -131,11 +135,9 @@ module.exports = {
     }
 
     try {
-      config = JSON.parse(fs.readFileSync('./conf.json', 'utf8'));
+      config = JSON.parse(fs.readFileSync(`${parameters.projectDir}/conf.json`, 'utf8'));
     } catch (e) {
-      throw `Invalid conf.json file. Please check: ${String(e)}`;
-      process.exit();
-      return;
+      throw new Error(`Invalid conf.json file. Please check: ${String(e)}`);
     }
 
     this.getDatabase();
@@ -146,7 +148,7 @@ module.exports = {
       return db;
     }
 
-    const myDb = require('better-sqlite3')('bot.db');
+    const myDb = Sqlite('bot.db');
     myDb.pragma('journal_mode = WAL');
 
     myDb.pragma('SYNCHRONOUS = 1;');
@@ -160,7 +162,6 @@ module.exports = {
       return ta;
     }
 
-    const Ta = require('../modules/ta.js');
     return (ta = new Ta(this.getCandlestickRepository(), this.getInstances(), this.getTickers()));
   },
 
@@ -365,7 +366,8 @@ module.exports = {
       this.getLogsHttp(),
       this.getCandleExportHttp(),
       this.getCandleImporter(),
-      this.getOrdersHttp()
+      this.getOrdersHttp(),
+      parameters.projectDir
     );
   },
 

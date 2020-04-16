@@ -11,7 +11,7 @@ program
   .description('start crypto trading bot')
   .option('-i, --instance <file>', 'Instance to start', 'instance.json')
   .action(async options => {
-    await services.boot();
+    await services.boot(__dirname);
 
     const cmd = new TradeCommand(options.instance);
     cmd.execute();
