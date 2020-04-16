@@ -3,7 +3,7 @@ var c = module.exports = {}
 c.symbols = []
 
 /*
-const InstanceUtil = require('./utils/instance_util');
+const InstanceUtil = require('./src/utils/instance_util');
 c.init = async () => {
     // Bitmex contracts + examples
   c.symbols.push(
