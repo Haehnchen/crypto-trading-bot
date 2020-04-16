@@ -98,19 +98,24 @@
             ]
         },
         {
-            "name": "Stock",
-            "grid": 3,
-            "intervals": [1440],
-            "height": 400,
-            "pairs": [
+            "name":"Stock",
+            "grid":3,
+            "intervals":[
+                1440
+            ],
+            "height":400,
+            "pairs":[
                 {
-                    "symbol": "SPY"
+                    "symbol":"SPX500USD"
                 },
                 {
-                    "symbol": "TVC:NDX"
+                    "symbol":"NAS100USD"
                 },
                 {
-                    "symbol": "DJI"
+                    "symbol":"DJI"
+                },
+                {
+                    "symbol":"EURUSD"
                 }
             ]
         }
