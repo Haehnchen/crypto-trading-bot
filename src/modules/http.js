@@ -100,7 +100,10 @@ module.exports = class Http {
     const { ta } = this;
 
     app.get('/', async (req, res) => {
-      res.render('../templates/base.html.twig', await ta.getTaForPeriods(this.systemUtil.getConfig('dashboard.periods')));
+      res.render(
+        '../templates/base.html.twig',
+        await ta.getTaForPeriods(this.systemUtil.getConfig('dashboard.periods'))
+      );
     });
 
     app.get('/backtest', async (req, res) => {
