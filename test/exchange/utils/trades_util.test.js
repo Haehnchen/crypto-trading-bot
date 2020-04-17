@@ -1,5 +1,5 @@
 const assert = require('assert');
-const TradesUtil = require('../../../exchange/utils/trades_util');
+const TradesUtil = require('../../../src/exchange/utils/trades_util');
 const moment = require('moment');
 
 describe('#trades utils', function() {

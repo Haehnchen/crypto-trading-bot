@@ -1,5 +1,5 @@
 const assert = require('assert');
-const SignalResult = require('../../../../modules/strategy/dict/signal_result');
+const SignalResult = require('../../../../src/modules/strategy/dict/signal_result');
 
 describe('#test signal object', function() {
   it('test that signal state is correct', () => {

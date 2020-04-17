@@ -1,6 +1,6 @@
 const assert = require('assert');
 const fs = require('fs');
-const ta = require('../../utils/technical_analysis');
+const ta = require('../../src/utils/technical_analysis');
 
 describe('#technical_analysis for candles', () => {
   it('technical_analysis for candles are returned', async () => {

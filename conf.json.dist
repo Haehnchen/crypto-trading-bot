@@ -75,45 +75,75 @@
     },
     "desks": [
         {
-            "name": "Top 10",
-            "grid": 4,
-            "intervals": [15, 60],
-            "height": 400,
-            "pairs": [
-                {
-                    "symbol": "bitmex:XBTUSD"
-                },
-                {
-                    "symbol": "bitmex:ETHUSD"
-                },
-                {
-                    "symbol": "binance:ETHUSDT"
-                },
-                {
-                    "symbol": "binance:LTCUSDT"
-                },
-                {
-                    "symbol": "binance:XRPUSDT"
-                },
-                {
-                    "symbol": "binance:EOSUSDT"
-                }
-            ]
+          "name":"Top 10",
+          "grid":4,
+          "intervals":[
+            15,
+            60,
+            1440
+          ],
+          "height":400,
+          "pairs":[
+            {
+              "symbol":"bitmex:XBTUSD"
+            },
+            {
+              "symbol":"bitmex:ETHUSD"
+            },
+            {
+              "symbol":"binance:LTCUSDT"
+            },
+            {
+              "symbol":"binance:EOSUSDT"
+            },
+            {
+              "symbol":"binance:XRPUSDT"
+            },
+            {
+              "symbol":"binance:NEOUSDT"
+            },
+            {
+              "symbol":"binance:BCHUSDT"
+            },
+            {
+              "symbol":"binance:ETCUSDT"
+            },
+            {
+              "symbol":"binance:ADAUSDT"
+            },
+            {
+              "symbol":"binance:TRXUSDT"
+            },
+            {
+              "symbol":"binance:LINKUSDT"
+            },
+            {
+              "symbol":"binance:BNBUSDT"
+            },
+            {
+              "symbol":"binance:DASHUSDT"
+            }
+          ]
         },
         {
-            "name": "Stock",
-            "grid": 3,
-            "intervals": [1440],
-            "height": 400,
-            "pairs": [
+            "name":"Stock",
+            "grid":3,
+            "intervals":[
+                1440
+            ],
+            "height":400,
+            "pairs":[
                 {
-                    "symbol": "SPY"
+                    "symbol":"SPX500USD"
                 },
                 {
-                    "symbol": "TVC:NDX"
+                    "symbol":"NAS100USD"
                 },
                 {
-                    "symbol": "DJI"
+                    "symbol":"DJI"
+                },
+                {
+                    "symbol":"EURUSD"
                 }
             ]
         }

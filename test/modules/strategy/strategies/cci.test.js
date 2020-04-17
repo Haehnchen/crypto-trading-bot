@@ -1,9 +1,9 @@
 const assert = require('assert');
-const CCI = require('../../../../modules/strategy/strategies/cci');
-const IndicatorBuilder = require('../../../../modules/strategy/dict/indicator_builder');
-const IndicatorPeriod = require('../../../../modules/strategy/dict/indicator_period');
-const StrategyContext = require('../../../../dict/strategy_context');
-const Ticker = require('../../../../dict/ticker');
+const CCI = require('../../../../src/modules/strategy/strategies/cci');
+const IndicatorBuilder = require('../../../../src/modules/strategy/dict/indicator_builder');
+const IndicatorPeriod = require('../../../../src/modules/strategy/dict/indicator_period');
+const StrategyContext = require('../../../../src/dict/strategy_context');
+const Ticker = require('../../../../src/dict/ticker');
 
 describe('#strategy cci', () => {
   it('cci indicator builder', async () => {

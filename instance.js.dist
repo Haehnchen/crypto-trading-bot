@@ -3,7 +3,7 @@ var c = module.exports = {}
 c.symbols = []
 
 /*
-const InstanceUtil = require('./utils/instance_util');
+const InstanceUtil = require('./src/utils/instance_util');
 c.init = async () => {
     // Bitmex contracts + examples
   c.symbols.push(
@@ -53,6 +53,12 @@ c.init = async () => {
         return pair;
       }))
     );
+
+    // Bitfinex USD margin pairs
+    c.symbols.push(...(await InstanceUtil.bitfinexUsdMarginInit()));
+
+    // Bybit USD pairs
+    c.symbols.push(...(await InstanceUtil.bybitInit()));
 };
 */
 
@@ -127,38 +133,6 @@ c.init = () => {
     })
 }
 */
-
-// bitfinex
-let x = [
-    'BTCUSD', 'EOSUSD', 'LTCUSD', 'ETHUSD', 'ETCUSD', 'NEOUSD', 'IOTUSD', 'XMRUSD', 'XRPUSD', 'DSHUSD', 'ZECUSD', 'OMGUSD', 'ETPUSD', 'ZRXUSD', 'BABUSD', 'BSVUSD',
-    'EOSBTC', 'LTCBTC', 'ETHBTC', 'ETCBTC', 'NEOBTC', 'IOTBTC', 'XMRBTC', 'XRPBTC', 'DSHBTC', 'ZECBTC', 'OMGBTC', 'ETPBTC', 'ZRXBTC',
-]
-
-x.forEach((pair) => {
-    c.symbols.push({
-        'symbol': pair,
-        'periods': ['1m', '15m', '1h'],
-        'exchange': 'bitfinex',
-        'state': 'watch',
-        'strategies': [
-            {
-                'strategy': 'cci',
-                'options': {
-                    'period': '15m'
-                }
-            },
-            {
-                'strategy': 'obv_pump_dump'
-            },
-            {
-                'strategy': 'macd',
-                'options': {
-                    'period': '1h'
-                }
-            }
-        ]
-    })
-})
 
 // bitmex
 let y = [

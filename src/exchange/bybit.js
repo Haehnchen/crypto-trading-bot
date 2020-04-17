@@ -4,10 +4,8 @@ const moment = require('moment');
 const request = require('request');
 const crypto = require('crypto');
 const _ = require('lodash');
-const Candlestick = require('./../dict/candlestick');
 const Ticker = require('./../dict/ticker');
 const TickerEvent = require('./../event/ticker_event');
-const Orderbook = require('./../dict/orderbook');
 const Order = require('./../dict/order');
 const ExchangeCandlestick = require('../dict/exchange_candlestick');
 
@@ -126,6 +124,7 @@ module.exports = class Bybit {
             me.logger.info('Bybit: Auth successful');
 
             ws.send(JSON.stringify({ op: 'subscribe', args: ['order'] }));
+            ws.send(JSON.stringify({ op: 'subscribe', args: ['stop_order'] }));
             ws.send(JSON.stringify({ op: 'subscribe', args: ['position'] }));
             ws.send(JSON.stringify({ op: 'subscribe', args: ['execution'] }));
           }
@@ -175,7 +174,7 @@ module.exports = class Bybit {
               )
             );
           });
-        } else if (data.data && data.topic && data.topic.toLowerCase() === 'order') {
+        } else if (data.data && data.topic && ['order', 'stop_order'].includes(data.topic.toLowerCase())) {
           const orders = data.data;
 
           Bybit.createOrders(orders).forEach(order => {
@@ -202,7 +201,6 @@ module.exports = class Bybit {
 
     ws.onclose = function() {
       logger.info('Bybit: Connection closed.');
-      console.log('Bybit: Connection closed.');
 
       for (const interval of me.intervals) {
         clearInterval(interval);
@@ -225,8 +223,7 @@ module.exports = class Bybit {
           // from is required calculate to be inside window
           const from = Math.floor(new Date().getTime() / 1000) - minutes * 195 * 60;
 
-          const s =
-            `${me.getBaseUrl()}/v2/public/kline/list?symbol=${symbol.symbol}&from=${from}` + `&interval=${minutes}`;
+          const s = `${me.getBaseUrl()}/v2/public/kline/list?symbol=${symbol.symbol}&from=${from}&interval=${minutes}`;
           request(s, { json: true }, async (err, res, body) => {
             if (err) {
               console.log(`Bybit: Candle backfill error: ${String(err)}`);
@@ -428,7 +425,7 @@ module.exports = class Bybit {
     if (isConditionalOrder) {
       if (!this.tickers[order.symbol]) {
         this.logger.error('Bybit: base_price based on ticker for conditional not found');
-        return;
+        return undefined;
       }
 
       // current ticker price is required on this api
@@ -781,11 +778,20 @@ module.exports = class Bybit {
         orderType = ExchangeOrder.TYPE_STOP;
       }
 
-      if (['new', 'partiallyfilled', 'pendingnew', 'doneforday', 'stopped', 'created'].includes(orderStatus)) {
+      // via websocket; conditional is different here
+      if (order.stop_order_type) {
+        orderType = ExchangeOrder.TYPE_STOP;
+      }
+
+      if (
+        ['new', 'partiallyfilled', 'pendingnew', 'doneforday', 'stopped', 'created', 'untriggered'].includes(
+          orderStatus
+        )
+      ) {
         status = 'open';
       } else if (orderStatus === 'filled') {
         status = 'done';
-      } else if (orderStatus === 'canceled' || orderStatus === 'cancelled') {
+      } else if (orderStatus === 'canceled' || orderStatus === 'cancelled' || orderStatus === 'deactivated') {
         status = 'canceled';
       } else if (orderStatus === 'rejected' || orderStatus === 'expired') {
         status = 'rejected';

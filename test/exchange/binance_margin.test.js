@@ -1,10 +1,10 @@
 const assert = require('assert');
 const fs = require('fs');
 const moment = require('moment');
-const BinanceMargin = require('../../exchange/binance_margin');
-const Ticker = require('../../dict/ticker');
-const Order = require('../../dict/order');
-const ExchangeOrder = require('../../dict/exchange_order');
+const BinanceMargin = require('../../src/exchange/binance_margin');
+const Ticker = require('../../src/dict/ticker');
+const Order = require('../../src/dict/order');
+const ExchangeOrder = require('../../src/dict/exchange_order');
 
 describe('#binance_margin exchange implementation', function() {
   const getFixtures = function(file) {

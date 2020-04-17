@@ -1,6 +1,6 @@
 const assert = require('assert');
 const moment = require('moment');
-const TechnicalAnalysisValidator = require('../../utils/technical_analysis_validator');
+const TechnicalAnalysisValidator = require('../../src/utils/technical_analysis_validator');
 
 describe('#technical analysis validation for candles', () => {
   it('test that last candle is up to date', async () => {

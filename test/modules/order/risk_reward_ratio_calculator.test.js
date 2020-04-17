@@ -1,9 +1,9 @@
 const assert = require('assert');
 const { createLogger } = require('winston');
 const fs = require('fs');
-const RiskRewardRatioCalculator = require('../../../modules/order/risk_reward_ratio_calculator');
-const Position = require('../../../dict/position');
-const ExchangeOrder = require('../../../dict/exchange_order');
+const RiskRewardRatioCalculator = require('../../../src/modules/order/risk_reward_ratio_calculator');
+const Position = require('../../../src/dict/position');
+const ExchangeOrder = require('../../../src/dict/exchange_order');
 
 describe('#risk reward order calculation', function() {
   it('calculate risk reward orders for long', async () => {

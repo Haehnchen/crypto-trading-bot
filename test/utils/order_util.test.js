@@ -1,7 +1,7 @@
 const assert = require('assert');
-const orderUtil = require('../../utils/order_util');
-const Position = require('../../dict/position');
-const ExchangeOrder = require('../../dict/exchange_order');
+const orderUtil = require('../../src/utils/order_util');
+const Position = require('../../src/dict/position');
+const ExchangeOrder = require('../../src/dict/exchange_order');
 
 describe('#order util', function() {
   it('calculate order amount', () => {

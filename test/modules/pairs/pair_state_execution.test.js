@@ -1,8 +1,8 @@
 const assert = require('assert');
-const PairStateExecution = require('../../../modules/pairs/pair_state_execution');
-const ExchangeOrder = require('../../../dict/exchange_order');
-const Position = require('../../../dict/position');
-const PairState = require('../../../dict/pair_state');
+const PairStateExecution = require('../../../src/modules/pairs/pair_state_execution');
+const ExchangeOrder = require('../../../src/dict/exchange_order');
+const Position = require('../../../src/dict/position');
+const PairState = require('../../../src/dict/pair_state');
 
 describe('#pair state execution', function() {
   it('test limit open order trigger for long', async () => {

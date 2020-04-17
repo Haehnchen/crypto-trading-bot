@@ -1,7 +1,7 @@
 const assert = require('assert');
 const moment = require('moment');
-const Tickers = require('../../storage/tickers');
-const Ticker = require('../../dict/ticker');
+const Tickers = require('../../src/storage/tickers');
+const Ticker = require('../../src/dict/ticker');
 
 describe('#tickers', function() {
   it('test getting update tickers', () => {
