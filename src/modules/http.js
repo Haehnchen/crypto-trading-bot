@@ -257,7 +257,7 @@ module.exports = class Http {
       res.render('../templates/orders/orders.html.twig', {
         pair: pair,
         pairs: this.ordersHttp.getPairs(),
-        orders: this.ordersHttp.getOrders(pair),
+        orders: await this.ordersHttp.getOrders(pair),
         position: await this.exchangeManager.getPosition(tradingview[0], tradingview[1]),
         ticker: ticker,
         tradingview: this.buildTradingViewSymbol(`${tradingview[0]}:${tradingview[1]}`),
