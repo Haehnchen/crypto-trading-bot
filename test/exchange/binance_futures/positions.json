@@ -1,0 +1,58 @@
+[
+  {
+    "symbol": "ETHUSDT",
+    "positionAmt": "-2.349",
+    "entryPrice": "170.24000",
+    "markPrice": "172.82814882",
+    "unRealizedProfit": "-6.07956158",
+    "liquidationPrice": "203.10",
+    "leverage": "5",
+    "maxNotionalValue": "2000000",
+    "marginType": "isolated",
+    "isolatedMargin": "74.21191568",
+    "isAutoAddMargin": "false",
+    "positionSide": "BOTH"
+  },
+  {
+    "symbol": "ETHUSDT",
+    "positionAmt": "-2.349",
+    "entryPrice": "190.24000",
+    "markPrice": "172.82814882",
+    "unRealizedProfit": "-6.07956158",
+    "liquidationPrice": "203.10",
+    "leverage": "5",
+    "maxNotionalValue": "2000000",
+    "marginType": "isolated",
+    "isolatedMargin": "74.21191568",
+    "isAutoAddMargin": "false",
+    "positionSide": "BOTH"
+  },
+  {
+    "symbol": "ETHUSDT",
+    "positionAmt": "2.349",
+    "entryPrice": "170.24000",
+    "markPrice": "172.82814882",
+    "unRealizedProfit": "-6.07956158",
+    "liquidationPrice": "203.10",
+    "leverage": "5",
+    "maxNotionalValue": "2000000",
+    "marginType": "isolated",
+    "isolatedMargin": "74.21191568",
+    "isAutoAddMargin": "false",
+    "positionSide": "BOTH"
+  },
+  {
+    "symbol": "ETHUSDT",
+    "positionAmt": "2.349",
+    "entryPrice": "190.24000",
+    "markPrice": "172.82814882",
+    "unRealizedProfit": "-6.07956158",
+    "liquidationPrice": "203.10",
+    "leverage": "5",
+    "maxNotionalValue": "2000000",
+    "marginType": "isolated",
+    "isolatedMargin": "74.21191568",
+    "isAutoAddMargin": "false",
+    "positionSide": "BOTH"
+  }
+]

@@ -27,7 +27,6 @@ module.exports = class BinanceFutures {
   }
 
   start(config, symbols) {
-    const { eventEmitter } = this;
     const { logger } = this;
     this.exchange = null;
 
@@ -107,14 +106,14 @@ module.exports = class BinanceFutures {
   /**
    * Updates all position; must be a full update not delta. Unknown current non orders are assumed to be closed
    *
-   * @param positions Position in raw json from Bitmex
+   * @param positions Position
    */
   fullPositionsUpdate(positions) {
     const currentPositions = {};
 
-    for (const position of positions) {
+    positions.forEach(position => {
       currentPositions[position.symbol] = position;
-    }
+    });
 
     this.positions = currentPositions;
   }
@@ -132,38 +131,11 @@ module.exports = class BinanceFutures {
   }
 
   async getPositions() {
-    const results = [];
-
-    for (const x in this.positions) {
-      let position = this.positions[x];
-      if (position.entry && this.tickers[position.symbol]) {
-        if (position.side === 'long') {
-          position = Position.createProfitUpdate(
-            position,
-            (this.tickers[position.symbol].bid / position.entry - 1) * 100
-          );
-        } else if (position.side === 'short') {
-          position = Position.createProfitUpdate(
-            position,
-            (position.entry / this.tickers[position.symbol].ask - 1) * 100
-          );
-        }
-      }
-
-      results.push(position);
-    }
-
-    return results;
+    return Object.values(this.positions);
   }
 
   async getPositionForSymbol(symbol) {
-    for (const position of await this.getPositions()) {
-      if (position.symbol === symbol) {
-        return position;
-      }
-    }
-
-    return undefined;
+    return (await this.getPositions()).find(position => position.symbol === symbol);
   }
 
   calculatePrice(price, symbol) {
@@ -196,7 +168,7 @@ module.exports = class BinanceFutures {
 
   async updateOrder(id, order) {
     if (!order.amount && !order.price) {
-      throw 'Invalid amount / price for update';
+      throw new Error('Invalid amount / price for update');
     }
 
     const result = this.ccxtExchangeOrder.updateOrder(id, order);
@@ -214,14 +186,23 @@ module.exports = class BinanceFutures {
     return positions.map(position => {
       const positionAmt = parseFloat(position.positionAmt);
 
+      const entryPrice = parseFloat(position.entryPrice);
+      const markPrice = parseFloat(position.markPrice);
+
+      const profit =
+        positionAmt < 0
+          ? (entryPrice / markPrice - 1) * 100 // short
+          : (markPrice / entryPrice - 1) * 100; // long
+
       return new Position(
         position.symbol,
         positionAmt < 0 ? 'short' : 'long',
         positionAmt,
-        undefined,
+        parseFloat(profit.toFixed(2)), // round 2 numbers
         new Date(),
-        position.entryPrice,
-        undefined
+        entryPrice,
+        undefined,
+        position
       );
     });
   }

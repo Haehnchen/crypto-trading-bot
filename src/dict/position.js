@@ -7,18 +7,19 @@ module.exports = class Position {
    * @param updatedAt Item last found or sync
    * @param entry The entry price
    * @param createdAt
+   * @param raw
    */
-  constructor(symbol, side, amount, profit, updatedAt, entry, createdAt) {
+  constructor(symbol, side, amount, profit, updatedAt, entry, createdAt, raw = undefined) {
     if (!['long', 'short'].includes(side)) {
-      throw `Invalid position direction given:${side}`;
+      throw new Error(`Invalid position direction given:${side}`);
     }
 
     if (amount < 0 && side === 'long') {
-      throw `Invalid direction amount:${side}`;
+      throw new Error(`Invalid direction amount:${side}`);
     }
 
     if (amount > 0 && side === 'short') {
-      throw `Invalid direction amount:${side}`;
+      throw new Error(`Invalid direction amount:${side}`);
     }
 
     this.symbol = symbol;
@@ -28,6 +29,7 @@ module.exports = class Position {
     this.updatedAt = updatedAt;
     this.entry = entry;
     this.createdAt = createdAt;
+    this.raw = raw;
   }
 
   isShort() {
@@ -38,8 +40,41 @@ module.exports = class Position {
     return this.side === 'long';
   }
 
-  static create(symbol, amount, updatedAt, createdAt, entry, profit) {
-    return new Position(symbol, amount < 0 ? 'short' : 'long', amount, profit, updatedAt, entry, createdAt);
+  getAmount() {
+    return this.amount;
+  }
+
+  getSymbol() {
+    return this.symbol;
+  }
+
+  getProfit() {
+    return this.profit;
+  }
+
+  getEntry() {
+    return this.entry;
+  }
+
+  getCreatedAt() {
+    return this.createdAt;
+  }
+
+  getUpdatedAt() {
+    return this.updatedAt;
+  }
+
+  /**
+   * For position based exchanges
+   *
+   * @returns {array}
+   */
+  getRaw() {
+    return this.raw;
+  }
+
+  static create(symbol, amount, updatedAt, createdAt, entry, profit, raw = undefined) {
+    return new Position(symbol, amount < 0 ? 'short' : 'long', amount, profit, updatedAt, entry, createdAt, raw);
   }
 
   static createProfitUpdate(position, profit) {
@@ -50,7 +85,8 @@ module.exports = class Position {
       profit,
       position.updatedAt,
       position.entry,
-      position.createdAt
+      position.createdAt,
+      position.raw
     );
   }
 };
