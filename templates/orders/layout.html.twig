@@ -24,11 +24,13 @@
                                 <i class="fas fa-text-width"></i>
                                 Pairs
                             </h3>
+
+                            <small class="float-sm-right"><input class="filter-pairs" type="text" placeholder="Filter"></small>
                         </div>
                         <div class="card-body">
-                            <ul>
+                            <ul class="list-unstyled">
                                 {% for pair in pairs %}
-                                    <li><a href="/orders/{{ pair|url_encode }}">{{ pair }}</a></li>
+                                    <li class="pair-item"><a href="/orders/{{ pair|url_encode }}">{{ pair }}</a></li>
                                 {% endfor %}
                             </ul>
                         </div>
@@ -39,6 +41,38 @@
             </div>
         </div>
     </div>
-
-
 {% endblock %}
+
+
+{% block javascript %}
+    <script>
+        // filter pairs
+        $(function() {
+          var filterTimeout = null;
+          $( ".filter-pairs" ).keyup(function() {
+            var me = $(this);
+
+            if (filterTimeout != null) {
+              clearTimeout(filterTimeout);
+            }
+            filterTimeout = setTimeout(function() {
+              var filter = me.val();
+
+              var card = me.closest('.card');
+              if (filter.length === 0) {
+                card.find('li.pair-item').show()
+                return;
+              }
+
+              card.find('li.pair-item').each(function() {
+                if ($(this).text().toLowerCase().includes(filter.toLowerCase())) {
+                  $(this).show()
+                } else {
+                  $(this).hide()
+                }
+              });
+            }, 250);
+          });
+        });
+    </script>
+{% endblock javascript %}
