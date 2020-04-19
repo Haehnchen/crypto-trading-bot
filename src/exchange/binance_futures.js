@@ -131,7 +131,18 @@ module.exports = class BinanceFutures {
   }
 
   async getPositions() {
-    return Object.values(this.positions);
+    return Object.values(this.positions).map(position => {
+      // overwrite profits by ticker price from position; ticker prices are more fresh
+      if (position.getEntry() && this.tickers[position.getSymbol()]) {
+        const profit = position.isLong()
+          ? (this.tickers[position.symbol].bid / position.entry - 1) * 100 // long profit
+          : (position.entry / this.tickers[position.symbol].ask - 1) * 100; // short profit
+
+        return Position.createProfitUpdate(position, profit);
+      }
+
+      return position;
+    });
   }
 
   async getPositionForSymbol(symbol) {
@@ -198,7 +209,7 @@ module.exports = class BinanceFutures {
         position.symbol,
         positionAmt < 0 ? 'short' : 'long',
         positionAmt,
-        parseFloat(profit.toFixed(2)), // round 2 numbers
+        undefined, // round 2 numbers
         new Date(),
         entryPrice,
         undefined,
