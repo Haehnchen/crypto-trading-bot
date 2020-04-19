@@ -209,7 +209,7 @@ module.exports = class BinanceFutures {
         position.symbol,
         positionAmt < 0 ? 'short' : 'long',
         positionAmt,
-        undefined, // round 2 numbers
+        parseFloat(profit.toFixed(2)), // round 2 numbers
         new Date(),
         entryPrice,
         undefined,
