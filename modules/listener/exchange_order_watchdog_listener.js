@@ -310,12 +310,6 @@ module.exports = class ExchangeOrderWatchdogListener {
       return;
     }
 
-    const ticker = this.tickers.get(exchange.getName(), position.symbol);
-    if (!ticker) {
-      this.logger.error(`Stoploss Watcher: no ticker found ${JSON.stringify([exchange.getName(), position.symbol])}`);
-      return;
-    }
-
     const orders = await exchange.getOrdersForSymbol(position.symbol);
     const orderChanges = orderUtil.syncTrailingStopLossOrder(position, orders);
 
@@ -351,7 +345,7 @@ module.exports = class ExchangeOrderWatchdogListener {
         const order = Order.createTrailingStopLossOrder(position.symbol, trailingOffset, orderChange.amount);
 
         try {
-          // await exchange.order(order)
+          await exchange.order(order);
 
           logger.info(
             `Trailing stop loss activated: ${JSON.stringify({

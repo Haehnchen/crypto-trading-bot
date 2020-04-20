@@ -218,4 +218,154 @@ describe('#watchdogs are working', () => {
 
     assert.deepStrictEqual(calls.length, 0);
   });
+
+  it('watchdog for trailing stoploss is working (long)', async () => {
+    const calls = [];
+
+    const listener = new ExchangeOrderWatchdogListener(
+      {},
+      {},
+      { calculateForOpenPosition: async (_exchange, _position, _conf) => -105.0 },
+      {},
+      {},
+      {},
+      { info: () => {} },
+      {}
+    );
+
+    const exchange = {
+      getName: () => 'foobar',
+      getOrdersForSymbol: async () => [],
+      calculatePrice: price => price,
+      order: async order => {
+        calls.push(order);
+      }
+    };
+
+    await listener.trailingStoplossWatch(exchange, new Position('FOOUSD', 'long', 1, undefined, undefined, 100), {
+      target_percent: 5.0,
+      stop_percent: 1.0
+    });
+
+    delete calls[0].id;
+    assert.deepEqual(calls, [
+      {
+        amount: 1,
+        options: {
+          close: true
+        },
+        price: -1.05,
+        side: 'short',
+        symbol: 'FOOUSD',
+        type: 'trailing-stop'
+      }
+    ]);
+  });
+
+  it('watchdog for trailing stoploss is working (long) not activated', async () => {
+    const calls = [];
+
+    const listener = new ExchangeOrderWatchdogListener(
+      {},
+      {},
+      { calculateForOpenPosition: async () => undefined },
+      {},
+      {},
+      {},
+      { info: () => {} },
+      {}
+    );
+
+    const exchange = {
+      getName: () => 'foobar',
+      getOrdersForSymbol: async () => [],
+      calculatePrice: price => price,
+      order: async order => {
+        calls.push(order);
+      }
+    };
+
+    await listener.trailingStoplossWatch(exchange, new Position('FOOUSD', 'long', 1, undefined, undefined, 100), {
+      target_percent: 5.0,
+      stop_percent: 1.0
+    });
+
+    assert.deepEqual(calls, []);
+  });
+
+  it('watchdog for trailing stoploss is working (short)', async () => {
+    const calls = [];
+
+    const listener = new ExchangeOrderWatchdogListener(
+      {},
+      {},
+      { calculateForOpenPosition: async () => 95.0 },
+      {},
+      {},
+      {},
+      { info: () => {} },
+      {}
+    );
+
+    // eslint-disable-next-line no-unused-vars
+    const exchange = {
+      getName: () => 'foobar',
+      getOrdersForSymbol: async () => [],
+      // eslint-disable-next-line no-unused-vars
+      calculatePrice: price => price,
+      order: async order => {
+        calls.push(order);
+      }
+    };
+
+    await listener.trailingStoplossWatch(exchange, new Position('FOOUSD', 'short', -1, undefined, undefined, 100), {
+      target_percent: 5.0,
+      stop_percent: 1.0
+    });
+
+    delete calls[0].id;
+    assert.deepEqual(calls, [
+      {
+        amount: 1,
+        options: {
+          close: true
+        },
+        price: 0.95,
+        side: 'long',
+        symbol: 'FOOUSD',
+        type: 'trailing-stop'
+      }
+    ]);
+  });
+
+  it('watchdog for trailing stoploss is working (short) not activated', async () => {
+    const calls = [];
+
+    const listener = new ExchangeOrderWatchdogListener(
+      {},
+      {},
+      { calculateForOpenPosition: async () => undefined },
+      {},
+      {},
+      {},
+      { info: () => {} },
+      {}
+    );
+
+    const exchange = {
+      getName: () => 'foobar',
+      getOrdersForSymbol: async () => [],
+      calculatePrice: price => price,
+      order: async order => {
+        calls.push(order);
+      }
+    };
+
+    await listener.trailingStoplossWatch(exchange, new Position('FOOUSD', 'short', -1, undefined, undefined, 100), {
+      target_percent: 5.0,
+      stop_percent: 1.0
+    });
+
+    assert.deepEqual(calls, []);
+  });
 });
