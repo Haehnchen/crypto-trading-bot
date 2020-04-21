@@ -313,7 +313,7 @@ module.exports = class ExchangeOrderWatchdogListener {
     const orders = await exchange.getOrdersForSymbol(position.symbol);
     const orderChanges = orderUtil.syncTrailingStopLossOrder(position, orders);
 
-    orderChanges.forEach(async orderChange => {
+    for (const orderChange of orderChanges) {
       if (orderChange.id) {
         // update
 
@@ -336,7 +336,7 @@ module.exports = class ExchangeOrderWatchdogListener {
         });
 
         if (!activationPrice) {
-          return;
+          continue;
         }
 
         const exchangeSymbol = position.symbol.substring(0, 3).toUpperCase();
@@ -363,6 +363,6 @@ module.exports = class ExchangeOrderWatchdogListener {
           console.error(msg);
         }
       }
-    });
+    }
   }
 };
