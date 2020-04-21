@@ -17,7 +17,8 @@ module.exports = class Http {
     logsHttp,
     candleExportHttp,
     candleImporter,
-    ordersHttp
+    ordersHttp,
+    projectDir
   ) {
     this.systemUtil = systemUtil;
     this.ta = ta;
@@ -29,6 +30,7 @@ module.exports = class Http {
     this.candleExportHttp = candleExportHttp;
     this.candleImporter = candleImporter;
     this.ordersHttp = ordersHttp;
+    this.projectDir = projectDir;
   }
 
   start() {
@@ -68,15 +70,16 @@ module.exports = class Http {
 
     const app = express();
 
+    app.set('views', `${this.projectDir}/templates`);
     app.set('twig options', {
       allow_async: true,
-      strict_variables: true
+      strict_variables: false
     });
 
     app.use(express.urlencoded({ limit: '12mb', extended: true, parameterLimit: 50000 }));
     app.use(cookieParser());
     app.use(compression());
-    app.use(express.static(`${__dirname}/../web/static`, { maxAge: 3600000 * 24 }));
+    app.use(express.static(`${this.projectDir}/web/static`, { maxAge: 3600000 * 24 }));
 
     const username = this.systemUtil.getConfig('webserver.username');
     const password = this.systemUtil.getConfig('webserver.password');
@@ -97,7 +100,10 @@ module.exports = class Http {
     const { ta } = this;
 
     app.get('/', async (req, res) => {
-      res.render('../templates/base.html.twig', await ta.getTaForPeriods(['15m', '1h']));
+      res.render(
+        '../templates/base.html.twig',
+        await ta.getTaForPeriods(this.systemUtil.getConfig('dashboard.periods', ['15m', '1h']))
+      );
     });
 
     app.get('/backtest', async (req, res) => {
@@ -251,7 +257,7 @@ module.exports = class Http {
       res.render('../templates/orders/orders.html.twig', {
         pair: pair,
         pairs: this.ordersHttp.getPairs(),
-        orders: this.ordersHttp.getOrders(pair),
+        orders: await this.ordersHttp.getOrders(pair),
         position: await this.exchangeManager.getPosition(tradingview[0], tradingview[1]),
         ticker: ticker,
         tradingview: this.buildTradingViewSymbol(`${tradingview[0]}:${tradingview[1]}`),
@@ -288,7 +294,7 @@ module.exports = class Http {
       res.render('../templates/orders/orders.html.twig', {
         pair: pair,
         pairs: this.ordersHttp.getPairs(),
-        orders: this.ordersHttp.getOrders(pair),
+        orders: await this.ordersHttp.getOrders(pair),
         ticker: ticker,
         position: await this.exchangeManager.getPosition(tradingview[0], tradingview[1]),
         form: form,

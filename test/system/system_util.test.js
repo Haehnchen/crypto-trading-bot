@@ -1,5 +1,5 @@
 const assert = require('assert');
-const SystemUtil = require('../../modules/system/system_util');
+const SystemUtil = require('../../src/modules/system/system_util');
 
 describe('#system util test', function() {
   it('test configuration extraction', () => {

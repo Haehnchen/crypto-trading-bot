@@ -12,6 +12,6 @@ describe('#validate pre deployment files', function() {
     const instances = require(`${__dirname}/../instance.js.dist`);
 
     assert.equal(instances.symbols.length > 0, true);
-    assert.equal(instances.symbols.filter(i => i.symbol === 'BTCUSD').length, 1);
+    assert.equal(instances.symbols.filter(i => i.symbol === 'ETHUSD').length, 1);
   });
 });

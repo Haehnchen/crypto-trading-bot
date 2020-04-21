@@ -1,7 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
-const Bitmex = require('../../exchange/bitmex');
-const Order = require('../../dict/order');
+const Bitmex = require('../../src/exchange/bitmex');
+const Order = require('../../src/dict/order');
 
 describe('#bitmex exchange implementation', function() {
   it('positions are extracted', () => {

@@ -1,9 +1,9 @@
 const assert = require('assert');
 const fs = require('fs');
-const StrategyManager = require('../../../../modules/strategy/strategy_manager');
-const StrategyContext = require('../../../../dict/strategy_context');
-const TechnicalAnalysisValidator = require('../../../../utils/technical_analysis_validator');
-const Ticker = require('../../../../dict/ticker');
+const StrategyManager = require('../../../../src/modules/strategy/strategy_manager');
+const StrategyContext = require('../../../../src/dict/strategy_context');
+const TechnicalAnalysisValidator = require('../../../../src/utils/technical_analysis_validator');
+const Ticker = require('../../../../src/dict/ticker');
 
 describe('#strategy manager', () => {
   it('strategy cci', async () => {

@@ -1,7 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
-const Bybit = require('../../exchange/bybit');
-const Order = require('../../dict/order');
+const Bybit = require('../../src/exchange/bybit');
+const Order = require('../../src/dict/order');
 
 describe('#bitmex exchange implementation', function() {
   it('positions are extracted', () => {
@@ -42,6 +42,12 @@ describe('#bitmex exchange implementation', function() {
     assert.equal(orders[2].status, 'open');
 
     assert.equal(orders[3].type, 'stop_limit');
+
+    assert.equal(orders[4].status, 'open');
+    assert.equal(orders[4].type, 'stop');
+
+    assert.equal(orders[5].status, 'canceled');
+    assert.equal(orders[5].type, 'stop');
   });
 
   it('test that request body for order is created (limit order)', () => {

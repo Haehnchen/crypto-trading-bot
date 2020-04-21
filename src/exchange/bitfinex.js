@@ -2,11 +2,11 @@ const BFX = require('bitfinex-api-node');
 
 const { Order } = require('bfx-api-node-models');
 const moment = require('moment');
+const _ = require('lodash');
 const ExchangeCandlestick = require('./../dict/exchange_candlestick');
 const Ticker = require('./../dict/ticker');
 const Position = require('../dict/position');
 
-const CandlestickEvent = require('./../event/candlestick_event.js');
 const TickerEvent = require('./../event/ticker_event.js');
 const ExchangeOrder = require('../dict/exchange_order');
 const OrderUtil = require('../utils/order_util');
@@ -24,134 +24,45 @@ module.exports = class Bitfinex {
   }
 
   start(config, symbols) {
-    const { eventEmitter } = this;
+    const subscriptions = [];
 
-    const opts = {
-      apiKey: config.key,
-      apiSecret: config.secret,
-      version: 2,
-      transform: true,
-      autoOpen: true
-    };
+    symbols.forEach(instance => {
+      // candles
+      instance.periods.forEach(period => {
+        let myPeriod = period;
+        if (period === '1d') {
+          myPeriod = period.toUpperCase();
+        }
 
-    const isAuthed = config.key && config.secret && config.key.length > 0 && config.secret.length > 0;
-    if (isAuthed) {
-      opts.apiKey = config.key;
-      opts.apiSecret = config.secret;
-    } else {
-      this.logger.info('Bitfinex: Starting as anonymous; no trading possible');
-    }
-
-    const ws = (this.client = new BFX(opts).ws());
-
-    const myLogger = this.logger;
-
-    this.tickers = {};
-    this.orders = {};
-    this.positions = {};
-    this.exchangePairs = {};
-
-    ws.on('error', err => {
-      myLogger.error(`Bitfinex: error: ${JSON.stringify(err)}`);
-    });
-
-    ws.on('close', () => {
-      myLogger.error('Bitfinex: Connection closed; reconnecting soon');
-
-      // retry connecting after some second to not bothering on high load
-      setTimeout(() => {
-        myLogger.info('Bitfinex: Connection reconnect');
-        ws.open();
-      }, 10000);
-    });
-
-    ws.on('open', () => {
-      myLogger.debug('Bitfinex: Connection open');
-
-      symbols.forEach(instance => {
-        // candles
-        instance.periods.forEach(function(period) {
-          if (period === '1d') {
-            period = period.toUpperCase();
-          }
-
-          ws.subscribeCandles(`trade:${period}:t${instance.symbol}`);
+        subscriptions.push({
+          type: 'subscribeCandles',
+          parameter: `trade:${myPeriod}:t${instance.symbol}`
         });
-
-        // ticker
-        ws.subscribeTicker(`t${instance.symbol}`);
-        // ws.subscribeTrades('t' + instance['symbol'])
-        // ws.subscribeOrderBook('t' + instance['symbol']);
       });
 
-      // authenticate
-      if (opts.apiKey && opts.apiSecret) {
-        ws.auth();
-      }
+      // ticker
+      subscriptions.push({
+        type: 'subscribeTicker',
+        parameter: `t${instance.symbol}`
+      });
     });
 
-    ws.on('ticker', (pair, ticker) => {
-      const symbol = Bitfinex.formatSymbol(pair);
-
-      eventEmitter.emit(
-        'ticker',
-        new TickerEvent(
-          'bitfinex',
-          symbol,
-          (me.tickers[symbol] = new Ticker('bitfinex', symbol, moment().format('X'), ticker.bid, ticker.ask))
-        )
-      );
+    // split subscriptions into chunks; currently limit is 30 (reduce it on our side, also) based on Bitfinex api
+    _.chunk(subscriptions, 25).forEach((chunk, index) => {
+      // chunk connect, but wait for each chunk for possible connection limit
+      setTimeout(async () => {
+        this.openPublicWebsocketChunk(chunk, index + 1);
+      }, 2250 * (index + 1));
     });
 
-    ws.on('candle', async (candles, pair) => {
-      const options = pair.split(':');
+    const isAuthed = config.key && config.secret && config.key.length > 0 && config.secret.length > 0;
 
-      const period = options[1].toLowerCase();
-      let mySymbol = options[2];
+    if (!isAuthed) {
+      this.logger.info('Bitfinex: Starting as anonymous; no trading possible');
+    } else {
+      const me = this;
+      this.client = this.openAuthenticatedPublicWebsocket(config.key, config.secret);
 
-      if (mySymbol.substring(0, 1) === 't') {
-        mySymbol = mySymbol.substring(1);
-      }
-
-      const myCandles = [];
-
-      if (Array.isArray(candles)) {
-        candles.forEach(function(candle) {
-          myCandles.push(candle);
-        });
-      } else {
-        myCandles.push(candles);
-      }
-
-      const sticks = myCandles
-        .filter(function(candle) {
-          return typeof candle.mts !== 'undefined';
-        })
-        .map(function(candle) {
-          return new ExchangeCandlestick(
-            'bitfinex',
-            mySymbol,
-            period.toLowerCase(),
-            Math.round(candle.mts / 1000),
-            candle.open,
-            candle.high,
-            candle.low,
-            candle.close,
-            candle.volume
-          );
-        });
-
-      if (sticks.length === 0) {
-        console.error(`Candle issue: ${pair}`);
-        return;
-      }
-
-      await this.candleImport.insertThrottledCandles(sticks);
-    });
-
-    let me = this;
-
-    if (isAuthed) {
       setInterval(
         (function f() {
           me.syncSymbolDetails();
@@ -160,44 +71,6 @@ module.exports = class Bitfinex {
         60 * 60 * 30 * 1000
       );
     }
-
-    ws.onOrderUpdate({}, order => {
-      me.onOrderUpdate(order);
-    });
-
-    ws.onOrderNew({}, order => {
-      me.onOrderUpdate(order);
-    });
-
-    ws.onOrderClose({}, order => {
-      me.onOrderUpdate(order);
-    });
-
-    ws.onOrderSnapshot({}, orders => {
-      const marginOrder = orders.filter(order => !order.type.toLowerCase().includes('exchange'));
-
-      Bitfinex.createExchangeOrders(marginOrder).forEach(order => {
-        me.orders[order.id] = order;
-      });
-    });
-
-    ws.onPositionSnapshot({}, positions => {
-      me.onPositions(positions);
-    });
-
-    ws.onPositionUpdate({}, position => {
-      me.onPositionUpdate(position);
-    });
-
-    ws.onPositionNew({}, position => {
-      me.onPositionUpdate(position);
-    });
-
-    ws.onPositionClose({}, position => {
-      me.onPositionUpdate(position);
-    });
-
-    ws.open();
   }
 
   getName() {
@@ -386,7 +259,7 @@ module.exports = class Bitfinex {
   async cancelOrder(id) {
     const order = await this.findOrderById(id);
     if (!order) {
-      return;
+      return undefined;
     }
 
     // external lib does not support string as id; must be int
@@ -400,7 +273,7 @@ module.exports = class Bitfinex {
       result = await this.client.cancelOrder(id);
     } catch (e) {
       this.logger.error(`Bitfinex: cancel order error: ${e}`);
-      return;
+      return undefined;
     }
 
     delete this.orders[id];
@@ -433,8 +306,8 @@ module.exports = class Bitfinex {
           Accept: 'application/json'
         }
       },
-      result => {
-        return result.response && result.response.statusCode >= 500;
+      r => {
+        return r.response && r.response.statusCode >= 500;
       }
     );
 
@@ -457,7 +330,7 @@ module.exports = class Bitfinex {
         }
 
         const increment = `0.${'0'.repeat(
-          prec + product.price_precision - (product.pair.substring(3, 6).toUpperCase() == 'USD' ? 3 : 0)
+          prec + product.price_precision - (product.pair.substring(3, 6).toUpperCase() === 'USD' ? 3 : 0)
         )}1`;
 
         exchangePairs[product.pair.substring(0, 3).toUpperCase()] = {
@@ -620,5 +493,191 @@ module.exports = class Bitfinex {
 
   isInverseSymbol(symbol) {
     return false;
+  }
+
+  /**
+   * Connect to websocket on chunks because Bitfinex limits per connection subscriptions eg to 30
+   *
+   * @param subscriptions
+   * @param index current chunk
+   */
+  openPublicWebsocketChunk(subscriptions, index) {
+    const me = this;
+
+    me.logger.debug(`Bitfinex: public websocket ${index} chunks connecting: ${JSON.stringify(subscriptions)}`);
+
+    const ws = new BFX({
+      version: 2,
+      transform: true,
+      autoOpen: true
+    }).ws();
+
+    ws.on('error', err => {
+      me.logger.error(`Bitfinex: public websocket ${index} error: ${JSON.stringify([err.message, err])}`);
+    });
+
+    ws.on('close', () => {
+      me.logger.error(`Bitfinex: public websocket ${index} Connection closed; reconnecting soon`);
+
+      // retry connecting after some second to not bothering on high load
+      setTimeout(() => {
+        me.logger.info(`Bitfinex: public websocket ${index} Connection reconnect`);
+        ws.open();
+      }, 10000);
+    });
+
+    ws.on('open', () => {
+      me.logger.info(`Bitfinex: public websocket ${index} connection open. Subscription to ${subscriptions.length} channels`);
+
+      subscriptions.forEach(subscription => {
+        ws[subscription.type](subscription.parameter);
+      });
+    });
+
+    ws.on('ticker', (pair, ticker) => {
+      const symbol = Bitfinex.formatSymbol(pair);
+
+      me.eventEmitter.emit(
+        'ticker',
+        new TickerEvent(
+          'bitfinex',
+          symbol,
+          (me.tickers[symbol] = new Ticker('bitfinex', symbol, moment().format('X'), ticker.bid, ticker.ask))
+        )
+      );
+    });
+
+    ws.on('candle', async (candles, pair) => {
+      const options = pair.split(':');
+
+      if (options.length < 3) {
+        return;
+      }
+
+      const period = options[1].toLowerCase();
+      let mySymbol = options[2];
+
+      if (mySymbol.substring(0, 1) === 't') {
+        mySymbol = mySymbol.substring(1);
+      }
+
+      const myCandles = [];
+
+      if (Array.isArray(candles)) {
+        candles.forEach(function(candle) {
+          myCandles.push(candle);
+        });
+      } else {
+        myCandles.push(candles);
+      }
+
+      const sticks = myCandles
+        .filter(function(candle) {
+          return typeof candle.mts !== 'undefined';
+        })
+        .map(function(candle) {
+          return new ExchangeCandlestick(
+            'bitfinex',
+            mySymbol,
+            period.toLowerCase(),
+            Math.round(candle.mts / 1000),
+            candle.open,
+            candle.high,
+            candle.low,
+            candle.close,
+            candle.volume
+          );
+        });
+
+      if (sticks.length === 0) {
+        return;
+      }
+
+      await this.candleImport.insertThrottledCandles(sticks);
+    });
+
+    ws.open();
+  }
+
+  /**
+   * Create a websocket just for authenticated requests a written is official Bitfinex documentation
+   *
+   * @param apiKey
+   * @param apiSecret
+   * @returns {WSv1|WSv2}
+   */
+  openAuthenticatedPublicWebsocket(apiKey, apiSecret) {
+    const ws = new BFX({
+      version: 2,
+      transform: true,
+      autoOpen: true,
+      apiKey: apiKey,
+      apiSecret: apiSecret
+    }).ws();
+
+    const me = this;
+
+    this.logger.info('Bitfinex: Authenticated Websocket connecting');
+
+    ws.on('error', err => {
+      me.logger.error(`Bitfinex: Authenticated Websocket error: ${JSON.stringify([err.message, err])}`);
+    });
+
+    ws.on('close', () => {
+      me.logger.error('Bitfinex: Authenticated Websocket Connection closed; reconnecting soon');
+
+      // retry connecting after some second to not bothering on high load
+      setTimeout(() => {
+        me.logger.info('Bitfinex: Authenticated Websocket Connection reconnect');
+        ws.open();
+      }, 10000);
+    });
+
+    ws.on('open', () => {
+      me.logger.debug('Bitfinex: Authenticated Websocket Connection open');
+
+      // authenticate
+      ws.auth();
+    });
+
+    ws.onOrderUpdate({}, order => {
+      me.onOrderUpdate(order);
+    });
+
+    ws.onOrderNew({}, order => {
+      me.onOrderUpdate(order);
+    });
+
+    ws.onOrderClose({}, order => {
+      me.onOrderUpdate(order);
+    });
+
+    ws.onOrderSnapshot({}, orders => {
+      const marginOrder = orders.filter(order => !order.type.toLowerCase().includes('exchange'));
+
+      Bitfinex.createExchangeOrders(marginOrder).forEach(order => {
+        me.orders[order.id] = order;
+      });
+    });
+
+    ws.onPositionSnapshot({}, positions => {
+      me.onPositions(positions);
+    });
+
+    ws.onPositionUpdate({}, position => {
+      me.onPositionUpdate(position);
+    });
+
+    ws.onPositionNew({}, position => {
+      me.onPositionUpdate(position);
+    });
+
+    ws.onPositionClose({}, position => {
+      me.onPositionUpdate(position);
+    });
+
+    ws.open();
+
+    return ws;
   }
 };

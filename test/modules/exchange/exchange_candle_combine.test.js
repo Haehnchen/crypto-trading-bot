@@ -1,7 +1,7 @@
 const assert = require('assert');
-const ExchangeCandleCombine = require('../../../modules/exchange/exchange_candle_combine');
+const ExchangeCandleCombine = require('../../../src/modules/exchange/exchange_candle_combine');
 
-const Candlestick = require('../../../dict/candlestick');
+const Candlestick = require('../../../src/dict/candlestick');
 
 describe('#exchange candle combine', () => {
   it('test that times are combined for exchanges', async () => {

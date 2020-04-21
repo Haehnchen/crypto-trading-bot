@@ -1,6 +1,6 @@
 const assert = require('assert');
 const fs = require('fs');
-const Resample = require('../../utils/resample');
+const Resample = require('../../src/utils/resample');
 
 describe('#resample of candles', () => {
   it('should resample 1 hour candles', () => {

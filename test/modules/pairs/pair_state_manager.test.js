@@ -1,8 +1,8 @@
 const assert = require('assert');
-const PairStateManager = require('../../../modules/pairs/pair_state_manager');
+const PairStateManager = require('../../../src/modules/pairs/pair_state_manager');
 
-const ExchangeOrder = require('../../../dict/exchange_order');
-const Order = require('../../../dict/order');
+const ExchangeOrder = require('../../../src/dict/exchange_order');
+const Order = require('../../../src/dict/order');
 
 describe('#pair state manager', function() {
   it('test pair state changes', () => {

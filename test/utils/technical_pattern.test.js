@@ -1,6 +1,6 @@
 const assert = require('assert');
 const fs = require('fs');
-const TechnicalPattern = require('../../utils/technical_pattern');
+const TechnicalPattern = require('../../src/utils/technical_pattern');
 
 describe('#technical pattern', () => {
   it('pump it with volume', () => {

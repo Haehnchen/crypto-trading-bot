@@ -1,10 +1,10 @@
 const assert = require('assert');
 const moment = require('moment');
-const OrderExecutor = require('../../../modules/order/order_executor');
-const Order = require('../../../dict/order');
-const PairState = require('../../../dict/pair_state');
-const Ticker = require('../../../dict/ticker');
-const ExchangeOrder = require('../../../dict/exchange_order');
+const OrderExecutor = require('../../../src/modules/order/order_executor');
+const Order = require('../../../src/dict/order');
+const PairState = require('../../../src/dict/pair_state');
+const Ticker = require('../../../src/dict/ticker');
+const ExchangeOrder = require('../../../src/dict/exchange_order');
 
 describe('#order executor', () => {
   it('test order create execution', async () => {

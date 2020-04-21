@@ -1,17 +1,15 @@
 const Transport = require('winston-transport');
-const util = require('util');
-const { createLogger } = require('../');
 
 module.exports = class WinstonSqliteTransport extends Transport {
   constructor(opts) {
     super(opts);
 
     if (!opts.database_connection) {
-      throw 'database_connection is needed';
+      throw new Error('database_connection is needed');
     }
 
     if (!opts.table) {
-      throw 'table is needed';
+      throw new Error('table is needed');
     }
 
     this.db = opts.database_connection;

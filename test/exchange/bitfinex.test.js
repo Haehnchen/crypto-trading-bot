@@ -1,10 +1,10 @@
 const assert = require('assert');
 const { Position, Order } = require('bfx-api-node-models');
 const fs = require('fs');
-const Bitfinex = require('../../exchange/bitfinex');
-const OurOrder = require('../../dict/order');
-const ExchangeOrder = require('../../dict/exchange_order');
-const Ticker = require('../../dict/ticker');
+const Bitfinex = require('../../src/exchange/bitfinex');
+const OurOrder = require('../../src/dict/order');
+const ExchangeOrder = require('../../src/dict/exchange_order');
+const Ticker = require('../../src/dict/ticker');
 
 describe('#bitfinex exchange implementation', function() {
   it('positions are extracted', () => {

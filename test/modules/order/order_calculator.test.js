@@ -1,6 +1,6 @@
 const assert = require('assert');
-const OrderCalculator = require('../../../modules/order/order_calculator');
-const PairConfig = require('../../../modules/pairs/pair_config');
+const OrderCalculator = require('../../../src/modules/order/order_calculator');
+const PairConfig = require('../../../src/modules/pairs/pair_config');
 
 describe('#order size calculation', () => {
   it('test instance order size for capital', async () => {

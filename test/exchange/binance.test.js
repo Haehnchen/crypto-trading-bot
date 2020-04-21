@@ -1,10 +1,10 @@
 const assert = require('assert');
 const fs = require('fs');
-const Binance = require('../../exchange/binance');
-const Order = require('../../dict/order');
-const Position = require('../../dict/position');
-const Ticker = require('../../dict/ticker');
-const ExchangeOrder = require('../../dict/exchange_order');
+const Binance = require('../../src/exchange/binance');
+const Order = require('../../src/dict/order');
+const Position = require('../../src/dict/position');
+const Ticker = require('../../src/dict/ticker');
+const ExchangeOrder = require('../../src/dict/exchange_order');
 
 describe('#binance exchange implementation', function() {
   it('limit order is created', () => {
@@ -235,234 +235,87 @@ describe('#binance exchange implementation', function() {
     assert.equal(0, (await binance.getOrdersForSymbol('BTCUSD')).length);
   });
 
-  it('test that positions are open based on websocket balances', async () => {
+  it('test that positions are open based on balances', async () => {
     const binance = new Binance(undefined, { debug: () => {} });
 
     binance.symbols = [
       {
-        symbol: 'BTCUSDT',
+        symbol: 'XRPUSDT',
         trade: {
-          capital: 0.008
+          capital: 3000
         }
       }
     ];
 
-    binance.tickers.BTCUSDT = new Ticker('foobar', 'BTCUSD', undefined, 1331, 1332);
-
+    let myOrder;
     binance.client = {
-      allOrders: async () => {
-        return [
-          {
-            symbol: 'BTCUSDT',
-            orderId: 1740797,
-            clientOrderId: '1XZTVBTGS4K1e',
-            transactTime: 1514418413947,
-            price: '1337.123',
-            origQty: '1337.123',
-            executedQty: '0.00000000',
-            status: 'FILLED',
-            timeInForce: 'GTC',
-            type: 'LIMIT',
-            side: 'BUY'
-          }
-        ];
+      order: async order => {
+        myOrder = order;
+
+        return new ExchangeOrder(
+          25035356,
+          'FOOUSD',
+          'open',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          'buy',
+          ExchangeOrder.TYPE_LIMIT
+        );
+      },
+      allOrders: async opts => {
+        const newVar = {
+          XRPUSDT: [
+            {
+              clientOrderId: 'web_2e31730aa5814006a6295c1779a68eab',
+              cummulativeQuoteQty: '499.97581200',
+              executedQty: '1822.80000000',
+              icebergQty: '0.00000000',
+              isWorking: true,
+              orderId: 278520093,
+              origQty: '1822.80000000',
+              price: '0.27429000',
+              side: 'BUY',
+              status: 'FILLED',
+              stopPrice: '0.00000000',
+              symbol: 'XRPUSDT',
+              time: new Date(),
+              timeInForce: 'GTC',
+              type: 'LIMIT',
+              updateTime: 1571933622396
+            }
+          ]
+        };
+
+        return newVar[opts.symbol] || [];
+      },
+      accountInfo: async () => {
+        return {
+          balances: [
+            {
+              asset: 'XRP',
+              free: '3000',
+              locked: '0.00000000',
+            }
+          ]
+        };
       }
     };
 
-    await binance.onWebSocketEvent(getEvent(event => event.eventType === 'account'));
-
-    const { balances } = binance;
-
-    assert.equal(balances.length, 23);
-    assert.equal(balances.find(balance => balance.asset === 'USDT').available > 1, true);
-
+    await binance.syncBalances();
     await binance.syncTradesForEntries();
 
-    const BTCUSDT = await binance.getPositionForSymbol('BTCUSDT');
+    const positions = await binance.getPositions();
+    assert.strictEqual(positions.length, 1);
 
-    assert.equal(BTCUSDT.amount > 0.008, true);
-    assert.equal(BTCUSDT.profit < 1, true);
-  });
-
-  it('test that positions are open based on websocket balances with currency capital', async () => {
-    const binance = new Binance(undefined, { debug: () => {} });
-
-    binance.symbols = [
-      {
-        symbol: 'BTCUSDT',
-        trade: {
-          currency_capital: 50
-        }
-      }
-    ];
-
-    binance.tickers.BTCUSDT = new Ticker('foobar', 'BTCUSD', undefined, 1331, 1332);
-
-    binance.client = {
-      allOrders: async () => {
-        return [
-          {
-            symbol: 'BTCUSDT',
-            orderId: 1740797,
-            clientOrderId: '1XZTVBTGS4K1e',
-            transactTime: 1514418413947,
-            price: '1337.123',
-            origQty: '1337.123',
-            executedQty: '0.00000000',
-            status: 'FILLED',
-            timeInForce: 'GTC',
-            type: 'LIMIT',
-            side: 'BUY'
-          }
-        ];
-      }
-    };
-
-    await binance.onWebSocketEvent(getEvent(event => event.eventType === 'account'));
-
-    const { balances } = binance;
-
-    assert.equal(balances.length, 23);
-    assert.equal(balances.find(balance => balance.asset === 'USDT').available > 1, true);
-
-    await binance.syncTradesForEntries();
-
-    const BTCUSDT = await binance.getPositionForSymbol('BTCUSDT');
-
-    assert.equal(BTCUSDT.amount > 0.008, true);
-    assert.equal(BTCUSDT.profit < 1, true);
-  });
-
-  it('test websocket order events with cancel state', async () => {
-    const binance = new Binance(undefined, { debug: () => {}, error: () => {} });
-
-    binance.symbols = [
-      {
-        symbol: 'BTCUSDT',
-        trade: {
-          capital: 0.008
-        }
-      }
-    ];
-
-    const calls = [];
-    binance.client = {
-      allOrders: async arg => {
-        calls.push(arg);
-        return [];
-      },
-      openOrders: async () => {
-        throw 'Connection issue';
-      }
-    };
-
-    binance.triggerOrder(
-      new ExchangeOrder(
-        '25035356',
-        'BTCUSDT',
-        'open',
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        'buy',
-        ExchangeOrder.TYPE_LIMIT
-      )
-    );
-    binance.triggerOrder(
-      new ExchangeOrder(
-        'foobar',
-        'ADAUSDT',
-        'open',
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        'buy',
-        ExchangeOrder.TYPE_LIMIT
-      )
-    );
-
-    assert.equal(Object.keys(binance.orderbag.all()).length, 2);
-    assert.equal(binance.orderbag.all()[25035356].symbol, 'BTCUSDT');
-
-    await binance.onWebSocketEvent(getEvent(event => event.orderId === 25035356));
-    assert.equal(binance.orderbag.all()[25035356], undefined);
-    assert.equal(Object.keys(binance.orderbag.all()).length, 1);
-
-    assert.deepEqual(calls, [
-      {
-        symbol: 'ONTUSDT',
-        limit: 150
-      }
-    ]);
-  });
-
-  it('test websocket order events with filled state', async () => {
-    const binance = new Binance(undefined, { debug: () => {}, error: () => {} });
-
-    binance.symbols = [
-      {
-        symbol: 'BTCUSDT',
-        trade: {
-          capital: 0.008
-        }
-      }
-    ];
-
-    const calls = [];
-    binance.client = {
-      allOrders: async arg => {
-        calls.push(arg);
-        return [];
-      },
-      openOrders: async () => {
-        throw 'Connection issue';
-      }
-    };
-
-    binance.triggerOrder(
-      new ExchangeOrder(
-        '25035356',
-        'BTCUSDT',
-        'open',
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        'buy',
-        ExchangeOrder.TYPE_LIMIT
-      )
-    );
-    binance.triggerOrder(
-      new ExchangeOrder(
-        'foobar',
-        'ADAUSDT',
-        'open',
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        'buy',
-        ExchangeOrder.TYPE_LIMIT
-      )
-    );
-
-    assert.equal(Object.keys(binance.orderbag.all()).length, 2);
-    assert.equal(binance.orderbag.all()[25035356].symbol, 'BTCUSDT');
-
-    await binance.onWebSocketEvent(getEvent(event => event.orderId === 25035368));
-
-    assert.equal(binance.trades.ONTUSDT.side, 'buy');
-    assert.strictEqual(binance.trades.ONTUSDT.price, 0.5448);
-    assert.equal(binance.trades.ONTUSDT.symbol, 'ONTUSDT');
-
-    assert.deepEqual(calls, [
-      {
-        symbol: 'ONTUSDT',
-        limit: 150
-      }
-    ]);
+    // close position
+    await binance.order(Order.createLimitPostOnlyOrder('XRPUSDT', Order.SIDE_LONG, 6666, 1));
+    assert.strictEqual(myOrder.symbol, 'XRPUSDT');
+    assert.strictEqual(myOrder.side, 'BUY');
+    assert.strictEqual(myOrder.quantity, 1);
+    assert.strictEqual(myOrder.price, 6666);
+    assert.strictEqual(myOrder.type, 'LIMIT');
   });
 
   it('test init of balances via account info', async () => {
