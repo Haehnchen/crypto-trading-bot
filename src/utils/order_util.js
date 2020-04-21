@@ -37,11 +37,11 @@ module.exports = {
   },
 
   syncStopLossOrder: (position, orders) => {
-    return module.exports.syncOrderByType(position, orders, ExchangeOrder.TYPE_STOP)
+    return module.exports.syncOrderByType(position, orders, ExchangeOrder.TYPE_STOP);
   },
 
   syncTrailingStopLossOrder: (position, orders) => {
-    return module.exports.syncOrderByType(position, orders, ExchangeOrder.TYPE_TRAILING_STOP)
+    return module.exports.syncOrderByType(position, orders, ExchangeOrder.TYPE_TRAILING_STOP);
   },
 
   /**

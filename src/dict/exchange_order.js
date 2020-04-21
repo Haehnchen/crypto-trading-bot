@@ -48,7 +48,7 @@ module.exports = class ExchangeOrder {
   }
 
   static get TYPE_TRAILING_STOP() {
-    return 'trailing-stop';
+    return 'trailing_stop';
   }
 
   constructor(

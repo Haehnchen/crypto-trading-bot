@@ -399,8 +399,8 @@ module.exports = class Bitfinex {
         orderType = ExchangeOrder.TYPE_STOP_LIMIT;
         break;
       case 'trailingstop':
-        orderType = ExchangeOrder.TYPE_TRAILING_STOP
-      break;
+        orderType = ExchangeOrder.TYPE_TRAILING_STOP;
+        break;
       default:
         orderType = ExchangeOrder.TYPE_UNKNOWN;
         break;
@@ -451,9 +451,9 @@ module.exports = class Bitfinex {
       orderOptions.price = String(Math.abs(order.price));
     } else if (order.type === 'market') {
       orderOptions.type = Order.type.MARKET;
-    } else if(order.type === 'trailing-stop') {
-      orderOptions['type'] = Order.type.TRAILING_STOP
-      orderOptions['price'] = String(Math.abs(order.price))
+    } else if (order.type === 'trailing_stop') {
+      orderOptions.type = Order.type.TRAILING_STOP;
+      orderOptions.price = String(Math.abs(order.price));
     }
 
     const myOrder = new Order(orderOptions);
@@ -527,7 +527,9 @@ module.exports = class Bitfinex {
     });
 
     ws.on('open', () => {
-      me.logger.info(`Bitfinex: public websocket ${index} connection open. Subscription to ${subscriptions.length} channels`);
+      me.logger.info(
+        `Bitfinex: public websocket ${index} connection open. Subscription to ${subscriptions.length} channels`
+      );
 
       subscriptions.forEach(subscription => {
         ws[subscription.type](subscription.parameter);

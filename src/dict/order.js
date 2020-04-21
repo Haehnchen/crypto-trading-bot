@@ -24,13 +24,17 @@ module.exports = class Order {
     return 'market';
   }
 
+  static get TYPE_TRAILING_STOP() {
+    return 'trailing_stop';
+  }
+
   static get OPTION_POST_ONLY() {
     return 'post_only';
   }
 
   constructor(id, symbol, side, price, amount, type, options = {}) {
     if (![Order.SIDE_LONG, Order.SIDE_SHORT].includes(side)) {
-      throw `Invalid order side given: ${side}`;
+      throw new Error(`Invalid order side given: ${side}`);
     }
 
     this.id = id;
@@ -89,13 +93,13 @@ module.exports = class Order {
       amount > 0 ? Order.SIDE_LONG : Order.SIDE_SHORT,
       amount > 0 ? 0.000001 : -0.000001, // fake prices
       amount,
-      'market'
+      this.TYPE_MARKET
     );
   }
 
   static createLimitPostOnlyOrder(symbol, side, price, amount, options) {
     if (![Order.SIDE_SHORT, Order.SIDE_LONG].includes(side)) {
-      throw `Invalid order side:${side} - ${JSON.stringify([symbol, side, price, amount, options])}`;
+      throw new Error(`Invalid order side:${side} - ${JSON.stringify([symbol, side, price, amount, options])}`);
     }
 
     return new Order(
@@ -113,7 +117,7 @@ module.exports = class Order {
 
   static createStopOrder(symbol, side, price, amount, options) {
     if (![Order.SIDE_SHORT, Order.SIDE_LONG].includes(side)) {
-      throw `Invalid order side:${side} - ${JSON.stringify([symbol, side, price, amount, options])}`;
+      throw new Error(`Invalid order side:${side} - ${JSON.stringify([symbol, side, price, amount, options])}`);
     }
 
     return new Order(
@@ -148,7 +152,7 @@ module.exports = class Order {
       price < 0 ? Order.SIDE_SHORT : Order.SIDE_LONG,
       price,
       amount,
-      'limit',
+      this.TYPE_LIMIT,
       {
         post_only: true,
         close: true
@@ -169,12 +173,12 @@ module.exports = class Order {
   }
 
   static createRetryOrder(order, amount) {
-    if (!order instanceof Order) {
-      throw 'TypeError: no Order';
+    if (!(order instanceof Order)) {
+      throw new Error('TypeError: no Order');
     }
 
     if (![Order.SIDE_SHORT, Order.SIDE_LONG].includes(order.side)) {
-      throw `Invalid order side:${order.side} - ${JSON.stringify(order)}`;
+      throw new Error(`Invalid order side:${order.side} - ${JSON.stringify(order)}`);
     }
 
     let orderAmount = order.amount;
@@ -199,11 +203,11 @@ module.exports = class Order {
 
   static createRetryOrderWithPriceAdjustment(order, price) {
     if (!(order instanceof Order)) {
-      throw 'TypeError: no Order';
+      throw new Error('TypeError: no Order');
     }
 
     if (![Order.SIDE_SHORT, Order.SIDE_LONG].includes(order.side)) {
-      throw `Invalid order side:${order.side} - ${JSON.stringify(order)}`;
+      throw new Error(`Invalid order side:${order.side} - ${JSON.stringify(order)}`);
     }
 
     return new Order(
@@ -256,8 +260,8 @@ module.exports = class Order {
       distance < 0 ? Order.SIDE_SHORT : Order.SIDE_LONG,
       distance,
       amount,
-      'trailing-stop',
-      {'close': true},
-    )
+      this.TYPE_TRAILING_STOP,
+      { close: true }
+    );
   }
 };

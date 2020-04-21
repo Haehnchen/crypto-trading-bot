@@ -257,7 +257,7 @@ describe('#watchdogs are working', () => {
         price: -1.05,
         side: 'short',
         symbol: 'FOOUSD',
-        type: 'trailing-stop'
+        type: 'trailing_stop'
       }
     ]);
   });
@@ -333,7 +333,7 @@ describe('#watchdogs are working', () => {
         price: 0.95,
         side: 'long',
         symbol: 'FOOUSD',
-        type: 'trailing-stop'
+        type: 'trailing_stop'
       }
     ]);
   });
