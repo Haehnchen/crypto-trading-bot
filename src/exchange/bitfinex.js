@@ -398,6 +398,9 @@ module.exports = class Bitfinex {
       case 'stoplimit':
         orderType = ExchangeOrder.TYPE_STOP_LIMIT;
         break;
+      case 'trailingstop':
+        orderType = ExchangeOrder.TYPE_TRAILING_STOP
+      break;
       default:
         orderType = ExchangeOrder.TYPE_UNKNOWN;
         break;
@@ -448,6 +451,9 @@ module.exports = class Bitfinex {
       orderOptions.price = String(Math.abs(order.price));
     } else if (order.type === 'market') {
       orderOptions.type = Order.type.MARKET;
+    } else if(order.type === 'trailing-stop') {
+      orderOptions['type'] = Order.type.TRAILING_STOP
+      orderOptions['price'] = String(Math.abs(order.price))
     }
 
     const myOrder = new Order(orderOptions);

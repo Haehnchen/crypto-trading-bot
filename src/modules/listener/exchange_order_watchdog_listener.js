@@ -66,6 +66,11 @@ module.exports = class ExchangeOrderWatchdogListener {
         if (stoplossWatch) {
           await this.stoplossWatch(exchange, position, stoplossWatch);
         }
+
+        const trailingStoplossWatch = pair.watchdogs.find(watchdog => watchdog.name === 'trailing_stop');
+        if (trailingStoplossWatch) {
+          await this.trailingStoplossWatch(exchange, position, trailingStoplossWatch);
+        }
       });
     });
   }
@@ -86,7 +91,9 @@ module.exports = class ExchangeOrderWatchdogListener {
       return;
     }
 
-    const found = pair.watchdogs.find(watchdog => ['stoploss', 'risk_reward_ratio'].includes(watchdog.name));
+    const found = pair.watchdogs.find(watchdog =>
+      ['trailing_stop', 'stoploss', 'risk_reward_ratio'].includes(watchdog.name)
+    );
     if (!found) {
       return;
     }
@@ -281,5 +288,81 @@ module.exports = class ExchangeOrderWatchdogListener {
       );
       this.pairStateManager.update(exchange.getName(), position.symbol, 'close');
     }
+  }
+
+  async trailingStoplossWatch(exchange, position, config) {
+    const { logger } = this;
+
+    if (
+      !config.target_percent ||
+      config.target_percent < 0.1 ||
+      config.target_percent > 50 ||
+      !config.stop_percent ||
+      config.stop_percent < 0.1 ||
+      config.stop_percent > 50
+    ) {
+      this.logger.error('Stoploss Watcher: invalid stop configuration need "0.1" - "50"');
+      return;
+    }
+
+    if (typeof position.entry === 'undefined') {
+      this.logger.error(`Stoploss Watcher: no entry for position: ${JSON.stringify(position)}`);
+      return;
+    }
+
+    const orders = await exchange.getOrdersForSymbol(position.symbol);
+    const orderChanges = orderUtil.syncTrailingStopLossOrder(position, orders);
+
+    orderChanges.forEach(async orderChange => {
+      if (orderChange.id) {
+        // update
+
+        logger.info(
+          `Stoploss update: ${JSON.stringify({
+            order: orderChange,
+            symbol: position.symbol,
+            exchange: exchange.getName()
+          })}`
+        );
+        exchange.updateOrder(orderChange.id, {
+          amount: orderChange.amount
+        });
+      } else {
+        // create if target profit reached
+
+        // calculate activation price, undefined if it is not reached yet.
+        const activationPrice = await this.stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, {
+          percent: -config.target_percent
+        });
+
+        if (!activationPrice) {
+          return;
+        }
+
+        const exchangeSymbol = position.symbol.substring(0, 3).toUpperCase();
+        let trailingOffset = (activationPrice * parseFloat(config.stop_percent)) / 100;
+        trailingOffset = exchange.calculatePrice(trailingOffset, exchangeSymbol);
+        const order = Order.createTrailingStopLossOrder(position.symbol, trailingOffset, orderChange.amount);
+
+        try {
+          await exchange.order(order);
+
+          logger.info(
+            `Trailing stop loss activated: ${JSON.stringify({
+              position: position,
+              exchange: exchange.getName()
+            })}`
+          );
+        } catch (e) {
+          const msg = `Trailing stoploss create${JSON.stringify({
+            error: e,
+            order: order
+          })}`;
+
+          logger.error(msg);
+          console.error(msg);
+        }
+      }
+    });
   }
 };

@@ -248,4 +248,16 @@ module.exports = class Order {
       exchangeOrder.options
     );
   }
+
+  static createTrailingStopLossOrder(symbol, distance, amount) {
+    return new Order(
+      Math.round(new Date().getTime().toString() * Math.random()),
+      symbol,
+      distance < 0 ? Order.SIDE_SHORT : Order.SIDE_LONG,
+      distance,
+      amount,
+      'trailing-stop',
+      {'close': true},
+    )
+  }
 };

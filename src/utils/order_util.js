@@ -5,8 +5,8 @@ module.exports = {
     return capital / price;
   },
 
-  syncStopLossOrder: (position, orders) => {
-    const stopOrders = orders.filter(order => order.type === ExchangeOrder.TYPE_STOP);
+  syncOrderByType: (position, orders, type) => {
+    const stopOrders = orders.filter(order => order.type === type)
     if (stopOrders.length === 0) {
       return [
         {
@@ -34,6 +34,14 @@ module.exports = {
     }
 
     return [];
+  },
+
+  syncStopLossOrder: (position, orders) => {
+    return module.exports.syncOrderByType(position, orders, ExchangeOrder.TYPE_STOP)
+  },
+
+  syncTrailingStopLossOrder: (position, orders) => {
+    return module.exports.syncOrderByType(position, orders, ExchangeOrder.TYPE_TRAILING_STOP)
   },
 
   /**

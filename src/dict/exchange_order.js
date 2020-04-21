@@ -47,6 +47,10 @@ module.exports = class ExchangeOrder {
     return 'long';
   }
 
+  static get TYPE_TRAILING_STOP() {
+    return 'trailing-stop';
+  }
+
   constructor(
     id,
     symbol,
@@ -72,7 +76,8 @@ module.exports = class ExchangeOrder {
         ExchangeOrder.TYPE_STOP_LIMIT,
         ExchangeOrder.TYPE_MARKET,
         ExchangeOrder.TYPE_UNKNOWN,
-        ExchangeOrder.TYPE_STOP
+        ExchangeOrder.TYPE_STOP,
+        ExchangeOrder.TYPE_TRAILING_STOP
       ].includes(type)
     ) {
       throw `Invalid order type: ${type}`;
