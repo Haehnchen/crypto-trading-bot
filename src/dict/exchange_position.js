@@ -3,7 +3,7 @@ const Position = require('./position');
 module.exports = class ExchangePosition {
   constructor(exchange, position) {
     if (!(position instanceof Position)) {
-      throw 'TypeError: invalid position';
+      throw new Error(`TypeError: invalid position`);
     }
 
     this._exchange = exchange;
@@ -11,7 +11,7 @@ module.exports = class ExchangePosition {
   }
 
   getKey() {
-    return this._exchange + this._position.symbol;
+    return this._exchange + this._position.symbol + this._position.side;
   }
 
   getExchange() {

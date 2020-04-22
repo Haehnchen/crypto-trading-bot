@@ -37,7 +37,7 @@ module.exports = class PairStateExecution {
   async onSellBuyPair(pair, side) {
     const position = await this.exchangeManager.getPosition(pair.exchange, pair.symbol);
 
-    if (position) {
+    if (position && position.side === side) {
       this.pairStateManager.clear(pair.exchange, pair.symbol);
       this.logger.debug(`block ${side} order; open position:${JSON.stringify([pair.exchange, pair.symbol])}`);
       return;
@@ -64,6 +64,10 @@ module.exports = class PairStateExecution {
         `Pair State: Create position open order: ${JSON.stringify([pair.exchange, pair.symbol, side, pair.options])}`
       );
 
+      if (position) {
+        // If we have open position and we want to switch short/long, we need to add position size to order size
+        pair.options.positionAmount = position.amount;
+      } 
       const exchangeOrder = await this.executeOrder(pair.exchange, pair.symbol, side, pair.options);
 
       if (exchangeOrder) {
@@ -302,6 +306,10 @@ module.exports = class PairStateExecution {
       this.logger.error(`Invalid order size: ${JSON.stringify([exchangeName, symbol, side, orderSize])}`);
 
       return undefined;
+    }
+
+    if (options && options.positionAmount) {
+      orderSize = parseFloat(orderSize) + Math.abs(options.positionAmount);
     }
 
     // inverse price for short
