@@ -351,7 +351,8 @@ module.exports = {
     return (strategyManager = new StrategyManager(
       this.getTechnicalAnalysisValidator(),
       this.getExchangeCandleCombine(),
-      this.getLogger()
+      this.getLogger(),
+      parameters.projectDir
     ));
   },
 
