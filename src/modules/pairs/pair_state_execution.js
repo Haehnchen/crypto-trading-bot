@@ -64,12 +64,13 @@ module.exports = class PairStateExecution {
         `Pair State: Create position open order: ${JSON.stringify([pair.exchange, pair.symbol, side, pair.options])}`
       );
 
+      const pairOptions = pair.options;
       if (position) {
         // If we have open position and we want to switch short/long, we need to add position size to order size
-        pair.options.positionAmount = position.amount;
-      } 
-      const exchangeOrder = await this.executeOrder(pair.exchange, pair.symbol, side, pair.options);
+        pairOptions.positionAmount = position.amount;
+      }
 
+      const exchangeOrder = await this.executeOrder(pair.exchange, pair.symbol, side, pairOptions);
       if (exchangeOrder) {
         if (exchangeOrder.shouldCancelOrderProcess()) {
           // check if we need to to cancel the process
