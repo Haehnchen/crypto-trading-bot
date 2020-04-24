@@ -4,10 +4,11 @@ const StrategyManager = require('./strategy/strategy_manager');
 const Resample = require('../utils/resample');
 
 module.exports = class Backtest {
-  constructor(instances, strategyManager, exchangeCandleCombine) {
+  constructor(instances, strategyManager, exchangeCandleCombine, projectDir) {
     this.instances = instances;
     this.strategyManager = strategyManager;
     this.exchangeCandleCombine = exchangeCandleCombine;
+    this.projectDir = projectDir;
   }
 
   getBacktestPairs() {
@@ -69,7 +70,7 @@ module.exports = class Backtest {
 
       const end = moment().unix();
       while (current < end) {
-        const strategyManager = new StrategyManager({}, mockedRepository);
+        const strategyManager = new StrategyManager({}, mockedRepository, {}, this.projectDir);
 
         const item = await strategyManager.executeStrategyBacktest(strategy, exchange, pair, options, lastSignal);
         item.time = current;
