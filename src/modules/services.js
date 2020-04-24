@@ -170,7 +170,7 @@ module.exports = {
       return backtest;
     }
 
-    return (backtest = new Backtest(this.getInstances(), this.getStrategyManager(), this.getExchangeCandleCombine()));
+    return (backtest = new Backtest(this.getInstances(), this.getStrategyManager(), this.getExchangeCandleCombine(), parameters.projectDir));
   },
 
   getStopLossCalculator: function() {
