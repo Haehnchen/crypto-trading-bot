@@ -5,21 +5,26 @@ module.exports = class LogsRepository {
     this.db = db;
   }
 
-  getLatestLogs(excludes = ['debug'], limit = 200) {
+  getLatestLogs(filters = { logExcludeLevels: ['debug'], logTxtFilter: '' }, limit = 200) {
     return new Promise(resolve => {
-      let sql = `SELECT * from logs order by created_at DESC LIMIT ${limit}`;
-
       const parameters = {};
+      let sql = `SELECT * from logs WHERE 1=1`;
 
-      if (excludes.length > 0) {
-        sql = `SELECT * from logs WHERE level NOT IN (${excludes
-          .map((exclude, index) => `$level_${index}`)
-          .join(', ')}) order by created_at DESC LIMIT ${limit}`;
+      if (filters.logExcludeLevels.length > 0) {
+        sql += ` AND level NOT IN (${filters.logExcludeLevels
+          .map((_exclude, index) => `$level_${index}`)
+          .join(', ')}) `;
 
-        excludes.forEach((exclude, index) => {
+        filters.logExcludeLevels.forEach((exclude, index) => {
           parameters[`level_${index}`] = exclude;
         });
       }
+
+      if (filters.logTxtFilter !== '') {
+        sql += ` AND message LIKE '%${filters.logTxtFilter}%'`;
+      }
+
+      sql += ` order by created_at DESC LIMIT ${limit}`;
 
       const stmt = this.db.prepare(sql);
       resolve(stmt.all(parameters));
