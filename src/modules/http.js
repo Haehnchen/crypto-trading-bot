@@ -152,6 +152,11 @@ module.exports = class Http {
       res.render('../templates/logs.html.twig', await this.logsHttp.getLogsPageVariables(req, res));
     });
 
+    app.post('/logsTable', async (req, res) => {
+      const logs = await this.logsHttp.getLogsData(req, res);
+      res.json(logs);
+    });
+
     app.get('/desks/:desk', async (req, res) => {
       res.render('../templates/desks.html.twig', {
         desk: this.systemUtil.getConfig('desks')[req.params.desk],

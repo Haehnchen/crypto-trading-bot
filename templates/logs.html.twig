@@ -2,6 +2,11 @@
 
 {% block title %}Logs | Crypto Bot{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/jq-3.3.1/dt-1.10.20/datatables.min.css"/>
+{% endblock %}
+
+
 {% block content %}
     <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
@@ -58,7 +63,7 @@
 
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-sm table-hover">
+                                    <table id="logsTable" class="table table-striped table-bordered" style="width:100%">
                                         <thead>
                                         <tr>
                                             <th scope="col">Level</th>
@@ -66,33 +71,10 @@
                                             <th scope="col">CreatedAt</th>
                                         </tr>
                                         </thead>
-                                        <tbody>
-                                        {% for log in logs %}
-                                            <tr>
-                                                <td>
-                                                    {% if log.level == 'debug' %}
-                                                        <span class="text-muted">{{ log.level }}</span>
-                                                    {% elseif log.level == 'info' %}
-                                                        <span class="text-info">{{ log.level }}</span>
-                                                    {% elseif log.level == 'error' %}
-                                                        <span class="text-danger"><strong>{{ log.level }}</strong></span>
-                                                    {% endif %}
-                                                </td>
-                                                <td style="word-break: break-all;">
-                                                      {% if log.profit and log.profit >= 0 %}
-                                                        {{ log.message|replace({(log.profit): ('<span class="text-success">' ~ log.profit ~ '</span>') }) }}
-                                                      {% elseif log.profit and log.profit < 0 %}
-                                                        {{ log.message|replace({(log.profit): ('<span class="text-danger">' ~ log.profit ~ '</span>') }) }}
-                                                      {% else %}
-                                                        {{ log.message }}
-                                                      {% endif %}
-                                                </td>
-                                                <td style="white-space: nowrap">{{ log.created_at|date('y-m-d H:i:s') }}</td>
-                                            </tr>
-                                        {% endfor %}
-                                        </tbody>
+                                        <tbody></tbody>
                                     </table>
                                 </div>
+
                             </div>
                             <!-- /.card-body -->
                         </div>
@@ -105,3 +87,9 @@
     </div>
     <!-- /.content-wrapper -->
 {% endblock %}
+
+{% block javascript %}
+{{ parent() }}
+<script type="text/javascript" src="https://cdn.datatables.net/v/bs4/jq-3.3.1/dt-1.10.20/datatables.min.js"></script>
+<script type="text/javascript" src="/js/logs.js"></script>
+{% endblock javascript %}
