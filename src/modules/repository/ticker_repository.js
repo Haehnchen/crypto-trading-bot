@@ -1,31 +1,36 @@
-module.exports = class TickerRepository {
-  constructor(db, logger) {
-    this.db = db;
-    this.logger = logger;
-  }
+module.exports = function(sequelize, DataTypes) {
+  const TickerRepository = sequelize.define(
+    'Ticker',
+    {
+      exchange: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        primaryKey: true
+      },
+      symbol: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        primaryKey: true
+      },
+      ask: {
+        type: DataTypes.REAL,
+        allowNull: true
+      },
+      bid: {
+        type: DataTypes.REAL,
+        allowNull: true
+      }
+    },
+    {
+      tableName: 'tickers'
+    }
+  );
 
-  insertTickers(tickers) {
-    return new Promise(resolve => {
-      const upsert = this.db.prepare(
-        'INSERT INTO ticker(exchange, symbol, ask, bid, updated_at) VALUES ($exchange, $symbol, $ask, $bid, $updated_at) ' +
-          'ON CONFLICT(exchange, symbol) DO UPDATE SET ask=$ask, bid=$bid, updated_at=$updated_at'
-      );
-
-      this.db.transaction(() => {
-        tickers.forEach(ticker => {
-          const parameters = {
-            exchange: ticker.exchange,
-            symbol: ticker.symbol,
-            ask: ticker.ask,
-            bid: ticker.bid,
-            updated_at: new Date().getTime()
-          };
-
-          upsert.run(parameters);
-        });
-      })();
-
-      resolve();
+  TickerRepository.insertTickers = function(tickers) {
+    return TickerRepository.bulkCreate(tickers, {
+      updateOnDuplicate: ['ask', 'bid']
     });
-  }
+  };
+
+  return TickerRepository;
 };

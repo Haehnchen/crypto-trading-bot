@@ -1,27 +1,58 @@
-module.exports = class SignalRepository {
-  constructor(db) {
-    this.db = db;
-  }
+const { Op } = require('sequelize');
 
-  getSignals(since) {
-    return new Promise(resolve => {
-      const stmt = this.db.prepare('SELECT * from signals where income_at > ? order by income_at DESC LIMIT 100');
-      resolve(stmt.all(since));
+module.exports = function(sequelize, DataTypes) {
+  const SignalRepository = sequelize.define(
+    'Signal',
+    {
+      exchange: {
+        type: DataTypes.STRING(255),
+        allowNull: true
+      },
+      symbol: {
+        type: DataTypes.STRING(255),
+        allowNull: true
+      },
+      ask: {
+        type: DataTypes.REAL,
+        allowNull: true
+      },
+      bid: {
+        type: DataTypes.REAL,
+        allowNull: true
+      },
+      options: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
+      side: {
+        type: DataTypes.STRING(50),
+        allowNull: true
+      },
+      strategy: {
+        type: DataTypes.STRING(50),
+        allowNull: true
+      },
+      state: {
+        type: DataTypes.STRING(50),
+        allowNull: true
+      }
+    },
+    {
+      tableName: 'signals'
+    }
+  );
+
+  SignalRepository.getSignals = async since => {
+    return SignalRepository.findAll({
+      where: { updatedAt: { [Op.gt]: since } },
+      order: [['updatedAt', 'DESC']],
+      limit: 1000
+      // raw : true
     });
-  }
+  };
 
-  insertSignal(exchange, symbol, options, side, strategy) {
-    const stmt = this.db.prepare(
-      'INSERT INTO signals(exchange, symbol, options, side, strategy, income_at) VALUES ($exchange, $symbol, $options, $side, $strategy, $income_at)'
-    );
+  SignalRepository.insertSignal = async (exchange, symbol, options, side, strategy) =>
+    SignalRepository.create(exchange, symbol, options, side, strategy);
 
-    stmt.run({
-      exchange: exchange,
-      symbol: symbol,
-      options: JSON.stringify(options || {}),
-      side: side,
-      strategy: strategy,
-      income_at: Math.floor(Date.now() / 1000)
-    });
-  }
+  return SignalRepository;
 };

@@ -18,7 +18,6 @@ module.exports = class Trade {
     pairStateExecution,
     systemUtil,
     logsRepository,
-    tickerLogRepository,
     exchangePositionWatcher
   ) {
     this.eventEmitter = eventEmitter;
@@ -34,7 +33,6 @@ module.exports = class Trade {
     this.pairStateExecution = pairStateExecution;
     this.systemUtil = systemUtil;
     this.logsRepository = logsRepository;
-    this.tickerLogRepository = tickerLogRepository;
     this.exchangePositionWatcher = exchangePositionWatcher;
   }
 
@@ -96,9 +94,7 @@ module.exports = class Trade {
 
     // cronjob like tasks
     setInterval(async () => {
-      await me.logsRepository.cleanOldLogEntries();
-      await me.tickerLogRepository.cleanOldLogEntries();
-
+      //      await me.logsRepository.cleanOldLogEntries();
       me.logger.debug('Logs: Cleanup old entries');
     }, 86455000);
 
