@@ -74,20 +74,12 @@ module.exports = function(sequelize, DataTypes) {
       whereCondition.time = timeConditions;
     };
     return CandlestickRepository.findAll({
-      // attributes: ['time', 'open', 'high', 'low', 'close', 'volume'],
+      attributes: ['time', 'open', 'high', 'low', 'close', 'volume'],
       where: whereCondition,
       order: [['time', 'DESC']],
-      limit: limit
-      // raw : true
+      limit: limit,
+      raw : true
     });   
-    /*  .then(candles => {
-        return candles.map(row => {
-          return new Candlestick(row.time, row.open, row.high, row.low, row.close, row.volume);
-        });
-      })
-      .catch(err => {
-        console.log(`Error: ${err}`);
-      }); */
   };
 
   CandlestickRepository.getExchangePairs = async () => {
