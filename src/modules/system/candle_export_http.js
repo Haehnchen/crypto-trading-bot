@@ -4,7 +4,13 @@ module.exports = class CandleExportHttp {
   }
 
   async getCandles(exchange, symbol, period, start, end) {
-    return this.candlestickRepository.getCandlesInWindow(exchange, symbol, period, start, end);
+    return this.candlestickRepository.getCandlesInWindow(
+      exchange,
+      symbol,
+      period,
+      start.getTime() / 1000,
+      end.getTime() / 1000
+    );
   }
 
   async getPairs() {

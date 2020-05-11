@@ -67,8 +67,8 @@ module.exports = function(sequelize, DataTypes) {
       period: period
     };
     const timeConditions = {
-      ...(typeof(start) !== 'undefined') && {[Op.gt]: Math.round(start.getTime() / 1000)},
-      ...(typeof(end) !== 'undefined') && {[Op.lt]: Math.round(end.getTime() / 1000)}
+      ...(typeof(start) !== 'undefined') && {[Op.gt]: start},
+      ...(typeof(end) !== 'undefined') && {[Op.lt]: end}
     };
     if (Object.keys(timeConditions).length !== 0) {
       whereCondition.time = timeConditions;
