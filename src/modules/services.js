@@ -6,9 +6,7 @@ const { createLogger, transports, format } = require('winston');
 const WinstonTransportSequelize = require('winston-transport-sequelize');
 
 const _ = require('lodash');
-const Sqlite = require('sqlite3').verbose();
 const Sequelize = require('sequelize');
-const Datatable = require('sequelize-datatable');
 const Notify = require('../notify/notify');
 const Slack = require('../notify/slack');
 const Mail = require('../notify/mail');
@@ -26,8 +24,6 @@ const ExchangePositionWatcher = require('../modules/exchange/exchange_position_w
 const SignalLogger = require('../modules/signal/signal_logger');
 const SignalHttp = require('../modules/signal/signal_http');
 
-const SignalRepository = require('../modules/repository/signal_repository');
-const CandlestickRepository = require('../modules/repository/candlestick_repository').default;
 const StrategyManager = require('./strategy/strategy_manager');
 const ExchangeManager = require('./exchange/exchange_manager');
 
@@ -142,10 +138,6 @@ module.exports = {
     this.getDatabase();
     this.getLogger();
     await db.sequelize.sync({ force: true });
-
-    /* const zz = await db.Candlestick.getLookbacksForPair('bitfinex', 'BTCUSD', '1h');
-    const yy = await db.Candlestick.getExchangePairs();
-    console.log('zz'); */
   },
 
   getDatabase: () => {
@@ -320,12 +312,11 @@ module.exports = {
 
     const options = {
       sequelize: this.getDatabase().sequelize, // sequelize instance [required]
-      tableName: 'log', // default name
-      meta: { project: 'crypto-trading-bot' }, // meta object defaults
-      fields: { meta: Sequelize.JSONB }, // merge model fields
-      modelOptions: { timestamps: false } // merge model options
+      tableName: 'logs', // default name
+      level: 'debug'
     };
 
+    const winstonTransportSequelize = new WinstonTransportSequelize(options);
     logger = createLogger({
       format: format.combine(format.timestamp(), format.json()),
       transports: [
@@ -336,9 +327,10 @@ module.exports = {
         new transports.Console({
           level: 'error'
         }),
-        new WinstonTransportSequelize(options)
+        winstonTransportSequelize
       ]
     });
+    this.getDatabase().Log = winstonTransportSequelize.model;
     return logger;
   },
 
