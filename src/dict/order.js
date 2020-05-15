@@ -67,11 +67,11 @@ module.exports = class Order {
   }
 
   getPrice() {
-    return Math.abs(this.price);
+    return this.price ? Math.abs(this.price) : undefined;
   }
 
   getAmount() {
-    return Math.abs(this.amount);
+    return this.amount ? Math.abs(this.amount) : undefined;
   }
 
   getType() {
@@ -235,6 +235,10 @@ module.exports = class Order {
       'stop',
       { close: true }
     );
+  }
+
+  static createUpdateOrder(id, price = undefined, amount = undefined) {
+    return new Order(id, undefined, price < 0 || amount < 0 ? Order.SIDE_SHORT : Order.SIDE_LONG, price, amount);
   }
 
   static createCloseOrderWithPriceAdjustment(symbol, amount) {

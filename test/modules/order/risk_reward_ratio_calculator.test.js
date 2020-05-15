@@ -119,8 +119,8 @@ describe('#risk reward order calculation', function() {
       target_percent: 0.25
     });
 
-    assert.deepEqual(result.stop, { amount: 0.15, id: '12345-12345' });
-    assert.deepEqual(result.target, { amount: 0.15, id: '54321-54321' });
+    assert.deepEqual(result.stop, { amount: -0.15, id: '12345-12345' });
+    assert.deepEqual(result.target, { amount: -0.15, id: '54321-54321' });
   });
 
   it('create risk reward ratio changeset orders (short)', async () => {
@@ -238,6 +238,78 @@ describe('#risk reward order calculation', function() {
     const stopOrder = orders.find(order => order.type === 'stop');
     assert.deepEqual(stopOrder.price, 6534.2688);
     assert.deepEqual(stopOrder.options, { close: true });
+  });
+
+  it('create risk reward ratio orders updates for long', async () => {
+    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const position = new Position('BTCUSD', 'long', 0.15, 0, new Date(), 6501.76);
+
+    const openExchangeOrders = [
+      new ExchangeOrder(123, 'FOOUSD', 'open', 6500.76, 0.11, undefined, undefined, 'sell', ExchangeOrder.TYPE_STOP),
+      new ExchangeOrder(321, 'FOOUSD', 'open', 6522.76, 0.11, undefined, undefined, 'sell', ExchangeOrder.TYPE_LIMIT)
+    ];
+
+    const orders = await calculator.createRiskRewardOrdersOrders(position, openExchangeOrders, {
+      stop_percent: 0.5,
+      target_percent: 0.25
+    });
+
+    // stop should close
+    const limitOrder = orders.find(order => order.id === 321);
+    assert.strictEqual(limitOrder.getId(), 321);
+    assert.strictEqual(limitOrder.getAmount(), 0.15);
+    assert.strictEqual(limitOrder.isShort(), true);
+
+    // stop should close
+    const stopOrder = orders.find(order => order.id === 123);
+    assert.strictEqual(stopOrder.getId(), 123);
+    assert.strictEqual(stopOrder.getAmount(), 0.15);
+    assert.strictEqual(stopOrder.isShort(), true);
+  });
+
+  it('create risk reward ratio orders updates for short', async () => {
+    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const position = new Position('BTCUSD', 'short', -0.15, 0, new Date(), 6501.76);
+
+    const openExchangeOrders = [
+      new ExchangeOrder(123, 'FOOUSD', 'open', 6500.76, 0.11, undefined, undefined, 'buy', ExchangeOrder.TYPE_LIMIT),
+      new ExchangeOrder(321, 'FOOUSD', 'open', 6520.76, 0.11, undefined, undefined, 'buy', ExchangeOrder.TYPE_STOP)
+    ];
+
+    const orders = await calculator.createRiskRewardOrdersOrders(position, openExchangeOrders, {
+      stop_percent: 0.5,
+      target_percent: 0.25
+    });
+
+    // stop should close
+    const limitOrder = orders.find(order => order.id === 321);
+    assert.strictEqual(limitOrder.getId(), 321);
+    assert.strictEqual(limitOrder.getAmount(), 0.15);
+    assert.strictEqual(limitOrder.isLong(), true);
+
+    // stop should close
+    const stopOrder = orders.find(order => order.id === 123);
+    assert.strictEqual(stopOrder.getId(), 123);
+    assert.strictEqual(stopOrder.getAmount(), 0.15);
+    assert.strictEqual(stopOrder.isLong(), true);
+  });
+
+  it('test sync calucation for big different in long position', async () => {
+    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+
+    const position = new Position('EOSUSD', 'long', 2, 0, new Date(), 3.2);
+    const orders = [
+      new ExchangeOrder('1', undefined, undefined, 6401.76, 4, undefined, undefined, 'sell', ExchangeOrder.TYPE_STOP),
+      new ExchangeOrder('2', undefined, undefined, 6401.76, 4, undefined, undefined, 'sell', ExchangeOrder.TYPE_LIMIT)
+    ];
+
+    const result = await calculator.syncRatioRewardOrders(position, orders, {
+      stop_percent: 0.5,
+      target_percent: 0.25
+    });
+
+    assert.deepEqual(result.stop, { amount: -2, id: '1' });
+    assert.deepEqual(result.target, { amount: -2, id: '2' });
   });
 
   function createLoggerInstance() {

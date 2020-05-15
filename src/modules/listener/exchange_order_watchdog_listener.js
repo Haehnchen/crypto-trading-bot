@@ -120,10 +120,13 @@ module.exports = class ExchangeOrderWatchdogListener {
 
       // update
       if (orderChange.id) {
+        let amount = Math.abs(orderChange.amount);
+        if (position.isLong()) {
+          amount *= -1;
+        }
+
         try {
-          await exchange.updateOrder(orderChange.id, {
-            amount: orderChange.amount
-          });
+          await exchange.updateOrder(orderChange.id, Order.createUpdateOrder(orderChange.id, undefined, amount));
         } catch (e) {
           const msg = `Stoploss update error${JSON.stringify({
             error: e,
@@ -186,7 +189,7 @@ module.exports = class ExchangeOrderWatchdogListener {
       );
 
       // update
-      if (order.id && order.id.length > 0) {
+      if (order.id && String(order.id).length > 0) {
         logger.info(
           `Risk Reward: order update: ${JSON.stringify({
             order: order,
@@ -196,7 +199,7 @@ module.exports = class ExchangeOrderWatchdogListener {
         );
 
         try {
-          await exchange.updateOrder(order.id, { amount: order.amount });
+          await exchange.updateOrder(order.id, order);
         } catch (e) {
           logger.error(
             `Risk Reward: order update error: ${JSON.stringify({
@@ -324,9 +327,13 @@ module.exports = class ExchangeOrderWatchdogListener {
             exchange: exchange.getName()
           })}`
         );
-        exchange.updateOrder(orderChange.id, {
-          amount: orderChange.amount
-        });
+
+        let amount = Math.abs(orderChange.amount);
+        if (position.isLong()) {
+          amount *= -1;
+        }
+
+        exchange.updateOrder(orderChange.id, Order.createUpdateOrder(orderChange.id, undefined, amount));
       } else {
         // create if target profit reached
 
