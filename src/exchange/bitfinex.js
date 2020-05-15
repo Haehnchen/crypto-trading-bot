@@ -132,7 +132,11 @@ module.exports = class Bitfinex {
     };
 
     if (order.getAmount()) {
-      changes.amount = String(order.isLong() ? order.getAmount() : order.getAmount() * -1);
+      // amount need be negative on sell / short orders; as on order create
+      const ourOrder = await this.findOrderById(id);
+      const isLong = (ourOrder && ourOrder.isLong()) || order.isLong();
+
+      changes.amount = String(isLong ? order.getAmount() : order.getAmount() * -1);
     }
 
     if (order.getPrice()) {
