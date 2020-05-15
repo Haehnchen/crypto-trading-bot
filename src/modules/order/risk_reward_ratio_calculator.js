@@ -1,5 +1,6 @@
 const Order = require('../../dict/order');
 const ExchangeOrder = require('../../dict/exchange_order');
+const OrderUtil = require('../../utils/order_util');
 
 module.exports = class RiskRewardRatioCalculator {
   constructor(logger) {
@@ -56,14 +57,15 @@ module.exports = class RiskRewardRatioCalculator {
       const stopOrder = stopOrders[0];
 
       // only +1% amount change is important for us
-      const difference = Math.abs(Math.abs(position.amount) - Math.abs(stopOrder.amount));
-      if (
-        difference !== 0 &&
-        Math.abs(((Math.abs(position.amount) - Math.abs(difference)) / position.amount) * 100) >= 1
-      ) {
+      if (OrderUtil.isPercentDifferentGreaterThen(position.amount, stopOrder.amount, 1)) {
+        let amount = Math.abs(position.amount);
+        if (position.isLong()) {
+          amount *= -1;
+        }
+
         newOrders.stop = {
           id: stopOrder.id,
-          amount: Math.abs(position.amount)
+          amount: amount
         };
       }
     }
@@ -84,14 +86,15 @@ module.exports = class RiskRewardRatioCalculator {
       const targetOrder = targetOrders[0];
 
       // only +1% amount change is important for us
-      const difference = Math.abs(Math.abs(position.amount) - Math.abs(targetOrder.amount));
-      if (
-        difference !== 0 &&
-        Math.abs(((Math.abs(position.amount) - Math.abs(difference)) / position.amount) * 100) >= 1
-      ) {
+      if (OrderUtil.isPercentDifferentGreaterThen(position.amount, targetOrder.amount, 1)) {
+        let amount = Math.abs(position.amount);
+        if (position.isLong()) {
+          amount *= -1;
+        }
+
         newOrders.target = {
           id: targetOrder.id,
-          amount: Math.abs(position.amount)
+          amount: amount
         };
       }
     }
@@ -105,13 +108,19 @@ module.exports = class RiskRewardRatioCalculator {
     const newOrders = [];
     if (ratioOrders.target) {
       if (ratioOrders.target.id) {
-        newOrders.push(ratioOrders.target);
+        newOrders.push(
+          Order.createUpdateOrder(
+            ratioOrders.target.id,
+            ratioOrders.target.price || undefined,
+            ratioOrders.target.amount || undefined
+          )
+        );
       } else {
         newOrders.push(
           Order.createCloseLimitPostOnlyReduceOrder(
             position.symbol,
-            ratioOrders.target.price,
-            ratioOrders.target.amount
+            ratioOrders.target.price || undefined,
+            ratioOrders.target.amount || undefined
           )
         );
       }
@@ -119,9 +128,21 @@ module.exports = class RiskRewardRatioCalculator {
 
     if (ratioOrders.stop) {
       if (ratioOrders.stop.id) {
-        newOrders.push(ratioOrders.stop);
+        newOrders.push(
+          Order.createUpdateOrder(
+            ratioOrders.stop.id,
+            ratioOrders.stop.price || undefined,
+            ratioOrders.stop.amount || undefined
+          )
+        );
       } else {
-        newOrders.push(Order.createStopLossOrder(position.symbol, ratioOrders.stop.price, ratioOrders.stop.amount));
+        newOrders.push(
+          Order.createStopLossOrder(
+            position.symbol,
+            ratioOrders.stop.price || undefined,
+            ratioOrders.stop.amount || undefined
+          )
+        );
       }
     }
 

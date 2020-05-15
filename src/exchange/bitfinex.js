@@ -127,25 +127,23 @@ module.exports = class Bitfinex {
   }
 
   async updateOrder(id, order) {
-    const amount = order.side === 'buy' ? order.amount : order.amount * -1;
-
     const changes = {
       id: id
     };
 
-    if (order.amount) {
-      changes.amount = String(amount);
+    if (order.getAmount()) {
+      changes.amount = String(order.isLong() ? order.getAmount() : order.getAmount() * -1);
     }
 
-    if (order.price) {
-      changes.price = String(Math.abs(order.price));
+    if (order.getPrice()) {
+      changes.price = String(order.getPrice());
     }
 
     let result;
     try {
       result = await this.client.updateOrder(changes);
     } catch (e) {
-      this.logger.error(`Bitfinex: error updating order: ${JSON.stringify([id, order])}`);
+      this.logger.error(`Bitfinex: error updating order: ${JSON.stringify([id, order, e.message])}`);
       throw e;
     }
 
