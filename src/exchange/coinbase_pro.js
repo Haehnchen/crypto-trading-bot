@@ -1,10 +1,9 @@
 const Gdax = require('coinbase-pro');
 
 const moment = require('moment');
-const ExchangeCandlestick = require('./../dict/exchange_candlestick');
-const Ticker = require('./../dict/ticker');
-const CandlestickEvent = require('./../event/candlestick_event');
-const TickerEvent = require('./../event/ticker_event');
+const ExchangeCandlestick = require('../dict/exchange_candlestick');
+const Ticker = require('../dict/ticker');
+const TickerEvent = require('../event/ticker_event');
 const OrderUtil = require('../utils/order_util');
 const Resample = require('../utils/resample');
 const CandlesFromTrades = require('./utils/candles_from_trades');
@@ -564,23 +563,24 @@ module.exports = class CoinbasePro {
   }
 
   static createOrderBody(order) {
-    if (!order.amount && !order.price && !order.symbol) {
+    if (!order.getAmount() && !order.getPrice() && !order.getSymbol()) {
       throw 'Invalid amount for update';
     }
 
     const myOrder = {
-      side: order.price < 0 ? 'sell' : 'buy',
-      price: Math.abs(order.price),
-      size: Math.abs(order.amount),
-      product_id: order.symbol
+      side: order.isShort() ? 'sell' : 'buy',
+      price: order.getPrice(),
+      size: order.getAmount(),
+      product_id: order.getSymbol()
     };
 
     let orderType;
-    if (!order.type || order.type === 'limit') {
+    const originOrderType = order.getType();
+    if (!originOrderType || originOrderType === 'limit') {
       orderType = 'limit';
-    } else if (order.type === 'stop') {
+    } else if (originOrderType === 'stop') {
       orderType = 'stop';
-    } else if (order.type === 'market') {
+    } else if (originOrderType === 'market') {
       orderType = 'market';
     }
 
@@ -588,15 +588,10 @@ module.exports = class CoinbasePro {
       throw 'Invalid order type';
     }
 
-    if (order.options && order.options.post_only === true) {
-      myOrder.post_only = true;
-    }
-
     myOrder.type = orderType;
 
-    if (order.id) {
-      // format issue
-      // myOrder['client_oid'] = order.id
+    if (order.isPostOnly()) {
+      myOrder.post_only = true;
     }
 
     return myOrder;
