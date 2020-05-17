@@ -92,7 +92,7 @@ sqlite3 bot.db < bot.sql
 Lets start it
 
 ```
-node index.js trade
+npm start
 ```
 
 ## How to use: Docker
