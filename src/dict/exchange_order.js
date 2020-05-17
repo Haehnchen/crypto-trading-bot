@@ -110,6 +110,14 @@ module.exports = class ExchangeOrder {
     return this.options.post_only && this.options.post_only === true;
   }
 
+  isLong() {
+    return this.getLongOrShortSide() === 'long';
+  }
+
+  isShort() {
+    return this.getLongOrShortSide() === 'short';
+  }
+
   getLongOrShortSide() {
     switch (this.side) {
       case 'buy':

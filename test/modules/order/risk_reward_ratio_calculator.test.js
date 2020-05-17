@@ -9,14 +9,14 @@ describe('#risk reward order calculation', function() {
   it('calculate risk reward orders for long', async () => {
     const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
 
-    let result = await calculator.calculateForOpenPosition(
+    let result = calculator.calculateForOpenPosition(
       new Position('BTCUSD', 'long', 0.15, 0, new Date(), 6501.76)
     );
 
     assert.equal(result.stop.toFixed(1), 6306.7);
     assert.equal(result.target.toFixed(1), 6891.9);
 
-    result = await calculator.calculateForOpenPosition(new Position('BTCUSD', 'long', 0.15, 0, new Date(), 6501.76), {
+    result = calculator.calculateForOpenPosition(new Position('BTCUSD', 'long', 0.15, 0, new Date(), 6501.76), {
       stop_percent: 0.5,
       target_percent: 0.25
     });
@@ -28,14 +28,14 @@ describe('#risk reward order calculation', function() {
   it('calculate risk reward orders for short', async () => {
     const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
 
-    let result = await calculator.calculateForOpenPosition(
+    let result = calculator.calculateForOpenPosition(
       new Position('BTCUSD', 'short', -0.15, 0, new Date(), 6501.76)
     );
 
     assert.equal(result.stop.toFixed(1), 6696.8);
     assert.equal(result.target.toFixed(1), 6111.7);
 
-    result = await calculator.calculateForOpenPosition(new Position('BTCUSD', 'short', -0.15, 0, new Date(), 6501.76), {
+    result = calculator.calculateForOpenPosition(new Position('BTCUSD', 'short', -0.15, 0, new Date(), 6501.76), {
       stop_percent: 0.5,
       target_percent: 0.25
     });
@@ -212,13 +212,11 @@ describe('#risk reward order calculation', function() {
       target_percent: 0.25
     });
 
-    const closeOrder = orders.find(order => order.type === 'limit');
+    const closeOrder = orders.find(order => order.type === 'target');
     assert.deepEqual(closeOrder.price, -6518.0144);
-    assert.deepEqual(closeOrder.options, { post_only: true, close: true });
 
     const stopOrder = orders.find(order => order.type === 'stop');
     assert.deepEqual(stopOrder.price, -6469.251200000001);
-    assert.deepEqual(stopOrder.options, { close: true });
   });
 
   it('create risk reward ratio orders (short)', async () => {
@@ -231,13 +229,11 @@ describe('#risk reward order calculation', function() {
       target_percent: 0.25
     });
 
-    const closeOrder = orders.find(order => order.type === 'limit');
+    const closeOrder = orders.find(order => order.type === 'target');
     assert.deepEqual(closeOrder.price, 6485.5056);
-    assert.deepEqual(closeOrder.options, { post_only: true, close: true });
 
     const stopOrder = orders.find(order => order.type === 'stop');
     assert.deepEqual(stopOrder.price, 6534.2688);
-    assert.deepEqual(stopOrder.options, { close: true });
   });
 
   it('create risk reward ratio orders updates for long', async () => {
@@ -256,15 +252,13 @@ describe('#risk reward order calculation', function() {
 
     // stop should close
     const limitOrder = orders.find(order => order.id === 321);
-    assert.strictEqual(limitOrder.getId(), 321);
-    assert.strictEqual(limitOrder.getAmount(), 0.15);
-    assert.strictEqual(limitOrder.isShort(), true);
+    assert.strictEqual(limitOrder.id, 321);
+    assert.strictEqual(limitOrder.amount, -0.15);
 
     // stop should close
     const stopOrder = orders.find(order => order.id === 123);
-    assert.strictEqual(stopOrder.getId(), 123);
-    assert.strictEqual(stopOrder.getAmount(), 0.15);
-    assert.strictEqual(stopOrder.isShort(), true);
+    assert.strictEqual(stopOrder.id, 123);
+    assert.strictEqual(stopOrder.amount, -0.15);
   });
 
   it('create risk reward ratio orders updates for short', async () => {
@@ -283,15 +277,13 @@ describe('#risk reward order calculation', function() {
 
     // stop should close
     const limitOrder = orders.find(order => order.id === 321);
-    assert.strictEqual(limitOrder.getId(), 321);
-    assert.strictEqual(limitOrder.getAmount(), 0.15);
-    assert.strictEqual(limitOrder.isLong(), true);
+    assert.strictEqual(limitOrder.id, 321);
+    assert.strictEqual(limitOrder.amount, 0.15);
 
     // stop should close
     const stopOrder = orders.find(order => order.id === 123);
-    assert.strictEqual(stopOrder.getId(), 123);
-    assert.strictEqual(stopOrder.getAmount(), 0.15);
-    assert.strictEqual(stopOrder.isLong(), true);
+    assert.strictEqual(stopOrder.id, 123);
+    assert.strictEqual(stopOrder.amount, 0.15);
   });
 
   it('test sync calucation for big different in long position', async () => {

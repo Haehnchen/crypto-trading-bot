@@ -348,7 +348,21 @@ describe('#bitfinex exchange implementation', function() {
       }
     };
 
-    const exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createUpdateOrder(121212, -12, -0.001));
+    bitfinex.orders = {
+      12345: new ExchangeOrder(
+        12345,
+        'BCHBTC',
+        'open',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'sell',
+        ExchangeOrder.TYPE_LIMIT
+      )
+    };
+
+    const exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createUpdateOrder(12345, -12, -0.001));
 
     assert.strictEqual(exchangeOrder.symbol, 'BCHBTC');
     assert.deepStrictEqual(myChanges, { id: 12345, price: '12', amount: '-0.001' });

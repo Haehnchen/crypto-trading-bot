@@ -225,7 +225,7 @@ describe('#watchdogs are working', () => {
     const listener = new ExchangeOrderWatchdogListener(
       {},
       {},
-      { calculateForOpenPosition: async (_exchange, _position, _conf) => -105.0 },
+      { calculateForOpenPosition: (_exchange, _position, _conf) => -105.0 },
       {},
       {},
       {},
@@ -268,7 +268,7 @@ describe('#watchdogs are working', () => {
     const listener = new ExchangeOrderWatchdogListener(
       {},
       {},
-      { calculateForOpenPosition: async () => undefined },
+      { calculateForOpenPosition: () => undefined },
       {},
       {},
       {},
@@ -299,7 +299,7 @@ describe('#watchdogs are working', () => {
     const listener = new ExchangeOrderWatchdogListener(
       {},
       {},
-      { calculateForOpenPosition: async () => 95.0 },
+      { calculateForOpenPosition: () => 95.0 },
       {},
       {},
       {},
@@ -344,7 +344,7 @@ describe('#watchdogs are working', () => {
     const listener = new ExchangeOrderWatchdogListener(
       {},
       {},
-      { calculateForOpenPosition: async () => undefined },
+      { calculateForOpenPosition: () => undefined },
       {},
       {},
       {},

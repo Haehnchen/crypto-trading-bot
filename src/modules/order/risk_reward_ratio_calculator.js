@@ -7,39 +7,35 @@ module.exports = class RiskRewardRatioCalculator {
     this.logger = logger;
   }
 
-  async calculateForOpenPosition(position, options = { stop_percent: 3, target_percent: 6 }) {
-    return new Promise(resolve => {
-      let entryPrice = position.entry;
-      if (!entryPrice) {
-        this.logger.info(`Invalid position entryPrice for stop loss:${JSON.stringify(position)}`);
-        resolve();
+  calculateForOpenPosition(position, options = { stop_percent: 3, target_percent: 6 }) {
+    let entryPrice = position.entry;
+    if (!entryPrice) {
+      this.logger.info(`Invalid position entryPrice for stop loss:${JSON.stringify(position)}`);
+      return undefined;
+    }
 
-        return;
-      }
+    const result = {
+      stop: undefined,
+      target: undefined
+    };
 
-      const result = {
-        stop: undefined,
-        target: undefined
-      };
+    entryPrice = Math.abs(entryPrice);
 
-      entryPrice = Math.abs(entryPrice);
+    if (position.side === 'long') {
+      result.target = entryPrice * (1 + options.target_percent / 100);
+      result.stop = entryPrice * (1 - options.stop_percent / 100);
+    } else {
+      result.target = entryPrice * (1 - options.target_percent / 100);
+      result.stop = entryPrice * (1 + options.stop_percent / 100);
+    }
 
-      if (position.side === 'long') {
-        result.target = entryPrice * (1 + options.target_percent / 100);
-        result.stop = entryPrice * (1 - options.stop_percent / 100);
-      } else {
-        result.target = entryPrice * (1 - options.target_percent / 100);
-        result.stop = entryPrice * (1 + options.stop_percent / 100);
-      }
-
-      resolve(result);
-    });
+    return result;
   }
 
   async syncRatioRewardOrders(position, orders, options) {
     const newOrders = {};
 
-    const riskRewardRatio = await this.calculateForOpenPosition(position, options);
+    const riskRewardRatio = this.calculateForOpenPosition(position, options);
 
     const stopOrders = orders.filter(order => order.type === ExchangeOrder.TYPE_STOP);
     if (stopOrders.length === 0) {
@@ -108,41 +104,33 @@ module.exports = class RiskRewardRatioCalculator {
     const newOrders = [];
     if (ratioOrders.target) {
       if (ratioOrders.target.id) {
-        newOrders.push(
-          Order.createUpdateOrder(
-            ratioOrders.target.id,
-            ratioOrders.target.price || undefined,
-            ratioOrders.target.amount || undefined
-          )
-        );
+        newOrders.push({
+          id: ratioOrders.target.id,
+          price: ratioOrders.target.price,
+          amount: ratioOrders.target.amount
+        });
       } else {
-        newOrders.push(
-          Order.createCloseLimitPostOnlyReduceOrder(
-            position.symbol,
-            ratioOrders.target.price || undefined,
-            ratioOrders.target.amount || undefined
-          )
-        );
+        newOrders.push({
+          price: ratioOrders.target.price || undefined,
+          amount: ratioOrders.target.amount || undefined,
+          type: 'target'
+        });
       }
     }
 
     if (ratioOrders.stop) {
       if (ratioOrders.stop.id) {
-        newOrders.push(
-          Order.createUpdateOrder(
-            ratioOrders.stop.id,
-            ratioOrders.stop.price || undefined,
-            ratioOrders.stop.amount || undefined
-          )
-        );
+        newOrders.push({
+          id: ratioOrders.stop.id,
+          price: ratioOrders.stop.price,
+          amount: ratioOrders.stop.amount
+        });
       } else {
-        newOrders.push(
-          Order.createStopLossOrder(
-            position.symbol,
-            ratioOrders.stop.price || undefined,
-            ratioOrders.stop.amount || undefined
-          )
-        );
+        newOrders.push({
+          price: ratioOrders.stop.price,
+          amount: ratioOrders.stop.amount,
+          type: 'stop'
+        });
       }
     }
 
