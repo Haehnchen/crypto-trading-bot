@@ -30,7 +30,7 @@ const ExchangeManager = require('./exchange/exchange_manager');
 const Trade = require('../modules/trade');
 const Http = require('../modules/http');
 const Backtest = require('../modules/backtest');
-const Backfill = require('../modules/backfill');
+const Backfill2 = require('../modules/backfill');
 
 const StopLossCalculator = require('../modules/order/stop_loss_calculator');
 const RiskRewardRatioCalculator = require('../modules/order/risk_reward_ratio_calculator');
@@ -117,10 +117,10 @@ let tickerRepository;
 let ordersHttp;
 let pairConfig;
 
-const parameters = {};
+const parameters: {projectDir?: string} = {};
 
 module.exports = {
-  boot: async function(projectDir) {
+  boot: async function(projectDir: string) {
     parameters.projectDir = projectDir;
 
     try {
@@ -313,7 +313,7 @@ module.exports = {
   },
 
   getNotifier: function() {
-    const notifiers = [];
+    const notifiers: any[] = [];
 
     const config = this.getConfig();
 
@@ -652,7 +652,7 @@ module.exports = {
   },
 
   getBackfill: function() {
-    return new Backfill(this.getExchanges(), this.getCandleImporter());
+    return new Backfill2(this.getExchanges(), this.getCandleImporter());
   },
 
   createMailer: function() {
