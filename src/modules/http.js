@@ -5,6 +5,7 @@ const auth = require('basic-auth');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const moment = require('moment');
+const Path = require('path');
 
 module.exports = class Http {
   constructor(
@@ -80,6 +81,16 @@ module.exports = class Http {
     app.use(cookieParser());
     app.use(compression());
     app.use(express.static(`${this.projectDir}/web/static`, { maxAge: 3600000 * 24 }));
+    app.use('/scripts/moment', express.static(Path.join(this.projectDir, '/node_modules/moment/min')));
+    app.use('/scripts/datatables.net', express.static(Path.join(this.projectDir, '/node_modules/datatables.net/js')));
+    app.use(
+      '/scripts/datatables.net-bs4/',
+      express.static(Path.join(this.projectDir, '/node_modules/datatables.net-bs4/js'))
+    );
+    app.use(
+      '/css/datatables.net-bs4/',
+      express.static(Path.join(this.projectDir, '/node_modules/datatables.net-bs4/css'))
+    );
 
     const username = this.systemUtil.getConfig('webserver.username');
     const password = this.systemUtil.getConfig('webserver.password');
@@ -153,8 +164,7 @@ module.exports = class Http {
     });
 
     app.post('/logsTable', async (req, res) => {
-      const logs = await this.logsHttp.getLogsData(req, res);
-      res.json(logs);
+      res.json(await this.logsHttp.getLogsData(req, res));
     });
 
     app.get('/desks/:desk', async (req, res) => {

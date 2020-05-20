@@ -137,7 +137,7 @@ module.exports = {
 
     this.getDatabase();
     this.getLogger();
-    await db.sequelize.sync({ force: true });
+    await db.sequelize.sync();
   },
 
   getDatabase: () => {

@@ -3,7 +3,7 @@
 {% block title %}Logs | Crypto Bot{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/jq-3.3.1/dt-1.10.20/datatables.min.css"/>
+<link rel="stylesheet" type="text/css" href="/css/datatables.net-bs4/dataTables.bootstrap4.min.css"/>
 {% endblock %}
 
 
@@ -35,29 +35,22 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header">
-                                <strong>Filters</strong>
-                                <form method="get">
+                            <strong>Filters</strong>
                                     <div class="form-row">
-                                        <div class="col-md-2">
+                                        <div class="col-md-4">
                                             <ul class="list-inline">
                                                 <li class="list-inline-item">Exclude:</li>
                                                 {% for key,level in levels %}
                                                     <li class="list-inline-item">
                                                         <div class="form-check">
-                                                            <input type="checkbox" class="form-check-input" name="filters[logExcludeLevels][]" value="{{ level }}" id="level_{{ key }}" onChange="this.form.submit()" {% if level in form.filters.logExcludeLevels %}checked{% endif %}>
+                                                            <input type="checkbox" class="form-check-input" name="logExcludeLevels" value="{{ level }}" id="level_{{ key }}" {% if level in filters.logExcludeLevels %}checked{% endif %}>
                                                             <label class="form-check-label" for="level_{{ key }}">{{ level }}</label>
                                                         </div>
                                                     </li>
                                                 {% endfor %}
                                             </ul>
                                         </div>
-                                        <div class="col-md-2">
-                                            <label class="sr-only" for="form-txt-filter">Text filter</label>
-                                            <input class="form-control" name="filters[logTxtFilter]" placeholder="Text filter" value="{{form.filters.logTxtFilter}}">
-                                        </div>
-                                        <button type="submit" class="btn btn-primary mb-2">Submit</button>
                                     </div>
-                                </form>
                             </div>
                             <!-- /.card-header -->
 
@@ -90,6 +83,8 @@
 
 {% block javascript %}
 {{ parent() }}
-<script type="text/javascript" src="https://cdn.datatables.net/v/bs4/jq-3.3.1/dt-1.10.20/datatables.min.js"></script>
+<script type="text/javascript" src="/scripts/datatables.net/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="/scripts/datatables.net-bs4/dataTables.bootstrap4.min.js"></script>
 <script type="text/javascript" src="/js/logs.js"></script>
+<script type="text/javascript" src="/scripts/moment/moment-with-locales.min.js"></script>
 {% endblock javascript %}

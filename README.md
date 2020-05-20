@@ -39,12 +39,14 @@ TODOS:
 
  * node.js
  * sqlite3
+ * [sequelize ORM](https://sequelize.org/)
  * [technicalindicators](https://github.com/anandanand84/technicalindicators)
  * [tulipindicators - tulind](https://tulipindicators.org/list)
  * [TA-Lib](https://mrjbq7.github.io/ta-lib/)
- * twig
+ * [twig](https://www.npmjs.com/package/twig)
  * express
  * Bootstrap v4
+ * [datatables](https://datatables.net/)
  * Tradingview widgets
 
 ## How to use
