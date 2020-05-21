@@ -160,11 +160,11 @@ module.exports = class Http {
     });
 
     app.get('/logs', async (req, res) => {
-      res.render('../templates/logs.html.twig', await this.logsHttp.getLogsPageVariables(req, res));
+      res.render('../templates/logs.html.twig', await this.logsHttp.getLogsPageVariables());
     });
 
     app.post('/logsTable', async (req, res) => {
-      res.json(await this.logsHttp.getLogsData(req, res));
+      res.json(await this.logsHttp.getLogsData(req));
     });
 
     app.get('/desks/:desk', async (req, res) => {

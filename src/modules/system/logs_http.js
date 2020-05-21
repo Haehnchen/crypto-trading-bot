@@ -5,7 +5,7 @@ module.exports = class LogsHttp {
     this.logsRepository = logsRepository;
   }
 
-  async getLogsPageVariables(request, response) {
+  async getLogsPageVariables() {
     return {
       levels: await this.logsRepository
         .findAll({
@@ -17,7 +17,7 @@ module.exports = class LogsHttp {
     };
   }
 
-  async getLogsData(request, response) {
+  async getLogsData(request) {
     return Datatable(this.logsRepository, request.body, undefined, { replaceRegexp: true });
   }
 };
