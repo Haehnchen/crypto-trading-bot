@@ -325,7 +325,7 @@ module.exports = class BinanceFutures {
   async initUserWebsocket() {
     let response;
     try {
-      response = await this.ccxtClient.fapiPublicPostListenKey();
+      response = await this.ccxtClient.fapiPrivatePostListenKey();
     } catch (e) {
       this.logger.error(`Binance Futures: listenKey error: ${String(e)}`);
       return undefined;
@@ -384,12 +384,12 @@ module.exports = class BinanceFutures {
 
     const heartbeat = setInterval(async () => {
       try {
-        await this.ccxtClient.fapiPublicPutListenKey();
+        await this.ccxtClient.fapiPrivatePutListenKey();
         this.logger.debug('Binance Futures: user stream ping successfully done');
       } catch (e) {
         this.logger.error(`Binance Futures: user stream ping error: ${String(e)}`);
       }
-    }, 1000 * 60 * 10);
+    }, 3000);
 
     ws.onclose = function() {
       me.logger.info('Binance futures: User stream connection closed.');

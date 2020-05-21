@@ -120,10 +120,13 @@ module.exports = class ExchangeOrderWatchdogListener {
 
       // update
       if (orderChange.id) {
+        let amount = Math.abs(orderChange.amount);
+        if (position.isLong()) {
+          amount *= -1;
+        }
+
         try {
-          await exchange.updateOrder(orderChange.id, {
-            amount: orderChange.amount
-          });
+          await exchange.updateOrder(orderChange.id, Order.createUpdateOrder(orderChange.id, undefined, amount));
         } catch (e) {
           const msg = `Stoploss update error${JSON.stringify({
             error: e,
@@ -138,7 +141,7 @@ module.exports = class ExchangeOrderWatchdogListener {
       }
 
       // create
-      let price = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss);
+      let price = stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss);
       if (!price) {
         console.log('Stop loss: auto price skipping');
         return;
@@ -169,39 +172,47 @@ module.exports = class ExchangeOrderWatchdogListener {
   async riskRewardRatioWatchdog(exchange, position, riskRewardRatioOptions) {
     const { logger } = this;
 
-    const orders = await exchange.getOrdersForSymbol(position.symbol);
+    const symbol = position.getSymbol();
+    const orders = await exchange.getOrdersForSymbol(symbol);
     const orderChanges = await this.riskRewardRatioCalculator.createRiskRewardOrdersOrders(
       position,
       orders,
       riskRewardRatioOptions
     );
 
-    orderChanges.forEach(async order => {
+    orderChanges.forEach(async orderChange => {
       logger.info(
-        `Risk Reward: order change: ${JSON.stringify({
-          order: order,
-          symbol: position.symbol,
+        `Risk Reward: needed order change detected: ${JSON.stringify({
+          orderChange: orderChange,
+          symbol: symbol,
           exchange: exchange.getName()
         })}`
       );
 
       // update
-      if (order.id && order.id.length > 0) {
+      if (orderChange.id && String(orderChange.id).length > 0) {
         logger.info(
           `Risk Reward: order update: ${JSON.stringify({
-            order: order,
-            symbol: position.symbol,
+            orderChange: orderChange,
+            symbol: symbol,
             exchange: exchange.getName()
           })}`
         );
 
         try {
-          await exchange.updateOrder(order.id, { amount: order.amount });
+          await exchange.updateOrder(
+            orderChange.id,
+            Order.createUpdateOrder(
+              orderChange.target.id,
+              orderChange.target.price || undefined,
+              orderChange.target.amount || undefined
+            )
+          );
         } catch (e) {
           logger.error(
             `Risk Reward: order update error: ${JSON.stringify({
-              order: order,
-              symbol: position.symbol,
+              orderChange: orderChange,
+              symbol: symbol,
               exchange: exchange.getName(),
               message: e
             })}`
@@ -211,12 +222,12 @@ module.exports = class ExchangeOrderWatchdogListener {
         return;
       }
 
-      const price = exchange.calculatePrice(order.price, order.symbol);
+      const price = exchange.calculatePrice(orderChange.price, orderChange.symbol);
       if (!price) {
         logger.error(
           `Risk Reward: Invalid price: ${JSON.stringify({
-            order: order,
-            symbol: position.symbol,
+            orderChange: orderChange,
+            symbol: symbol,
             exchange: exchange.getName()
           })}`
         );
@@ -225,17 +236,22 @@ module.exports = class ExchangeOrderWatchdogListener {
       }
 
       // we need to normalize the price here: more general solution?
-      order.price = price;
-
       logger.info(
         `Risk Reward: order create: ${JSON.stringify({
-          order: order,
-          symbol: position.symbol,
+          orderChange: orderChange,
+          symbol: symbol,
           exchange: exchange.getName()
         })}`
       );
 
-      await this.orderExecutor.executeOrder(exchange.getName(), order);
+      const ourOrder =
+        orderChange.type === 'stop'
+          ? Order.createStopLossOrder(symbol, orderChange.price, orderChange.amount)
+          : Order.createCloseLimitPostOnlyReduceOrder(symbol, orderChange.price, orderChange.amount);
+
+      ourOrder.price = price;
+
+      await this.orderExecutor.executeOrder(exchange.getName(), ourOrder);
     });
   }
 
@@ -324,14 +340,18 @@ module.exports = class ExchangeOrderWatchdogListener {
             exchange: exchange.getName()
           })}`
         );
-        exchange.updateOrder(orderChange.id, {
-          amount: orderChange.amount
-        });
+
+        let amount = Math.abs(orderChange.amount);
+        if (position.isLong()) {
+          amount *= -1;
+        }
+
+        exchange.updateOrder(orderChange.id, Order.createUpdateOrder(orderChange.id, undefined, amount));
       } else {
         // create if target profit reached
 
         // calculate activation price, undefined if it is not reached yet.
-        const activationPrice = await this.stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, {
+        const activationPrice = this.stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, {
           percent: -config.target_percent
         });
 

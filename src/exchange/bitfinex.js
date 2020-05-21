@@ -127,25 +127,25 @@ module.exports = class Bitfinex {
   }
 
   async updateOrder(id, order) {
-    const amount = order.side === 'buy' ? order.amount : order.amount * -1;
-
     const changes = {
       id: id
     };
 
-    if (order.amount) {
-      changes.amount = String(amount);
+    if (order.getAmount()) {
+      // amount need be negative on sell / short orders; as on order create
+      const ourOrder = await this.findOrderById(id);
+      changes.amount = String(ourOrder && ourOrder.isShort() ? order.getAmount() * -1 : order.getAmount());
     }
 
-    if (order.price) {
-      changes.price = String(Math.abs(order.price));
+    if (order.getPrice()) {
+      changes.price = String(order.getPrice());
     }
 
     let result;
     try {
       result = await this.client.updateOrder(changes);
     } catch (e) {
-      this.logger.error(`Bitfinex: error updating order: ${JSON.stringify([id, order])}`);
+      this.logger.error(`Bitfinex: error updating order: ${JSON.stringify([id, order, e.message])}`);
       throw e;
     }
 
@@ -434,31 +434,32 @@ module.exports = class Bitfinex {
   }
 
   static createOrder(order) {
-    const amount = Math.abs(order.amount);
+    const amount = order.getAmount();
 
     const orderOptions = {
-      cid: order.id,
-      symbol: `t${order.symbol}`,
-      amount: order.price < 0 ? amount * -1 : amount,
+      cid: order.getId(),
+      symbol: `t${order.getSymbol()}`,
+      amount: order.isShort() ? amount * -1 : amount,
       meta: { aff_code: 'kDLceRHa' }
     };
 
-    if (!order.type || order.type === 'limit') {
+    const orderType = order.getType();
+    if (!orderType || orderType === 'limit') {
       orderOptions.type = Order.type.LIMIT;
-      orderOptions.price = String(Math.abs(order.price));
-    } else if (order.type === 'stop') {
+      orderOptions.price = String(order.getPrice());
+    } else if (orderType === 'stop') {
       orderOptions.type = Order.type.STOP;
-      orderOptions.price = String(Math.abs(order.price));
-    } else if (order.type === 'market') {
+      orderOptions.price = String(order.getPrice());
+    } else if (orderType === 'market') {
       orderOptions.type = Order.type.MARKET;
-    } else if (order.type === 'trailing_stop') {
+    } else if (orderType === 'trailing_stop') {
       orderOptions.type = Order.type.TRAILING_STOP;
-      orderOptions.price = String(Math.abs(order.price));
+      orderOptions.price = String(order.getPrice());
     }
 
     const myOrder = new Order(orderOptions);
 
-    if (order.options && order.options.post_only === true) {
+    if (order.isPostOnly()) {
       myOrder.setPostOnly(true);
     }
 

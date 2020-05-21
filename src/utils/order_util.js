@@ -6,7 +6,7 @@ module.exports = {
   },
 
   syncOrderByType: (position, orders, type) => {
-    const stopOrders = orders.filter(order => order.type === type)
+    const stopOrders = orders.filter(order => order.type === type);
     if (stopOrders.length === 0) {
       return [
         {
@@ -16,15 +16,9 @@ module.exports = {
     }
 
     const stopOrder = stopOrders[0];
-    const difference = Math.abs(position.amount) - Math.abs(stopOrder.amount);
-
-    if (difference === 0) {
-      return [];
-    }
 
     // only update if we 1 % out of range; to get not unit amount lot size issues
-    const differencePercent = Math.abs(((Math.abs(position.amount) - Math.abs(difference)) / position.amount) * 100);
-    if (differencePercent >= 1) {
+    if (module.exports.isPercentDifferentGreaterThen(position.amount, stopOrder.amount, 1)) {
       return [
         {
           id: stopOrder.id,
@@ -62,5 +56,13 @@ module.exports = {
     }
 
     return number.toFixed(points[1].length);
+  },
+
+  isPercentDifferentGreaterThen: (value1, value2, percentDiff) => {
+    // we dont care about negative values
+    const value1Abs = Math.abs(value1);
+    const value2Abs = Math.abs(value2);
+
+    return Math.abs((value1Abs - value2Abs) / ((value1Abs + value2Abs) / 2)) * 100 > percentDiff;
   }
 };
