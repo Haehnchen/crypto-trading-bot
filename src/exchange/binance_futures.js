@@ -389,7 +389,7 @@ module.exports = class BinanceFutures {
       } catch (e) {
         this.logger.error(`Binance Futures: user stream ping error: ${String(e)}`);
       }
-    }, 3000);
+    }, 1000 * 60 * 10);
 
     ws.onclose = function() {
       me.logger.info('Binance futures: User stream connection closed.');
