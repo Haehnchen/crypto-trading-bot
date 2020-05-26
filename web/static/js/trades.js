@@ -3,15 +3,16 @@ $(function() {
     bFilter: false,
     paging: false,
     info: false,
+    ordering: false,
     serverSide: true,
     ajax: {
       type: 'GET',
       url: '/trades/positions'
     },
     columns: [
-      { data: 'position.side', title: 'Side' },
       { data: 'exchange', title: 'Exchange' },
       { data: 'position.symbol', title: 'Symbol' },
+      { data: 'position.side', title: 'Side' },
       { data: 'position.amount', title: 'Amount' },
       { data: 'currency', title: 'Currency' },
       { data: 'position.profit', title: 'Profit', defaultContent: '' },
@@ -22,34 +23,14 @@ $(function() {
     ],
     order: [[1, 'desc']],
     columnDefs: [
-      {
-        targets: 0,
-        render: $.fn.dataTable.render.arrows()
-      },
-      {
-        targets: 2,
-        render: $.fn.dataTable.render.tradingviewLink('exchange')
-      },
-      {
-        targets: 3,
-        render: $.fn.dataTable.render.greenRed({ minimumFractionDigits: 2 })
-      },
-      {
-        targets: [4, 6],
-        render: $.fn.dataTable.render.number('', '.', 2)
-      },
-      {
-        targets: 5,
-        render: $.fn.dataTable.render.greenRed({ style: 'percent', minimumFractionDigits: 2 })
-      },
-      {
-        targets: [7, 8],
-        render: $.fn.dataTable.render.moment('YYYY-MM-DDTHH:mm:ss.SSSZ', 'YYYY-MM-DD HH:mm:ss') // 2020-05-21T20:38:11.462Z
-      },
-      {
-        targets: 9,
-        render: $.fn.dataTable.render.actionButtons()
-      }
+      { render: $.fn.dataTable.render.tradingviewLink('exchange'), targets: 1 },
+      { render: $.fn.dataTable.render.arrows(), targets: 2 },
+      { render: $.fn.dataTable.render.greenRed({ minimumFractionDigits: 2 }), targets: 3 },
+      { render: $.fn.dataTable.render.number('', '.', 2), targets: [4, 6] },
+      { render: $.fn.dataTable.render.greenRed({ style: 'percent', minimumFractionDigits: 2 }), targets: 5 },
+      { render: $.fn.dataTable.render.moment('YYYY-MM-DDTHH:mm:ss.SSSZ', 'YYYY-MM-DD HH:mm:ss'), targets: [7, 8] },
+      { render: $.fn.dataTable.render.actionButtons(), targets: 9 },
+      { responsivePriority: 10001, targets: [7, 8] }
     ]
   });
 
@@ -63,15 +44,16 @@ $(function() {
     bFilter: false,
     paging: false,
     info: false,
+    ordering: false,
     serverSide: true,
     ajax: {
       type: 'GET',
       url: '/trades/orders'
     },
     columns: [
-      { data: 'order.side', title: 'Side' },
       { data: 'exchange', title: 'Exchange' },
       { data: 'order.symbol', title: 'Symbol' },
+      { data: 'order.side', title: 'Side' },
       { data: 'order.amount', title: 'Amount' },
       { data: 'order.price', title: 'Price' },
       { data: 'order.type', title: 'Type' },
@@ -85,30 +67,12 @@ $(function() {
     ],
     order: [[1, 'desc']],
     columnDefs: [
-      {
-        targets: 0,
-        render: $.fn.dataTable.render.arrows()
-      },
-      {
-        targets: 2,
-        render: $.fn.dataTable.render.tradingviewLink('exchange')
-      },
-      {
-        targets: 3,
-        render: $.fn.dataTable.render.greenRed({ minimumFractionDigits: 2 })
-      },
-      {
-        targets: 4,
-        render: $.fn.dataTable.render.number('', '.', 2)
-      },
-      {
-        targets: [9, 10],
-        render: $.fn.dataTable.render.moment('YYYY-MM-DDTHH:mm:ss.SSSZ', 'YYYY-MM-DD HH:mm:ss') // 2020-05-21T20:38:11.462Z
-      },
-      {
-        targets: 12,
-        render: $.fn.dataTable.render.actionButtons()
-      }
+      { render: $.fn.dataTable.render.tradingviewLink('exchange'), targets: 1 },
+      { render: $.fn.dataTable.render.arrows(), targets: 2 },
+      { render: $.fn.dataTable.render.greenRed({ minimumFractionDigits: 2 }), targets: 3 },
+      { render: $.fn.dataTable.render.number('', '.', 2), targets: 4 },
+      { render: $.fn.dataTable.render.moment('YYYY-MM-DDTHH:mm:ss.SSSZ', 'YYYY-MM-DD HH:mm:ss'), targets: [9, 10] },
+      { render: $.fn.dataTable.render.actionButtons(), targets: 12 }
     ]
   });
 
@@ -118,7 +82,7 @@ $(function() {
     $.ajax({
       url: `/orders/${data.exchange}/${data.order.id}`,
       type: 'DELETE',
-      success: function(result) {
+      success: function() {
         ordersTable.ajax.reload();
       }
     });

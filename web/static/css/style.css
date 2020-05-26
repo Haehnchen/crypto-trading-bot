@@ -53,4 +53,8 @@ nav {
     -ms-user-select: none;
     user-select: none;
 }
+
+#tradesTable button, #ordersTable button, #pairsTable button {
+    padding: 0 0 0 3px;
+}    
 /*end base*/

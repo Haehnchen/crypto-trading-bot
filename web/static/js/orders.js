@@ -44,6 +44,7 @@ $(function() {
     bFilter: false,
     paging: false,
     info: false,
+    responsive: true,
     columnDefs: [
       {
         targets: [5, 6],

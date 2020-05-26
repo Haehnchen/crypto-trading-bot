@@ -21,18 +21,9 @@ $(function() {
     ],
     order: [[1, 'desc']],
     columnDefs: [
-      {
-        targets: 1,
-        render: $.fn.dataTable.render.tradingviewLink('exchange')
-      },
-      {
-        targets: [4, 5],
-        render: $.fn.dataTable.render.JSON()
-      },
-      {
-        targets: 7,
-        render: $.fn.dataTable.render.actionButtons()
-      }
+      { render: $.fn.dataTable.render.tradingviewLink('exchange'), targets: 1 },
+      { render: $.fn.dataTable.render.JSON(), targets: [4, 5] },
+      { render: $.fn.dataTable.render.actionButtons(), targets: 7 }
     ]
   });
 
