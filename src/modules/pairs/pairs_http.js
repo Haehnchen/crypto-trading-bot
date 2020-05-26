@@ -30,6 +30,14 @@ module.exports = class PairsHttp {
             item.process = state.state;
           }
 
+          item.actions = {};
+          if (!item.has_position && !item.process) {
+            item.actions = ['short', 'long', 'short_market', 'long_market'];
+          } else if (item.has_position && !item.process) {
+            item.actions = ['close', 'close_market'];
+          } else if (item.process) {
+            item.actions = ['close'];
+          }
           return item;
         })
     );

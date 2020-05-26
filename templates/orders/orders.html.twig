@@ -79,13 +79,11 @@
                 <div class="card-header border-0">
                     <h3 class="card-title">Orders</h3>
                     <div class="card-tools">
-                        <a href="/orders/{{ pair|url_encode }}/cancel-all" class="btn btn-tool btn-sm" title="Cancel All">
-                            <i class="fas fa-trash"></i>
-                        </a>
+                        <button id="cancel-all" name="action" value="cancel-all" data-toggle="tooltip" title="Cancel All" class="btn btn-xs btn-tool btn-sm"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    <table class="table table-striped table-valign-middle">
+                    <table id="ordersTable" class="table table-striped table-valign-middle">
                         <thead>
                         <tr>
                             <th>Type</th>
@@ -93,6 +91,8 @@
                             <th>Amount</th>
                             <th>Side</th>
                             <th>Cancel</th>
+                            <th>Exchange</th>
+                            <th>ID</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -109,10 +109,10 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="/orders/{{ pair|url_encode }}/cancel/{{ order.id|url_encode }}" class="btn btn-tool btn-sm" title="Cancel">
-                                        <i class="fas fa-window-close text-dark"></i>
-                                    </a>
+                                    <button name="action" value="cancel" data-toggle="tooltip" title="Cancel" class="btn btn-xs btn-tool btn-sm"><i class="fas fa-window-close text-dark"></i></button>
                                 </td>
+                                <td>{{ exchange }}</td>
+                                <td>{{ order.id }}</td>                                
                             </tr>
                         {% endfor %}
                         </tbody>

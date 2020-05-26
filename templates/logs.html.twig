@@ -2,11 +2,6 @@
 
 {% block title %}Logs | Crypto Bot{% endblock %}
 
-{% block head %}
-<link rel="stylesheet" type="text/css" href="/css/datatables.net-bs4/dataTables.bootstrap4.min.css"/>
-{% endblock %}
-
-
 {% block content %}
     <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
@@ -56,16 +51,7 @@
 
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table id="logsTable" class="table table-striped table-bordered" style="width:100%">
-                                        <thead>
-                                        <tr>
-                                            <th scope="col">Level</th>
-                                            <th scope="col">Message</th>
-                                            <th scope="col">CreatedAt</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
+                                    <table id="logsTable" class="table table-striped table-bordered" style="width:100%"></table>
                                 </div>
 
                             </div>
@@ -83,8 +69,5 @@
 
 {% block javascript %}
 {{ parent() }}
-<script type="text/javascript" src="/scripts/datatables.net/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="/scripts/datatables.net-bs4/dataTables.bootstrap4.min.js"></script>
 <script type="text/javascript" src="/js/logs.js"></script>
-<script type="text/javascript" src="/scripts/moment/moment-with-locales.min.js"></script>
 {% endblock javascript %}

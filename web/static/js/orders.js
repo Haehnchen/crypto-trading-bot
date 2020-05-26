@@ -39,4 +39,43 @@ $(function() {
       scope.find('#amount').val((value / assetPrice).toFixed(8)); // precision (tick / lot size?)
     }
   });
+
+  const ordersTable = $('#ordersTable').DataTable({
+    bFilter: false,
+    paging: false,
+    info: false,
+    columnDefs: [
+      {
+        targets: [5, 6],
+        visible: false,
+        searchable: false
+      }
+    ]
+  });
+
+  // bind button actions
+  $('#ordersTable tbody').on('click', 'button', function() {
+    const data = ordersTable.row($(this).parents('tr')).data();
+    $.ajax({
+      url: `/orders/${data[5]}/${data[6]}`,
+      type: 'DELETE',
+      success: function(result) {
+        // ordersTable.ajax.reload();
+        location.reload();
+      }
+    });
+  });
+
+  $('button.cancel-all').on('click', 'button', function() {
+    const data = ordersTable.rows(0).data();
+    $.ajax({
+      url: `/orders/${data[5]}`,
+      type: 'DELETE',
+      success: function(result) {
+        // ordersTable.ajax.reload();
+        location.reload();
+      }
+    });
+  });
+
 });

@@ -21,26 +21,21 @@ $(function() {
       url: '/logsTable'
     },
     columns: [
-      { data: 'level', name: 'Level' },
+      { data: 'level', title: 'Level' },
+      { data: 'message', title: 'Message' },
+      { data: 'createdAt', title: 'CreatedAt' }
+    ],
+    order: [[2, 'desc']],
+    columnDefs: [
       {
-        data: 'message',
-        name: 'Message',
-        render: function(data, type, row) {
-          const profit = data.match(/(?<=profit":)(-?\d+.\d+)/);
-          if (profit && type === 'display') 
-            return data.replace(profit[0], '<span class="'+ (profit[0] < 0 ? 'text-danger' : 'text-success') + '">' + profit[0]+ '</span>')
-          else return data;
-        }
+        targets: [1],
+        render: $.fn.dataTable.render.highlightProfit()
       },
       {
-        data: 'createdAt',
-        name: 'CreatedAt',
-        render: function(data, type, row) {
-          return type === 'display' ? moment(data).format('YYYY-MM-DD HH:mm:ss') : data;
-        }
+        targets: [2],
+        render: $.fn.dataTable.render.moment('YYYY-MM-DDTHH:mm:ss.SSSZ', 'YYYY-MM-DD HH:mm:ss')    // 2020-05-21T20:38:11.462Z
       }
-    ],
-    order: [[2, 'desc']]
+    ]
   });
 
   $('input:checkbox').on('change', function() {

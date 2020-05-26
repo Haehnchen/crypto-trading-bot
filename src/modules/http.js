@@ -83,6 +83,8 @@ module.exports = class Http {
     app.use(express.static(`${this.projectDir}/web/static`, { maxAge: 3600000 * 24 }));
     app.use('/scripts/moment', express.static(Path.join(this.projectDir, '/node_modules/moment/min')));
     app.use('/scripts/datatables.net', express.static(Path.join(this.projectDir, '/node_modules/datatables.net/js')));
+    app.use('/scripts/bootstrap', express.static(Path.join(this.projectDir, '/node_modules/bootstrap/dist/js')));
+    app.use('/css/bootstrap', express.static(Path.join(this.projectDir, '/node_modules/bootstrap/dist/css')));
     app.use(
       '/scripts/datatables.net-bs4/',
       express.static(Path.join(this.projectDir, '/node_modules/datatables.net-bs4/js'))
@@ -90,6 +92,10 @@ module.exports = class Http {
     app.use(
       '/css/datatables.net-bs4/',
       express.static(Path.join(this.projectDir, '/node_modules/datatables.net-bs4/css'))
+    );
+    app.use(
+      '/scripts/datatables.net-plugins/',
+      express.static(Path.join(this.projectDir, '/node_modules/datatables.net-plugins'))
     );
 
     const username = this.systemUtil.getConfig('webserver.username');
@@ -154,9 +160,27 @@ module.exports = class Http {
     });
 
     app.get('/pairs', async (req, res) => {
-      res.render('../templates/pairs.html.twig', {
-        pairs: await this.pairsHttp.getTradePairs()
+      res.render('../templates/pairs.html.twig', {});
+    });
+
+    app.get('/pairs/trade', async (req, res) => {
+      const pairs = await this.pairsHttp.getTradePairs();
+      res.json({
+        draw: req.body.draw,
+        data: pairs,
+        recordsFiltered: pairs.length,
+        recordsTotal: pairs.length
       });
+    });
+
+    app.get('/pairs/:exchange/:symbol/:action', async (req, res) => {
+      const { exchange, symbol, action } = req.params;
+      await this.pairsHttp.triggerOrder(exchange, symbol, action);
+
+      // simple sleep for async ui blocking for exchange communication
+      setTimeout(() => {
+        res.redirect('/pairs');
+      }, 800);
     });
 
     app.get('/logs', async (req, res) => {
@@ -225,36 +249,25 @@ module.exports = class Http {
       res.redirect('/tools/candles');
     });
 
-    app.post('/pairs/:pair', async (req, res) => {
-      const pair = req.params.pair.split('-');
-      const { body } = req;
-
-      // exchange-ETC-FOO
-      // exchange-ETCFOO
-      const symbol = req.params.pair.substring(pair[0].length + 1);
-
-      await this.pairsHttp.triggerOrder(pair[0], symbol, body.action);
-
-      // simple sleep for async ui blocking for exchange communication
-      setTimeout(() => {
-        res.redirect('/pairs');
-      }, 800);
-    });
-
     const { exchangeManager } = this;
-    app.get('/order/:exchange/:id', async (req, res) => {
-      const exchangeName = req.params.exchange;
-      const { id } = req.params;
+    app.delete('/orders/:exchange/:id', async (req, res) => {
+      const { exchange, id } = req.params;
 
-      const exchange = exchangeManager.get(exchangeName);
+      const exchangeMgr = exchangeManager.get(exchange);
 
       try {
-        await exchange.cancelOrder(id);
+        await exchangeMgr.cancelOrder(id);
       } catch (e) {
-        console.log(`Cancel order error: ${JSON.stringify([exchangeName, id, String(e)])}`);
+        const error = `Cancel order error: ${JSON.stringify([exchange, id, String(e)])}`;
+        console.log(error);
+        res.json(JSON.stringify(error));
       }
+      res.json({ [id]: 'OK' });
+    });
 
-      res.redirect('/trades');
+    app.get('/orders/:pair/cancel-all', async (req, res) => {
+      await this.ordersHttp.cancelAll(req.params.pair);
+      res.redirect(`/orders/${req.params.pair}`);
     });
 
     app.get('/orders', async (req, res) => {
@@ -271,6 +284,7 @@ module.exports = class Http {
 
       res.render('../templates/orders/orders.html.twig', {
         pair: pair,
+        exchange: tradingview[0],
         pairs: this.ordersHttp.getPairs(),
         orders: await this.ordersHttp.getOrders(pair),
         position: await this.exchangeManager.getPosition(tradingview[0], tradingview[1]),
@@ -322,24 +336,14 @@ module.exports = class Http {
       });
     });
 
-    app.get('/orders/:pair/cancel/:id', async (req, res) => {
-      const foo = await this.ordersHttp.cancel(req.params.pair, req.params.id);
-      res.redirect(`/orders/${req.params.pair}`);
-    });
-
-    app.get('/orders/:pair/cancel-all', async (req, res) => {
-      await this.ordersHttp.cancelAll(req.params.pair);
-      res.redirect(`/orders/${req.params.pair}`);
-    });
-
     app.get('/trades', async (req, res) => {
+      res.render('../templates/trades.html.twig', {});
+    });
+
+    app.get('/trades/positions', async (req, res) => {
       const positions = [];
-      const orders = [];
-
-      const exchanges = exchangeManager.all();
-      for (const key in exchanges) {
-        const exchange = exchanges[key];
-
+      // TODO: Get rid of async calls in for loop
+      for (const exchange of exchangeManager.all()) {
         const exchangeName = exchange.getName();
 
         const myPositions = await exchange.getPositions();
@@ -356,30 +360,40 @@ module.exports = class Http {
             currencyValue = position.entry * Math.abs(position.amount);
           }
 
-          positions.push({
-            exchange: exchangeName,
-            position: position,
-            currency: currencyValue
-          });
+          if (req.query.search.value === '' || position.symbol.includes((req.query.search.value).toUpperCase())) {
+            positions.push({
+              exchange: exchangeName,
+              position: position,
+              currency: currencyValue,
+              actions: 'close'
+            });
+          }
         });
+      };
+      res.json({
+        draw: req.body.draw,
+        data: positions,
+        recordsFiltered: positions.length,
+        recordsTotal: positions.length
+      });
+    });
 
+    app.get('/trades/orders', async (req, res) => {
+      const orders = [];
+      // TODO: Get rid of async calls in for loop
+      for (const exchange of exchangeManager.all()) {
         const myOrders = await exchange.getOrders();
         myOrders.forEach(order => {
-          orders.push({
-            exchange: exchange.getName(),
-            order: order
-          });
+          if (req.query.search.value === '' || order.symbol.includes(req.query.search.value.toUpperCase())) {
+            orders.push({
+              exchange: exchange.getName(),
+              order: order,
+              actions: 'cancel'
+            });
+          }
         });
       }
-
-      res.render('../templates/trades.html.twig', {
-        orders: orders,
-        positions: positions.sort(
-          (a, b) =>
-            (!a.position.createdAt ? 0 : a.position.createdAt.getTime()) -
-            (!b.position.createdAt ? 0 : b.position.createdAt.getTime())
-        )
-      });
+      res.json({ draw: req.body.draw, data: orders, recordsFiltered: orders.length, recordsTotal: orders.length });
     });
 
     const ip = this.systemUtil.getConfig('webserver.ip', '0.0.0.0');
