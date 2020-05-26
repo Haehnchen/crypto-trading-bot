@@ -17,10 +17,14 @@ scratch. This page gets rid of all links and provides the needed markup only.
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css">
     <!-- Theme style -->
     <link rel="stylesheet" href="{{ '/css/adminlte.min.css' }}">
-    <!-- style -->
-    <link rel="stylesheet" href="{{ '/css/style.css' }}">
     <!-- Google Font: Source Sans Pro -->
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    <!-- Bootstrap -->
+    <!-- bootstrap.min.css included in adminlte -->
+    <!-- link rel="stylesheet" type="text/css" href="/css/bootstrap/bootstrap.min.css"/-->
+    <link rel="stylesheet" type="text/css" href="/css/datatables.net-bs4/dataTables.bootstrap4.min.css"/>
+    <!-- style -->
+    <link rel="stylesheet" href="{{ '/css/style.css' }}">
 
     {% block stylesheet %}{% endblock stylesheet %}
 
@@ -106,7 +110,13 @@ scratch. This page gets rid of all links and provides the needed markup only.
 <!-- jQuery -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 <!-- Bootstrap 4 -->
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+<script src="/scripts/bootstrap/bootstrap.min.js"></script>
+<!-- Datatables -->
+<script src="/scripts/datatables.net/jquery.dataTables.min.js"></script>
+<script src="/scripts/datatables.net-bs4/dataTables.bootstrap4.min.js"></script>
+<script src="/scripts/moment/moment-with-locales.min.js"></script>
+<script src="/scripts/datatables.net-plugins/dataRender/datetime.js"></script>
+<script type="text/javascript" src="/js/customdatarenderer.js"></script>
 <!-- AdminLTE App -->
 <script src="{{ '/js/adminlte.min.js' }}"></script>
 <script>
