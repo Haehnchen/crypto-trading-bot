@@ -81,6 +81,7 @@ module.exports = class Http {
     app.use(cookieParser());
     app.use(compression());
     app.use(express.static(`${this.projectDir}/web/static`, { maxAge: 3600000 * 24 }));
+    app.use('/scripts/jquery', express.static(Path.join(this.projectDir, 'node_modules/jquery/dist')));
     app.use('/scripts/moment', express.static(Path.join(this.projectDir, '/node_modules/moment/min')));
     app.use('/scripts/datatables.net', express.static(Path.join(this.projectDir, '/node_modules/datatables.net/js')));
     app.use('/scripts/bootstrap', express.static(Path.join(this.projectDir, '/node_modules/bootstrap/dist/js')));
@@ -96,6 +97,18 @@ module.exports = class Http {
     app.use(
       '/scripts/datatables.net-plugins/',
       express.static(Path.join(this.projectDir, '/node_modules/datatables.net-plugins'))
+    );
+    app.use(
+      '/scripts/datatables.net-responsive/',
+      express.static(Path.join(this.projectDir, '/node_modules/datatables.net-responsive/js'))
+    );
+    app.use(
+      '/scripts/datatables.net-responsive-bs4/',
+      express.static(Path.join(this.projectDir, '/node_modules/datatables.net-responsive-bs4/js'))
+    );
+    app.use(
+      '/css/datatables.net-responsive-bs4/',
+      express.static(Path.join(this.projectDir, '/node_modules/datatables.net-responsive-bs4/css'))
     );
 
     const username = this.systemUtil.getConfig('webserver.username');
