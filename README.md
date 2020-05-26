@@ -86,11 +86,6 @@ Provide a configuration with your exchange credentials
 cp conf.json.dist conf.json
 ```
 
-Create a new sqlite database use bot.sql scheme to create the tables
-```
-sqlite3 bot.db < bot.sql
-```
-
 Lets start it
 
 ```
