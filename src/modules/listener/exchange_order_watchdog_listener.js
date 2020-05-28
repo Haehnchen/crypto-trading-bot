@@ -128,13 +128,12 @@ module.exports = class ExchangeOrderWatchdogListener {
         try {
           await exchange.updateOrder(orderChange.id, Order.createUpdateOrder(orderChange.id, undefined, amount));
         } catch (e) {
-          const msg = `Stoploss update error${JSON.stringify({
-            error: e,
-            orderChange: orderChange
-          })}`;
-
-          logger.error(msg);
-          console.error(msg);
+          logger.error(
+            `Stoploss update error${JSON.stringify({
+              error: e,
+              orderChange: orderChange
+            })}`
+          );
         }
 
         return;
@@ -158,13 +157,12 @@ module.exports = class ExchangeOrderWatchdogListener {
       try {
         await exchange.order(order);
       } catch (e) {
-        const msg = `Stoploss create${JSON.stringify({
-          error: e,
-          order: order
-        })}`;
-
-        logger.error(msg);
-        console.error(msg);
+        logger.error(
+          `Stoploss create${JSON.stringify({
+            error: e,
+            order: order
+          })}`
+        );
       }
     });
   }
@@ -283,7 +281,7 @@ module.exports = class ExchangeOrderWatchdogListener {
         profit = (position.entry / ticker.ask - 1) * 100;
       }
     } else {
-      throw 'Invalid side';
+      throw new Error(`Invalid side`);
     }
 
     if (typeof profit === 'undefined' || profit > 0) {
@@ -307,7 +305,7 @@ module.exports = class ExchangeOrderWatchdogListener {
   }
 
   async trailingStoplossWatch(exchange, position, config) {
-    const { logger } = this;
+    const { logger, stopLossCalculator } = this;
 
     if (
       !config.target_percent ||
@@ -328,35 +326,27 @@ module.exports = class ExchangeOrderWatchdogListener {
 
     const orders = await exchange.getOrdersForSymbol(position.symbol);
     const orderChanges = orderUtil.syncTrailingStopLossOrder(position, orders);
+    await Promise.all(
+      orderChanges.map(async orderChange => {
+        if (orderChange.id) {
+          // update
 
-    for (const orderChange of orderChanges) {
-      if (orderChange.id) {
-        // update
+          let amount = Math.abs(orderChange.amount);
+          if (position.isLong()) {
+            amount *= -1;
+          }
 
-        logger.info(
-          `Stoploss update: ${JSON.stringify({
-            order: orderChange,
-            symbol: position.symbol,
-            exchange: exchange.getName()
-          })}`
-        );
-
-        let amount = Math.abs(orderChange.amount);
-        if (position.isLong()) {
-          amount *= -1;
+          return exchange.updateOrder(orderChange.id, Order.createUpdateOrder(orderChange.id, undefined, amount));
         }
-
-        exchange.updateOrder(orderChange.id, Order.createUpdateOrder(orderChange.id, undefined, amount));
-      } else {
         // create if target profit reached
 
         // calculate activation price, undefined if it is not reached yet.
-        const activationPrice = this.stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, {
+        const activationPrice = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, {
           percent: -config.target_percent
         });
 
         if (!activationPrice) {
-          continue;
+          return undefined;
         }
 
         const exchangeSymbol = position.symbol.substring(0, 3).toUpperCase();
@@ -364,25 +354,19 @@ module.exports = class ExchangeOrderWatchdogListener {
         trailingOffset = exchange.calculatePrice(trailingOffset, exchangeSymbol);
         const order = Order.createTrailingStopLossOrder(position.symbol, trailingOffset, orderChange.amount);
 
-        try {
-          await exchange.order(order);
-
-          logger.info(
-            `Trailing stop loss activated: ${JSON.stringify({
-              position: position,
-              exchange: exchange.getName()
-            })}`
-          );
-        } catch (e) {
-          const msg = `Trailing stoploss create${JSON.stringify({
-            error: e,
-            order: order
-          })}`;
-
-          logger.error(msg);
-          console.error(msg);
-        }
-      }
-    }
+        return exchange.order(order);
+      })
+    )
+      .then(results => {
+        logger.info(
+          `Trailing stop loss: ${JSON.stringify({
+            results: results,
+            exchange: exchange.getName()
+          })}`
+        );
+      })
+      .catch(e => {
+        logger.error(`Trailing stoploss create${JSON.stringify(e)}`);
+      });
   }
 };
