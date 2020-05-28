@@ -145,9 +145,10 @@ module.exports = {
       return db;
     }
 
+    const env = process.env.NODE_ENV || 'development';
     const dbSettings = {
-      dialect: _.get(config, 'production.dialect'),
-      storage: _.get(config, 'production.storage')
+      dialect: _.get(config, `${env}.dialect`),
+      storage: _.get(config, `${env}.storage`)
     };
 
     const sequelize = new Sequelize(dbSettings.database, dbSettings.user, dbSettings.password, dbSettings);

@@ -155,7 +155,7 @@
         "operatorsAliases": false
     },
     "test": {
-        "storage": "bot.db",
+        "storage": ":memory:",
         "dialect": "sqlite",
         "operatorsAliases": false
     },
