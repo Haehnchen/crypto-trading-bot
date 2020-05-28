@@ -14,7 +14,7 @@ $(function() {
   const logsTable = $('#logsTable').DataTable({
     paging: true,
     pageLength: 10,
-    processing: true,
+    responsive: true,
     serverSide: true,
     ajax: {
       type: 'POST',
