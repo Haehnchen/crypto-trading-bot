@@ -1,17 +1,14 @@
 const assert = require('assert');
-const { createLogger } = require('winston');
-const fs = require('fs');
 const RiskRewardRatioCalculator = require('../../../src/modules/order/risk_reward_ratio_calculator');
 const Position = require('../../../src/dict/position');
 const ExchangeOrder = require('../../../src/dict/exchange_order');
 
 describe('#risk reward order calculation', function() {
+  const fakeLogger = { info: () => {} };
   it('calculate risk reward orders for long', async () => {
-    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const calculator = new RiskRewardRatioCalculator(fakeLogger);
 
-    let result = calculator.calculateForOpenPosition(
-      new Position('BTCUSD', 'long', 0.15, 0, new Date(), 6501.76)
-    );
+    let result = calculator.calculateForOpenPosition(new Position('BTCUSD', 'long', 0.15, 0, new Date(), 6501.76));
 
     assert.equal(result.stop.toFixed(1), 6306.7);
     assert.equal(result.target.toFixed(1), 6891.9);
@@ -26,11 +23,9 @@ describe('#risk reward order calculation', function() {
   });
 
   it('calculate risk reward orders for short', async () => {
-    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const calculator = new RiskRewardRatioCalculator(fakeLogger);
 
-    let result = calculator.calculateForOpenPosition(
-      new Position('BTCUSD', 'short', -0.15, 0, new Date(), 6501.76)
-    );
+    let result = calculator.calculateForOpenPosition(new Position('BTCUSD', 'short', -0.15, 0, new Date(), 6501.76));
 
     assert.equal(result.stop.toFixed(1), 6696.8);
     assert.equal(result.target.toFixed(1), 6111.7);
@@ -45,7 +40,7 @@ describe('#risk reward order calculation', function() {
   });
 
   it('create risk reward ratio changeset orders (long)', async () => {
-    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const calculator = new RiskRewardRatioCalculator(fakeLogger);
 
     const position = new Position('BTCUSD', 'long', 0.15, 0, new Date(), 6501.76);
 
@@ -86,7 +81,7 @@ describe('#risk reward order calculation', function() {
   });
 
   it('update risk reward ratio changeset orders (long)', async () => {
-    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const calculator = new RiskRewardRatioCalculator(fakeLogger);
 
     const position = new Position('BTCUSD', 'long', 0.15, 0, new Date(), 6501.76);
     const orders = [
@@ -124,7 +119,7 @@ describe('#risk reward order calculation', function() {
   });
 
   it('create risk reward ratio changeset orders (short)', async () => {
-    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const calculator = new RiskRewardRatioCalculator(fakeLogger);
 
     const position = new Position('BTCUSD', 'short', -0.15, 0, new Date(), 6501.76);
 
@@ -165,7 +160,7 @@ describe('#risk reward order calculation', function() {
   });
 
   it('update risk reward ratio changeset orders (short)', async () => {
-    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const calculator = new RiskRewardRatioCalculator(fakeLogger);
 
     const position = new Position('BTCUSD', 'short', -0.15, 0, new Date(), 6501.76);
     const orders = [
@@ -203,7 +198,7 @@ describe('#risk reward order calculation', function() {
   });
 
   it('create risk reward ratio orders (long)', async () => {
-    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const calculator = new RiskRewardRatioCalculator(fakeLogger);
 
     const position = new Position('BTCUSD', 'long', 0.15, 0, new Date(), 6501.76);
 
@@ -220,7 +215,7 @@ describe('#risk reward order calculation', function() {
   });
 
   it('create risk reward ratio orders (short)', async () => {
-    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const calculator = new RiskRewardRatioCalculator(fakeLogger);
 
     const position = new Position('BTCUSD', 'short', -0.15, 0, new Date(), 6501.76);
 
@@ -237,7 +232,7 @@ describe('#risk reward order calculation', function() {
   });
 
   it('create risk reward ratio orders updates for long', async () => {
-    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const calculator = new RiskRewardRatioCalculator(fakeLogger);
     const position = new Position('BTCUSD', 'long', 0.15, 0, new Date(), 6501.76);
 
     const openExchangeOrders = [
@@ -262,7 +257,7 @@ describe('#risk reward order calculation', function() {
   });
 
   it('create risk reward ratio orders updates for short', async () => {
-    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const calculator = new RiskRewardRatioCalculator(fakeLogger);
     const position = new Position('BTCUSD', 'short', -0.15, 0, new Date(), 6501.76);
 
     const openExchangeOrders = [
@@ -287,7 +282,7 @@ describe('#risk reward order calculation', function() {
   });
 
   it('test sync calucation for big different in long position', async () => {
-    const calculator = new RiskRewardRatioCalculator(createLoggerInstance());
+    const calculator = new RiskRewardRatioCalculator(fakeLogger);
 
     const position = new Position('EOSUSD', 'long', 2, 0, new Date(), 3.2);
     const orders = [
@@ -303,14 +298,4 @@ describe('#risk reward order calculation', function() {
     assert.deepEqual(result.stop, { amount: -2, id: '1' });
     assert.deepEqual(result.target, { amount: -2, id: '2' });
   });
-
-  function createLoggerInstance() {
-    return createLogger({
-      transports: [
-        new (require('winston').transports.Stream)({
-          stream: fs.createWriteStream('/dev/null')
-        })
-      ]
-    });
-  }
 });
