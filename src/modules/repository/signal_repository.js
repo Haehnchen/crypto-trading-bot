@@ -12,14 +12,6 @@ module.exports = function(sequelize, DataTypes) {
         type: DataTypes.STRING(255),
         allowNull: true
       },
-      ask: {
-        type: DataTypes.REAL,
-        allowNull: true
-      },
-      bid: {
-        type: DataTypes.REAL,
-        allowNull: true
-      },
       options: {
         type: DataTypes.TEXT,
         allowNull: true
@@ -29,10 +21,6 @@ module.exports = function(sequelize, DataTypes) {
         allowNull: true
       },
       strategy: {
-        type: DataTypes.STRING(50),
-        allowNull: true
-      },
-      state: {
         type: DataTypes.STRING(50),
         allowNull: true
       }
@@ -52,7 +40,13 @@ module.exports = function(sequelize, DataTypes) {
   };
 
   SignalRepository.insertSignal = async (exchange, symbol, options, side, strategy) =>
-    SignalRepository.create(exchange, symbol, options, side, strategy);
+    SignalRepository.create({
+      exchange: exchange,
+      symbol: symbol,
+      options: JSON.stringify(options || {}),
+      side: side,
+      strategy: strategy
+    });
 
   return SignalRepository;
 };

@@ -21,7 +21,6 @@ const TickerDatabaseListener = require('../modules/listener/ticker_database_list
 const ExchangeOrderWatchdogListener = require('../modules/listener/exchange_order_watchdog_listener');
 const ExchangePositionWatcher = require('../modules/exchange/exchange_position_watcher');
 
-const SignalLogger = require('../modules/signal/signal_logger');
 const SignalHttp = require('../modules/signal/signal_http');
 
 const StrategyManager = require('./strategy/strategy_manager');
@@ -80,7 +79,6 @@ let tickListener;
 let createOrderListener;
 let exchangeOrderWatchdogListener;
 
-let signalLogger;
 let signalHttp;
 
 let signalRepository;
@@ -225,7 +223,7 @@ module.exports = {
       this.getTickers(),
       this.getInstances(),
       this.getNotifier(),
-      this.getSignalLogger(),
+      this.getSignalRepository(),
       this.getStrategyManager(),
       this.getExchangeManager(),
       this.getPairStateManager(),
@@ -260,15 +258,6 @@ module.exports = {
 
     tickerDatabaseListener = new TickerDatabaseListener(this.getTickerRepository());
     return tickerDatabaseListener;
-  },
-
-  getSignalLogger: function() {
-    if (signalLogger) {
-      return signalLogger;
-    }
-
-    signalLogger = new SignalLogger(this.getSignalRepository());
-    return signalLogger;
   },
 
   getSignalHttp: function() {
