@@ -27,15 +27,19 @@ $(function() {
     ],
     order: [[2, 'desc']],
     columnDefs: [
-      {
-        targets: [1],
-        render: $.fn.dataTable.render.highlightProfit()
-      },
-      {
-        targets: [2],
-        render: $.fn.dataTable.render.moment('YYYY-MM-DDTHH:mm:ss.SSSZ', 'YYYY-MM-DD HH:mm:ss')    // 2020-05-21T20:38:11.462Z
-      }
+      { render: $.fn.dataTable.render.highlightProfit(), targets: 1 },
+      { render: $.fn.dataTable.render.moment('YYYY-MM-DDTHH:mm:ss.SSSZ', 'YYYY-MM-DD HH:mm:ss'), targets: 2 },
+      { className: 'breakAll', targets: 1 },
+      { responsivePriority: 10001, targets: [0, 2] }
     ]
+  });
+
+  // do not break words on header
+  logsTable.on('draw', function() {
+    logsTable
+      .column(1)
+      .header()
+      .classList.remove('breakAll');
   });
 
   $('input:checkbox').on('change', function() {

@@ -56,5 +56,9 @@ nav {
 
 #tradesTable button, #ordersTable button, #pairsTable button {
     padding: 0 0 0 3px;
-}    
+}
+
+.breakAll {
+    overflow-wrap: anywhere;
+}
 /*end base*/

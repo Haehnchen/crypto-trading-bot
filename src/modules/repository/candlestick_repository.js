@@ -48,7 +48,8 @@ module.exports = function(sequelize, DataTypes) {
       }
     },
     {
-      tableName: 'candlesticks'
+      tableName: 'candlesticks',
+      timestamps: false
     }
   );
 
