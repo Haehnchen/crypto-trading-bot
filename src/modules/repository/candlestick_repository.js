@@ -71,7 +71,7 @@ module.exports = function(sequelize, DataTypes) {
       ...(typeof(start) !== 'undefined') && {[Op.gt]: start},
       ...(typeof(end) !== 'undefined') && {[Op.lt]: end}
     };
-    if (Object.keys(timeConditions).length !== 0) {
+    if (Reflect.ownKeys(timeConditions).length > 0) {
       whereCondition.time = timeConditions;
     };
     return CandlestickRepository.findAll({
