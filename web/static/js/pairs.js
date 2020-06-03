@@ -14,7 +14,7 @@ $(function() {
       { data: 'state', title: 'State' },
       { data: 'capital', title: 'Capital' },
       { data: 'strategies', title: 'Strategies' },
-      { data: 'watchdogs', title: 'Options' },
+      { data: 'watchdogs', title: 'Options', defaultContent: '' },
       { data: 'process', title: 'Process', defaultContent: '' },
       { data: 'actions', title: 'Actions' }
       // { data: 'actions', visible: false }
