@@ -11,7 +11,7 @@ describe('#tick listener for order', function() {
       { get: () => new Ticker() },
       {},
       { send: () => {} },
-      { signal: () => {} },
+      { insertSignal: () => {} },
       {
         executeStrategy: async () => {
           return SignalResult.createSignal('short', {});
@@ -56,7 +56,7 @@ describe('#tick listener for order', function() {
       {},
       { send: () => {} },
       {
-        signal: (exchange, symbol, opts, signal, strategyKey) => {
+        insertSignal: (exchange, symbol, opts, signal, strategyKey) => {
           calls.push(exchange, symbol, opts, signal, strategyKey);
           return [];
         }
