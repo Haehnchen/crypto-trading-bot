@@ -1,9 +1,9 @@
 const WebSocket = require('ws');
 const ccxt = require('ccxt');
 const moment = require('moment');
-const Ticker = require('./../dict/ticker');
-const Order = require('./../dict/order');
-const TickerEvent = require('./../event/ticker_event');
+const Ticker = require('../dict/ticker');
+const Order = require('../dict/order');
+const TickerEvent = require('../event/ticker_event');
 const ExchangeCandlestick = require('../dict/exchange_candlestick');
 const Position = require('../dict/position');
 const CcxtExchangeOrder = require('./ccxt/ccxt_exchange_order');
@@ -49,6 +49,10 @@ module.exports = class BinanceFutures {
       setInterval(async () => {
         await me.ccxtExchangeOrder.syncOrders();
       }, 1000 * 30);
+
+      setInterval(async () => {
+        await me.syncPositionViaRestApi();
+      }, 1000 * 36);
 
       setTimeout(async () => {
         await ccxtClient.fetchMarkets();
