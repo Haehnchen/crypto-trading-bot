@@ -115,7 +115,7 @@ module.exports = class CcxtExchangeOrder {
 
   async updateOrder(id, order) {
     if (!order.amount && !order.price) {
-      throw 'Invalid amount / price for update';
+      throw new Error('Invalid amount / price for update');
     }
 
     const currentOrder = await this.findOrderById(id);
@@ -124,7 +124,11 @@ module.exports = class CcxtExchangeOrder {
     }
 
     // cancel order; mostly it can already be canceled
-    await this.cancelOrder(id);
+    const cancelOrder = await this.cancelOrder(id);
+    if (!cancelOrder) {
+      this.logger.error(`${this.ccxtClient.name}: updateOrder order abort existing order not canceled: ${id}`);
+      return undefined;
+    }
 
     return this.createOrder(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
   }
@@ -152,7 +156,13 @@ module.exports = class CcxtExchangeOrder {
     try {
       await this.ccxtClient.cancelOrder(args.id, args.symbol);
     } catch (e) {
-      this.logger.error(`${this.ccxtClient.name}: cancel order error: ${e}`);
+      if (String(e).includes('OrderNotFound')) {
+        this.logger.info(`${this.ccxtClient.name}: order to cancel not found: ${args.id} - ${e}`);
+        this.orderbag.delete(id);
+      } else {
+        this.logger.error(`${this.ccxtClient.name}: cancel order error: ${args.id} - ${e}`);
+      }
+
       return undefined;
     }
 
