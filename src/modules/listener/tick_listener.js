@@ -8,7 +8,7 @@ module.exports = class TickListener {
     tickers,
     instances,
     notifier,
-    signalLogger,
+    signalRepository,
     strategyManager,
     exchangeManager,
     pairStateManager,
@@ -18,7 +18,7 @@ module.exports = class TickListener {
     this.tickers = tickers;
     this.instances = instances;
     this.notifier = notifier;
-    this.signalLogger = signalLogger;
+    this.signalRepository = signalRepository;
     this.strategyManager = strategyManager;
     this.exchangeManager = exchangeManager;
     this.pairStateManager = pairStateManager;
@@ -78,7 +78,7 @@ module.exports = class TickListener {
       this.notifier.send(`[${signal} (${strategyKey})` + `] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask}`);
 
       // log signal
-      this.signalLogger.signal(
+      await this.signalRepository.insertSignal(
         symbol.exchange,
         symbol.symbol,
         {
@@ -142,7 +142,7 @@ module.exports = class TickListener {
       [new Date().toISOString(), signal, strategyKey, symbol.exchange, symbol.symbol, ticker.ask].join(' ')
     );
     this.notifier.send(`[${signal} (${strategyKey})` + `] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask}`);
-    this.signalLogger.signal(
+    await this.signalRepository.insertSignal(
       symbol.exchange,
       symbol.symbol,
       {

@@ -147,5 +147,21 @@
                 }
             ]
         }
-    ]
+    ],
+    
+    "development": {
+        "storage": "bot.db",
+        "dialect": "sqlite",
+        "operatorsAliases": false
+    },
+    "test": {
+        "storage": ":memory:",
+        "dialect": "sqlite",
+        "operatorsAliases": false
+    },
+    "production": {
+        "storage": "bot.db",
+        "dialect": "sqlite",
+        "operatorsAliases": false
+    }    
 }

@@ -1,10 +1,12 @@
-const fs = require('fs');
+const Fs = require('fs');
+const Path = require('path');
 const events = require('events');
 
 const { createLogger, transports, format } = require('winston');
+const WinstonTransportSequelize = require('winston-transport-sequelize');
 
 const _ = require('lodash');
-const Sqlite = require('better-sqlite3');
+const Sequelize = require('sequelize');
 const Notify = require('../notify/notify');
 const Slack = require('../notify/slack');
 const Mail = require('../notify/mail');
@@ -19,11 +21,8 @@ const TickerDatabaseListener = require('../modules/listener/ticker_database_list
 const ExchangeOrderWatchdogListener = require('../modules/listener/exchange_order_watchdog_listener');
 const ExchangePositionWatcher = require('../modules/exchange/exchange_position_watcher');
 
-const SignalLogger = require('../modules/signal/signal_logger');
 const SignalHttp = require('../modules/signal/signal_http');
 
-const SignalRepository = require('../modules/repository/signal_repository');
-const CandlestickRepository = require('../modules/repository/candlestick_repository');
 const StrategyManager = require('./strategy/strategy_manager');
 const ExchangeManager = require('./exchange/exchange_manager');
 
@@ -42,11 +41,7 @@ const PairStateExecution = require('../modules/pairs/pair_state_execution');
 const PairConfig = require('../modules/pairs/pair_config');
 const SystemUtil = require('../modules/system/system_util');
 const TechnicalAnalysisValidator = require('../utils/technical_analysis_validator');
-const WinstonSqliteTransport = require('../utils/winston_sqlite_transport');
 const LogsHttp = require('./system/logs_http');
-const LogsRepository = require('../modules/repository/logs_repository');
-const TickerLogRepository = require('../modules/repository/ticker_log_repository');
-const TickerRepository = require('../modules/repository/ticker_repository');
 const CandlestickResample = require('../modules/system/candlestick_resample');
 const RequestClient = require('../utils/request_client');
 const Queue = require('../utils/queue');
@@ -84,7 +79,6 @@ let tickListener;
 let createOrderListener;
 let exchangeOrderWatchdogListener;
 
-let signalLogger;
 let signalHttp;
 
 let signalRepository;
@@ -106,7 +100,6 @@ let systemUtil;
 let technicalAnalysisValidator;
 let logsHttp;
 let logsRepository;
-let tickerLogRepository;
 let candlestickResample;
 let exchanges;
 let requestClient;
@@ -135,12 +128,14 @@ module.exports = {
     }
 
     try {
-      config = JSON.parse(fs.readFileSync(`${parameters.projectDir}/conf.json`, 'utf8'));
+      config = JSON.parse(Fs.readFileSync(Path.join(parameters.projectDir, 'conf.json'), 'utf8'));
     } catch (e) {
       throw new Error(`Invalid conf.json file. Please check: ${String(e)}`);
     }
 
     this.getDatabase();
+    this.getLogger();
+    await db.sequelize.sync();
   },
 
   getDatabase: () => {
@@ -148,13 +143,22 @@ module.exports = {
       return db;
     }
 
-    const myDb = Sqlite('bot.db');
-    myDb.pragma('journal_mode = WAL');
+    const env = process.env.NODE_ENV || 'development';
+    const dbSettings = _.get(config, `${env}`);
+    const sequelize = new Sequelize(dbSettings.database, dbSettings.user, dbSettings.password, dbSettings);
 
-    myDb.pragma('SYNCHRONOUS = 1;');
-    myDb.pragma('LOCKING_MODE = EXCLUSIVE;');
+    db = {};
+    Fs.readdirSync(Path.join(parameters.projectDir, 'src', 'modules', 'repository'))
+      .filter(file => file.indexOf('.') !== 0 && file !== 'index.js')
+      .forEach(file => {
+        const model = sequelize.import(Path.join(parameters.projectDir, 'src', 'modules', 'repository', file));
+        db[model.name] = model;
+      });
 
-    return (db = myDb);
+    db.sequelize = sequelize;
+    db.Sequelize = Sequelize;
+
+    return db;
   },
 
   getTa: function() {
@@ -202,7 +206,8 @@ module.exports = {
       return createOrderListener;
     }
 
-    return (createOrderListener = new CreateOrderListener(this.getExchangeManager(), this.getLogger()));
+    createOrderListener = new CreateOrderListener(this.getExchangeManager(), this.getLogger());
+    return createOrderListener;
   },
 
   getTickListener: function() {
@@ -210,17 +215,18 @@ module.exports = {
       return tickListener;
     }
 
-    return (tickListener = new TickListener(
+    tickListener = new TickListener(
       this.getTickers(),
       this.getInstances(),
       this.getNotifier(),
-      this.getSignalLogger(),
+      this.getSignalRepository(),
       this.getStrategyManager(),
       this.getExchangeManager(),
       this.getPairStateManager(),
       this.getLogger(),
       this.getSystemUtil()
-    ));
+    );
+    return tickListener;
   },
 
   getExchangeOrderWatchdogListener: function() {
@@ -228,7 +234,7 @@ module.exports = {
       return exchangeOrderWatchdogListener;
     }
 
-    return (exchangeOrderWatchdogListener = new ExchangeOrderWatchdogListener(
+    exchangeOrderWatchdogListener = new ExchangeOrderWatchdogListener(
       this.getExchangeManager(),
       this.getInstances(),
       this.getStopLossCalculator(),
@@ -237,7 +243,8 @@ module.exports = {
       this.getPairStateManager(),
       this.getLogger(),
       this.getTickers()
-    ));
+    );
+    return exchangeOrderWatchdogListener;
   },
 
   getTickerDatabaseListener: function() {
@@ -245,15 +252,8 @@ module.exports = {
       return tickerDatabaseListener;
     }
 
-    return (tickerDatabaseListener = new TickerDatabaseListener(this.getTickerRepository()));
-  },
-
-  getSignalLogger: function() {
-    if (signalLogger) {
-      return signalLogger;
-    }
-
-    return (signalLogger = new SignalLogger(this.getSignalRepository()));
+    tickerDatabaseListener = new TickerDatabaseListener(this.getTickerRepository());
+    return tickerDatabaseListener;
   },
 
   getSignalHttp: function() {
@@ -261,7 +261,8 @@ module.exports = {
       return signalHttp;
     }
 
-    return (signalHttp = new SignalHttp(this.getSignalRepository()));
+    signalHttp = new SignalHttp(this.getSignalRepository());
+    return signalHttp;
   },
 
   getSignalRepository: function() {
@@ -269,7 +270,8 @@ module.exports = {
       return signalRepository;
     }
 
-    return (signalRepository = new SignalRepository(this.getDatabase()));
+    signalRepository = this.getDatabase().Signal;
+    return signalRepository;
   },
 
   getCandlestickRepository: function() {
@@ -277,7 +279,8 @@ module.exports = {
       return candlestickRepository;
     }
 
-    return (candlestickRepository = new CandlestickRepository(this.getDatabase()));
+    candlestickRepository = this.getDatabase().Candlestick;
+    return candlestickRepository;
   },
 
   getEventEmitter: function() {
@@ -293,7 +296,14 @@ module.exports = {
       return logger;
     }
 
-    return (logger = createLogger({
+    const options = {
+      sequelize: this.getDatabase().sequelize, // sequelize instance [required]
+      tableName: 'logs', // default name
+      level: 'debug'
+    };
+
+    const winstonTransportSequelize = new WinstonTransportSequelize(options);
+    logger = createLogger({
       format: format.combine(format.timestamp(), format.json()),
       transports: [
         new transports.File({
@@ -303,13 +313,11 @@ module.exports = {
         new transports.Console({
           level: 'error'
         }),
-        new WinstonSqliteTransport({
-          level: 'debug',
-          database_connection: this.getDatabase(),
-          table: 'logs'
-        })
+        winstonTransportSequelize
       ]
-    }));
+    });
+    this.getDatabase().Log = winstonTransportSequelize.model;
+    return logger;
   },
 
   getNotifier: function() {
@@ -477,7 +485,7 @@ module.exports = {
       return logsRepository;
     }
 
-    return (logsRepository = new LogsRepository(this.getDatabase()));
+    return (logsRepository = this.getDatabase().Log);
   },
 
   getLogsHttp: function() {
@@ -488,20 +496,12 @@ module.exports = {
     return (logsHttp = new LogsHttp(this.getLogsRepository()));
   },
 
-  getTickerLogRepository: function() {
-    if (tickerLogRepository) {
-      return tickerLogRepository;
-    }
-
-    return (tickerLogRepository = new TickerLogRepository(this.getDatabase()));
-  },
-
   getTickerRepository: function() {
     if (tickerRepository) {
       return tickerRepository;
     }
 
-    return (tickerRepository = new TickerRepository(this.getDatabase(), this.getLogger()));
+    return (tickerRepository = this.getDatabase().Ticker);
   },
 
   getCandlestickResample: function() {
@@ -646,7 +646,6 @@ module.exports = {
       this.getPairStateExecution(),
       this.getSystemUtil(),
       this.getLogsRepository(),
-      this.getTickerLogRepository(),
       this.getExchangePositionWatcher()
     );
   },

@@ -34,74 +34,9 @@
                             </div>
                             <!-- /.card-header -->
                             <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-bordered table-sm table-hover">
-                                        <thead>
-                                        <tr>
-                                            <th scope="col">Exchange</th>
-                                            <th scope="col">Symbol</th>
-                                            <th scope="col">Amount</th>
-                                            <th scope="col">Currency</th>
-                                            <th scope="col">Profit</th>
-                                            <th scope="col">Entry</th>
-                                            <th scope="col">UpdatedAt</th>
-                                            <th scope="col">CreatedAt</th>
-                                            <th scope="col">Side</th>
-                                            <th scope="col">Action</th>
-                                        </tr>
-
-                                        </thead>
-                                        <tbody>
-                                        {% for position in positions %}
-                                            <tr>
-                                                <td>{{ position.exchange }}</td>
-                                                <td><a target="blank" href="/tradingview/{{ position.exchange }}:{{ position.position.symbol }}">{{ position.position.symbol }}</a></td>
-                                                <td class="{{ position.position.amount < 0 ? 'text-danger' : 'text-success' }}">
-                                                    {{ position.position.amount|price_format }}
-                                                </td>
-                                                <td>
-                                                    {% if position.currency %}{{ position.currency|price_format }}{% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if position.position.profit is defined %}
-                                                        <span class="{{ position.position.profit < 0 ? 'text-danger' : 'text-success' }}">{{ position.position.profit|round(2) }} %</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if position.position.entry %}
-                                                        {{ position.position.entry|price_format }}
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if position.position.updatedAt %}
-                                                        {{ position.position.updatedAt|date('d.m.y H:i') }}
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if position.position.createdAt %}
-                                                        {{ position.position.createdAt|date('d.m.y H:i') }}
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if position.position.side == 'short' %}
-                                                        <i class="fas fa-chevron-circle-down text-danger"></i>
-                                                    {% elseif position.position.side == 'long' %}
-                                                        <i class="fas fa-chevron-circle-up text-success"></i>
-                                                    {% endif %}
-                                                </td>
-                                                <td style="white-space: nowrap;padding: 0;">
-                                                    <form action="/pairs/{{ position.exchange }}-{{ position.position.symbol }}" method="post">
-                                                        <button style="padding: 0 0 0 3px;" name="action" value="close" data-toggle="tooltip"
-                                                                title="Limit Close" class="btn btn-link">
-                                                            <i class="fas fa-window-close text-dark" style="font-size: 0.9rem"></i>
-                                                        </button>
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <!-- Positions table, populated by Datatables script -->
+                                <table id="tradesTable" class="table table-striped table-bordered dt-responsive" style="width: 100%;">
+                                </table>
                             </div>
                             <!-- /.card-body -->
                         </div>
@@ -113,53 +48,8 @@
                             <!-- /.card-header -->
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-sm table-hover">
-                                        <thead>
-                                        <tr>
-                                            <th scope="col">Exchange</th>
-                                            <th scope="col">Symbol</th>
-                                            <th scope="col">Type</th>
-                                            <th scope="col">ID</th>
-                                            <th scope="col">Price</th>
-                                            <th scope="col">Amount</th>
-                                            <th scope="col">Retry</th>
-                                            <th scope="col">OurId</th>
-                                            <th scope="col">CreatedAt</th>
-                                            <th scope="col">UpdatedAt</th>
-                                            <th scope="col">Status</th>
-                                            <th scope="col">Side</th>
-                                            <th scope="col">Action</th>
-                                        </tr>
-
-                                        </thead>
-                                        <tbody>
-                                        {% for order in orders %}
-                                            <tr>
-                                                <td>{{ order.exchange }}</td>
-                                                <td><a target="blank" href="/tradingview/{{ order.exchange }}:{{ order.order.symbol }}">{{ order.order.symbol }}</a></td>
-                                                <td>{{ order.order.type }}</td>
-                                                <td>{{ order.order.id }}</td>
-                                                <td>{{ order.order.price }}</td>
-                                                <td class="{{ order.order.amount < 0 ? 'text-danger' : 'text-success' }}">{{ order.order.amount }}</td>
-                                                <td>{{ order.order.retry }}</td>
-                                                <td>{{ order.order.ourId }}</td>
-                                                <td>{{ order.order.createdAt|date('d.m.y H:i') }}</td>
-                                                <td>{{ order.order.updateAt|date('d.m.y H:i') }}</td>
-                                                <td>{{ order.order.status }}</td>
-                                                <td>
-                                                    {% if order.order.side == 'buy' %}
-                                                        <i class="fas fa-chevron-circle-up text-success"></i>
-                                                    {% elseif order.order.side == 'sell' %}
-                                                        <i class="fas fa-chevron-circle-down text-danger"></i>
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    <a title="cancel" href="/order/{{ order.exchange }}/{{ order.order.id }}"><i class="fas fa-window-close text-dark"></i></a>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                        </tbody>
-                                    </table>
+                                    <!-- Order table, populated by Datatables script -->
+                                    <table id="ordersTable" class="table table-striped table-bordered dt-responsive" style="width: 100%;"></table>
                                 </div>
                             </div>
                             <!-- /.card-body -->
@@ -173,3 +63,7 @@
     </div>
     <!-- /.content-wrapper -->
 {% endblock %}
+{% block javascript %}
+{{ parent() }}
+<script type="text/javascript" src="/js/trades.js"></script>
+{% endblock javascript %}

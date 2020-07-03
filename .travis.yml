@@ -3,6 +3,9 @@ language: node_js
 node_js:
   - '10'
 
+before_install:
+- cp conf.json.dist conf.json
+
 install:
 - npm install
 

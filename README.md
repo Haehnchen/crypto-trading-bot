@@ -39,12 +39,14 @@ TODOS:
 
  * node.js
  * sqlite3
+ * [sequelize ORM](https://sequelize.org/)
  * [technicalindicators](https://github.com/anandanand84/technicalindicators)
  * [tulipindicators - tulind](https://tulipindicators.org/list)
  * [TA-Lib](https://mrjbq7.github.io/ta-lib/)
- * twig
+ * [twig](https://www.npmjs.com/package/twig)
  * express
  * Bootstrap v4
+ * [datatables](https://datatables.net/)
  * Tradingview widgets
 
 ## How to use
@@ -82,11 +84,6 @@ Provide a configuration with your exchange credentials
 
 ```
 cp conf.json.dist conf.json
-```
-
-Create a new sqlite database use bot.sql scheme to create the tables
-```
-sqlite3 bot.db < bot.sql
 ```
 
 Lets start it
