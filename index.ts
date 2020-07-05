@@ -10,7 +10,7 @@ program
   .command('trade')
   .description('start crypto trading bot')
   .option('-i, --instance <file>', 'Instance to start', 'instance.json')
-  .action(async options => {
+  .action(async (options: any) => {
     await services.boot(__dirname);
 
     const cmd = new TradeCommand(options.instance);
@@ -24,7 +24,7 @@ program
   .option('-s, --symbol <symbol>')
   .option('-p, --period <period>', '1m 5m, 15m, 1h', '15m')
   .option('-d, --date <date>', 'days in past to collect start', '7')
-  .action(async options => {
+  .action(async (options: any) => {
     if (!options.exchange || !options.symbol || !options.period || !options.date) {
       throw new Error('Not all options are given');
     }
@@ -41,7 +41,7 @@ program
   .command('server')
   .description('')
   .option('-i, --instance <file>', 'Instance to start', 'instance.json')
-  .action(options => {
+  .action((options: any) => {
     const cmd = new ServerCommand(options.instance);
     cmd.execute();
   });
