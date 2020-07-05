@@ -394,8 +394,7 @@ module.exports = {
       this.getExchangeManager(),
       this.getTickers(),
       this.getSystemUtil(),
-      this.getLogger(),
-      this.getPairStateManager()
+      this.getLogger()
     ));
   },
 
@@ -438,7 +437,13 @@ module.exports = {
       return pairStateManager;
     }
 
-    return (pairStateManager = new PairStateManager(this.getLogger(), this.getPairConfig()));
+    return (pairStateManager = new PairStateManager(
+      this.getLogger(),
+      this.getPairConfig(),
+      this.getSystemUtil(),
+      this.getPairStateExecution(),
+      this.getOrderExecutor()
+    ));
   },
 
   getPairStateExecution: function() {
@@ -447,7 +452,6 @@ module.exports = {
     }
 
     return (pairStateExecution = new PairStateExecution(
-      this.getPairStateManager(),
       this.getExchangeManager(),
       this.getOrderCalculator(),
       this.getOrderExecutor(),
@@ -642,12 +646,11 @@ module.exports = {
       this.getTickers(),
       this.getTickerDatabaseListener(),
       this.getExchangeOrderWatchdogListener(),
-      this.getOrderExecutor(),
-      this.getPairStateExecution(),
       this.getSystemUtil(),
       this.getLogsRepository(),
       this.getTickerLogRepository(),
-      this.getExchangePositionWatcher()
+      this.getExchangePositionWatcher(),
+      this.getPairStateManager(),
     );
   },
 

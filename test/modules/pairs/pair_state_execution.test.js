@@ -11,7 +11,6 @@ describe('#pair state execution', function() {
 
     const executor = new PairStateExecution(
       undefined,
-      undefined,
       {
         calculateOrderSizeCapital: () => {
           return 1337;
@@ -44,7 +43,6 @@ describe('#pair state execution', function() {
 
     const executor = new PairStateExecution(
       undefined,
-      undefined,
       {
         calculateOrderSizeCapital: async () => {
           return 1337;
@@ -75,7 +73,6 @@ describe('#pair state execution', function() {
     let myOrder;
 
     const executor = new PairStateExecution(
-      undefined,
       undefined,
       {
         calculateOrderSizeCapital: async () => {
@@ -109,7 +106,6 @@ describe('#pair state execution', function() {
 
     const executor = new PairStateExecution(
       undefined,
-      undefined,
       {
         calculateOrderSizeCapital: async () => {
           return 1337;
@@ -140,7 +136,6 @@ describe('#pair state execution', function() {
     let myOrder;
 
     const executor = new PairStateExecution(
-      undefined,
       {
         get: () => {
           return { calculateAmount: v => v };
@@ -175,7 +170,6 @@ describe('#pair state execution', function() {
     let myOrder;
 
     const executor = new PairStateExecution(
-      undefined,
       {
         get: () => {
           return { calculateAmount: v => v };
@@ -214,7 +208,6 @@ describe('#pair state execution', function() {
     };
 
     const executor = new PairStateExecution(
-      undefined,
       {
         get: () => {
           return { calculateAmount: v => v };
@@ -250,9 +243,6 @@ describe('#pair state execution', function() {
     };
 
     const executor = new PairStateExecution(
-      {
-        get: () => new PairState('foobar', 'ADAUSDT', 'long', {}, true)
-      },
       {
         getPosition: async () => undefined,
         getOrders: async () => []
@@ -303,9 +293,6 @@ describe('#pair state execution', function() {
     };
 
     const executor = new PairStateExecution(
-      {
-        get: () => new PairState('foobar', 'ADAUSDT', 'long', {}, true)
-      },
       {
         getPosition: async () => undefined,
         getOrders: async () => []
@@ -365,7 +352,6 @@ describe('#pair state execution', function() {
     };
 
     const executor = new PairStateExecution(
-      {},
       {
         getPosition: async () => new Position('ADAUSDT', 'long', 1337),
         getOrders: async () => [],
@@ -428,10 +414,6 @@ describe('#pair state execution', function() {
 
     const executor = new PairStateExecution(
       {
-        get: () => pairState,
-        all: () => [pairState]
-      },
-      {
         getPosition: async () => new Position('ADAUSDT', 'long', 1337),
         getOrders: async () => [],
         get: () => {
@@ -465,7 +447,7 @@ describe('#pair state execution', function() {
       }
     );
 
-    await executor.onPairStateExecutionTick();
+    await executor.onPairStateExecutionTick(pairState);
 
     assert.strictEqual(clearCalls.length, 1);
     assert.strictEqual(logMessages.error.filter(msg => msg.includes('max retries')).length, 1);

@@ -5,8 +5,7 @@ const PairState = require('../../dict/pair_state');
 const ExchangeOrder = require('../../dict/exchange_order');
 
 module.exports = class OrderExecutor {
-  constructor(exchangeManager, tickers, systemUtil, logger, pairStateManager) {
-    this.pairStateManager = pairStateManager;
+  constructor(exchangeManager, tickers, systemUtil, logger) {
     this.exchangeManager = exchangeManager;
     this.tickers = tickers;
     this.logger = logger;
@@ -20,7 +19,7 @@ module.exports = class OrderExecutor {
   /**
    * Keep open orders in orderbook at first position
    */
-  adjustOpenOrdersPrice() {
+  adjustOpenOrdersPrice(...pairStates) {
     for (const orderId in this.runningOrders) {
       if (this.runningOrders[orderId] < moment().subtract(2, 'minutes')) {
         delete this.runningOrders[orderId];
@@ -156,7 +155,7 @@ module.exports = class OrderExecutor {
     };
 
     return Promise.all(
-      this.pairStateManager.all().map(pairState => {
+      pairStates.map(pairState => {
         return visitExchangeOrder(pairState);
       })
     );
