@@ -3,10 +3,14 @@ const PairStateManager = require('../../../src/modules/pairs/pair_state_manager'
 
 const ExchangeOrder = require('../../../src/dict/exchange_order');
 const Order = require('../../../src/dict/order');
+const OrderCapital = require('../../../src/dict/order_capital');
 
 describe('#pair state manager', function() {
   it('test pair state changes', () => {
-    const manager = new PairStateManager({ info: () => {}, debug: () => {} });
+    const manager = new PairStateManager(
+      { info: () => {}, debug: () => {} },
+      { getSymbolCapital: () => OrderCapital.createAsset(12) }
+    );
 
     manager.update('foo1', 'BTCUSD2', 'long', { foobar: 'test' });
     manager.update('foo2', 'BTCUSD3', 'short', { foobar: 'test' });

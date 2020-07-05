@@ -1,4 +1,5 @@
 const Order = require('./order');
+const OrderCapital = require('./order_capital');
 const ExchangeOrder = require('./exchange_order');
 
 module.exports = class PairState {
@@ -18,9 +19,45 @@ module.exports = class PairState {
     return 'cancel';
   }
 
+  /**
+   * @param exchange String
+   * @param symbol String
+   * @param capital {OrderCapital}
+   * @param options
+   * @param adjustedPrice bool
+   * @returns {PairState}
+   */
+  static createLong(exchange, symbol, capital, options, adjustedPrice) {
+    if (!(capital instanceof OrderCapital)) {
+      throw new Error('TypeError: invalid OrderCapital');
+    }
+
+    const state = new PairState(exchange, symbol, PairState.STATE_LONG, options, adjustedPrice);
+    state.capital = capital;
+    return state;
+  }
+
+  /**
+   * @param exchange String
+   * @param symbol String
+   * @param capital {OrderCapital}
+   * @param options
+   * @param adjustedPrice bool
+   * @returns {PairState}
+   */
+  static createShort(exchange, symbol, capital, options, adjustedPrice) {
+    if (!(capital instanceof OrderCapital)) {
+      throw new Error('TypeError: invalid OrderCapital');
+    }
+
+    const state = new PairState(exchange, symbol, PairState.STATE_SHORT, options, adjustedPrice);
+    state.capital = capital;
+    return state;
+  }
+
   constructor(exchange, symbol, state, options, adjustedPrice) {
     if (![PairState.STATE_LONG, PairState.STATE_SHORT, PairState.STATE_CLOSE, PairState.STATE_CANCEL].includes(state)) {
-      throw `Invalidate state: ${state}`;
+      throw new Error(`Invalidate state: ${state}`);
     }
 
     this.time = new Date();
@@ -82,8 +119,12 @@ module.exports = class PairState {
     return this.retries;
   }
 
+  getCapital() {
+    return this.capital;
+  }
+
   triggerRetry() {
-    return (this.retries += 1);
+    this.retries += 1;
   }
 
   /**

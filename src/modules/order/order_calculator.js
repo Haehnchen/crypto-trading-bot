@@ -12,6 +12,41 @@ module.exports = class OrderCalculator {
     this.pairConfig = pairConfig;
   }
 
+  /**
+   * @param exchangeName String
+   * @param symbol String
+   * @param capital {OrderCapital}
+   * @returns {Promise<?Number>}
+   */
+  async calculateOrderSizeCapital(exchangeName, symbol, capital) {
+    const asset = capital.getAsset();
+    const currency = capital.getCurrency();
+
+    if (!asset && !currency) {
+      throw new Error('Invalid capital');
+    }
+
+    const exchange = this.exchangeManager.get(exchangeName);
+
+    // spot exchanges wants to buy assets
+    if (!exchange.isInverseSymbol(symbol)) {
+      if (asset) {
+        return exchange.calculateAmount(asset, symbol);
+      }
+
+      const amount = await this.convertCurrencyToAsset(exchangeName, symbol, currency);
+      return amount ? exchange.calculateAmount(amount, symbol) : undefined;
+    }
+
+    // contracts exchange / pairs need inverse
+    if (currency) {
+      return exchange.calculateAmount(currency, symbol);
+    }
+
+    const amount = await this.convertAssetToCurrency(exchangeName, symbol, asset);
+    return amount ? exchange.calculateAmount(amount, symbol) : undefined;
+  }
+
   async calculateOrderSize(exchangeName, symbol) {
     const capital = this.pairConfig.getSymbolCapital(exchangeName, symbol);
     if (!capital) {
@@ -19,25 +54,7 @@ module.exports = class OrderCalculator {
       return undefined;
     }
 
-    const exchange = this.exchangeManager.get(exchangeName);
-
-    // spot exchanges wants to buy assets
-    if (!exchange.isInverseSymbol(symbol)) {
-      if (capital.asset) {
-        return exchange.calculateAmount(capital.asset, symbol);
-      }
-
-      const amount = await this.convertCurrencyToAsset(exchangeName, symbol, capital.currency);
-      return amount ? exchange.calculateAmount(amount, symbol) : undefined;
-    }
-
-    // contracts exchange / pairs need inverse
-    if (capital.currency) {
-      return exchange.calculateAmount(capital.currency, symbol);
-    }
-
-    const amount = await this.convertAssetToCurrency(exchangeName, symbol, capital.asset);
-    return amount ? exchange.calculateAmount(amount, symbol) : undefined;
+    return this.calculateOrderSizeCapital(exchangeName, symbol, capital);
   }
 
   /**

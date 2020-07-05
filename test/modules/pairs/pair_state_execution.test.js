@@ -3,6 +3,7 @@ const PairStateExecution = require('../../../src/modules/pairs/pair_state_execut
 const ExchangeOrder = require('../../../src/dict/exchange_order');
 const Position = require('../../../src/dict/position');
 const PairState = require('../../../src/dict/pair_state');
+const OrderCapital = require('../../../src/dict/order_capital');
 
 describe('#pair state execution', function() {
   it('test limit open order trigger for long', async () => {
@@ -12,7 +13,7 @@ describe('#pair state execution', function() {
       undefined,
       undefined,
       {
-        calculateOrderSize: () => {
+        calculateOrderSizeCapital: () => {
           return 1337;
         }
       },
@@ -25,7 +26,7 @@ describe('#pair state execution', function() {
       undefined
     );
 
-    await executor.executeOrder('exchange', 'BTCUSD', 'long', {});
+    await executor.pairStateExecuteOrder(PairState.createLong('exchange', 'BTCUSD', OrderCapital.createAsset(1337)));
 
     assert.equal(myOrder.symbol, 'BTCUSD');
     assert.equal(myOrder.side, 'long');
@@ -43,7 +44,7 @@ describe('#pair state execution', function() {
       undefined,
       undefined,
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -56,7 +57,9 @@ describe('#pair state execution', function() {
       undefined
     );
 
-    await executor.executeOrder('exchange', 'BTCUSD', 'long', { market: true });
+    await executor.pairStateExecuteOrder(
+      PairState.createLong('exchange', 'BTCUSD', OrderCapital.createAsset(1337), { market: true })
+    );
 
     assert.equal(myOrder.symbol, 'BTCUSD');
     assert.equal(myOrder.side, 'long');
@@ -73,7 +76,7 @@ describe('#pair state execution', function() {
       undefined,
       undefined,
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -86,7 +89,7 @@ describe('#pair state execution', function() {
       undefined
     );
 
-    await executor.executeOrder('exchange', 'BTCUSD', 'short', {});
+    await executor.pairStateExecuteOrder(PairState.createShort('exchange', 'BTCUSD', OrderCapital.createAsset(1337)));
 
     assert.equal(myOrder.symbol, 'BTCUSD');
     assert.equal(myOrder.side, 'short');
@@ -104,7 +107,7 @@ describe('#pair state execution', function() {
       undefined,
       undefined,
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -117,7 +120,9 @@ describe('#pair state execution', function() {
       undefined
     );
 
-    await executor.executeOrder('exchange', 'BTCUSD', 'short', { market: true });
+    await executor.pairStateExecuteOrder(
+      PairState.createShort('exchange', 'BTCUSD', OrderCapital.createAsset(1337), { market: true })
+    );
 
     assert.equal(myOrder.symbol, 'BTCUSD');
     assert.equal(myOrder.side, 'short');
@@ -138,7 +143,7 @@ describe('#pair state execution', function() {
         }
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -173,7 +178,7 @@ describe('#pair state execution', function() {
         }
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -212,7 +217,7 @@ describe('#pair state execution', function() {
         }
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -254,7 +259,7 @@ describe('#pair state execution', function() {
         getOrders: async () => []
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -279,7 +284,7 @@ describe('#pair state execution', function() {
       }
     );
 
-    await executor.onSellBuyPair({ exchange: 'foobar', symbol: 'ADAUSDT' }, 'long');
+    await executor.onSellBuyPair(PairState.createLong('foobar', 'ADAUSDT', OrderCapital.createAsset(1337)));
 
     assert.strictEqual(clearCalls[0][0], 'foobar');
     assert.strictEqual(clearCalls[0][1], 'ADAUSDT');
@@ -308,7 +313,7 @@ describe('#pair state execution', function() {
         getOrders: async () => []
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -336,7 +341,7 @@ describe('#pair state execution', function() {
       }
     );
 
-    await executor.onSellBuyPair({ exchange: 'foobar', symbol: 'ADAUSDT' }, 'long');
+    await executor.onSellBuyPair(PairState.createLong('foobar', 'ADAUSDT', OrderCapital.createAsset(1337)));
 
     assert.strictEqual(clearCalls[0][0], 'foobar');
     assert.strictEqual(clearCalls[0][1], 'ADAUSDT');
@@ -367,7 +372,7 @@ describe('#pair state execution', function() {
         }
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -430,7 +435,7 @@ describe('#pair state execution', function() {
         }
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
