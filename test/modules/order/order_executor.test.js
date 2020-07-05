@@ -27,7 +27,7 @@ describe('#order executor', () => {
       'order.retry_ms': 8
     };
 
-    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true, () => {});
 
     let i = 0;
     const executor = new OrderExecutor(
@@ -238,7 +238,7 @@ describe('#order executor', () => {
       ExchangeOrder.TYPE_LIMIT
     );
 
-    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true, () => {});
     pairState.setExchangeOrder(exchangeOrder);
 
     const executor = new OrderExecutor(
@@ -291,7 +291,7 @@ describe('#order executor', () => {
     let exchangeName;
     let orderUpdate;
 
-    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true, () => {});
     pairState.setExchangeOrder(exchangeOrder);
 
     const executor = new OrderExecutor(
@@ -348,7 +348,7 @@ describe('#order executor', () => {
       error: []
     };
 
-    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true, () => {});
     pairState.setExchangeOrder(exchangeOrder);
 
     const executor = new OrderExecutor(
@@ -416,7 +416,7 @@ describe('#order executor', () => {
       error: []
     };
 
-    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true, () => {});
     pairState.setExchangeOrder(exchangeOrder);
 
     const executor = new OrderExecutor(
@@ -482,7 +482,7 @@ describe('#order executor', () => {
     let exchangeName;
     let orderUpdate;
 
-    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true);
+    const pairState = new PairState('exchange', 'FOOUSD', 'short', {}, true, () => {});
     pairState.setExchangeOrder(exchangeOrder);
 
     const executor = new OrderExecutor(

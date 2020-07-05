@@ -29,9 +29,13 @@ module.exports = class PairStateExecution {
     this.lastRunAt = undefined;
   }
 
-  async onCancelPair(pair) {
-    await this.orderExecutor.cancelAll(pair.exchange, pair.symbol);
-    this.pairStateManager.clear(pair.exchange, pair.symbol);
+  /**
+   * @param pairState {PairState}
+   * @returns {Promise<void>}
+   */
+  async onCancelPair(pairState) {
+    await this.orderExecutor.cancelAll(pairState.getExchange(), pairState.getSymbol());
+    pairState.clear();
   }
 
   /**
@@ -39,12 +43,13 @@ module.exports = class PairStateExecution {
    * @returns {Promise<void>}
    */
   async onSellBuyPair(pairState) {
-    const side = pairState.getState();
     const position = await this.exchangeManager.getPosition(pairState.exchange, pairState.symbol);
 
     if (position) {
-      this.pairStateManager.clear(pairState.exchange, pairState.symbol);
-      this.logger.debug(`block ${side} order; open position:${JSON.stringify([pairState.exchange, pairState.symbol])}`);
+      pairState.clear();
+      this.logger.debug(
+        `block ${pairState.getState()} order; open position:${JSON.stringify([pairState.exchange, pairState.symbol])}`
+      );
       return;
     }
 
@@ -54,7 +59,7 @@ module.exports = class PairStateExecution {
         `Pair State: Create position open order: ${JSON.stringify([
           pairState.exchange,
           pairState.symbol,
-          side,
+          pairState.getState(),
           pairState.options
         ])}`
       );
@@ -73,7 +78,7 @@ module.exports = class PairStateExecution {
                 exchangeOrder
               ])}`
             );
-            this.pairStateManager.clear(pairState.exchange, pairState.symbol);
+            pairState.clear(pairState.exchange, pairState.symbol);
           } else {
             // just log this case
             this.logger.info(
@@ -94,7 +99,7 @@ module.exports = class PairStateExecution {
               exchangeOrder
             ])}`
           );
-          this.pairStateManager.clear(pairState.exchange, pairState.symbol);
+          pairState.clear(pairState.exchange, pairState.symbol);
         } else {
           // add order to know it for later usage
           pairState.setExchangeOrder(exchangeOrder);
@@ -122,40 +127,44 @@ module.exports = class PairStateExecution {
     }
   }
 
-  async onClosePair(pair) {
-    const position = await this.exchangeManager.getPosition(pair.exchange, pair.symbol);
+  async onClosePair(pairState) {
+    const position = await this.exchangeManager.getPosition(pairState.exchange, pairState.symbol);
 
     if (!position) {
-      this.pairStateManager.clear(pair.exchange, pair.symbol);
+      pairState.clear(pairState.exchange, pairState.symbol);
       this.logger.debug(
-        `Close Pair: Block selling order; no open position: ${JSON.stringify([pair.exchange, pair.symbol])}`
+        `Close Pair: Block selling order; no open position: ${JSON.stringify([pairState.exchange, pairState.symbol])}`
       );
 
       // clear untouched order
-      const orders = await this.exchangeManager.getOrders(pair.exchange, pair.symbol);
+      const orders = await this.exchangeManager.getOrders(pairState.exchange, pairState.symbol);
       if (orders.length > 0) {
-        this.logger.debug(`Close Pair: Found open orders clearing: ${JSON.stringify([pair.exchange, pair.symbol])}`);
-        await this.orderExecutor.cancelAll(pair.exchange, pair.symbol);
+        this.logger.debug(
+          `Close Pair: Found open orders clearing: ${JSON.stringify([pairState.exchange, pairState.symbol])}`
+        );
+        await this.orderExecutor.cancelAll(pairState.exchange, pairState.symbol);
       }
 
       return;
     }
 
-    const pairState = this.pairStateManager.get(pair.exchange, pair.symbol);
-
     const exchangeOrderStored = await this.managedPairStateOrder(pairState);
     if (!exchangeOrderStored) {
       this.logger.info(
-        `Pair State: Create position close order: ${JSON.stringify([pair.exchange, pair.symbol, pair.position])}`
+        `Pair State: Create position close order: ${JSON.stringify([
+          pairState.exchange,
+          pairState.symbol,
+          pairState.position
+        ])}`
       );
 
       const amount = Math.abs(position.amount);
 
       const exchangeOrder = await this.executeCloseOrder(
-        pair.exchange,
-        pair.symbol,
+        pairState.exchange,
+        pairState.symbol,
         position.side === 'short' ? amount : amount * -1, // invert the current position
-        pair.options,
+        pairState.options,
         pairState
       );
 
@@ -166,18 +175,18 @@ module.exports = class PairStateExecution {
             // order was canceled by exchange eg no balance or invalid amount
             this.logger.error(
               `Pair State: order rejected clearing pair state: ${JSON.stringify([
-                pair.exchange,
-                pair.symbol,
+                pairState.exchange,
+                pairState.symbol,
                 exchangeOrder
               ])}`
             );
-            this.pairStateManager.clear(pair.exchange, pair.symbol);
+            pairState.clear(pairState.exchange, pairState.symbol);
           } else {
             // just log this case
             this.logger.error(
               `Pair State: Signal canceled for invalid order: ${JSON.stringify([
-                pair.exchange,
-                pair.symbol,
+                pairState.exchange,
+                pairState.symbol,
                 exchangeOrder
               ])}`
             );
@@ -187,12 +196,12 @@ module.exports = class PairStateExecution {
           // order done
           this.logger.info(
             `Pair State: Order directly filled clearing state: ${JSON.stringify([
-              pair.exchange,
-              pair.symbol,
+              pairState.exchange,
+              pairState.symbol,
               exchangeOrder
             ])}`
           );
-          this.pairStateManager.clear(pair.exchange, pair.symbol);
+          pairState.clear(pairState.exchange, pairState.symbol);
         } else {
           // add order to know it for later usage
           pairState.setExchangeOrder(exchangeOrder);
@@ -202,7 +211,7 @@ module.exports = class PairStateExecution {
 
     // found multiple order; clear this invalid state
     // we also reset or managed order here
-    const newOrders = await this.exchangeManager.getOrders(pair.exchange, pair.symbol);
+    const newOrders = await this.exchangeManager.getOrders(pairState.exchange, pairState.symbol);
     if (newOrders.length > 1) {
       const state = pairState.getExchangeOrder();
       if (state) {
@@ -211,7 +220,7 @@ module.exports = class PairStateExecution {
           .forEach(async order => {
             this.logger.error(`Pair State: Clear invalid orders:${JSON.stringify([order])}`);
             try {
-              await this.orderExecutor.cancelOrder(pair.exchange, order.id);
+              await this.orderExecutor.cancelOrder(pairState.exchange, order.id);
             } catch (e) {
               console.log(e);
             }
