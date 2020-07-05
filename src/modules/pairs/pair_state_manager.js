@@ -45,19 +45,24 @@ module.exports = class PairStateManager {
       pairState = new PairState(exchange, symbol, state, options || {}, true, clearCallback);
     }
 
+    const stateKey = exchange + symbol;
     this.logger.info(
       `Pair state changed: ${JSON.stringify({
         new: JSON.stringify(pairState),
-        old: JSON.stringify(this.stats[exchange + symbol] || {})
+        old: JSON.stringify(this.stats[stateKey] || {})
       })}`
     );
 
-    this.stats[exchange + symbol] = pairState;
+    this.stats[stateKey] = pairState;
 
-    this.pairInterval.addInterval(exchange + symbol, this.systemUtil.getConfig('tick.ordering', 10800), async () => {
-      await this.pairStateExecution.onPairStateExecutionTick(pairState);
+    this.pairInterval.addInterval(stateKey, this.systemUtil.getConfig('tick.ordering', 10800), async () => {
+      // prevent race conditions
+      if (stateKey in this.stats) {
+        await this.pairStateExecution.onPairStateExecutionTick(pairState);
+      }
 
-      if (pairState.hasAdjustedPrice()) {
+      // state: can be cleared only onPairStateExecutionTick
+      if (pairState.hasAdjustedPrice() && stateKey in this.stats) {
         await this.orderExecutor.adjustOpenOrdersPrice(pairState);
       }
     });
