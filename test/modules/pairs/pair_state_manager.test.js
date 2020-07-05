@@ -53,4 +53,17 @@ describe('#pair state manager', function() {
     assert.equal(manager.get('foo4', 'BTCUSD5', 'order', { foo: 'foo' }).getExchangeOrder().symbol, 'FOOUSD');
     assert.equal(manager.get('foo4', 'BTCUSD5', 'order', { foo: 'foo' }).exchangeOrder.symbol, 'FOOUSD');
   });
+
+  it('test pair state should be cleared', () => {
+    const manager = new PairStateManager(
+      { info: () => {}, debug: () => {} },
+      { getSymbolCapital: () => OrderCapital.createAsset(12) }
+    );
+
+    manager.update('foo1', 'BTCUSD2', 'long', { foobar: 'test' });
+    const state = manager.get('foo1', 'BTCUSD2');
+    assert.equal(state.getSymbol(), 'BTCUSD2');
+
+    assert.equal(state.clear(), undefined);
+  });
 });

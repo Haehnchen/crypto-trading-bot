@@ -14,6 +14,11 @@ module.exports = class PairStateManager {
       throw new Error(`Invalidate state: ${state}`);
     }
 
+    const clearCallback = () => {
+      this.logger.info(`State cleared: ${exchange} - ${symbol} - ${state}`);
+      this.clear(exchange, symbol);
+    };
+
     let pairState;
     if (state === 'long') {
       const capital = this.pairConfig.getSymbolCapital(exchange, symbol);
@@ -22,7 +27,7 @@ module.exports = class PairStateManager {
         return;
       }
 
-      pairState = PairState.createLong(exchange, symbol, capital, options || {}, true);
+      pairState = PairState.createLong(exchange, symbol, capital, options || {}, true, clearCallback);
     } else if (state === 'short') {
       const capital = this.pairConfig.getSymbolCapital(exchange, symbol);
       if (!(capital instanceof OrderCapital)) {
@@ -30,9 +35,9 @@ module.exports = class PairStateManager {
         return;
       }
 
-      pairState = PairState.createShort(exchange, symbol, capital, options || {}, true);
+      pairState = PairState.createShort(exchange, symbol, capital, options || {}, true, clearCallback);
     } else {
-      pairState = new PairState(exchange, symbol, state, options || {}, true);
+      pairState = new PairState(exchange, symbol, state, options || {}, true, clearCallback);
     }
 
     this.logger.info(
