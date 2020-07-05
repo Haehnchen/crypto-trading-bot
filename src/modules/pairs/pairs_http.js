@@ -23,11 +23,19 @@ module.exports = class PairsHttp {
             state: symbol.state,
             has_position: position !== undefined,
             capital: `${_.get(symbol, 'trade.capital', 0)} / ${_.get(symbol, 'trade.currency_capital', 0)}`,
-            strategies: symbol.trade.strategies || []
+            strategies: symbol.trade.strategies || [],
+            weight: 0
           };
 
+          // open position wins over default state
+          if (item.has_position) {
+            item.weight += 1;
+          }
+
+          // processing items must win
           if (state && state.state) {
             item.process = state.state;
+            item.weight += 2;
           }
 
           return item;
@@ -35,13 +43,7 @@ module.exports = class PairsHttp {
     );
 
     return pairs.sort((a, b) => {
-      // ordering:
-      //  - open position
-      //  - running process
-      const aValue = (a.has_position ? 0 : 2) + (a.process ? 1 : 0);
-      const bValue = (b.has_position ? 0 : 2) + (b.process ? 1 : 0);
-
-      return aValue - bValue;
+      return b.weight - a.weight;
     });
   }
 
