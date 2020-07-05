@@ -9,7 +9,11 @@ describe('#pair state manager', function() {
   it('test pair state changes', () => {
     const manager = new PairStateManager(
       { info: () => {}, debug: () => {} },
-      { getSymbolCapital: () => OrderCapital.createAsset(12) }
+      { getSymbolCapital: () => OrderCapital.createAsset(12) },
+      { getConfig: () => 1 },
+      {},
+      {},
+      { addInterval: () => {}, clearInterval: () => {} }
     );
 
     manager.update('foo1', 'BTCUSD2', 'long', { foobar: 'test' });
@@ -57,7 +61,11 @@ describe('#pair state manager', function() {
   it('test pair state should be cleared', () => {
     const manager = new PairStateManager(
       { info: () => {}, debug: () => {} },
-      { getSymbolCapital: () => OrderCapital.createAsset(12) }
+      { getSymbolCapital: () => OrderCapital.createAsset(12) },
+      { getConfig: () => 1 },
+      {},
+      {},
+      { addInterval: () => {}, clearInterval: () => {} }
     );
 
     manager.update('foo1', 'BTCUSD2', 'long', { foobar: 'test' });

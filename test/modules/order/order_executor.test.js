@@ -321,10 +321,9 @@ describe('#order executor', () => {
       },
       undefined,
       { info: () => {}, error: () => {} },
-      { all: () => [pairState] }
     );
 
-    await executor.adjustOpenOrdersPrice();
+    await executor.adjustOpenOrdersPrice(pairState);
 
     assert.equal(orderUpdate.price, 1337);
     assert.equal(Object.keys(executor.runningOrders).length, 0);
@@ -380,8 +379,7 @@ describe('#order executor', () => {
         error: message => {
           logMessages.error.push(message);
         }
-      },
-      { all: () => [pairState] }
+      }
     );
 
     let retryOrder;
@@ -389,10 +387,10 @@ describe('#order executor', () => {
       retryOrder = order;
     };
 
-    await executor.adjustOpenOrdersPrice();
+    await executor.adjustOpenOrdersPrice(pairState);
 
     assert.strictEqual(retryOrder.amount, 1331);
-    assert.strictEqual(retryOrder.hasAdjustedPrice(), true);
+    assert.strictEqual(retryOrder.hasAdjustedPrice(pairState), true);
 
     assert.strictEqual(logMessages.error.filter(msg => msg.includes('canceled recreate')).length, 1);
     assert.strictEqual(logMessages.error.filter(msg => msg.includes('replacing canceled order')).length, 1);
@@ -448,8 +446,7 @@ describe('#order executor', () => {
         error: message => {
           logMessages.error.push(message);
         }
-      },
-      { all: () => [pairState] }
+      }
     );
 
     let retryOrder;
@@ -457,7 +454,7 @@ describe('#order executor', () => {
       retryOrder = order;
     };
 
-    await executor.adjustOpenOrdersPrice();
+    await executor.adjustOpenOrdersPrice(pairState);
 
     assert.strictEqual(retryOrder.amount, -1331);
     assert.strictEqual(retryOrder.hasAdjustedPrice(), true);
@@ -508,10 +505,9 @@ describe('#order executor', () => {
       { getIfUpToDate: () => new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338) },
       undefined,
       { info: () => {}, error: () => {} },
-      { all: () => [pairState] }
     );
 
-    await executor.adjustOpenOrdersPrice();
+    await executor.adjustOpenOrdersPrice(pairState);
 
     assert.equal(orderUpdate.price, -1338);
     assert.equal(Object.keys(executor.runningOrders).length, 0);

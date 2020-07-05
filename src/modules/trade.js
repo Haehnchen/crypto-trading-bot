@@ -14,12 +14,11 @@ module.exports = class Trade {
     tickers,
     tickerDatabaseListener,
     exchangeOrderWatchdogListener,
-    orderExecutor,
-    pairStateExecution,
     systemUtil,
     logsRepository,
     tickerLogRepository,
-    exchangePositionWatcher
+    exchangePositionWatcher,
+    pairStateManager
   ) {
     this.eventEmitter = eventEmitter;
     this.instances = instances;
@@ -30,12 +29,11 @@ module.exports = class Trade {
     this.tickers = tickers;
     this.tickerDatabaseListener = tickerDatabaseListener;
     this.exchangeOrderWatchdogListener = exchangeOrderWatchdogListener;
-    this.orderExecutor = orderExecutor;
-    this.pairStateExecution = pairStateExecution;
     this.systemUtil = systemUtil;
     this.logsRepository = logsRepository;
     this.tickerLogRepository = tickerLogRepository;
     this.exchangePositionWatcher = exchangePositionWatcher;
+    this.pairStateManager = pairStateManager;
   }
 
   start() {
@@ -47,7 +45,7 @@ module.exports = class Trade {
         process.exit();
       }, 7500);
 
-      await this.pairStateExecution.onTerminate();
+      await this.pairStateManager.onTerminate();
 
       process.exit();
     });
@@ -126,18 +124,6 @@ module.exports = class Trade {
 
     eventEmitter.on(PositionStateChangeEvent.EVENT_NAME, async event => {
       await me.exchangeOrderWatchdogListener.onPositionChanged(event);
-    });
-
-    let running;
-    eventEmitter.on('tick_ordering', async () => {
-      if (typeof running === 'undefined' || running < moment().subtract(20, 'seconds')) {
-        running = new Date();
-        await me.pairStateExecution.onPairStateExecutionTick();
-        await me.orderExecutor.adjustOpenOrdersPrice();
-        running = undefined;
-      } else {
-        me.logger.debug('tick_ordering still running');
-      }
     });
   }
 };

@@ -11,22 +11,18 @@ const ExchangeOrder = require('../../dict/exchange_order');
  */
 module.exports = class PairStateExecution {
   /**
-   *
-   * @param pairStateManager {PairStateManager}
    * @param exchangeManager
    * @param orderCalculator
    * @param orderExecutor
    * @param logger
    * @param ticker
    */
-  constructor(pairStateManager, exchangeManager, orderCalculator, orderExecutor, logger, ticker) {
-    this.pairStateManager = pairStateManager;
+  constructor(exchangeManager, orderCalculator, orderExecutor, logger, ticker) {
     this.exchangeManager = exchangeManager;
     this.orderCalculator = orderCalculator;
     this.orderExecutor = orderExecutor;
     this.logger = logger;
     this.ticker = ticker;
-    this.lastRunAt = undefined;
   }
 
   /**
@@ -229,60 +225,34 @@ module.exports = class PairStateExecution {
     }
   }
 
-  async onPairStateExecutionTick() {
-    // block ui running
-    if (typeof this.lastRunAt !== 'undefined' && this.lastRunAt < moment().subtract(2, 'minutes')) {
-      this.logger.debug('onPairStateExecutionTick blocked for running');
-      console.log('onPairStateExecutionTick blocked for running');
-
+  async onPairStateExecutionTick(pairState) {
+    if (pairState.getRetries() > 10) {
+      this.logger.error(`Pair execution max retries reached: ${JSON.stringify([pairState])}`);
+      await this.onCancelPair(pairState);
       return;
     }
 
-    this.lastRunAt = new Date();
-
-    const promises = [];
-
-    this.pairStateManager.all().forEach(pair => {
-      const pairState = this.pairStateManager.get(pair.exchange, pair.symbol);
-      if (pairState && pairState.getRetries() > 10) {
-        this.logger.error(`Pair execution max retries reached: ${JSON.stringify([pair, pairState])}`);
-        promises.push(this.onCancelPair(pair));
-        return;
-      }
-
-      // cancel execution if not possible to place after some minutes
-      if (pair.time < moment().subtract(60, 'minutes')) {
-        this.logger.error(`Pair execution timeout cancel: ${JSON.stringify([pair, pairState])}`);
-        promises.push(this.onCancelPair(pair));
-        return;
-      }
-
-      switch (pair.getState()) {
-        case 'cancel':
-          promises.push(this.onCancelPair(pair));
-          break;
-        case 'close':
-          promises.push(this.onClosePair(pair));
-          break;
-        case 'short':
-          promises.push(this.onSellBuyPair(pair));
-          break;
-        case 'long':
-          promises.push(this.onSellBuyPair(pair));
-          break;
-        default:
-          throw `Unsupported state: ${pair.state}`;
-      }
-    });
-
-    try {
-      await Promise.all(promises);
-    } catch (e) {
-      this.logger.error(`onPairStateExecutionTick error: ${JSON.stringify(e)}`);
-      console.error(e);
+    // cancel execution if not possible to place after some minutes
+    if (pairState.getTime() < moment().subtract(25, 'minutes')) {
+      this.logger.error(`Pair execution timeout cancel: ${JSON.stringify([pairState])}`);
+      await this.onCancelPair(pairState);
+      return;
     }
 
-    this.lastRunAt = undefined;
+    switch (pairState.getState()) {
+      case 'cancel':
+        await this.onCancelPair(pairState);
+        break;
+      case 'close':
+        await this.onClosePair(pairState);
+        break;
+      case 'long':
+      case 'short':
+        await this.onSellBuyPair(pairState);
+        break;
+      default:
+        throw new Error(`Unsupported state: ${pairState.getState()}`);
+    }
   }
 
   /**
@@ -329,19 +299,6 @@ module.exports = class PairStateExecution {
         : Order.createCloseOrderWithPriceAdjustment(symbol, exchangeOrderSize);
 
     return this.orderExecutor.executeOrder(exchangeName, order);
-  }
-
-  async onTerminate() {
-    const running = this.pairStateManager.all();
-
-    for (const key in running) {
-      const pair = running[key];
-
-      this.logger.info(`Terminate: Force managed orders cancel: ${JSON.stringify(pair)}`);
-      console.log(`Terminate: Force managed orders cancel: ${JSON.stringify(pair)}`);
-
-      await this.onCancelPair(pair);
-    }
   }
 
   async extractManagedPairStateOrderFromOrders(pairState) {
