@@ -57,12 +57,12 @@ module.exports = class PairStateManager {
 
     this.pairInterval.addInterval(stateKey, this.systemUtil.getConfig('tick.ordering', 10800), async () => {
       // prevent race conditions
-      if (stateKey in this.stats) {
+      if (!pairState.isCleared() && stateKey in this.stats) {
         await this.pairStateExecution.onPairStateExecutionTick(pairState);
       }
 
       // state: can be cleared only onPairStateExecutionTick
-      if (pairState.hasAdjustedPrice() && stateKey in this.stats) {
+      if (!pairState.isCleared() && pairState.hasAdjustedPrice() && stateKey in this.stats) {
         await this.orderExecutor.adjustOpenOrdersPrice(pairState);
       }
     });

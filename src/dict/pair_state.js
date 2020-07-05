@@ -76,6 +76,7 @@ module.exports = class PairState {
     this.retries = 0;
     this.adjustedPrice = adjustedPrice;
     this.clearCallback = clearCallback;
+    this.cleared = false;
   }
 
   /**
@@ -107,6 +108,7 @@ module.exports = class PairState {
   }
 
   clear() {
+    this.cleared = true;
     return this.clearCallback();
   }
 
@@ -116,6 +118,13 @@ module.exports = class PairState {
 
   getTime() {
     return this.time;
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  isCleared() {
+    return this.cleared;
   }
 
   /**

@@ -74,4 +74,39 @@ describe('#pair state manager', function() {
 
     assert.equal(state.clear(), undefined);
   });
+
+  it('test pair state provides callback and calls internal functions', async () => {
+    let addIntervalCallback;
+
+    let onPairStateExecutionTick;
+    let adjustOpenOrdersPrice;
+
+    const manager = new PairStateManager(
+      { info: () => {}, debug: () => {} },
+      { getSymbolCapital: () => OrderCapital.createAsset(12) },
+      { getConfig: () => 1 },
+      {
+        onPairStateExecutionTick: pairState => {
+          onPairStateExecutionTick = pairState;
+        }
+      },
+      {
+        adjustOpenOrdersPrice: pairState => {
+          adjustOpenOrdersPrice = pairState;
+        }
+      },
+      {
+        addInterval: (name, delay, func) => {
+          addIntervalCallback = func;
+        }
+      }
+    );
+
+    manager.update('foo1', 'BTCUSD2', 'long', { foobar: 'test' });
+
+    await addIntervalCallback();
+
+    assert.equal(onPairStateExecutionTick.getSymbol(), 'BTCUSD2');
+    assert.equal(adjustOpenOrdersPrice.getSymbol(), 'BTCUSD2');
+  });
 });
