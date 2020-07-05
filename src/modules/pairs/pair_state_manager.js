@@ -1,18 +1,39 @@
 const PairState = require('../../dict/pair_state');
+const OrderCapital = require('../../dict/order_capital');
 
 module.exports = class PairStateManager {
-  constructor(logger) {
+  constructor(logger, pairConfig) {
     this.logger = logger;
+    this.pairConfig = pairConfig;
     this.stats = {};
   }
 
   update(exchange, symbol, state, options = {}) {
     if (!['long', 'close', 'short', 'cancel'].includes(state)) {
       this.logger.error(`Invalidate state: ${state}`);
-      throw `Invalidate state: ${state}`;
+      throw new Error(`Invalidate state: ${state}`);
     }
 
-    const pairState = new PairState(exchange, symbol, state, options || {}, true);
+    let pairState;
+    if (state === 'long') {
+      const capital = this.pairConfig.getSymbolCapital(exchange, symbol);
+      if (!(capital instanceof OrderCapital)) {
+        this.logger.error(`Invalidate OrderCapital: ${exchange} - ${symbol} - ${state}`);
+        return;
+      }
+
+      pairState = PairState.createLong(exchange, symbol, capital, options || {}, true);
+    } else if (state === 'short') {
+      const capital = this.pairConfig.getSymbolCapital(exchange, symbol);
+      if (!(capital instanceof OrderCapital)) {
+        this.logger.error(`Invalidate OrderCapital: ${exchange} - ${symbol} - ${state}`);
+        return;
+      }
+
+      pairState = PairState.createShort(exchange, symbol, capital, options || {}, true);
+    } else {
+      pairState = new PairState(exchange, symbol, state, options || {}, true);
+    }
 
     this.logger.info(
       `Pair state changed: ${JSON.stringify({

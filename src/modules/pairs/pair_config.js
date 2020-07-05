@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const OrderCapital = require('../../dict/order_capital');
 
 module.exports = class PairConfig {
   constructor(instances) {
@@ -8,21 +9,16 @@ module.exports = class PairConfig {
   /**
    * @param exchangeName string
    * @param symbol string
-   * @returns {{currency: *, asset: *}}
+   * @returns OrderCapital
    */
   getSymbolCapital(exchangeName, symbol) {
-    const c = {
-      asset: undefined,
-      currency: undefined
-    };
-
     const capital = this.instances.symbols.find(
       instance =>
         instance.exchange === exchangeName && instance.symbol === symbol && _.get(instance, 'trade.capital', 0) > 0
     );
 
     if (capital) {
-      c.asset = capital.trade.capital;
+      return OrderCapital.createAsset(capital.trade.capital);
     }
 
     const capitalCurrency = this.instances.symbols.find(
@@ -33,13 +29,9 @@ module.exports = class PairConfig {
     );
 
     if (capitalCurrency) {
-      c.currency = capitalCurrency.trade.currency_capital;
+      return OrderCapital.createCurrency(capitalCurrency.trade.currency_capital);
     }
 
-    if (!c.asset && !c.currency) {
-      return undefined;
-    }
-
-    return c;
+    return undefined;
   }
 };
