@@ -200,6 +200,15 @@ node index.js backfill -e bitmex -p 1m -s XRPZ18
 
 For custom strategies use [var/strategies](var/strategies) folder.
 
+```
+# simple file structure
+var/strategies/your_strategy.js
+
+# or wrap strategy into any sub folder depth
+var/strategies/my_strategy/my_strategy.js
+var/strategies/subfolder1/our_strategy/our_strategy.js
+```
+
 Find some example strategies inside [modules/strategy/strategies](modules/strategy/strategies)
 
 ## Tools / Watchdog
