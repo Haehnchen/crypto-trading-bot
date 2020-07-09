@@ -223,6 +223,28 @@ module.exports = class BinanceFutures {
   }
 
   /**
+   * Websocket position updates
+   */
+  accountUpdate(message) {
+    if (message.a && message.a.P) {
+      message.a.P.forEach(position => {
+        if (!position.s) {
+          return;
+        }
+
+        // position closed
+        if (position.s in this.positions && position.pa === '0') {
+          delete this.positions[position.s];
+
+          this.logger.info(
+            `Binance Futures: Websocket position closed/removed: ${JSON.stringify([position.s, position])}`
+          );
+        }
+      }, this);
+    }
+  }
+
+  /**
    * As a websocket fallback update orders also on REST
    */
   async syncPositionViaRestApi() {
@@ -381,6 +403,8 @@ module.exports = class BinanceFutures {
         }
 
         if (message.e && message.e.toUpperCase() === 'ACCOUNT_UPDATE') {
+          console.log(JSON.stringify(message, null, 4));
+          me.accountUpdate(message);
           await me.syncPositionViaRestApi();
         }
       }
