@@ -39,4 +39,34 @@ describe('#binance_futures exchange implementation', () => {
 
     assert.strictEqual((await binanceFutures.getPositions()).length, 1);
   });
+
+  it('websocket position open positions', async () => {
+    const binanceFutures = new BinanceFutures({}, {}, {}, { info: () => {} }, {}, {});
+
+    binanceFutures.positions = {
+      ADAUSDT: new Position('ADAUSDT', 'long', 1)
+    };
+
+    const json = getJsonFixture('websocket_position_open.json');
+    binanceFutures.accountUpdate(json);
+
+    assert.strictEqual((await binanceFutures.getPositions()).length, 3);
+
+    const ADAUSDT = await binanceFutures.getPositionForSymbol('ADAUSDT');
+    assert.strictEqual(ADAUSDT.getSymbol(), 'ADAUSDT');
+    assert.strictEqual(ADAUSDT.getAmount(), 1);
+
+    const pos = await binanceFutures.getPositionForSymbol('EOSUSDT');
+    assert.strictEqual(pos.getSymbol(), 'EOSUSDT');
+    assert.strictEqual(pos.getAmount(), 1);
+    assert.strictEqual(pos.getEntry(), 2.626);
+    assert.strictEqual(pos.isLong(), true);
+
+    const posShort = await binanceFutures.getPositionForSymbol('EOSUSDTSHORT');
+    assert.strictEqual(posShort.getSymbol(), 'EOSUSDTSHORT');
+    assert.strictEqual(posShort.getAmount(), -1);
+    assert.strictEqual(posShort.getEntry(), 2.626);
+    assert.strictEqual(posShort.isLong(), false);
+    assert.strictEqual(posShort.isShort(), true);
+  });
 });

@@ -223,6 +223,28 @@ module.exports = class BinanceFutures {
   }
 
   /**
+   * Convert incoming position only if they are open
+   *
+   * @param position
+   * @returns {*}
+   */
+  static createPositionFromWebsocket(position) {
+    const positionAmt = parseFloat(position.pa);
+    const entryPrice = parseFloat(position.ep);
+
+    return new Position(
+      position.s,
+      positionAmt < 0 ? 'short' : 'long',
+      positionAmt,
+      undefined,
+      new Date(),
+      entryPrice,
+      undefined,
+      position
+    );
+  }
+
+  /**
    * Websocket position updates
    */
   accountUpdate(message) {
@@ -239,6 +261,17 @@ module.exports = class BinanceFutures {
           this.logger.info(
             `Binance Futures: Websocket position closed/removed: ${JSON.stringify([position.s, position])}`
           );
+        }
+
+        // position open
+        if (
+          !(position.s in this.positions) &&
+          position.pa !== '0' &&
+          (parseFloat(position.ep) > 0.00001 || parseFloat(position.ep) < -0.00001) // prevent float point issues
+        ) {
+          this.positions[position.s] = BinanceFutures.createPositionFromWebsocket(position);
+
+          this.logger.info(`Binance Futures: Websocket position new found: ${JSON.stringify([position.s, position])}`);
         }
       }, this);
     }
