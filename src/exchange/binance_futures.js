@@ -436,7 +436,6 @@ module.exports = class BinanceFutures {
         }
 
         if (message.e && message.e.toUpperCase() === 'ACCOUNT_UPDATE') {
-          console.log(JSON.stringify(message, null, 4));
           me.accountUpdate(message);
           await me.syncPositionViaRestApi();
         }
