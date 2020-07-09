@@ -131,6 +131,13 @@ describe('#order size calculation', () => {
         trade: {
           capital: 0.0001
         }
+      },
+      {
+        exchange: 'foobar',
+        symbol: 'foo_balance',
+        trade: {
+          balance_percent: 50
+        }
       }
     ];
 
@@ -148,6 +155,10 @@ describe('#order size calculation', () => {
           if (symbol === 'foo_capital') {
             return { bid: 8000 };
           }
+
+          if (symbol === 'foo_balance') {
+            return { bid: 8000 };
+          }
         }
       },
       {
@@ -156,6 +167,7 @@ describe('#order size calculation', () => {
       {
         get: () => {
           return {
+            getBalance: () => 100,
             calculateAmount: n => n,
             isInverseSymbol: () => true
           };
@@ -168,5 +180,60 @@ describe('#order size calculation', () => {
     assert.strictEqual(await calculator.calculateOrderSize('UNKNOWN', 'foo'), undefined);
     assert.strictEqual(await calculator.calculateOrderSize('foobar', 'foo2'), 1337.0);
     assert.strictEqual(await calculator.calculateOrderSize('foobar', 'foo_capital'), 0.8);
+    assert.strictEqual(await calculator.calculateOrderSize('foobar', 'foo_balance'), 50);
+  });
+
+  it('test instance order size for balance percent', async () => {
+    const instances = {};
+
+    instances.symbols = [
+      {
+        exchange: 'foobar',
+        symbol: 'foo',
+        trade: {
+          balance_percent: 100
+        }
+      },
+      {
+        exchange: 'foobar2',
+        symbol: 'foo2'
+      },
+      {
+        exchange: 'foobar',
+        symbol: 'foo2',
+        trade: {
+          balance_percent: 50
+        }
+      },
+      {
+        exchange: 'foobar',
+        symbol: 'foo3',
+        trade: {
+          balance_percent: 150
+        }
+      }
+    ];
+
+    const calculator = new OrderCalculator(
+      {},
+      {
+        error: () => {}
+      },
+      {
+        get: () => {
+          return {
+            getBalance: () => 100,
+            calculateAmount: n => n / 10,
+            isInverseSymbol: () => false
+          };
+        }
+      },
+      new PairConfig(instances)
+    );
+
+    assert.strictEqual(await calculator.calculateOrderSize('foobar', 'foo'), 10);
+    assert.strictEqual(await calculator.calculateOrderSize('UNKNOWN', 'foo'), undefined);
+    assert.strictEqual(await calculator.calculateOrderSize('foobar', 'foo2'), 5);
+    assert.strictEqual(await calculator.calculateOrderSize('foobar', 'foo3'), 15);
   });
 });

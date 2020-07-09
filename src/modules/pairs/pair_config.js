@@ -32,6 +32,17 @@ module.exports = class PairConfig {
       return OrderCapital.createCurrency(capitalCurrency.trade.currency_capital);
     }
 
+    const balancePercent = this.instances.symbols.find(
+      instance =>
+        instance.exchange === exchangeName &&
+        instance.symbol === symbol &&
+        _.get(instance, 'trade.balance_percent', 0) > 0
+    );
+
+    if (balancePercent) {
+      return OrderCapital.createBalance(balancePercent.trade.balance_percent);
+    }
+
     return undefined;
   }
 };

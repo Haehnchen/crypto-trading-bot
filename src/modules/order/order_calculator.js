@@ -21,9 +21,10 @@ module.exports = class OrderCalculator {
   async calculateOrderSizeCapital(exchangeName, symbol, capital) {
     const asset = capital.getAsset();
     const currency = capital.getCurrency();
+    const balancePercent = capital.getBalance();
 
-    if (!asset && !currency) {
-      throw new Error('Invalid capital');
+    if (!asset && !currency && !balancePercent) {
+      throw new Error(`Invalid capital`);
     }
 
     const exchange = this.exchangeManager.get(exchangeName);
@@ -34,13 +35,20 @@ module.exports = class OrderCalculator {
         return exchange.calculateAmount(asset, symbol);
       }
 
-      const amount = await this.convertCurrencyToAsset(exchangeName, symbol, currency);
+      const amount = balancePercent
+        ? (exchange.getBalance() * balancePercent) / 100
+        : await this.convertCurrencyToAsset(exchangeName, symbol, currency);
+
       return amount ? exchange.calculateAmount(amount, symbol) : undefined;
     }
 
     // contracts exchange / pairs need inverse
     if (currency) {
       return exchange.calculateAmount(currency, symbol);
+    }
+
+    if (balancePercent) {
+      return (exchange.getBalance() * balancePercent) / 100;
     }
 
     const amount = await this.convertAssetToCurrency(exchangeName, symbol, asset);
