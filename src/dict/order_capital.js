@@ -7,6 +7,10 @@ module.exports = class OrderCapital {
     return 'currency';
   }
 
+  static get BALANCE() {
+    return 'balance';
+  }
+
   static createAsset(asset) {
     const capital = new OrderCapital();
     capital.type = OrderCapital.ASSET;
@@ -21,13 +25,24 @@ module.exports = class OrderCapital {
     return capital;
   }
 
+  static createBalance(balance) {
+    const capital = new OrderCapital();
+    capital.type = OrderCapital.BALANCE;
+    capital.balance = balance;
+    return capital;
+  }
+
   getAmount() {
     if (this.type === OrderCapital.CURRENCY) {
-      return this.currency;
+      return this.getCurrency();
     }
 
     if (this.type === OrderCapital.ASSET) {
-      return this.asset;
+      return this.getAsset();
+    }
+
+    if (this.type === OrderCapital.BALANCE) {
+      return this.getBalance();
     }
 
     throw new Error(`Invalid capital type:${this.type}`);
@@ -39,5 +54,9 @@ module.exports = class OrderCapital {
 
   getCurrency() {
     return this.currency;
+  }
+
+  getBalance() {
+    return this.balance;
   }
 };

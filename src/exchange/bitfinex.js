@@ -496,6 +496,10 @@ module.exports = class Bitfinex {
     return false;
   }
 
+  getTradableBalance() {
+    return this.balanceInfo ? this.balanceInfo.amountNet : undefined;
+  }
+
   /**
    * Connect to websocket on chunks because Bitfinex limits per connection subscriptions eg to 30
    *
@@ -677,6 +681,11 @@ module.exports = class Bitfinex {
 
     ws.onPositionClose({}, position => {
       me.onPositionUpdate(position);
+    });
+
+    ws.onBalanceInfoUpdate({}, balanceInfo => {
+      this.logger.debug(`BalanceInfoUpdate updtate: ${JSON.stringify(balanceInfo)}`);
+      this.balanceInfo = balanceInfo;
     });
 
     ws.open();
