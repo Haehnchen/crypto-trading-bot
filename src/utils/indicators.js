@@ -1,5 +1,6 @@
 const tulind = require('tulind');
 const talib = require('talib');
+const percent = require('percent');
 
 /**
  * ZigZag indicator
@@ -132,7 +133,7 @@ function executeTulindIndicator(source, indicator, tulindOptions) {
 
 module.exports = {
   // indicators which source is Candles
-  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag'],
+  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked'],
 
   bb: (source, indicator) => 
     executeTulindIndicator(source, indicator, {
@@ -396,4 +397,26 @@ module.exports = {
       resolve({ [key]: result });
     });
   },
+
+  wicked: function(source, indicator) {
+    const { key } = indicator;
+    return new Promise(resolve => {
+      const results = [];
+      const { candles2MarketData } = require('./technical_analysis');
+      const marketData = candles2MarketData(source, undefined, ['high', 'close', 'open', 'low']);
+      for (let i = 0; i < marketData.close.length; i++) {
+        const top = marketData.high[i] - Math.max(marketData.close[i], marketData.open[i]);
+        const bottom = marketData.low[i] - Math.min(marketData.close[i], marketData.open[i]);
+
+        results.push({
+          top: Math.abs(percent.calc(top, marketData.high[i] - marketData.low[i], 2)),
+          body: Math.abs(
+            percent.calc(marketData.close[i] - marketData.open[i], marketData.high[i] - marketData.low[i], 2)
+          ),
+          bottom: Math.abs(percent.calc(bottom, marketData.high[i] - marketData.low[i], 2))
+        });
+      }
+      resolve({ [key]: results.reverse() });
+    });
+  }
 };
