@@ -45,7 +45,7 @@ module.exports = class Ta {
                 change = 100 * (candles[0].close / dayCandle.close) - 100;
               }
 
-              ta.getIndicatorsLookbacks(candles.slice().reverse()).then(result => {
+              ta.getPredefinedIndicators(candles.slice().reverse()).then(result => {
                 resolve({
                   symbol: symbol.symbol,
                   exchange: symbol.exchange,

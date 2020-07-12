@@ -1,6 +1,6 @@
 const tulind = require('tulind');
-const percent = require('percent');
 const Indicators = require('./indicators');
+const IndicatorBuilder = require('../modules/strategy/dict/indicator_builder');
 
 module.exports = {
   /**
@@ -53,149 +53,33 @@ module.exports = {
    * @param lookbacks oldest first
    * @returns {Promise<any>}
    */
-  getIndicatorsLookbacks: function(lookbacks) {
+  getPredefinedIndicators: function(lookbacks) {
     return new Promise(resolve => {
-      const marketData = this.candles2MarketData(lookbacks);
 
-      const calculations = [
-        new Promise(resolve => {
-          tulind.indicators.sma.indicator([marketData.close], [200], (err, results) => {
-            resolve({
-              sma_200: results[0]
-            });
-          });
-        }),
-        new Promise(resolve => {
-          tulind.indicators.sma.indicator([marketData.close], [50], (err, results) => {
-            resolve({
-              sma_50: results[0]
-            });
-          });
-        }),
-        new Promise(resolve => {
-          tulind.indicators.ema.indicator([marketData.close], [55], (err, results) => {
-            resolve({
-              ema_55: results[0]
-            });
-          });
-        }),
-        new Promise(resolve => {
-          tulind.indicators.ema.indicator([marketData.close], [200], (err, results) => {
-            resolve({
-              ema_200: results[0]
-            });
-          });
-        }),
-        new Promise(resolve => {
-          tulind.indicators.rsi.indicator([marketData.close], [14], (err, results) => {
-            resolve({
-              rsi: results[0]
-            });
-          });
-        }),
-        new Promise(resolve => {
-          tulind.indicators.cci.indicator([marketData.high, marketData.low, marketData.close], [20], (err, results) => {
-            resolve({
-              cci: results[0]
-            });
-          });
-        }),
-        new Promise(resolve => {
-          tulind.indicators.ao.indicator([marketData.high, marketData.low], [], (err, results) => {
-            resolve({
-              ao: results[0]
-            });
-          });
-        }),
-        new Promise(resolve => {
-          tulind.indicators.macd.indicator([marketData.close], [12, 26, 9], (err, results) => {
-            const result = [];
-
-            for (let i = 0; i < results[0].length; i++) {
-              result.push({
-                macd: results[0][i],
-                signal: results[1][i],
-                histogram: results[2][i]
-              });
-            }
-
-            resolve({ macd: result });
-          });
-        }),
-        new Promise(resolve => {
-          tulind.indicators.mfi.indicator(
-            [marketData.high, marketData.low, marketData.close, marketData.volume],
-            [14],
-            (err, results) => {
-              resolve({
-                mfi: results[0]
-              });
-            }
-          );
-        }),
-        new Promise(resolve => {
-          tulind.indicators.bbands.indicator([marketData.close], [20, 2], (err, results) => {
-            const result = [];
-
-            for (let i = 0; i < results[0].length; i++) {
-              result.push({
-                lower: results[0][i],
-                middle: results[1][i],
-                upper: results[2][i]
-              });
-            }
-
-            resolve({ bollinger_bands: result });
-          });
-        }),
-        new Promise(resolve => {
-          const results = [];
-
-          for (let i = 0; i < marketData.close.length; i++) {
-            const top = marketData.high[i] - Math.max(marketData.close[i], marketData.open[i]);
-            const bottom = marketData.low[i] - Math.min(marketData.close[i], marketData.open[i]);
-
-            results.push({
-              top: Math.abs(percent.calc(top, marketData.high[i] - marketData.low[i], 2)),
-              body: Math.abs(
-                percent.calc(marketData.close[i] - marketData.open[i], marketData.high[i] - marketData.low[i], 2)
-              ),
-              bottom: Math.abs(percent.calc(bottom, marketData.high[i] - marketData.low[i], 2))
-            });
-          }
-
-          resolve({ wicked: results.reverse() });
-        }),
-        new Promise(resolve => {
-          const { StochasticRSI } = require('technicalindicators');
-
-          const f = new StochasticRSI({
-            values: marketData.close,
-            rsiPeriod: 14,
-            stochasticPeriod: 14,
-            kPeriod: 3,
-            dPeriod: 3
-          });
-
-          resolve({ stoch_rsi: f.getResult() });
-        })
-      ];
-
-      Promise.all(calculations).then(values => {
-        const results = {};
-
-        values.forEach(value => {
-          for (const key in value) {
-            results[key] = value[key];
-          }
-        });
-
-        resolve(results);
-      });
+      const indicators = new IndicatorBuilder();
+      indicators.add('sma_200', 'sma', undefined, { length: 200 });
+      indicators.add('sma_50', 'sma', undefined, { length: 50 });
+      indicators.add('ema_55', 'ema', undefined, { length: 55 });
+      indicators.add('ema_200', 'ema', undefined, { length: 200 });
+      indicators.add('rsi', 'rsi', undefined, { length: 14 });
+      indicators.add('cci', 'cci', undefined, { length: 20 });
+      indicators.add('ao', 'ao'),
+      indicators.add('macd', 'macd', undefined, { fast_length: 12, slow_length: 26, signal_length: 9 });
+      indicators.add('mfi', 'mfi', undefined, { length: 14 });
+      indicators.add('bollinger_bands', 'bb', undefined, { length: 20, stddev: 2 });
+      indicators.add('stoch_rsi', 'stoch_rsi', undefined, { rsi_length: 14, stoch_length: 14, k: 3, d: 3 });
+      indicators.add('wicked', 'wicked');
+      
+      const results = this.createIndicatorsLookback(lookbacks, indicators.all());
+      resolve(results);
     });
   },
 
-  calculateIndicatorsLookback: function(indicators, results) {
+  /**
+   *  Function called from createIndicatorsLookback, several times.
+   *  Calculates only "Ready" indicators, with calculated source data
+   */
+  calculateReadyIndicators: function(indicators, results) {
     const { sourceCandle } = Indicators;
     return indicators
       .map(indicator => (
@@ -232,7 +116,7 @@ module.exports = {
 
     let calculations = { candles: lookbacks.slice(-1000) };
     for (let depth = 0; depth < 5; depth += 1) {
-      const values = await Promise.all(this.calculateIndicatorsLookback(indicators, calculations));
+      const values = await Promise.all(this.calculateReadyIndicators(indicators, calculations));
       calculations = Object.assign(calculations, ...values);
     }
 
@@ -254,26 +138,15 @@ module.exports = {
 
   getCrossedSince: function(lookbacks) {
     const values = lookbacks.slice().reverse(lookbacks);
-
     const currentValue = values[0];
 
-    if (currentValue < 0) {
-      for (let i = 1; i < values.length - 1; i++) {
-        if (values[i] > 0) {
-          return i;
-        }
-      }
-
-      return;
-    }
-
     for (let i = 1; i < values.length - 1; i++) {
-      if (values[i] < 0) {
+      if (currentValue < 0 && values[i] > 0 || currentValue >= 0 && values[i] < 0) {
         return i;
       }
     }
 
-    return undefined;
+    return;
   },
 
   /**
