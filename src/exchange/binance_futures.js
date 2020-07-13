@@ -250,7 +250,7 @@ module.exports = class BinanceFutures {
   accountUpdate(message) {
     if (message.a && message.a.P) {
       message.a.P.forEach(position => {
-        if (!position.s) {
+        if (!position.s || !position.ps || position.ps.toLowerCase() !== 'both') {
           return;
         }
 
