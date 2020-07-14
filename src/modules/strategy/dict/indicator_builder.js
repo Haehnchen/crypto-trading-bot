@@ -3,22 +3,17 @@ module.exports = class IndicatorBuilder {
     this.indicators = {};
   }
 
-  add(key, indicator, period, options) {
+  add(key, indicator, period, options = {}, source) {
     this.indicators[key] = {
       indicator: indicator,
       key: key,
       period: period,
-      options: options || {}
+      source: source,
+      options: options
     };
   }
 
   all() {
-    const indicators = [];
-
-    for (const key in this.indicators) {
-      indicators.push(this.indicators[key]);
-    }
-
-    return indicators;
+    return Object.keys(this.indicators).map(key => this.indicators[key]);
   }
 };

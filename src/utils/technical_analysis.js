@@ -1,6 +1,6 @@
 const tulind = require('tulind');
 const percent = require('percent');
-const CustomIndicators = require('./indicators');
+const Indicators = require('./indicators');
 
 module.exports = {
   /**
@@ -41,20 +41,21 @@ module.exports = {
   },
 
   /**
+   * 
+   * @param {*} canles 
+   * @param {*} lenght 
+   */
+  candles2MarketData: function(candles, length = 1000, keys = ['open', 'close', 'high', 'low', 'volume']) {
+    return keys.reduce((acc, k) => ({ ...acc, [k]: candles.slice(-length).map(c => c[k]) }), {});
+  },
+
+  /**
    * @param lookbacks oldest first
    * @returns {Promise<any>}
    */
   getIndicatorsLookbacks: function(lookbacks) {
     return new Promise(resolve => {
-      const marketData = { open: [], close: [], high: [], low: [], volume: [] };
-
-      lookbacks.slice(-1000).forEach(function(lookback) {
-        marketData.open.push(lookback.open);
-        marketData.high.push(lookback.high);
-        marketData.low.push(lookback.low);
-        marketData.close.push(lookback.close);
-        marketData.volume.push(lookback.volume);
-      });
+      const marketData = this.candles2MarketData(lookbacks);
 
       const calculations = [
         new Promise(resolve => {
@@ -194,612 +195,48 @@ module.exports = {
     });
   },
 
+  calculateIndicatorsLookback: function(indicators, results) {
+    const { sourceCandle } = Indicators;
+    return indicators
+      .map(indicator => (
+        { ...indicator, source: indicator.source || (sourceCandle.includes(indicator.indicator) ? 'candles' : 'close') })) // figure out indicator source    
+      .filter(({ key }) => !(key in results)) // skip already calculated indicators
+      .filter(({ source }) => source in results.candles[0] || source in results) // skip without source data
+      .map(indicator => {
+
+        const { indicator: indicatorName, source } = indicator;
+        
+        // Extract source from candle if it's candle data
+        const sourceData = source in results.candles[0] ? results.candles.map(v => v[source]) : results[source];
+
+        if (typeof indicatorName === 'function') {
+          return indicatorName(sourceData, indicator);
+        }
+        if (typeof indicatorName === 'string' && typeof Indicators[indicatorName] === 'function') {
+          return Indicators[indicatorName](sourceData, indicator);
+        }
+        throw Error(`Call to undefined indicator: ${JSON.stringify(indicator)}`);
+      });
+  },
+
   /**
    * @param indicators
    * @param lookbacks oldest first
    * @returns {Promise<any>}
    */
-  createIndicatorsLookback: function(lookbacks, indicators) {
-    return new Promise(resolve => {
-      const marketData = { open: [], close: [], high: [], low: [], volume: [] };
-
-      if (lookbacks.length > 1 && lookbacks[0].time > lookbacks[1].time) {
-        throw 'Invalid candlestick order';
-      }
-
-      lookbacks.slice(-1000).forEach(lookback => {
-        marketData.open.push(lookback.open);
-        marketData.high.push(lookback.high);
-        marketData.low.push(lookback.low);
-        marketData.close.push(lookback.close);
-        marketData.volume.push(lookback.volume);
-      });
-
-      const calculations = [];
-
-      indicators.forEach(indicator => {
-        const indicatorKey = indicator.key;
-        const options = indicator.options || {};
-
-        const indicatorName = indicator.indicator;
-
-        if (indicatorName === 'sma' || indicatorName === 'ema') {
-          const { length } = options;
-
-          if (!length) {
-            throw `Invalid length for indicator: ${JSON.stringify([indicator, options])}`;
-          }
-
-          calculations.push(
-            new Promise(resolve => {
-              tulind.indicators[indicatorName].indicator([marketData.close], [length], (err, results) => {
-                const values = {};
-                values[indicatorKey] = results[0];
-
-                resolve(values);
-              });
-            })
-          );
-        } else if (indicatorName === 'candles') {
-          calculations.push(
-            new Promise(resolve => {
-              const values = {};
-              values[indicatorKey] = lookbacks.slice();
-
-              resolve(values);
-            })
-          );
-        } else if (indicatorName === 'cci') {
-          let { length } = options;
-
-          // default value
-          if (!length) {
-            length = 20;
-          }
-
-          calculations.push(
-            new Promise(resolve => {
-              tulind.indicators.cci.indicator(
-                [marketData.high, marketData.low, marketData.close],
-                [length],
-                (err, results) => {
-                  const values = {};
-                  values[indicatorKey] = results[0];
-
-                  resolve(values);
-                }
-              );
-            })
-          );
-        } else if (indicatorName === 'macd') {
-          calculations.push(
-            new Promise(resolve => {
-              const fastLength = options.fast_length || 12;
-              const slowLength = options.slow_length || 26;
-              const signalLength = options.signal_length || 9;
-
-              tulind.indicators.macd.indicator(
-                [marketData.close],
-                [fastLength, slowLength, signalLength],
-                (err, results) => {
-                  const result = [];
-
-                  for (let i = 0; i < results[0].length; i++) {
-                    result.push({
-                      macd: results[0][i],
-                      signal: results[1][i],
-                      histogram: results[2][i]
-                    });
-                  }
-
-                  const values = {};
-                  values[indicatorKey] = result;
-
-                  resolve(values);
-                }
-              );
-            })
-          );
-        } else if (indicatorName === 'macd_ext') {
-          calculations.push(
-            new Promise(resolve => {
-              const talib = require('talib');
-
-              /**
-               * Extract int from string input eg (SMA = 0)
-               *
-               * @see https://github.com/oransel/node-talib
-               * @see https://github.com/markcheno/go-talib/blob/master/talib.go#L20
-               */
-              const getMaTypeFromString = function(maType) {
-                // no constant in lib?
-
-                switch (maType.toUpperCase()) {
-                  case 'SMA':
-                    return 0;
-                  case 'EMA':
-                    return 1;
-                  case 'WMA':
-                    return 2;
-                  case 'DEMA':
-                    return 3;
-                  case 'TEMA':
-                    return 4;
-                  case 'TRIMA':
-                    return 5;
-                  case 'KAMA':
-                    return 6;
-                  case 'MAMA':
-                    return 7;
-                  case 'T3':
-                    return 8;
-                  default:
-                    return 1;
-                }
-              };
-
-              const types = {
-                fast_ma_type: options.default_ma_type || 'EMA',
-                slow_ma_type: options.default_ma_type || 'EMA',
-                signal_ma_type: options.default_ma_type || 'EMA'
-              };
-
-              if (options.fast_ma_type) {
-                types.fast_ma_type = options.fast_ma_type;
-              }
-
-              if (options.slow_ma_type) {
-                types.slow_ma_type = options.slow_ma_type;
-              }
-
-              if (options.signal_ma_type) {
-                types.signal_ma_type = options.signal_ma_type;
-              }
-
-              talib.execute(
-                {
-                  name: 'MACDEXT',
-                  startIdx: 0,
-                  endIdx: marketData.close.length - 1,
-                  inReal: marketData.close.slice(),
-                  optInFastPeriod: options.fast_period || 12,
-                  optInSlowPeriod: options.slow_period || 26,
-                  optInSignalPeriod: options.signal_period || 9,
-                  optInFastMAType: getMaTypeFromString(types.fast_ma_type),
-                  optInSlowMAType: getMaTypeFromString(types.slow_ma_type),
-                  optInSignalMAType: getMaTypeFromString(types.signal_ma_type)
-                },
-                function(err, result) {
-                  if (err) {
-                    const values = {};
-                    values[indicatorKey] = [];
-
-                    resolve(values);
-                    return;
-                  }
-                  // Result format: (note: outReal  can have multiple items in the array)
-                  // {
-                  //   begIndex: 8,
-                  //   nbElement: 1,
-                  //   result: { outReal: [ 1820.8621111111108 ] }
-                  // }
-                  const resultHistory = [];
-                  for (let i = 0; i < result.nbElement; i++) {
-                    resultHistory.push({
-                      macd: result.result.outMACD[i],
-                      histogram: result.result.outMACDHist[i],
-                      signal: result.result.outMACDSignal[i]
-                    });
-                  }
-
-                  const values = {};
-                  values[indicatorKey] = resultHistory;
-
-                  resolve(values);
-                }
-              );
-            })
-          );
-        } else if (indicatorName === 'obv') {
-          calculations.push(
-            new Promise(resolve => {
-              tulind.indicators.obv.indicator([marketData.close, marketData.volume], [], (err, results) => {
-                const values = {};
-                values[indicatorKey] = results[0];
-
-                resolve(values);
-              });
-            })
-          );
-        } else if (indicatorName === 'ao') {
-          calculations.push(
-            new Promise(resolve => {
-              tulind.indicators.ao.indicator([marketData.high, marketData.low], [], (err, results) => {
-                const values = {};
-                values[indicatorKey] = results[0];
-
-                resolve(values);
-              });
-            })
-          );
-        } else if (indicatorName === 'mfi') {
-          calculations.push(
-            new Promise(resolve => {
-              const length = options.length || 14;
-
-              tulind.indicators.mfi.indicator(
-                [marketData.high, marketData.low, marketData.close, marketData.volume],
-                [14],
-                (err, results) => {
-                  const values = {};
-                  values[indicatorKey] = results[0];
-
-                  resolve(values);
-                }
-              );
-            })
-          );
-        } else if (indicatorName === 'rsi') {
-          calculations.push(
-            new Promise(resolve => {
-              const length = options.length || 14;
-
-              tulind.indicators.rsi.indicator([marketData.close], [length], (err, results) => {
-                const values = {};
-                values[indicatorKey] = results[0];
-
-                resolve(values);
-              });
-            })
-          );
-        } else if (indicatorName === 'bb') {
-          const length = options.length || 20;
-          const stddev = options.stddev || 2;
-
-          calculations.push(
-            new Promise(resolve => {
-              tulind.indicators.bbands.indicator([marketData.close], [length, stddev], (err, results) => {
-                const result = [];
-
-                for (let i = 0; i < results[0].length; i++) {
-                  result.push({
-                    lower: results[0][i],
-                    middle: results[1][i],
-                    upper: results[2][i],
-                    width: (results[2][i] - results[0][i]) / results[1][i] // https://www.tradingview.com/wiki/Bollinger_Bands_Width_(BBW)
-                  });
-                }
-
-                const values = {};
-                values[indicatorKey] = result;
-
-                resolve(values);
-              });
-            })
-          );
-        } else if (indicatorName === 'stoch') {
-          calculations.push(
-            new Promise(resolve => {
-              const length = options.length || 14;
-              const k = options.k || 3;
-              const d = options.d || 3;
-
-              tulind.indicators.stoch.indicator(
-                [marketData.high, marketData.low, marketData.close],
-                [length, k, d],
-                (err, results) => {
-                  const result = [];
-
-                  for (let i = 0; i < results[0].length; i++) {
-                    result.push({
-                      stoch_k: results[0][i],
-                      stoch_d: results[1][i]
-                    });
-                  }
-
-                  const values = {};
-                  values[indicatorKey] = result;
-
-                  resolve(values);
-                }
-              );
-            })
-          );
-        } else if (indicatorName === 'bb_talib') {
-          const talib = require('talib');
-
-          const length = options.length || 20;
-          const stddev = options.stddev || 2;
-
-          calculations.push(
-            new Promise(resolve => {
-              talib.execute(
-                {
-                  name: 'BBANDS',
-                  startIdx: 0,
-                  endIdx: marketData.close.length - 1,
-                  inReal: marketData.close.slice(),
-                  optInTimePeriod: length,
-                  optInNbDevUp: stddev,
-                  optInNbDevDn: stddev,
-                  optInMAType: 0 // simple moving average here
-                },
-                function(err, result) {
-                  if (err) {
-                    const values = {};
-                    values[indicatorKey] = [];
-
-                    resolve(values);
-                    return;
-                  }
-
-                  const resultHistory = [];
-                  for (let i = 0; i < result.nbElement; i++) {
-                    resultHistory.push({
-                      upper: result.result.outRealUpperBand[i],
-                      middle: result.result.outRealMiddleBand[i],
-                      lower: result.result.outRealLowerBand[i],
-                      width:
-                        (result.result.outRealUpperBand[i] - result.result.outRealLowerBand[i]) /
-                        result.result.outRealMiddleBand[i] // https://www.tradingview.com/wiki/Bollinger_Bands_Width_(BBW)
-                    });
-                  }
-
-                  const values = {};
-                  values[indicatorKey] = resultHistory;
-
-                  resolve(values);
-                }
-              );
-            })
-          );
-        } else if (indicatorName === 'stoch_rsi') {
-          calculations.push(
-            new Promise(resolve => {
-              const rsiLength = options.rsi_length || 14;
-              const stochLength = options.stoch_length || 14;
-              const k = options.k || 3;
-              const d = options.d || 3;
-
-              // only "technicalindicators" working fluently here
-              const { StochasticRSI } = require('technicalindicators');
-
-              const f = new StochasticRSI({
-                values: marketData.close,
-                rsiPeriod: rsiLength,
-                stochasticPeriod: stochLength,
-                kPeriod: k,
-                dPeriod: d
-              });
-
-              const result = [];
-
-              const results = f.getResult();
-
-              for (let i = 0; i < results.length; i++) {
-                result.push({
-                  stoch_k: results[i].k,
-                  stoch_d: results[i].d
-                });
-              }
-
-              resolve({
-                [indicatorKey]: result
-              });
-            })
-          );
-        } else if (indicatorName === 'pivot_points_high_low') {
-          const left = options.left || 5;
-          const right = options.right || 5;
-
-          calculations.push(
-            new Promise(resolve => {
-              const result = [];
-
-              for (let i = 0; i < lookbacks.length; i++) {
-                const start = i - left - right;
-                if (start < 0) {
-                  result.push({});
-                  continue;
-                }
-
-                result.push(this.getPivotPointsWithWicks(lookbacks.slice(start, i + 1), left, right));
-              }
-
-              result[indicatorKey] = result;
-
-              resolve(result);
-            })
-          );
-        } else if (indicatorName === 'hma') {
-          const length = options.length || 9;
-
-          calculations.push(
-            new Promise(resolve => {
-              tulind.indicators.hma.indicator([marketData.close], [length], function(err, results) {
-                resolve({
-                  [indicatorKey]: results[0]
-                });
-              });
-            })
-          );
-        } else if (indicatorName === 'vwma') {
-          const length = options.length || 20;
-
-          calculations.push(
-            new Promise(resolve => {
-              tulind.indicators.vwma.indicator([marketData.close, marketData.volume], [length], function(err, results) {
-                resolve({
-                  [indicatorKey]: results[0]
-                });
-              });
-            })
-          );
-        } else if (indicatorName === 'atr') {
-          const length = options.length || 14;
-
-          calculations.push(
-            new Promise(resolve => {
-              tulind.indicators.atr.indicator([marketData.high, marketData.low, marketData.close], [length], function(
-                err,
-                results
-              ) {
-                resolve({
-                  [indicatorKey]: results[0]
-                });
-              });
-            })
-          );
-        } else if (indicatorName === 'roc') {
-          const length = options.length || 6;
-
-          calculations.push(
-            new Promise(resolve => {
-              tulind.indicators.roc.indicator([marketData.close], [length], function(err, results) {
-                resolve({
-                  [indicatorKey]: results[0]
-                });
-              });
-            })
-          );
-        } else if (indicatorName === 'adx') {
-          const length = options.length || 14;
-          calculations.push(
-            new Promise(resolve => {
-              tulind.indicators.adx.indicator([marketData.high, marketData.low, marketData.close], [length], function(
-                err,
-                results
-              ) {
-                resolve({
-                  [indicatorKey]: results[0]
-                });
-              });
-            })
-          );
-        } else if (indicatorName === 'volume_profile') {
-          calculations.push(
-            new Promise(resolve => {
-              const length = options.length || 200;
-              const bars = options.ranges || 14;
-
-              const { VolumeProfile } = require('technicalindicators');
-
-              const f = new VolumeProfile({
-                high: marketData.high.slice(-length),
-                open: marketData.open.slice(-length),
-                low: marketData.low.slice(-length),
-                close: marketData.close.slice(-length),
-                volume: marketData.volume.slice(-length),
-                noOfBars: bars
-              });
-
-              const results = f.getResult();
-
-              resolve({
-                [indicatorKey]: results
-              });
-            })
-          );
-        } else if (indicatorName === 'volume_by_price') {
-          // https://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:volume_by_price
-          const length = options.length || 200;
-          const ranges = options.ranges || 12;
-
-          calculations.push(
-            new Promise(resolve => {
-              const lookbackRange = lookbacks.slice(-length);
-
-              const minMax = lookbackRange.reduce(
-                (accumulator, currentValue) => {
-                  return [Math.min(currentValue.close, accumulator[0]), Math.max(currentValue.close, accumulator[1])];
-                },
-                [Number.MAX_VALUE, Number.MIN_VALUE]
-              );
-
-              const rangeSize = (minMax[1] - minMax[0]) / ranges;
-              const rangeBlocks = [];
-
-              let current = minMax[0];
-              for (let i = 0; i < ranges; i++) {
-                // summarize volume per range
-                const map = lookbackRange
-                  .filter(c => c.close >= current && c.close < current + rangeSize)
-                  .map(c => c.volume);
-
-                // prevent float / rounding issues on first and last item
-                rangeBlocks.push({
-                  low: i === 0 ? current * 0.9999 : current,
-                  high: i === ranges - 1 ? minMax[1] * 1.0001 : current + rangeSize,
-                  volume: map.length > 0 ? map.reduce((x, y) => x + y) : 0
-                });
-
-                current += rangeSize;
-              }
-
-              resolve({
-                [indicatorKey]: [rangeBlocks.reverse()] // sort by price; low to high
-              });
-            })
-          );
-        } else if (indicatorName === 'zigzag') {
-          const deviation = options.deviation || 5;
-          const length = options.length || 1000;
-
-          calculations.push(
-            new Promise(resolve => {
-              const result = CustomIndicators.zigzag(lookbacks.slice(-length), deviation);
-
-              // we only what to have turningPoints; non turningPoints should be empty lookback
-              const turningPoints = result.map(r => {
-                return r && r.turningPoint === true ? r : {};
-              });
-
-              resolve({
-                [indicatorKey]: turningPoints
-              });
-            })
-          );
-        } else if (indicatorName === 'ichimoku_cloud') {
-          calculations.push(
-            new Promise(resolveIndicator => {
-              const conversionPeriod = options.conversionPeriod || 9;
-              const basePeriod = options.basePeriod || 26;
-              const spanPeriod = options.spanPeriod || 52;
-              const displacement = options.displacement || 26;
-
-              const { IchimokuCloud } = require('technicalindicators');
-
-              const f = new IchimokuCloud({
-                high: marketData.high.slice(),
-                low: marketData.low.slice(),
-                conversionPeriod: conversionPeriod,
-                basePeriod: basePeriod,
-                spanPeriod: spanPeriod,
-                displacement: displacement
-              });
-
-              const results = f.getResult();
-
-              resolveIndicator({
-                [indicatorKey]: results
-              });
-            })
-          );
-        }
-      });
-
-      Promise.all(calculations).then(values => {
-        const results = {};
-
-        values.forEach(value => {
-          for (const key in value) {
-            results[key] = value[key];
-          }
-        });
-
-        resolve(results);
-      });
-    });
+  createIndicatorsLookback: async function(lookbacks, indicators) {
+    // return new Promise(resolve => {
+    if (lookbacks.length > 1 && lookbacks[0].time > lookbacks[1].time) {
+      throw Error(`'Invalid candlestick order`);
+    }
+
+    let calculations = { candles: lookbacks.slice(-1000) };
+    for (let depth = 0; depth < 5; depth += 1) {
+      const values = await Promise.all(this.calculateIndicatorsLookback(indicators, calculations));
+      calculations = Object.assign(calculations, ...values);
+    }
+
+    return calculations;
   },
 
   getTrendingDirection: function(lookbacks) {
@@ -845,7 +282,7 @@ module.exports = {
    * https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/pivot-points-high-low
    */
   getPivotPoints: function(prices, left, right) {
-    if (left + right + 1 > prices.length || left <= 1 || right <= 1) {
+    if (left + right + 1 > prices.length || left <= 1 || right < 0) {
       return {};
     }
 
@@ -885,7 +322,7 @@ module.exports = {
    * https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/pivot-points-high-low
    */
   getPivotPointsWithWicks: function(candles, left, right) {
-    if (left + right + 1 > candles.length || left <= 1 || right <= 1) {
+    if (left + right + 1 > candles.length || left <= 1 || right < 0) {
       return {};
     }
 
