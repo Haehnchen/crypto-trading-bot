@@ -62,6 +62,10 @@ module.exports = class StrategyManager {
     return (this.strategies = strategies);
   }
 
+  findStrategy(strategyName) {
+    return this.getStrategies().find(strategy => strategy.getName() === strategyName);
+  }
+
   async executeStrategy(strategyName, context, exchange, symbol, options) {
     const results = await this.getTaResult(strategyName, exchange, symbol, options, true);
     if (!results || Object.keys(results).length === 0) {
@@ -73,7 +77,7 @@ module.exports = class StrategyManager {
 
     const indicatorPeriod = new IndicatorPeriod(context, results);
 
-    const strategy = this.getStrategies().find(strategy => strategy.getName() === strategyName);
+    const strategy = this.findStrategy(strategyName);
 
     const strategyResult = await strategy.period(indicatorPeriod, options);
     if (typeof strategyResult !== 'undefined' && !(strategyResult instanceof SignalResult)) {
