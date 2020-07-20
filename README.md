@@ -245,6 +245,31 @@ Find some example strategies inside [modules/strategy/strategies](modules/strate
     ],
 ```
 
+### Tick Interval
+
+Per default every strategy is "ticked" every full minute with a ~10sec time window. If you want to tick every 15 minutes or less see possible examples below.
+
+Supported units are "m" (minute) and "s" (seconds)
+
+```json
+{
+   "strategies":[
+      {
+         "strategy":"cci",
+         "interval":"15m"
+      },
+      {
+         "strategy":"cci2",
+         "interval":"30s"
+      },
+      {
+         "strategy":"cci3",
+         "interval":"60m"
+      }
+   ]
+}
+```
+
 ## Trading
 
 ### Capital

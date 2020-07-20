@@ -127,4 +127,8 @@ module.exports = class {
       foreign_pair_period: '15m'
     };
   }
+
+  getTickPeriod() {
+    return '1m';
+  }
 };

@@ -74,9 +74,9 @@ module.exports = class Trade {
       console.log('Trade module: warmup done; starting ticks');
       this.logger.info('Trade module: warmup done; starting ticks');
 
-      setInterval(() => {
-        eventEmitter.emit('tick', {});
-      }, this.systemUtil.getConfig('tick.default', 20100));
+      setTimeout(async () => {
+        await me.tickListener.startStrategyIntervals();
+      }, 1000);
 
       // order create tick
       setInterval(() => {
