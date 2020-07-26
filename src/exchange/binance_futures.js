@@ -9,11 +9,12 @@ const Position = require('../dict/position');
 const CcxtExchangeOrder = require('./ccxt/ccxt_exchange_order');
 
 module.exports = class BinanceFutures {
-  constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter) {
+  constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter, throttler) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;
     this.candleImporter = candleImporter;
+    this.throttler = throttler;
     this.exchange = null;
 
     this.ccxtExchangeOrder = undefined;
@@ -47,17 +48,17 @@ module.exports = class BinanceFutures {
 
     if (config.key && config.secret && config.key.length > 0 && config.secret.length > 0) {
       setInterval(async () => {
-        await me.ccxtExchangeOrder.syncOrders();
+        me.throttler.addTask('binance_futures_sync_orders', me.ccxtExchangeOrder.syncOrders());
       }, 1000 * 30);
 
       setInterval(async () => {
-        await me.syncPositionViaRestApi();
+        me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi());
       }, 1000 * 36);
 
       setTimeout(async () => {
         await ccxtClient.fetchMarkets();
-        await me.ccxtExchangeOrder.syncOrders();
-        await me.syncPositionViaRestApi();
+        me.throttler.addTask('binance_futures_sync_orders', me.ccxtExchangeOrder.syncOrders());
+        me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi());
       }, 1000);
 
       setTimeout(async () => {
@@ -261,6 +262,8 @@ module.exports = class BinanceFutures {
           this.logger.info(
             `Binance Futures: Websocket position closed/removed: ${JSON.stringify([position.s, position])}`
           );
+
+          return;
         }
 
         // position open
@@ -272,6 +275,19 @@ module.exports = class BinanceFutures {
           this.positions[position.s] = BinanceFutures.createPositionFromWebsocket(position);
 
           this.logger.info(`Binance Futures: Websocket position new found: ${JSON.stringify([position.s, position])}`);
+
+          return;
+        }
+
+        // position update
+        if (position.s in this.positions) {
+          this.logger.info(
+            `Binance Futures: Websocket position update: ${JSON.stringify([
+              position.s,
+              position.pa,
+              this.positions[position.s].getAmount()
+            ])}`
+          );
         }
       }, this);
     }
@@ -432,12 +448,15 @@ module.exports = class BinanceFutures {
             }
           });
 
+          me.logger.info(`Binance Futures: ORDER_TRADE_UPDATE event: ${JSON.stringify([message.e, order])}`);
+          me.throttler.addTask('binance_futures_sync_orders', me.ccxtExchangeOrder.syncOrders(), 3000);
           me.ccxtExchangeOrder.triggerPlainOrder(order);
         }
 
         if (message.e && message.e.toUpperCase() === 'ACCOUNT_UPDATE') {
           me.accountUpdate(message);
-          await me.syncPositionViaRestApi();
+
+          me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi(), 3000);
         }
       }
     };
@@ -480,6 +499,8 @@ module.exports = class BinanceFutures {
             order.symbol = order.symbol.replace('/USDT', 'USDT');
           });
         }
+
+        logger.debug(`Binance Futures: orders synced "${orders.length}"`);
 
         return orders;
       }
