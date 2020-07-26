@@ -49,6 +49,7 @@ const TickerLogRepository = require('../modules/repository/ticker_log_repository
 const TickerRepository = require('../modules/repository/ticker_repository');
 const CandlestickResample = require('../modules/system/candlestick_resample');
 const RequestClient = require('../utils/request_client');
+const Throttler = require('../utils/throttler');
 const Queue = require('../utils/queue');
 
 const Bitmex = require('../exchange/bitmex');
@@ -116,6 +117,7 @@ let exchangePositionWatcher;
 let tickerRepository;
 let ordersHttp;
 let pairConfig;
+let throttler;
 
 const parameters = {};
 
@@ -573,6 +575,14 @@ module.exports = {
     ));
   },
 
+  getThrottler: function() {
+    if (throttler) {
+      return throttler;
+    }
+
+    return (throttler = new Throttler(this.getLogger()));
+  },
+
   getExchanges: function() {
     if (exchanges) {
       return exchanges;
@@ -626,7 +636,8 @@ module.exports = {
         this.getCandlestickResample(),
         this.getLogger(),
         this.getQueue(),
-        this.getCandleImporter()
+        this.getCandleImporter(),
+        this.getThrottler(),
       ),
       new BinanceMargin(this.getEventEmitter(), this.getLogger(), this.getQueue(), this.getCandleImporter()),
       new Noop()
