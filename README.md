@@ -336,6 +336,7 @@ Other bots with possible design pattern
  * https://github.com/Ekliptor/WolfBot
  * https://github.com/andresilvasantos/bitprophet
  * https://github.com/kavehs87/PHPTradingBot
+ * https://github.com/Superalgos/Superalgos
 
 ### Strategies
 
@@ -346,3 +347,6 @@ Some strategies based on technical indicators for collection some ideas
  * https://github.com/xFFFFF/Gekko-Strategies
  * https://github.com/sthewissen/Mynt/tree/master/src/Mynt.Core/Strategies
  * https://github.com/Ekliptor/WolfBot/tree/master/src/Strategies
+ * https://github.com/Superalgos/Strategy-BTC-WeakHandsBuster
+ * https://github.com/Superalgos/Strategy-BTC-BB-Top-Bounce
+ 
