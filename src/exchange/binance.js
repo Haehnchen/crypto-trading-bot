@@ -594,9 +594,21 @@ module.exports = class Binance {
             (a, b) => b.time - a.time
           )
           .map(order => {
+            let price = parseFloat(order.price);
+
+            // market order is not having price info, we need to calulcate it
+            if (price === 0 && order.type && order.type.toLowerCase() === 'market') {
+              const executedQty = parseFloat(order.executedQty);
+              const cummulativeQuoteQty = parseFloat(order.cummulativeQuoteQty);
+
+              if (cummulativeQuoteQty !== 0 && executedQty !== 0) {
+                price = cummulativeQuoteQty / executedQty;
+              }
+            }
+
             return {
               side: order.side.toLowerCase(),
-              price: parseFloat(order.price),
+              price: price,
               symbol: order.symbol,
               time: new Date(order.time),
               size: parseFloat(order.executedQty)
