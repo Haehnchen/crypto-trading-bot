@@ -68,8 +68,8 @@ module.exports = {
         content.symbols
           .filter(
             p =>
-              ['USDT', 'BUSD'].includes(p.quoteAsset) &&
-              !['USDC', 'PAX', 'USDS', 'TUSD'].includes(p.baseAsset) &&
+              ['USDT'].includes(p.quoteAsset) &&
+              !['USDC', 'PAX', 'USDS', 'TUSD', 'BUSD'].includes(p.baseAsset) &&
               p.status.toLowerCase() === 'trading'
           )
           .forEach(pair => {
