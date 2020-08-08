@@ -562,7 +562,7 @@ module.exports = class Binance {
         .map(s => s.symbol);
 
       // we need position first and randomly add other
-      const positionSymbols = (await this.getPositions()).map(p => p.getSymbol());
+      const positionSymbols = _.shuffle((await this.getPositions()).map(p => p.getSymbol()));
       const unknown = _.shuffle(allSymbols).filter(s => !positionSymbols.includes(s));
 
       positionSymbols.push(...unknown);
@@ -624,7 +624,7 @@ module.exports = class Binance {
 
     // add to queue
     promises.forEach(p => {
-      this.queue.addLight(async () => {
+      this.queue.addQueue3(async () => {
         const result = await p();
         if (result) {
           this.trades[result.symbol] = result.orders;

@@ -44,7 +44,7 @@ describe('#binance_margin exchange implementation', function() {
       undefined,
       { debug: () => {} },
       {
-        addLight: async p => {
+        addQueue2: async p => {
           await p();
         }
       }

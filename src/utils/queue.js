@@ -10,7 +10,13 @@ module.exports = class {
 
     this.queue2 = new Queue({
       concurrent: 5,
-      interval: 1220,
+      interval: 1120,
+      start: true
+    });
+
+    this.queue3 = new Queue({
+      concurrent: 5,
+      interval: 1180,
       start: true
     });
   }
@@ -19,7 +25,11 @@ module.exports = class {
     return this.queue.enqueue(promise);
   }
 
-  addLight(promise) {
+  addQueue2(promise) {
     return this.queue2.enqueue(promise);
+  }
+
+  addQueue3(promise) {
+    return this.queue3.enqueue(promise);
   }
 };
