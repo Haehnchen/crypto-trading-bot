@@ -9,13 +9,13 @@ module.exports = class {
     });
 
     this.queue2 = new Queue({
-      concurrent: 5,
+      concurrent: 2,
       interval: 1120,
       start: true
     });
 
     this.queue3 = new Queue({
-      concurrent: 5,
+      concurrent: 2,
       interval: 1180,
       start: true
     });
