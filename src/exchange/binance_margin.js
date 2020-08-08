@@ -477,7 +477,7 @@ module.exports = class BinanceMargin {
             limit: 10
           });
         } catch (e) {
-          this.logger.error(`Binance Margin: Sync trades error for entries: ${symbol} - ${String(e)}`);
+          this.logger.info(`Binance Margin: Sync trades error for entries: ${symbol} - ${String(e)}`);
           return undefined;
         }
 

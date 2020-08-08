@@ -571,7 +571,7 @@ module.exports = class Binance {
             limit: 10
           });
         } catch (e) {
-          this.logger.error(`Binance: Sync trades error for entries: ${symbol} - ${String(e)}`);
+          this.logger.info(`Binance: Sync trades error for entries: ${symbol} - ${String(e)}`);
           return undefined;
         }
 
