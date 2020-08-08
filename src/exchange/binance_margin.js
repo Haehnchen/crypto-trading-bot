@@ -400,7 +400,11 @@ module.exports = class BinanceMargin {
       this.throttler.addTask('binance_margin_sync_orders', this.syncOrders());
 
       // set last order price to our trades. so we have directly profit and entry prices
-      await this.syncTradesForEntries([event.symbol]);
+      this.throttler.addTask(
+        `binance_margin_sync_trades_for_entries_${event.symbol}`,
+        this.syncTradesForEntries([event.symbol]),
+        300
+      );
     }
 
     // get balances and same them internally; allows to take open positions
