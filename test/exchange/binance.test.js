@@ -236,7 +236,7 @@ describe('#binance exchange implementation', function() {
   });
 
   it('test that positions are open based on balances', async () => {
-    const binance = new Binance(undefined, { debug: () => {} });
+    const binance = new Binance(undefined, { debug: () => {}, error: () => {} });
 
     binance.symbols = [
       {
@@ -296,7 +296,7 @@ describe('#binance exchange implementation', function() {
             {
               asset: 'XRP',
               free: '3000',
-              locked: '0.00000000',
+              locked: '0.00000000'
             }
           ]
         };

@@ -3,6 +3,7 @@
 const BinanceClient = require('binance-api-node').default;
 
 const moment = require('moment');
+const _ = require('lodash');
 const Binance = require('./binance');
 const ExchangeCandlestick = require('../dict/exchange_candlestick');
 const Ticker = require('../dict/ticker');
@@ -57,7 +58,7 @@ module.exports = class BinanceMargin {
           me.syncBalances();
           return f;
         })(),
-        60 * 60 * 1 * 1000
+        5 * 60 * 1198
       );
 
       setInterval(
@@ -65,7 +66,7 @@ module.exports = class BinanceMargin {
           me.syncTradesForEntries();
           return f;
         })(),
-        60 * 60 * 1 * 1000
+        5 * 60 * 1098
       );
 
       setInterval(
@@ -73,7 +74,7 @@ module.exports = class BinanceMargin {
           me.syncOrders();
           return f;
         })(),
-        1000 * 30
+        30 * 1232
       );
 
       // since pairs
@@ -82,7 +83,7 @@ module.exports = class BinanceMargin {
           me.syncPairInfo();
           return f;
         })(),
-        60 * 60 * 15 * 1000
+        60 * 60 * 1051
       );
     } else {
       this.logger.info('Binance Margin: Starting as anonymous; no trading possible');
@@ -457,19 +458,27 @@ module.exports = class BinanceMargin {
   async syncTradesForEntries(symbols = []) {
     // fetch all based on our allowed symbol capital
     if (symbols.length === 0) {
-      symbols = this.symbols
+      const allSymbols = this.symbols
         .filter(
           s =>
             s.trade &&
             ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0))
         )
         .map(s => s.symbol);
+
+      // we need position first and randomly add other
+      const positionSymbols = (await this.getPositions()).map(p => p.getSymbol());
+      const unknown = _.shuffle(allSymbols).filter(s => !positionSymbols.includes(s));
+
+      positionSymbols.push(...unknown);
+
+      symbols = positionSymbols;
     }
 
-    this.logger.debug(`Binance Margin: Sync trades for entries: ${symbols.length}`);
+    this.logger.debug(`Binance Margin: Sync trades for entries: ${symbols.length} - ${JSON.stringify(symbols)}`);
 
     const promises = symbols.map(symbol => {
-      return new Promise(async resolve => {
+      return async () => {
         let symbolOrders;
 
         try {
@@ -478,8 +487,8 @@ module.exports = class BinanceMargin {
             limit: 10
           });
         } catch (e) {
-          this.logger.error(`Binance Margin: Sync trades error for entries: ${String(e)}`);
-          return resolve(undefined);
+          this.logger.error(`Binance Margin: Sync trades error for entries: ${symbol} - ${String(e)}`);
+          return undefined;
         }
 
         const orders = symbolOrders
@@ -504,14 +513,28 @@ module.exports = class BinanceMargin {
             };
           });
 
-        return resolve({ symbol: symbol, orders: orders });
-      });
+        return { symbol: symbol, orders: orders };
+      };
     });
 
-    (await Promise.all(promises)).forEach(o => {
-      if (o) {
-        this.trades[o.symbol] = o.orders;
+    // no queue for trigger; its timing relevant
+    if (promises.length === 1) {
+      const result = await promises[0]();
+      if (result) {
+        this.trades[result.symbol] = result.orders;
       }
+
+      return;
+    }
+
+    // add to queue
+    promises.forEach(p => {
+      this.queue.addLight(async () => {
+        const result = await p();
+        if (result) {
+          this.trades[result.symbol] = result.orders;
+        }
+      });
     });
   }
 

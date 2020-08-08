@@ -498,9 +498,9 @@ module.exports = class BinanceFutures {
           orders.forEach(order => {
             order.symbol = order.symbol.replace('/USDT', 'USDT');
           });
-        }
 
-        logger.debug(`Binance Futures: orders synced "${orders.length}"`);
+          logger.debug(`Binance Futures: orders synced "${orders.length}"`);
+        }
 
         return orders;
       }

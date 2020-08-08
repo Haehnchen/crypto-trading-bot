@@ -40,7 +40,15 @@ describe('#binance_margin exchange implementation', function() {
   });
 
   it('test that positions are open based on websocket balances', async () => {
-    const binance = new BinanceMargin(undefined, { debug: () => {} });
+    const binance = new BinanceMargin(
+      undefined,
+      { debug: () => {} },
+      {
+        addLight: async p => {
+          await p();
+        }
+      }
+    );
 
     binance.symbols = [
       {
