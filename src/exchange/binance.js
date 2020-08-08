@@ -53,7 +53,13 @@ module.exports = class Binance {
         await me.syncPairInfo();
         await me.syncBalances();
         await me.syncOrders();
-        await me.syncTradesForEntries();
+
+        // positions needs a ticker price; which needs a websocket event
+        setTimeout(async () => {
+          const initSymbols = (await me.getPositions()).map(p => p.getSymbol());
+          me.logger.info(`Binance: init trades for positions: ${JSON.stringify(initSymbols)}`);
+          await me.syncTradesForEntries(initSymbols);
+        }, 12312);
       }, 1823);
 
       setInterval(async () => {
@@ -566,7 +572,7 @@ module.exports = class Binance {
         let symbolOrders;
 
         try {
-          symbolOrders = await this.client.marginAllOrders({
+          symbolOrders = await this.client.allOrders({
             symbol: symbol,
             limit: 10
           });

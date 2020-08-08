@@ -57,7 +57,13 @@ module.exports = class BinanceMargin {
         await me.syncPairInfo();
         await me.syncBalances();
         await me.syncOrders();
-        await me.syncTradesForEntries();
+
+        // positions needs a ticker price; which needs a websocket event
+        setTimeout(async () => {
+          const initSymbols = (await me.getPositions()).map(p => p.getSymbol());
+          me.logger.info(`Binance Margin: init trades for positions: ${JSON.stringify(initSymbols)}`);
+          await me.syncTradesForEntries(initSymbols);
+        }, 13312);
       }, 1523);
 
       setInterval(async () => {
