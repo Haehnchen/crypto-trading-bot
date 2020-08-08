@@ -22,7 +22,6 @@ module.exports = class Binance {
     this.client = undefined;
     this.exchangePairs = {};
     this.symbols = [];
-    this.positions = [];
     this.trades = {};
     this.tickers = {};
     this.balances = [];
@@ -50,38 +49,28 @@ module.exports = class Binance {
 
       // we need balance init; websocket sending only on change
       // also sync by time
-      setInterval(
-        (function f() {
-          me.syncBalances();
-          return f;
-        })(),
-        5 * 60 * 1312
-      );
+      setTimeout(async () => {
+        await me.syncPairInfo();
+        await me.syncBalances();
+        await me.syncOrders();
+        await me.syncTradesForEntries();
+      }, 1823);
 
-      setInterval(
-        (function f() {
-          me.syncTradesForEntries();
-          return f;
-        })(),
-        5 * 60 * 1391
-      );
+      setInterval(async () => {
+        await me.syncBalances();
+      }, 5 * 60 * 1312);
 
-      setInterval(
-        (function f() {
-          me.syncOrders();
-          return f;
-        })(),
-        30 * 1310
-      );
+      setInterval(async () => {
+        await me.syncTradesForEntries();
+      }, 16 * 60 * 1391);
 
-      // since pairs
-      setInterval(
-        (function f() {
-          me.syncPairInfo();
-          return f;
-        })(),
-        60 * 60 * 1532
-      );
+      setInterval(async () => {
+        await me.syncOrders();
+      }, 30 * 1310);
+
+      setInterval(async () => {
+        await me.syncPairInfo();
+      }, 30 * 60 * 1532);
     } else {
       this.logger.info('Binance: Starting as anonymous; no trading possible');
     }

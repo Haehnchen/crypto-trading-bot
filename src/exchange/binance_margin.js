@@ -53,38 +53,28 @@ module.exports = class BinanceMargin {
 
       // we need balance init; websocket sending only on change
       // also sync by time
-      setInterval(
-        (function f() {
-          me.syncBalances();
-          return f;
-        })(),
-        5 * 60 * 1198
-      );
+      setTimeout(async () => {
+        await me.syncPairInfo();
+        await me.syncBalances();
+        await me.syncOrders();
+        await me.syncTradesForEntries();
+      }, 1523);
 
-      setInterval(
-        (function f() {
-          me.syncTradesForEntries();
-          return f;
-        })(),
-        5 * 60 * 1098
-      );
+      setInterval(async () => {
+        await me.syncBalances();
+      }, 5 * 60 * 1198);
 
-      setInterval(
-        (function f() {
-          me.syncOrders();
-          return f;
-        })(),
-        30 * 1232
-      );
+      setInterval(async () => {
+        await me.syncTradesForEntries();
+      }, 15 * 60 * 1098);
 
-      // since pairs
-      setInterval(
-        (function f() {
-          me.syncPairInfo();
-          return f;
-        })(),
-        60 * 60 * 1051
-      );
+      setInterval(async () => {
+        await me.syncOrders();
+      }, 30 * 1232);
+
+      setInterval(async () => {
+        await me.syncPairInfo();
+      }, 30 * 60 * 1051);
     } else {
       this.logger.info('Binance Margin: Starting as anonymous; no trading possible');
     }
