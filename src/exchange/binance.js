@@ -13,11 +13,12 @@ const OrderBag = require('./utils/order_bag');
 const TradesUtil = require('./utils/trades_util');
 
 module.exports = class Binance {
-  constructor(eventEmitter, logger, queue, candleImport) {
+  constructor(eventEmitter, logger, queue, candleImport, throttler) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;
     this.candleImport = candleImport;
+    this.throttler = throttler;
 
     this.client = undefined;
     this.exchangePairs = {};
@@ -463,7 +464,7 @@ module.exports = class Binance {
       }
 
       // sync all open orders and get entry based fire them in parallel
-      await this.syncOrders();
+      this.throttler.addTask('binance_sync_orders', this.syncOrders());
 
       // set last order price to our trades. so we have directly profit and entry prices
       await this.syncTradesForEntries([event.symbol]);
@@ -479,7 +480,7 @@ module.exports = class Binance {
 
         if (parseFloat(balance.available) + parseFloat(balance.locked) > 0) {
           balances.push({
-            available: parseFloat(balance.available),
+            available: parseFloat(balance.available) + parseFloat(balance.locked),
             locked: parseFloat(balance.locked),
             asset: asset
           });
@@ -487,6 +488,8 @@ module.exports = class Binance {
       }
 
       this.balances = balances;
+
+      this.throttler.addTask('binance_sync_balances', this.syncBalances(), 5000);
     }
   }
 
@@ -532,7 +535,7 @@ module.exports = class Binance {
       .filter(b => parseFloat(b.free) + parseFloat(b.locked) > 0)
       .map(balance => {
         return {
-          available: parseFloat(balance.free),
+          available: parseFloat(balance.free) + parseFloat(balance.locked),
           locked: parseFloat(balance.locked),
           asset: balance.asset
         };

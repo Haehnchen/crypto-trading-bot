@@ -605,7 +605,13 @@ module.exports = {
         this.getQueue(),
         this.getCandleImporter()
       ),
-      new Binance(this.getEventEmitter(), this.getLogger(), this.getQueue(), this.getCandleImporter()),
+      new Binance(
+        this.getEventEmitter(),
+        this.getLogger(),
+        this.getQueue(),
+        this.getCandleImporter(),
+        this.getThrottler()
+      ),
       new CoinbasePro(
         this.getEventEmitter(),
         this.getLogger(),
@@ -639,7 +645,13 @@ module.exports = {
         this.getCandleImporter(),
         this.getThrottler(),
       ),
-      new BinanceMargin(this.getEventEmitter(), this.getLogger(), this.getQueue(), this.getCandleImporter()),
+      new BinanceMargin(
+        this.getEventEmitter(),
+        this.getLogger(),
+        this.getQueue(),
+        this.getCandleImporter(),
+        this.getThrottler()
+      ),
       new Noop()
     ]);
   },

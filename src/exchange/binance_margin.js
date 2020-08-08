@@ -16,11 +16,12 @@ const Order = require('../dict/order');
 const OrderBag = require('./utils/order_bag');
 
 module.exports = class BinanceMargin {
-  constructor(eventEmitter, logger, queue, candleImport) {
+  constructor(eventEmitter, logger, queue, candleImport, throttler) {
     this.eventEmitter = eventEmitter;
     this.candleImport = candleImport;
     this.logger = logger;
     this.queue = queue;
+    this.throttler = throttler;
 
     this.client = undefined;
     this.exchangePairs = {};
@@ -396,7 +397,7 @@ module.exports = class BinanceMargin {
       }
 
       // sync all open orders and get entry based fire them in parallel
-      await this.syncOrders();
+      this.throttler.addTask('binance_margin_sync_orders', this.syncOrders());
 
       // set last order price to our trades. so we have directly profit and entry prices
       await this.syncTradesForEntries([event.symbol]);
@@ -408,7 +409,7 @@ module.exports = class BinanceMargin {
       // we dont get the margin information here;
       // so we would only be able to calculate longs, so do a full sync on API
 
-      await this.syncBalances();
+      this.throttler.addTask('binance_margin_sync_balances', this.syncBalances());
     }
   }
 
