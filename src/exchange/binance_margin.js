@@ -4,9 +4,9 @@ const BinanceClient = require('binance-api-node').default;
 
 const moment = require('moment');
 const Binance = require('./binance');
-const ExchangeCandlestick = require('./../dict/exchange_candlestick');
-const Ticker = require('./../dict/ticker');
-const TickerEvent = require('./../event/ticker_event');
+const ExchangeCandlestick = require('../dict/exchange_candlestick');
+const Ticker = require('../dict/ticker');
+const TickerEvent = require('../event/ticker_event');
 const ExchangeOrder = require('../dict/exchange_order');
 const OrderUtil = require('../utils/order_util');
 const TradesUtil = require('./utils/trades_util');
@@ -85,7 +85,7 @@ module.exports = class BinanceMargin {
         60 * 60 * 15 * 1000
       );
     } else {
-      this.logger.info('Binance: Starting as anonymous; no trading possible');
+      this.logger.info('Binance Margin: Starting as anonymous; no trading possible');
     }
 
     const { eventEmitter } = this;
@@ -176,7 +176,7 @@ module.exports = class BinanceMargin {
     try {
       result = await this.client.marginOrder(payload);
     } catch (e) {
-      this.logger.error(`Binance: order create error: ${JSON.stringify([e.code, e.message, order, payload])}`);
+      this.logger.error(`Binance Margin: order create error: ${JSON.stringify([e.code, e.message, order, payload])}`);
 
       // -2010: insufficient balance
       // -XXXX: borrow amount has exceed
@@ -209,7 +209,7 @@ module.exports = class BinanceMargin {
         orderId: id
       });
     } catch (e) {
-      this.logger.error(`Binance: cancel order error: ${e}`);
+      this.logger.error(`Binance Margin: cancel order error: ${e}`);
       return undefined;
     }
 
@@ -386,7 +386,7 @@ module.exports = class BinanceMargin {
 
   async onWebSocketEvent(event) {
     if (event.eventType && event.eventType === 'executionReport' && ('orderStatus' in event || 'orderId' in event)) {
-      this.logger.debug(`Binance: Got executionReport order event: ${JSON.stringify(event)}`);
+      this.logger.debug(`Binance Margin: Got executionReport order event: ${JSON.stringify(event)}`);
 
       // clean orders with state is switching from open to close
       const orderStatus = event.orderStatus.toLowerCase();
@@ -416,14 +416,14 @@ module.exports = class BinanceMargin {
   }
 
   async syncOrders() {
-    this.logger.debug(`Binance: Sync orders`);
+    this.logger.debug(`Binance Margin: Sync orders`);
 
     // false equal to all symbols
     let openOrders = [];
     try {
       openOrders = await this.client.marginOpenOrders(false);
     } catch (e) {
-      this.logger.error(`Binance: error sync orders: ${String(e)}`);
+      this.logger.error(`Binance Margin: error sync orders: ${String(e)}`);
       return;
     }
 
@@ -435,7 +435,7 @@ module.exports = class BinanceMargin {
     try {
       accountInfo = await this.client.marginAccountInfo();
     } catch (e) {
-      this.logger.error(`Binance: error sync balances: ${String(e)}`);
+      this.logger.error(`Binance Margin: error sync balances: ${String(e)}`);
       return;
     }
 
@@ -443,7 +443,7 @@ module.exports = class BinanceMargin {
       return;
     }
 
-    this.logger.debug('Binance: Sync balances');
+    this.logger.debug('Binance Margin: Sync balances');
 
     this.balances = BinanceMargin.createMarginBalances(accountInfo.userAssets);
   }
@@ -466,7 +466,7 @@ module.exports = class BinanceMargin {
         .map(s => s.symbol);
     }
 
-    this.logger.debug(`Binance: Sync trades for entries: ${symbols.length}`);
+    this.logger.debug(`Binance Margin: Sync trades for entries: ${symbols.length}`);
 
     const promises = symbols.map(symbol => {
       return new Promise(async resolve => {
@@ -478,7 +478,7 @@ module.exports = class BinanceMargin {
             limit: 10
           });
         } catch (e) {
-          this.logger.error(`Binance: Error on symbol order fetch: ${String(e)}`);
+          this.logger.error(`Binance Margin: Sync trades error for entries: ${String(e)}`);
           return resolve(undefined);
         }
 
@@ -538,7 +538,7 @@ module.exports = class BinanceMargin {
       exchangePairs[pair.symbol] = pairInfo;
     });
 
-    this.logger.info(`Binance: pairs synced: ${pairs.symbols.length}`);
+    this.logger.info(`Binance Margin: pairs synced: ${pairs.symbols.length}`);
     this.exchangePairs = exchangePairs;
   }
 
