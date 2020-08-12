@@ -212,7 +212,7 @@ module.exports = {
       if (
         ['close', 'high'].includes(source) &&
         typeof leftRange.find(c => c[source] > middleValue) === 'undefined' &&
-        typeof rightRange.find(c => c[source] > middleValue) === 'undefined'
+        typeof rightRange.find(c => c[source] >= middleValue) === 'undefined'
       ) {
         if (!result.high) {
           result.high = {};
@@ -224,7 +224,7 @@ module.exports = {
       if (
         ['close', 'low'].includes(source) &&
         typeof leftRange.find(c => c[source] < middleValue) === 'undefined' &&
-        typeof rightRange.find(c => c[source] < middleValue) === 'undefined'
+        typeof rightRange.find(c => c[source] <= middleValue) === 'undefined'
       ) {
         if (!result.low) {
           result.low = {};
