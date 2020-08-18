@@ -3,11 +3,11 @@ const BFX = require('bitfinex-api-node');
 const { Order } = require('bfx-api-node-models');
 const moment = require('moment');
 const _ = require('lodash');
-const ExchangeCandlestick = require('./../dict/exchange_candlestick');
-const Ticker = require('./../dict/ticker');
+const ExchangeCandlestick = require('../dict/exchange_candlestick');
+const Ticker = require('../dict/ticker');
 const Position = require('../dict/position');
 
-const TickerEvent = require('./../event/ticker_event.js');
+const TickerEvent = require('../event/ticker_event.js');
 const ExchangeOrder = require('../dict/exchange_order');
 const OrderUtil = require('../utils/order_util');
 
@@ -273,6 +273,12 @@ module.exports = class Bitfinex {
       result = await this.client.cancelOrder(id);
     } catch (e) {
       this.logger.error(`Bitfinex: cancel order error: ${e}`);
+
+      if (e.toLowerCase().includes('not found')) {
+        this.logger.info(`Bitfinex: "Order not found" clear`);
+        delete this.orders[id];
+      }
+
       return undefined;
     }
 
