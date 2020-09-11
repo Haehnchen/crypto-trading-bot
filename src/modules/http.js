@@ -64,6 +64,14 @@ module.exports = class Http {
       return desks;
     });
 
+    twig.extendFunction('node_version', function() {
+      return process.version;
+    });
+
+    twig.extendFunction('memory_usage', function() {
+      return Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100;
+    });
+
     twig.extendFilter('format_json', function(value) {
       return JSON.stringify(value, null, '\t');
     });

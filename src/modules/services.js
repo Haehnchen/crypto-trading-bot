@@ -643,7 +643,7 @@ module.exports = {
         this.getLogger(),
         this.getQueue(),
         this.getCandleImporter(),
-        this.getThrottler(),
+        this.getThrottler()
       ),
       new BinanceMargin(
         this.getEventEmitter(),
