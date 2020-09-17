@@ -4,12 +4,12 @@ const moment = require('moment');
 const request = require('request');
 const crypto = require('crypto');
 const _ = require('lodash');
-const Ticker = require('./../dict/ticker');
-const TickerEvent = require('./../event/ticker_event');
-const Order = require('./../dict/order');
+const Ticker = require('../dict/ticker');
+const TickerEvent = require('../event/ticker_event');
+const Order = require('../dict/order');
 const ExchangeCandlestick = require('../dict/exchange_candlestick');
 
-const resample = require('./../utils/resample');
+const resample = require('../utils/resample');
 
 const Position = require('../dict/position');
 const ExchangeOrder = require('../dict/exchange_order');
@@ -78,7 +78,7 @@ module.exports = class Bybit {
 
       symbols.forEach(symbol => {
         ws.send(JSON.stringify({ op: 'subscribe', args: [`kline.${symbol.symbol}.${symbol.periods.join('|')}`] }));
-        ws.send(JSON.stringify({ op: 'subscribe', args: [`instrument.${symbol.symbol}`] }));
+        ws.send(JSON.stringify({ op: 'subscribe', args: [`instrument_info.100ms.${symbol.symbol}`] }));
       });
 
       if (config.key && config.secret && config.key.length > 0 && config.secret.length > 0) {
@@ -144,14 +144,21 @@ module.exports = class Bybit {
           );
 
           await me.candleImporter.insertThrottledCandles([candleStick]);
-        } else if (data.data && data.topic && data.topic.startsWith('instrument.')) {
-          data.data.forEach(instrument => {
-            // not always given
+        } else if (data.data && data.topic && data.topic.startsWith('instrument_info.')) {
+          let instruments = [];
+          if (data.data.update) {
+            instruments = data.data.update;
+          } else if (data.data.last_price_e4) {
+            instruments = [data.data];
+          }
 
-            const price = instrument.last_price;
-            if (!price) {
+          instruments.forEach(instrument => {
+            // update and init
+            if (!instrument.last_price_e4) {
               return;
             }
+
+            const price = instrument.last_price_e4 / 1000;
 
             let bid = price;
             let ask = price;
@@ -161,8 +168,8 @@ module.exports = class Bybit {
             // add price spread around the last price; as we not getting the bid and ask of the orderbook directly
             // prevent also floating issues
             if (symbol in me.tickSizes) {
-              bid = orderUtil.calculateNearestSize(bid - me.tickSizes[symbol], me.tickSizes[symbol]);
-              ask = orderUtil.calculateNearestSize(ask + me.tickSizes[symbol], me.tickSizes[symbol]);
+              bid = parseFloat(orderUtil.calculateNearestSize(bid - me.tickSizes[symbol], me.tickSizes[symbol]));
+              ask = parseFloat(orderUtil.calculateNearestSize(ask + me.tickSizes[symbol], me.tickSizes[symbol]));
             }
 
             eventEmitter.emit(
@@ -423,13 +430,13 @@ module.exports = class Bybit {
     const isConditionalOrder = this.isConditionalExchangeOrder(order);
 
     if (isConditionalOrder) {
-      if (!this.tickers[order.symbol]) {
+      if (!this.tickers[order.getSymbol()]) {
         this.logger.error('Bybit: base_price based on ticker for conditional not found');
         return undefined;
       }
 
       // current ticker price is required on this api
-      parameters.base_price = this.tickers[order.symbol].bid;
+      parameters.base_price = this.tickers[order.getSymbol()].bid;
     }
 
     const parametersSorted = {};
@@ -449,7 +456,7 @@ module.exports = class Bybit {
       url = `${this.getBaseUrl()}/open-api/order/create?${querystring.stringify(parametersSorted)}`;
     }
 
-    await this.updateLeverage(order.symbol);
+    await this.updateLeverage(order.getSymbol());
 
     const result = await this.requestClient.executeRequestRetry(
       {
@@ -700,7 +707,7 @@ module.exports = class Bybit {
   }
 
   isConditionalExchangeOrder(order) {
-    return [ExchangeOrder.TYPE_STOP, ExchangeOrder.TYPE_STOP_LIMIT].includes(order.type);
+    return [ExchangeOrder.TYPE_STOP, ExchangeOrder.TYPE_STOP_LIMIT].includes(order.getType());
   }
 
   async cancelAll(symbol) {
