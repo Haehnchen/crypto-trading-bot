@@ -158,7 +158,7 @@ module.exports = class Bybit {
               return;
             }
 
-            const price = instrument.last_price_e4 / 1000;
+            const price = instrument.last_price_e4 / 10000;
 
             let bid = price;
             let ask = price;
@@ -730,10 +730,13 @@ module.exports = class Bybit {
       return;
     }
 
-    // cancel order; mostly it can already be canceled
-    await this.cancelOrder(id);
 
-    return await this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
+
+
+    // cancel order; mostly it can already be canceled
+   // await this.cancelOrder(id);
+
+    //return await this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
   }
 
   /**
