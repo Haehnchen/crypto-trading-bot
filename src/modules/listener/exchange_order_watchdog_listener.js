@@ -102,18 +102,24 @@ module.exports = class ExchangeOrderWatchdogListener {
     await this.orderExecutor.cancelAll(exchangeName, positionStateChangeEvent.getSymbol());
   }
 
+  /**
+   * @param exchange
+   * @param position {Position}
+   * @param stopLoss
+   * @returns {Promise<void>}
+   */
   async stopLossWatchdog(exchange, position, stopLoss) {
     const { logger } = this;
     const { stopLossCalculator } = this;
 
-    const orders = await exchange.getOrdersForSymbol(position.symbol);
+    const orders = await exchange.getOrdersForSymbol(position.getSymbol());
     const orderChanges = orderUtil.syncStopLossOrder(position, orders);
 
     orderChanges.forEach(async orderChange => {
       logger.info(
         `Stoploss update: ${JSON.stringify({
           order: orderChange,
-          symbol: position.symbol,
+          symbol: position.getSymbol(),
           exchange: exchange.getName()
         })}`
       );
@@ -146,13 +152,13 @@ module.exports = class ExchangeOrderWatchdogListener {
         return;
       }
 
-      price = exchange.calculatePrice(price, position.symbol);
+      price = exchange.calculatePrice(price, position.getSymbol());
       if (!price) {
         console.log('Stop loss: auto price skipping');
         return;
       }
 
-      const order = Order.createStopLossOrder(position.symbol, price, orderChange.amount);
+      const order = Order.createStopLossOrder(position.getSymbol(), price, orderChange.amount);
 
       try {
         await exchange.order(order);
@@ -220,7 +226,7 @@ module.exports = class ExchangeOrderWatchdogListener {
         return;
       }
 
-      const price = exchange.calculatePrice(orderChange.price, orderChange.symbol);
+      const price = exchange.calculatePrice(orderChange.price, symbol);
       if (!price) {
         logger.error(
           `Risk Reward: Invalid price: ${JSON.stringify({
