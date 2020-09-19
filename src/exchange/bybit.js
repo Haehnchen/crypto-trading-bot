@@ -17,12 +17,13 @@ const ExchangeOrder = require('../dict/exchange_order');
 const orderUtil = require('../utils/order_util');
 
 module.exports = class Bybit {
-  constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter) {
+  constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter, throttler) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;
     this.candleImporter = candleImporter;
     this.requestClient = requestClient;
+    this.throttler = throttler;
 
     this.apiKey = undefined;
     this.apiSecret = undefined;
@@ -99,8 +100,13 @@ module.exports = class Bybit {
           me.intervals.push(
             setInterval(
               (function f() {
-                me.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol));
-                me.syncPositionViaRestApi();
+                me.throttler.addTask(
+                  `bybit_sync_all_orders`,
+                  me.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol)),
+                  1245
+                );
+
+                me.throttler.addTask(`bybit_sync_positions`, me.syncPositionViaRestApi(), 1245);
                 return f;
               })(),
               60000
@@ -187,6 +193,12 @@ module.exports = class Bybit {
           Bybit.createOrders(orders).forEach(order => {
             me.triggerOrder(order);
           });
+
+          me.throttler.addTask(
+            `bybit_sync_all_orders`,
+            me.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol)),
+            1245
+          );
         } else if (data.data && data.topic && data.topic.toLowerCase() === 'position') {
           const positionsRaw = data.data;
           const positions = [];
@@ -202,6 +214,8 @@ module.exports = class Bybit {
           Bybit.createPositionsWithOpenStateOnly(positions).forEach(position => {
             me.positions[position.symbol] = position;
           });
+
+          me.throttler.addTask(`bybit_sync_positions`, me.syncPositionViaRestApi(), 1545);
         }
       }
     };
@@ -722,21 +736,18 @@ module.exports = class Bybit {
 
   async updateOrder(id, order) {
     if (!order.amount && !order.price) {
-      throw 'Invalid amount / price for update';
+      throw Error('Invalid amount / price for update');
     }
 
     const currentOrder = await this.findOrderById(id);
     if (!currentOrder) {
-      return;
+      return undefined;
     }
 
-
-
-
     // cancel order; mostly it can already be canceled
-   // await this.cancelOrder(id);
+    await this.cancelOrder(id);
 
-    //return await this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
+    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
   }
 
   /**
@@ -824,9 +835,20 @@ module.exports = class Bybit {
         orderType = ExchangeOrder.TYPE_STOP_LIMIT;
       }
 
+      // new format
+      if (orderType === ExchangeOrder.TYPE_LIMIT && order.stop_order_type === 'Stop') {
+        orderType = ExchangeOrder.TYPE_STOP_LIMIT;
+      }
+
       let { price } = order;
       if (orderType === 'stop') {
-        price = order.stop_px;
+        // old stuff; can be dropped?
+        price = parseFloat(order.stop_px || '0');
+
+        // new format
+        if (!price || price === 0.0) {
+          price = parseFloat(order.trigger_price);
+        }
       }
 
       const options = {};
@@ -849,7 +871,11 @@ module.exports = class Bybit {
       }
 
       if (!status) {
-        throw `Invalid status:${JSON.stringify([order])}`;
+        throw `Bybit: Invalid exchange order price:${JSON.stringify([order])}`;
+      }
+
+      if (!price || price === 0) {
+        throw `Bybit: Invalid exchange order price:${JSON.stringify([order])}`;
       }
 
       return new ExchangeOrder(

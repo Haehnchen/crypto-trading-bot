@@ -100,5 +100,41 @@
     "trigger_by": "LastPrice",
     "trigger_price": "6800",
     "timestamp": "2020-03-19T13:07:39.820Z"
+  },
+  {
+    "order_id": "2bb48cb4-64e0-414c-877a-e64ffbebecfe",
+    "order_link_id": "MARKET STOP NEW FORMAT",
+    "user_id": 500181,
+    "symbol": "BTCUSD",
+    "side": "Sell",
+    "order_type": "Market",
+    "price": "0",
+    "qty": 1,
+    "time_in_force": "ImmediateOrCancel",
+    "create_type": "CreateByStopOrder",
+    "cancel_type": "CancelByUser",
+    "order_status": "Deactivated",
+    "stop_order_type": "Stop",
+    "trigger_by": "LastPrice",
+    "trigger_price": "11020",
+    "timestamp": "2020-09-19T17:43:23.780Z"
+  },
+  {
+    "order_id": "47457536-14c3-4c16-83d4-bad291c1ead7",
+    "order_link_id": "MARKET LIMIT STOP NEW FORMAT",
+    "user_id": 500181,
+    "symbol": "BTCUSD",
+    "side": "Sell",
+    "order_type": "Limit",
+    "price": "11081.5",
+    "qty": 1,
+    "time_in_force": "GoodTillCancel",
+    "create_type": "CreateByStopOrder",
+    "cancel_type": "",
+    "order_status": "Untriggered",
+    "stop_order_type": "Stop",
+    "trigger_by": "LastPrice",
+    "trigger_price": "11020",
+    "timestamp": "2020-09-19T17:49:27.769Z"
   }
 ]
