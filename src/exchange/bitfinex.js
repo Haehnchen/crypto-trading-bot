@@ -274,12 +274,16 @@ module.exports = class Bitfinex {
     } catch (e) {
       this.logger.error(`Bitfinex: cancel order error: ${e}`);
 
-      if (e.toLowerCase().includes('not found')) {
+      if (
+        String(e)
+          .toLowerCase()
+          .includes('not found')
+      ) {
         this.logger.info(`Bitfinex: "Order not found" clear`);
         delete this.orders[id];
       }
 
-      return undefined;
+      return ExchangeOrder.createCanceled(order);
     }
 
     delete this.orders[id];
