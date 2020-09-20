@@ -611,7 +611,7 @@ module.exports = class Bybit {
       return;
     }
 
-    if (!(await this.getPositionForSymbol(symbol))) {
+    if (await this.getPositionForSymbol(symbol)) {
       this.logger.debug(`Bybit: leverage update with open position not needed: ${symbol}`);
       return;
     }
@@ -638,7 +638,7 @@ module.exports = class Bybit {
         }
       },
       r => {
-        return r && result.response && r.response.statusCode >= 500;
+        return r && r.response && r.response.statusCode >= 500;
       }
     );
 
