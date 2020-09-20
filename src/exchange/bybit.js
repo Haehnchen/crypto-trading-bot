@@ -471,7 +471,9 @@ module.exports = class Bybit {
       url = `${this.getBaseUrl()}/open-api/order/create?${querystring.stringify(parametersSorted)}`;
     }
 
-    await this.updateLeverage(order.getSymbol());
+    if (!(await this.getPositionForSymbol(order.getSymbol()))) {
+      await this.updateLeverage(order.getSymbol());
+    }
 
     const result = await this.requestClient.executeRequestRetry(
       {
