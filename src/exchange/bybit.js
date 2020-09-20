@@ -471,9 +471,7 @@ module.exports = class Bybit {
       url = `${this.getBaseUrl()}/open-api/order/create?${querystring.stringify(parametersSorted)}`;
     }
 
-    if (!(await this.getPositionForSymbol(order.getSymbol()))) {
-      await this.updateLeverage(order.getSymbol());
-    }
+    await this.updateLeverage(order.getSymbol());
 
     const result = await this.requestClient.executeRequestRetry(
       {
@@ -603,13 +601,18 @@ module.exports = class Bybit {
     // use default leverage to "3"
     const leverageSize = _.get(config, 'extra.bybit_leverage', 5);
     if (leverageSize < 0 || leverageSize > 100) {
-      throw `Invalid leverage size for: ${leverageSize} ${symbol}`;
+      throw Error(`Invalid leverage size for: ${leverageSize} ${symbol}`);
     }
 
     // we dont get the selected leverage value in websocket or api endpoints
     // so we update them only in a given time window; system overload is often blocked
     if (symbol in this.leverageUpdated && this.leverageUpdated[symbol] > moment().subtract(45, 'minutes')) {
       this.logger.debug(`Bybit: leverage update not needed: ${symbol}`);
+      return;
+    }
+
+    if (!(await this.getPositionForSymbol(symbol))) {
+      this.logger.debug(`Bybit: leverage update with open position not needed: ${symbol}`);
       return;
     }
 
@@ -634,8 +637,8 @@ module.exports = class Bybit {
           Accept: 'application/json'
         }
       },
-      result => {
-        return result && result.response && result.response.statusCode >= 500;
+      r => {
+        return r && result.response && r.response.statusCode >= 500;
       }
     );
 
