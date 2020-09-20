@@ -306,6 +306,7 @@ module.exports = class Bybit {
       currentPositions[position.symbol] = position;
     }
 
+    this.logger.debug(`Bybit: Positions via API updated: ${Object.keys(currentPositions).length}`);
     this.positions = currentPositions;
   }
 
@@ -1061,8 +1062,8 @@ module.exports = class Bybit {
           Accept: 'application/json'
         }
       },
-      result => {
-        return result && result.response && result.response.statusCode >= 500;
+      r => {
+        return r && r.response && r.response.statusCode >= 500;
       }
     );
 
@@ -1081,7 +1082,6 @@ module.exports = class Bybit {
       return;
     }
 
-    this.logger.debug('Bybit: Positions via API updated');
     this.fullPositionsUpdate(json.result);
   }
 
