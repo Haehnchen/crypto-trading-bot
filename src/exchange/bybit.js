@@ -905,79 +905,13 @@ module.exports = class Bybit {
     symbols.forEach(symbol => {
       // there is not full active order state; we need some more queries
       ['Created', 'New', 'PartiallyFilled'].forEach(orderStatus => {
-        promises.push(
-          new Promise(async resolve => {
-            const parameter = {
-              api_key: this.apiKey,
-              limit: 100,
-              order_status: orderStatus,
-              symbol: symbol,
-              timestamp: new Date().getTime() // 1 min in the future
-            };
-
-            parameter.sign = crypto
-              .createHmac('sha256', this.apiSecret)
-              .update(querystring.stringify(parameter))
-              .digest('hex');
-
-            const url = `${this.getBaseUrl()}/open-api/order/list?${querystring.stringify(parameter)}`;
-            const result = await this.requestClient.executeRequestRetry(
-              {
-                url: url,
-                headers: {
-                  'Content-Type': 'application/json',
-                  Accept: 'application/json'
-                }
-              },
-              result => {
-                return result && result.response && result.response.statusCode >= 500;
-              }
-            );
-
-            const { error } = result;
-            const { response } = result;
-            const { body } = result;
-
-            if (error || !response || response.statusCode !== 200) {
-              this.logger.error(
-                `Bybit: Invalid orders response:${JSON.stringify({
-                  error: error,
-                  body: body,
-                  orderStatus: orderStatus
-                })}`
-              );
-              resolve([]);
-              return;
-            }
-
-            let json;
-            try {
-              json = JSON.parse(body);
-            } catch (e) {
-              json = [];
-            }
-
-            if (!json.result) {
-              this.logger.error(
-                `Bybit: Invalid orders json:${JSON.stringify({ body: body, orderStatus: orderStatus })}`
-              );
-              resolve([]);
-              return;
-            }
-
-            resolve(json.result.data || []);
-          })
-        );
-      });
-
-      // stop order are special endpoint
-      promises.push(
-        new Promise(async resolve => {
+        promises.push(async () => {
           const parameter = {
             api_key: this.apiKey,
             limit: 100,
+            order_status: orderStatus,
             symbol: symbol,
-            timestamp: new Date().getTime()
+            timestamp: new Date().getTime() // 1 min in the future
           };
 
           parameter.sign = crypto
@@ -985,7 +919,7 @@ module.exports = class Bybit {
             .update(querystring.stringify(parameter))
             .digest('hex');
 
-          const url = `${this.getBaseUrl()}/open-api/stop-order/list?${querystring.stringify(parameter)}`;
+          const url = `${this.getBaseUrl()}/open-api/order/list?${querystring.stringify(parameter)}`;
           const result = await this.requestClient.executeRequestRetry(
             {
               url: url,
@@ -994,8 +928,8 @@ module.exports = class Bybit {
                 Accept: 'application/json'
               }
             },
-            result => {
-              return result && result.response && result.response.statusCode >= 500;
+            r => {
+              return r && r.response && r.response.statusCode >= 500;
             }
           );
 
@@ -1004,9 +938,15 @@ module.exports = class Bybit {
           const { body } = result;
 
           if (error || !response || response.statusCode !== 200) {
-            this.logger.error(`Bybit: Invalid order update:${JSON.stringify({ error: error, body: body })}`);
-            resolve([]);
-            return;
+            this.logger.error(
+              `Bybit: Invalid orders response:${JSON.stringify({
+                error: error,
+                body: body,
+                orderStatus: orderStatus
+              })}`
+            );
+
+            throw new Error();
           }
 
           let json;
@@ -1017,25 +957,84 @@ module.exports = class Bybit {
           }
 
           if (!json.result || !json.result.data) {
-            this.logger.error(`Bybit: Invalid stop-order json:${JSON.stringify({ body: body })}`);
-            resolve([]);
-            return;
+            this.logger.error(`Bybit: Invalid orders json:${JSON.stringify({ body: body })}`);
+
+            throw new Error('Invalid orders json');
           }
 
-          const orders = json.result.data.filter(order => order.stop_order_status === 'Untriggered');
-          resolve(orders);
-        })
-      );
+          return json.result.data;
+        });
+      });
+
+      // stop order are special endpoint
+      promises.push(async () => {
+        const parameter = {
+          api_key: this.apiKey,
+          limit: 100,
+          symbol: symbol,
+          timestamp: new Date().getTime()
+        };
+
+        parameter.sign = crypto
+          .createHmac('sha256', this.apiSecret)
+          .update(querystring.stringify(parameter))
+          .digest('hex');
+
+        const url = `${this.getBaseUrl()}/open-api/stop-order/list?${querystring.stringify(parameter)}`;
+        const result = await this.requestClient.executeRequestRetry(
+          {
+            url: url,
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            }
+          },
+          r => {
+            return r && r.response && r.response.statusCode >= 500;
+          }
+        );
+
+        const { error } = result;
+        const { response } = result;
+        const { body } = result;
+
+        if (error || !response || response.statusCode !== 200) {
+          this.logger.error(`Bybit: Invalid order update:${JSON.stringify({ error: error, body: body })}`);
+
+          throw new Error(`Invalid stop-order update`);
+        }
+
+        let json;
+        try {
+          json = JSON.parse(body);
+        } catch (e) {
+          json = [];
+        }
+
+        if (!json.result || !json.result.data) {
+          this.logger.error(`Bybit: Invalid stop-order json:${JSON.stringify({ body: body })}`);
+
+          throw new Error(`Invalid stop-order update`);
+        }
+
+        return json.result.data.filter(order => order.stop_order_status === 'Untriggered');
+      });
     });
 
-    const results = await Promise.all(promises);
+    let results;
+    try {
+      results = await Promise.all(promises.map(fn => fn()));
+    } catch (e) {
+      this.logger.error(`Bybit: Orders via API updated stopped: ${e.message}`);
+      return;
+    }
 
     const orders = [];
     results.forEach(order => {
       orders.push(...order);
     });
 
-    this.logger.debug('Bybit: Orders via API updated');
+    this.logger.debug(`Bybit: Orders via API updated: ${orders.length}`);
     this.fullOrdersUpdate(orders);
   }
 
