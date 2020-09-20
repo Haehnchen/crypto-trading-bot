@@ -173,5 +173,38 @@
     },
     "stop_px": null,
     "stop_order_id": "ccee7f42-9281-447a-baf8-78bb1062ce57"
+  },
+  {
+    "user_id": 500181,
+    "symbol": "BTCUSD",
+    "side": "Sell",
+    "order_type": "Market",
+    "price": 0,
+    "qty": 1,
+    "time_in_force": "ImmediateOrCancel",
+    "order_status": "Untriggered",
+    "ext_fields": {
+      "stop_order_type": "Stop",
+      "trigger_by": "LastPrice",
+      "base_price": 10956.5,
+      "expected_direction": "Falling",
+      "trigger_price": 10465,
+      "close_on_trigger": true,
+      "op_from": "api",
+      "remark": "159.69.194.68",
+      "o_req_num": 0
+    },
+    "last_exec_time": "0.000000",
+    "last_exec_price": 0,
+    "leaves_qty": 1,
+    "leaves_value": 0.00009555,
+    "cum_exec_qty": 0,
+    "cum_exec_value": 0,
+    "cum_exec_fee": 0,
+    "reject_reason": "NoError",
+    "order_link_id": "78177160675",
+    "created_at": "2020-09-20T08:36:52.000Z",
+    "updated_at": "2020-09-20T08:36:52.000Z",
+    "order_id": "b9544c6a-f16f-450f-89fa-2266be2ae093"
   }
 ]

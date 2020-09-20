@@ -785,7 +785,19 @@ module.exports = class Bybit {
   }
 
   static createOrders(orders) {
-    return orders.map(order => {
+    return orders.map(originOrder => {
+      const order = originOrder;
+
+      // some endpoints / websocket request merge extra field into nested "ext_fields"; just merge them into main
+      for (const [key, value] of Object.entries(order.ext_fields || {})) {
+        // dont overwrite?
+        if (key in order) {
+          continue;
+        }
+
+        order[key] = value;
+      }
+
       let retry = false;
 
       let status;
@@ -875,7 +887,7 @@ module.exports = class Bybit {
         throw Error(`Bybit: Invalid exchange order price:${JSON.stringify([order])}`);
       }
 
-      if (status !== 'canceled' && (!price || price === 0)) {
+      if (!price || price === 0) {
         throw Error(`Bybit: Invalid exchange order price:${JSON.stringify([order])}`);
       }
 
