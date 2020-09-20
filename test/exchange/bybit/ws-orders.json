@@ -136,5 +136,42 @@
     "trigger_by": "LastPrice",
     "trigger_price": "11020",
     "timestamp": "2020-09-19T17:49:27.769Z"
+  },
+  {
+    "order_link_id": "79920252673",
+    "user_id": 500181,
+    "symbol": "EOSUSD",
+    "side": "Sell",
+    "order_type": "Market",
+    "price": 0,
+    "qty": 1,
+    "time_in_force": "ImmediateOrCancel",
+    "create_type": "CreateByStopOrder",
+    "cancel_type": "CancelByUser",
+    "order_status": "Deactivated",
+    "leaves_qty": 1,
+    "leaves_value": 0.38565368,
+    "created_at": "2020-09-20T07:19:21.000Z",
+    "updated_at": "2020-09-20T08:14:32.000Z",
+    "cross_seq": -1,
+    "last_exec_time": "0",
+    "last_exec_price": 0,
+    "cum_exec_qty": 0,
+    "cum_exec_value": 0,
+    "cum_exec_fee": 0,
+    "ext_fields": {
+      "stop_order_type": "Stop",
+      "trigger_by": "LastPrice",
+      "base_price": 2.694,
+      "expected_direction": "Falling",
+      "trigger_price": 2.593,
+      "close_on_trigger": true,
+      "op_from": "api",
+      "remark": "159.69.194.68|-unknown:159.69.194.68",
+      "o_req_num": 0,
+      "cross_status": "Deactivated"
+    },
+    "stop_px": null,
+    "stop_order_id": "ccee7f42-9281-447a-baf8-78bb1062ce57"
   }
 ]

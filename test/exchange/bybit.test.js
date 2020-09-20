@@ -54,6 +54,9 @@ describe('#bitmex exchange implementation', function() {
 
     assert.equal(orders[7].type, 'stop_limit');
     assert.equal(orders[7].price, 11081.5);
+
+    assert.equal(orders[8].type, 'unknown');
+    assert.equal(orders[8].price, 0);
   });
 
   it('test that request body for order is created (limit order)', () => {

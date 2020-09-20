@@ -844,7 +844,7 @@ module.exports = class Bybit {
       let { price } = order;
       if (orderType === 'stop') {
         // old stuff; can be dropped?
-        price = parseFloat(order.stop_px || '0');
+        price = parseFloat(order.stop_px || undefined);
 
         // new format
         if (!price || price === 0.0) {
@@ -872,11 +872,11 @@ module.exports = class Bybit {
       }
 
       if (!status) {
-        throw `Bybit: Invalid exchange order price:${JSON.stringify([order])}`;
+        throw Error(`Bybit: Invalid exchange order price:${JSON.stringify([order])}`);
       }
 
-      if (!price || price === 0) {
-        throw `Bybit: Invalid exchange order price:${JSON.stringify([order])}`;
+      if (status !== 'canceled' && (!price || price === 0)) {
+        throw Error(`Bybit: Invalid exchange order price:${JSON.stringify([order])}`);
       }
 
       return new ExchangeOrder(
