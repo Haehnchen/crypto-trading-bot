@@ -19,6 +19,7 @@ new TradingView.widget(
         "enable_publishing": false,
         "allow_symbol_change": true,
         "container_id": "tradingview_{{ loop.index }}",
+        "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
         "studies": [
             "RSI@tv-basicstudies"
         ],
