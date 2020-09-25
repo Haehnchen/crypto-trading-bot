@@ -156,17 +156,18 @@ describe('#binance_margin exchange implementation', function() {
       marginOrder: async order => {
         myOrder = order;
 
-        return new ExchangeOrder(
-          25035356,
-          'FOOUSD',
-          'open',
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          'buy',
-          ExchangeOrder.TYPE_LIMIT
-        );
+        return {
+          symbol: 'FOOUSD',
+          orderId: 3278332213,
+          clientOrderId: 'web_f4ab3eae12844370a056685f0e52617e_REST',
+          price: '10400',
+          origQty: '0.000962',
+          status: 'NEW',
+          type: 'LIMIT',
+          side: 'BUY',
+          time: 1601049698994,
+          updateTime: 1601049698994
+        };
       }
     };
 
@@ -191,17 +192,18 @@ describe('#binance_margin exchange implementation', function() {
       marginOrder: async order => {
         myOrder = order;
 
-        return new ExchangeOrder(
-          25035356,
-          'FOOUSD',
-          'open',
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          'sell',
-          ExchangeOrder.TYPE_LIMIT
-        );
+        return {
+          symbol: 'FOOUSD',
+          orderId: 25035356,
+          clientOrderId: 'web_f4ab3eae12844370a056685f0e52617e_REST',
+          price: '10400',
+          origQty: '0.000962',
+          status: 'NEW',
+          type: 'LIMIT',
+          side: 'SELL',
+          time: 1601049698994,
+          updateTime: 1601049698994
+        };
       },
       marginAllOrders: async opts => {
         const newVar = {
@@ -277,17 +279,18 @@ describe('#binance_margin exchange implementation', function() {
       marginOrder: async order => {
         myOrder = order;
 
-        return new ExchangeOrder(
-          25035356,
-          'FOOUSD',
-          'open',
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          'buy',
-          ExchangeOrder.TYPE_LIMIT
-        );
+        return {
+          symbol: 'FOOUSD',
+          orderId: 25035356,
+          clientOrderId: 'web_f4ab3eae12844370a056685f0e52617e_REST',
+          price: '10400',
+          origQty: '0.000962',
+          status: 'NEW',
+          type: 'LIMIT',
+          side: 'BUY',
+          time: 1601049698994,
+          updateTime: 1601049698994
+        };
       },
       marginAllOrders: async opts => {
         const newVar = {

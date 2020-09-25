@@ -252,17 +252,18 @@ describe('#binance exchange implementation', function() {
       order: async order => {
         myOrder = order;
 
-        return new ExchangeOrder(
-          25035356,
-          'FOOUSD',
-          'open',
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          'buy',
-          ExchangeOrder.TYPE_LIMIT
-        );
+        return {
+          symbol: 'FOOUSD',
+          orderId: 25035356,
+          clientOrderId: 'web_f4ab3eae12844370a056685f0e52617e_REST',
+          price: '10400',
+          origQty: '0.000962',
+          status: 'NEW',
+          type: 'LIMIT',
+          side: 'BUY',
+          time: 1601049698994,
+          updateTime: 1601049698994
+        };
       },
       allOrders: async opts => {
         const newVar = {
@@ -355,7 +356,43 @@ describe('#binance exchange implementation', function() {
     assert.strictEqual(order.type, 'market');
   });
 
-  let getEvent = function(find) {
+  it('test mapping order request mapping for websocket and rest json', async () => {
+    const orders1 = getOrders();
+    const orders = Binance.createOrders(...orders1);
+
+    assert.strictEqual(orders[0].retry, false);
+    assert.strictEqual(orders[0].status, 'open');
+    assert.strictEqual(orders[0].symbol, 'BTCUSDT');
+    assert.strictEqual(orders[0].amount, 0.000962);
+    assert.strictEqual(orders[0].type, 'limit');
+    assert.strictEqual(orders[0].ourId, 'web_f4ab3eae12844370a056685f0e52617e_WEBSOCKET');
+    assert.strictEqual(orders[0].side, 'buy');
+    assert.strictEqual(orders[0].createdAt.getFullYear(), 2020);
+
+    assert.strictEqual(orders[1].retry, false);
+    assert.strictEqual(orders[1].status, 'open');
+    assert.strictEqual(orders[1].symbol, 'BTCUSDT');
+    assert.strictEqual(orders[1].amount, 0.000962);
+    assert.strictEqual(orders[1].type, 'limit');
+    assert.strictEqual(orders[1].ourId, 'web_f4ab3eae12844370a056685f0e52617e_REST');
+    assert.strictEqual(orders[1].side, 'buy');
+    assert.strictEqual(orders[1].createdAt.getFullYear(), 2020);
+
+    assert.strictEqual(orders[2].retry, false);
+    assert.strictEqual(orders[2].status, 'done');
+    assert.strictEqual(orders[2].symbol, 'BTCUSDT');
+    assert.strictEqual(orders[2].amount, 0.000962);
+    assert.strictEqual(orders[2].type, 'market');
+    assert.strictEqual(orders[2].ourId, 'web_c5dc7e3efb5c43268adffe692cadceb1_WEBSOCKET_MARKET');
+    assert.strictEqual(orders[2].side, 'buy');
+    assert.strictEqual(orders[2].createdAt.getFullYear(), 2020);
+  });
+
+  const getEvent = function(find) {
     return JSON.parse(fs.readFileSync(`${__dirname}/binance/events.json`, 'utf8')).find(find);
+  };
+
+  const getOrders = function() {
+    return JSON.parse(fs.readFileSync(`${__dirname}/binance/orders.json`, 'utf8'));
   };
 });

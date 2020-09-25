@@ -12,11 +12,16 @@ module.exports = class OrderBag {
    */
   triggerOrder(order) {
     if (!(order instanceof ExchangeOrder)) {
-      throw 'Invalid order given';
+      throw Error('Invalid order given');
     }
 
     // dont overwrite state closed order
-    if (order.id in this.orders && ['done', 'canceled'].includes(this.orders[order.id].status)) {
+    if (
+      order.id in this.orders &&
+      [ExchangeOrder.STATUS_DONE, ExchangeOrder.STATUS_CANCELED, ExchangeOrder.STATUS_REJECTED].includes(
+        this.orders[order.id].status
+      )
+    ) {
       delete this.orders[order.id];
       return;
     }
