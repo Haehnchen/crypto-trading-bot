@@ -16,17 +16,20 @@ module.exports = class OrderBag {
     }
 
     // dont overwrite state closed order
-    if (
-      order.id in this.orders &&
-      [ExchangeOrder.STATUS_DONE, ExchangeOrder.STATUS_CANCELED, ExchangeOrder.STATUS_REJECTED].includes(
-        this.orders[order.id].status
-      )
-    ) {
-      delete this.orders[order.id];
-      return;
+    for (const [key] of Object.entries(this.orders)) {
+      if (String(order.id) !== String(key)) {
+        continue;
+      }
+
+      if (
+        [ExchangeOrder.STATUS_DONE, ExchangeOrder.STATUS_CANCELED, ExchangeOrder.STATUS_REJECTED].includes(order.status)
+      ) {
+        delete this.orders[order.id];
+      }
+      break;
     }
 
-    this.orders[order.id] = order;
+    this.orders[String(order.id)] = order;
   }
 
   getOrders() {
@@ -56,24 +59,28 @@ module.exports = class OrderBag {
   }
 
   delete(id) {
-    delete this.orders[id];
+    delete this.orders[String(id)];
   }
 
   set(orders) {
     const ourOrder = {};
 
     orders.forEach(o => {
-      ourOrder[o.id] = o;
+      if (!(o instanceof ExchangeOrder)) {
+        throw Error('Invalid order given');
+      }
+
+      ourOrder[String(o.id)] = o;
     });
 
     this.orders = ourOrder;
   }
 
   get(id) {
-    return this.orders[id];
+    return this.orders[String(id)];
   }
 
   all() {
-    return this.orders;
+    return Object.values(this.orders);
   }
 };

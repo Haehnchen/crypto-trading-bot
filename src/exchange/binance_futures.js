@@ -426,27 +426,7 @@ module.exports = class BinanceFutures {
         const message = JSON.parse(event.data);
 
         if (message.e && message.e.toUpperCase() === 'ORDER_TRADE_UPDATE') {
-          const order = message.o;
-
-          const remapp = {
-            s: 'symbol',
-            c: 'clientOrderId',
-            S: 'side',
-            o: 'type',
-            f: 'timeInForce',
-            q: 'origQty',
-            p: 'price',
-            sp: 'stopPrice',
-            X: 'status',
-            i: 'orderId',
-            T: 'updateTime'
-          };
-
-          Object.keys(order).forEach(k => {
-            if (remapp[k]) {
-              order[remapp[k]] = order[k];
-            }
-          });
+          const order = BinanceFutures.createRestOrderFromWebsocket(message.o);
 
           me.logger.info(`Binance Futures: ORDER_TRADE_UPDATE event: ${JSON.stringify([message.e, order])}`);
           me.throttler.addTask('binance_futures_sync_orders', me.ccxtExchangeOrder.syncOrders(), 3000);
@@ -529,5 +509,50 @@ module.exports = class BinanceFutures {
         return request;
       }
     });
+  }
+
+  static createRestOrderFromWebsocket(websocketOrder) {
+    const order = websocketOrder;
+
+    //     {
+    //         "symbol": "BTCUSDT",
+    //         "orderId": 1,
+    //         "clientOrderId": "myOrder1",
+    //         "price": "0.1",
+    //         "origQty": "1.0",
+    //         "executedQty": "1.0",
+    //         "cumQuote": "10.0",
+    //         "status": "NEW",
+    //         "timeInForce": "GTC",
+    //         "type": "LIMIT",
+    //         "side": "BUY",
+    //         "stopPrice": "0.0",
+    //         "updateTime": 1499827319559
+    //     }
+
+    const map = {
+      s: 'symbol',
+      c: 'clientOrderId',
+      S: 'side',
+      o: 'type',
+      f: 'timeInForce',
+      q: 'origQty',
+      p: 'price',
+      sp: 'stopPrice',
+      X: 'status',
+      i: 'orderId',
+      T: 'updateTime',
+      z: 'executedQty'
+      // n: 'cumQuote' // not fully sure about commision
+    };
+
+    const newOrder = {};
+    Object.keys(order).forEach(k => {
+      if (map[k]) {
+        newOrder[map[k]] = order[k];
+      }
+    });
+
+    return newOrder;
   }
 };

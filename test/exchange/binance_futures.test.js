@@ -69,4 +69,21 @@ describe('#binance_futures exchange implementation', () => {
     assert.strictEqual(posShort.isLong(), false);
     assert.strictEqual(posShort.isShort(), true);
   });
+
+  it('test converting websocket order to rest api order', async () => {
+    const orders = getJsonFixture('websocket-orders.json').map(BinanceFutures.createRestOrderFromWebsocket);
+
+    assert.strictEqual(orders[0].symbol, 'SXPUSDT');
+    assert.strictEqual(orders[0].clientOrderId, 'c6QlyAzYShGmuLe2Hu73ew');
+    assert.strictEqual(orders[0].side, 'SELL');
+    assert.strictEqual(orders[0].type, 'LIMIT');
+    assert.strictEqual(orders[0].timeInForce, 'GTC');
+    assert.strictEqual(orders[0].origQty, '374.4');
+    assert.strictEqual(orders[0].price, '1.6041');
+    assert.strictEqual(orders[0].stopPrice, '0');
+    assert.strictEqual(orders[0].status, 'PARTIALLY_FILLED');
+    assert.strictEqual(orders[0].orderId, 289977283);
+    assert.strictEqual(orders[0].executedQty, '324.4');
+    assert.strictEqual(orders[0].updateTime > 1001371637215, true);
+  });
 });
