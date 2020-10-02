@@ -176,6 +176,7 @@ module.exports = class BinanceMargin {
     } catch (e) {
       this.logger.error(`Binance Margin: order create error: ${JSON.stringify([e.code, e.message, order, payload])}`);
 
+      // @TODO: retry possible: [-3007,"You have pending transcation, please try again later." // typo "transcation" externally ;)
       // -2010: insufficient balance
       // -XXXX: borrow amount has exceed
       if (
@@ -208,6 +209,8 @@ module.exports = class BinanceMargin {
       });
     } catch (e) {
       this.logger.error(`Binance Margin: cancel order error: ${e}`);
+
+      // @TODO: filter for: Binance Margin: cancel order error: Error: Unknown order sent.
       return undefined;
     }
 
@@ -369,6 +372,7 @@ module.exports = class BinanceMargin {
 
     const currentOrder = await this.findOrderById(id);
     if (!currentOrder) {
+      this.logger.debug(`Binance Margin: Order to update not found: ${JSON.stringify([id, order])}`);
       return undefined;
     }
 

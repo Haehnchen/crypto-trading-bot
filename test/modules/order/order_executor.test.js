@@ -262,7 +262,7 @@ describe('#order executor', () => {
   });
 
   it('test that adjust price handler must clean up outdated managed orders', async () => {
-    const executor = new OrderExecutor(undefined, undefined, undefined, undefined, { all: () => [] });
+    const executor = new OrderExecutor(undefined, undefined, undefined, { debug: () => {} }, { all: () => [] });
 
     // current
     executor.runningOrders['1815-1337'] = new Date();
@@ -320,7 +320,7 @@ describe('#order executor', () => {
         }
       },
       undefined,
-      { info: () => {}, error: () => {} },
+      { info: () => {}, error: () => {} }
     );
 
     await executor.adjustOpenOrdersPrice(pairState);
@@ -504,7 +504,7 @@ describe('#order executor', () => {
       },
       { getIfUpToDate: () => new Ticker('exchange', 'FOOUSD', new Date(), 1337, 1338) },
       undefined,
-      { info: () => {}, error: () => {} },
+      { info: () => {}, error: () => {} }
     );
 
     await executor.adjustOpenOrdersPrice(pairState);
