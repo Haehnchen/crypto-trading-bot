@@ -59,7 +59,7 @@
               <i v-if="position.position.side === 'long'" class="fas fa-chevron-circle-up text-success"></i>
             </td>
             <td style="white-space: nowrap;padding: 0;">
-              <form :href="'/pairs/' + position.exchange + ':' + position.position.symbol" method="post">
+              <form :action="'/pairs/' + position.exchange + '-' + position.position.symbol" method="post">
                 <button style="padding: 0 0 0 3px;" name="action" value="close" data-toggle="tooltip"
                         title="Limit Close" class="btn btn-link">
                   <i class="fas fa-window-close text-dark" style="font-size: 0.9rem"></i>
