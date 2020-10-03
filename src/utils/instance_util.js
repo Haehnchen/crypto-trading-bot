@@ -100,8 +100,10 @@ module.exports = {
    * @returns {Promise<unknown>}
    */
   binanceInitSpotUsd: async callback => {
+    const crossMarginPairs = await module.exports.binanceCrossMarginPairs();
+
     return module.exports.binanceInitUsd((result, pair) => {
-      if (pair.isMarginTradingAllowed !== false) {
+      if (pair.isMarginTradingAllowed && crossMarginPairs.includes(pair.baseAsset)) {
         return undefined;
       }
 
@@ -114,13 +116,32 @@ module.exports = {
   },
 
   /**
+   * There is API (or not documented) where to filter isolated and cross margin wallet pairs take them from fee page api
+   *
+   * @link https://www.binance.com/de/margin-fee
+   * @returns {Promise<unknown>}
+   */
+  binanceCrossMarginPairs: () => {
+    return new Promise(resolve => {
+      request('https://www.binance.com/gateway-api/v1/friendly/margin/vip/spec/list-all', (_error, _res, body) => {
+        const content = JSON.parse(body);
+        const crossMarginPairs = content.data.map(i => i.assetName);
+
+        resolve(crossMarginPairs);
+      });
+    });
+  },
+
+  /**
    * Init helper for Binance to fetch all USDT pairs with margin only
    * @param callback
    * @returns {Promise<unknown>}
    */
   binanceInitMarginUsd: async callback => {
+    const crossMarginPairs = await module.exports.binanceCrossMarginPairs();
+
     return module.exports.binanceInitUsd((result, pair) => {
-      if (pair.isMarginTradingAllowed !== true) {
+      if (!pair.isMarginTradingAllowed || !crossMarginPairs.includes(pair.baseAsset)) {
         return undefined;
       }
 
