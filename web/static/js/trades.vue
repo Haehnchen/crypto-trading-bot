@@ -35,7 +35,7 @@
               </template>
             </td>
             <td>
-            <span v-if="!!position.position.profit" v-bind:class="{ 'text-success': position.position.profit > 0, 'text-danger': position.position.profit < 0 }">
+            <span v-if="typeof position.position.profit !== 'undefined'" v-bind:class="{ 'text-success': position.position.profit >= 0, 'text-danger': position.position.profit < 0 }">
               {{ position.position.profit|round(2) }} %
             </span>
             </td>
