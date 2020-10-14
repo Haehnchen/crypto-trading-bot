@@ -304,6 +304,20 @@ module.exports = class Binance {
         throw new Error(`Invalid order amount: ${JSON.stringify(order)}`);
       }
 
+      if (order.totalTradeQuantity) {
+        // websocket
+        const totalTradeQuantity = parseFloat(order.totalTradeQuantity);
+        if (totalTradeQuantity > 0) {
+          amount -= totalTradeQuantity;
+        }
+      } else if (order.cummulativeQuoteQty) {
+        // REST
+        const cummulativeQuoteQty = parseFloat(order.cummulativeQuoteQty);
+        if (cummulativeQuoteQty > 0) {
+          amount -= cummulativeQuoteQty;
+        }
+      }
+
       let clientOrderId;
       if (order.clientOrderId) {
         clientOrderId = order.clientOrderId; // REST

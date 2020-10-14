@@ -381,11 +381,23 @@ describe('#binance exchange implementation', function() {
     assert.strictEqual(orders[2].retry, false);
     assert.strictEqual(orders[2].status, 'done');
     assert.strictEqual(orders[2].symbol, 'BTCUSDT');
-    assert.strictEqual(orders[2].amount, 0.000962);
+    assert.strictEqual(orders[2].amount, 0);
     assert.strictEqual(orders[2].type, 'market');
     assert.strictEqual(orders[2].ourId, 'web_c5dc7e3efb5c43268adffe692cadceb1_WEBSOCKET_MARKET');
     assert.strictEqual(orders[2].side, 'buy');
     assert.strictEqual(orders[2].createdAt.getFullYear(), 2020);
+
+    assert.strictEqual(orders[4].status, 'open');
+    assert.strictEqual(orders[4].symbol, 'EURBUSD');
+    assert.strictEqual(orders[4].type, 'limit');
+    assert.strictEqual(orders[4].side, 'sell');
+    assert.strictEqual(orders[4].amount, 598.34);
+
+    assert.strictEqual(orders[5].status, 'open');
+    assert.strictEqual(orders[5].symbol, 'BTCUSDT');
+    assert.strictEqual(orders[5].type, 'limit');
+    assert.strictEqual(orders[5].side, 'buy');
+    assert.strictEqual(orders[5].amount, 0.000611);
   });
 
   const getEvent = function(find) {
