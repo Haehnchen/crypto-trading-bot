@@ -208,9 +208,17 @@ module.exports = class BinanceMargin {
         orderId: id
       });
     } catch (e) {
-      this.logger.error(`Binance Margin: cancel order error: ${e}`);
+      const message = String(e).toLowerCase();
 
-      // @TODO: filter for: Binance Margin: cancel order error: Error: Unknown order sent.
+      // "Error: Unknown order sent."
+      if (message.includes('unknown order sent')) {
+        this.logger.info(`Binance Margin: cancel order not found remove it: ${JSON.stringify([e, id])}`);
+        this.orderbag.delete(id);
+        return ExchangeOrder.createCanceled(order);
+      }
+
+      this.logger.error(`Binance Margin: cancel order error: ${JSON.stringify([e, id])}`);
+
       return undefined;
     }
 

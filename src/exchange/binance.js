@@ -168,7 +168,7 @@ module.exports = class Binance {
   async cancelOrder(id) {
     const order = await this.findOrderById(id);
     if (!order) {
-      return;
+      return undefined;
     }
 
     try {
@@ -177,8 +177,18 @@ module.exports = class Binance {
         orderId: id
       });
     } catch (e) {
-      this.logger.error(`Binance: cancel order error: ${e}`);
-      return;
+      const message = String(e).toLowerCase();
+
+      // "Error: Unknown order sent."
+      if (message.includes('unknown order sent')) {
+        this.logger.info(`Binance: cancel order not found remove it: ${JSON.stringify([e, id])}`);
+        this.orderbag.delete(id);
+        return ExchangeOrder.createCanceled(order);
+      }
+
+      this.logger.error(`Binance: cancel order error: ${JSON.stringify([e, id])}`);
+
+      return undefined;
     }
 
     this.orderbag.delete(id);
@@ -495,18 +505,18 @@ module.exports = class Binance {
 
   async updateOrder(id, order) {
     if (!order.amount && !order.price) {
-      throw 'Invalid amount / price for update';
+      throw new Error('Invalid amount / price for update');
     }
 
     const currentOrder = await this.findOrderById(id);
     if (!currentOrder) {
-      return;
+      return undefined;
     }
 
     // cancel order; mostly it can already be canceled
     await this.cancelOrder(id);
 
-    return await this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
+    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
   }
 
   getName() {
