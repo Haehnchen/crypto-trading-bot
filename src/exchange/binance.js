@@ -328,6 +328,10 @@ module.exports = class Binance {
         }
       }
 
+      if (amount < 0) {
+        throw new Error(`Invalid order amount: ${JSON.stringify(amount, order)}`);
+      }
+
       let clientOrderId;
       if (order.clientOrderId) {
         clientOrderId = order.clientOrderId; // REST
