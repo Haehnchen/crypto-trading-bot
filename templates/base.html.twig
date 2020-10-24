@@ -83,12 +83,12 @@
                                                     {% if ta.cci.value > -100 and ta.rsi.value < 100 %}text-warning{% endif %}
                                                 ">{{ ta.cci.value|round(2) }}</td>
                                                 <td>
-                                                    {% if ta.stoch_rsi.value.k >= 80 and ta.stoch_rsi.value.d >= 80 %}
-                                                        <i data-toggle="tooltip" title="{{ ta.stoch_rsi.value.k|round(2) }}" class="far fa-circle text-danger"></i>
-                                                    {% elseif ta.stoch_rsi.value.k <= 20 and ta.stoch_rsi.value.d <= 20 %}
-                                                        <i data-toggle="tooltip" title="{{ ta.stoch_rsi.value.k|round(2) }}" class="far fa-circle text-success"></i>
+                                                    {% if ta.stoch_rsi.value.stoch_k >= 80 and ta.stoch_rsi.value.stoch_d >= 80 %}
+                                                        <i data-toggle="tooltip" title="{{ ta.stoch_rsi.value.stoch_k|round(2) }}" class="far fa-circle text-danger"></i>
+                                                    {% elseif ta.stoch_rsi.value.stoch_k <= 20 and ta.stoch_rsi.value.stoch_d <= 20 %}
+                                                        <i data-toggle="tooltip" title="{{ ta.stoch_rsi.value.stoch_k|round(2) }}" class="far fa-circle text-success"></i>
                                                     {% else %}
-                                                        <i data-toggle="tooltip" title="{{ ta.stoch_rsi.value.k|round(2) }}" class="far fa-arrow-alt-circle-up {{ ta.stoch_rsi.value.k >= ta.stoch_rsi.value.d ? 'trend-up text-success' : 'trend-down text-danger' }}"></i>
+                                                        <i data-toggle="tooltip" title="{{ ta.stoch_rsi.value.stoch_k|round(2) }}" class="far fa-arrow-alt-circle-up {{ ta.stoch_rsi.value.stoch_k >= ta.stoch_rsi.value.stoch_d ? 'trend-up text-success' : 'trend-down text-danger' }}"></i>
                                                     {% endif %}
                                                 </td>
                                                 <td class="{{ ta.ao.value > 0 ? 'text-success' : 'text-danger' }}">
