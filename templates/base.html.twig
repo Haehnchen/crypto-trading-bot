@@ -39,7 +39,8 @@
                                         <th scope="col" style="border-top-width: 1px">24h</th>
 
                                         {% for period in periods %}
-                                            <th class="text-uppercase" colspan="2" scope="col">s200</th>
+                                            <th class="text-uppercase" scope="col" data-toggle="tooltip" title="Trend Direction (ema 55 / ema 200)">T</th>
+                                            <th class="text-uppercase" scope="col">s200</th>
                                             <th class="text-uppercase" scope="col">s50</th>
                                             <th class="text-uppercase" scope="col">e55</th>
                                             <th class="text-uppercase" scope="col">e200</th>
@@ -58,13 +59,13 @@
 
                                     {% for row in rows %}
                                         <tr>
-                                            <td><i class="fa-fw {% if 'USD' in row.symbol %}fas fa-dollar-sign{% elseif 'Z18' in row.symbol %}fas fa-file-contract{% else %}fab fa-bitcoin{% endif %}"></i> <a target="blank" href="/tradingview/{{ row.exchange }}:{{ row.symbol }}">{{ row.symbol }}</a></td>
+                                            <td><i class="fa-fw {% if 'USD' in row.symbol %}fas fa-dollar-sign{% elseif 'PERP' in row.symbol %}fas fa-file-contract{% else %}fab fa-bitcoin{% endif %}"></i> <a target="blank" href="/tradingview/{{ row.exchange }}:{{ row.symbol }}">{{ row.symbol }}</a></td>
                                             <td>{{ row.ticker.bid|price_format }}</td>
                                             <td style="white-space: nowrap">{% if row.percentage_change %}<span class="{{ row.percentage_change > 0 ? 'text-success' : 'text-danger' }}">{{ row.percentage_change|round(1) }} %</span>{% endif %}</td>
 
                                             {% for period in periods %}
                                                 {% set ta = row.ta[period] %}
-                                                <td class="period-start {{ ta.ema_55.value > ta.ema_200.value ? 'text-success' : 'text-danger' }}"><i class="fas {{ ta.ema_55.value > ta.ema_200.value ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i></td>
+                                                <td class="period-start {{ ta.ema_55.value > ta.ema_200.value ? 'text-success' : 'text-danger' }}"><i class="fas {{ ta.ema_55.value > ta.ema_200.value ? 'fa-arrow-alt-circle-up' : 'fa-arrow-alt-circle-down' }}"></i></td>
                                                 <td data-toggle="tooltip" title="{{ ta.sma_200.value|price_format }}" class="{{ row.ticker.bid > ta.sma_200.value ? 'text-success' : 'text-danger' }}"><i class="fas {{ row.ticker.bid > ta.sma_200.value ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i></td>
                                                 <td data-toggle="tooltip" title="{{ ta.sma_50.value|price_format }}"  class="{{ row.ticker.bid > ta.sma_50.value ? 'text-success' : 'text-danger' }}"><i class="fas {{ row.ticker.bid > ta.sma_50.value ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i></td>
                                                 <td data-toggle="tooltip" title="{{ ta.ema_55.value|price_format }}"  class="{{ row.ticker.bid > ta.ema_55.value ? 'text-success' : 'text-danger' }}"><i class="fas {{ row.ticker.bid > ta.ema_55.value ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i></td>
@@ -75,13 +76,13 @@
                                                     {% if ta.rsi.value >= 70 %}text-danger{% endif %}
                                                     {% if ta.rsi.value > 30 and ta.rsi.value < 50 %}text-warning{% endif %}
                                                     {% if ta.rsi.value > 50 and ta.rsi.value < 70 %}text-orange{% endif %}
-                                                ">{{ ta.rsi.value|round(2) }}</td>
+                                                ">{{ ta.rsi.value|round(0) }}</td>
                                                                                     <td class="
                                                     {% if ta.cci.value >= 250 or ta.cci.value <= -250 %}font-weight-bold {% endif %}
                                                     {% if ta.cci.value <= -100 %}text-success{% endif %}
                                                     {% if ta.cci.value >= 100 %}text-danger{% endif %}
                                                     {% if ta.cci.value > -100 and ta.rsi.value < 100 %}text-warning{% endif %}
-                                                ">{{ ta.cci.value|round(2) }}</td>
+                                                ">{{ ta.cci.value|round(0) }}</td>
                                                 <td>
                                                     {% if ta.stoch_rsi.value.stoch_k >= 80 and ta.stoch_rsi.value.stoch_d >= 80 %}
                                                         <i data-toggle="tooltip" title="{{ ta.stoch_rsi.value.stoch_k|round(2) }}" class="far fa-circle text-danger"></i>
@@ -101,7 +102,7 @@
                                                     {% if ta.mfi.value <= 20 %}text-success{% endif %}
                                                     {% if ta.mfi.value >= 80 %}text-danger{% endif %}
                                                     {% if ta.mfi.value > 20 and ta.rsi.value < 80 %}text-warning{% endif %}
-                                                ">{{ ta.mfi.value|round(2) }}</td>
+                                                ">{{ ta.mfi.value|round(0) }}</td>
                                                                                     <td style="white-space: nowrap" class="
                                                     {% if ta.bollinger_bands.percent >= 95 or ta.bollinger_bands.percent <= 5 %}font-weight-bold {% endif %}
                                                     {% if ta.bollinger_bands.percent <= 5 %}text-success{% endif %}
