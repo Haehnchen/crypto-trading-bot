@@ -320,11 +320,11 @@ module.exports = class Binance {
         if (totalTradeQuantity > 0) {
           amount -= totalTradeQuantity;
         }
-      } else if (order.cummulativeQuoteQty) {
+      } else if (order.executedQty) {
         // REST
-        const cummulativeQuoteQty = parseFloat(order.cummulativeQuoteQty);
-        if (cummulativeQuoteQty > 0) {
-          amount -= cummulativeQuoteQty;
+        const executedQty = parseFloat(order.executedQty);
+        if (executedQty > 0) {
+          amount -= executedQty;
         }
       }
 

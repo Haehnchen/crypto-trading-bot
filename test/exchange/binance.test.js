@@ -398,6 +398,12 @@ describe('#binance exchange implementation', function() {
     assert.strictEqual(orders[5].type, 'limit');
     assert.strictEqual(orders[5].side, 'buy');
     assert.strictEqual(orders[5].amount, 0.000611);
+
+    assert.strictEqual(orders[6].status, 'done');
+    assert.strictEqual(orders[6].symbol, 'BTCUSDT');
+    assert.strictEqual(orders[6].type, 'limit');
+    assert.strictEqual(orders[6].side, 'sell');
+    assert.strictEqual(orders[6].amount, 0);
   });
 
   const getEvent = function(find) {

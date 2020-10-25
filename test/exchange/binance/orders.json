@@ -152,7 +152,7 @@
     "clientOrderId": "web_f4ab3eae12844370a056685f0e52617e_REST",
     "price": "10400",
     "origQty": "0.000962",
-    "executedQty": "0",
+    "executedQty": "0.000351",
     "cummulativeQuoteQty": "0.000351",
     "status": "NEW",
     "timeInForce": "GTC",
@@ -163,6 +163,31 @@
     "time": 1601049698994,
     "updateTime": 1601049698994,
     "isWorking": true,
+    "isIsolated": false
+  },
+  {
+    "symbol": "BTCUSDT",
+    "orderId": 3425333561,
+    "clientOrderId": "638050460369_REST",
+    "transactTime": 1603614250415,
+    "price": "12725",
+    "origQty": "0.001178",
+    "executedQty": "0.001178",
+    "cummulativeQuoteQty": "15.28836672",
+    "status": "FILLED",
+    "timeInForce": "GTC",
+    "type": "LIMIT",
+    "side": "SELL",
+    "fills": [
+      {
+        "price": "12978.24",
+        "qty": "0.001178",
+        "commission": "0.00037728",
+        "commissionAsset": "BNB"
+      }
+    ],
+    "marginBuyBorrowAsset": "BTC",
+    "marginBuyBorrowAmount": "0.001178",
     "isIsolated": false
   }
 ]
