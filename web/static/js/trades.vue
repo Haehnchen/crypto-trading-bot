@@ -23,7 +23,7 @@
 
           </thead>
           <tbody>
-          <tr v-for='position in positions'>
+          <tr v-for='position in positions' :key="`${position.exchange}-${position.position.symbol}`">
             <td>{{ position.exchange }}</td>
             <td><a target="blank" :href="'/tradingview/' + position.exchange + ':' + position.position.symbol">{{ position.position.symbol }}</a></td>
             <td v-bind:class="{ 'text-success': position.position.amount > 0, 'text-danger': position.position.amount < 0 }">
@@ -98,7 +98,7 @@
 
             </thead>
             <tbody>
-            <tr v-for='order in orders'>
+            <tr v-for='order in orders' :key="`${order.exchange}-${order.order.symbol}-${order.order.id}`">
               <td>{{ order.exchange }}</td>
               <td><a target="blank" :href="'/tradingview/' + order.exchange + ':' + order.order.symbol">{{ order.order.symbol }}</a></td>
               <td>{{ order.order.type }}</td>
