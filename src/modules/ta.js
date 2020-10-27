@@ -13,7 +13,13 @@ module.exports = class Ta {
     return new Promise(resolve => {
       const promises = [];
 
+      // filter same pair on different exchanges; last wins
+      const uniqueSymbols = {};
       this.instances.symbols.forEach(symbol => {
+        uniqueSymbols[symbol.symbol] = symbol;
+      });
+
+      Object.values(uniqueSymbols).forEach(symbol => {
         periods.forEach(period => {
           promises.push(
             new Promise(async resolve => {
