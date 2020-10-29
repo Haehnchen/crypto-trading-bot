@@ -64,5 +64,17 @@ module.exports = {
     const value2Abs = Math.abs(value2);
 
     return Math.abs((value1Abs - value2Abs) / ((value1Abs + value2Abs) / 2)) * 100 > percentDiff;
+  },
+
+  /**
+   * Percent different between to values, independent of smaller or bigger
+   * @param orderPrice
+   * @param currentPrice
+   * @returns {number}
+   */
+  getPercentDifferent: (orderPrice, currentPrice) => {
+    return orderPrice > currentPrice
+      ? 100 - (currentPrice / orderPrice) * 100
+      : 100 - (orderPrice / currentPrice) * 100;
   }
 };

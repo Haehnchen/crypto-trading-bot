@@ -103,7 +103,7 @@
               <td><a target="blank" :href="'/tradingview/' + order.exchange + ':' + order.order.symbol">{{ order.order.symbol }}</a></td>
               <td>{{ order.order.type }}</td>
               <td>{{ order.order.id }}</td>
-              <td>{{ order.order.price }}</td>
+              <td>{{ order.order.price }}<span class="text-muted" v-if="order.percent_to_price" title="Percent to current price"> {{ order.percent_to_price|round(1) }} %</span></td>
               <td v-bind:class="{ 'text-success': order.order.amount > 0, 'text-danger': order.order.amount < 0 }">{{ order.order.amount }}</td>
               <td>{{ order.order.retry }}</td>
               <td>{{ order.order.ourId }}</td>

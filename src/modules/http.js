@@ -5,6 +5,7 @@ const auth = require('basic-auth');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const moment = require('moment');
+const OrderUtil = require('../utils/order_util');
 
 module.exports = class Http {
   constructor(
@@ -18,6 +19,7 @@ module.exports = class Http {
     candleExportHttp,
     candleImporter,
     ordersHttp,
+    tickers,
     projectDir
   ) {
     this.systemUtil = systemUtil;
@@ -31,6 +33,7 @@ module.exports = class Http {
     this.candleImporter = candleImporter;
     this.ordersHttp = ordersHttp;
     this.projectDir = projectDir;
+    this.tickers = tickers;
   }
 
   start() {
@@ -362,10 +365,17 @@ module.exports = class Http {
 
         const myOrders = await exchange.getOrders();
         myOrders.forEach(order => {
-          orders.push({
+          const items = {
             exchange: exchange.getName(),
             order: order
-          });
+          };
+
+          const ticker = this.tickers.get(exchange.getName(), order.symbol);
+          if (ticker) {
+            items.percent_to_price = OrderUtil.getPercentDifferent(order.price, ticker.bid);
+          }
+
+          orders.push(items);
         });
       }
 

@@ -370,6 +370,7 @@ module.exports = {
       this.getCandleExportHttp(),
       this.getCandleImporter(),
       this.getOrdersHttp(),
+      this.getTickers(),
       parameters.projectDir
     );
   },
