@@ -5,7 +5,7 @@
 {% block javascript %}
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://unpkg.com/http-vue-loader"></script>
-    <script src="/js/trades.js" type="module"></script>
+    <script src="/js/trades.js?v={{ asset_version() }}" type="module"></script>
 {% endblock %}
 
 {% block content %}
