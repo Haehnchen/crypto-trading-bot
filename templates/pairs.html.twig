@@ -48,7 +48,7 @@
                                         <tbody>
                                         {% for pair in pairs %}
                                             <tr>
-                                                <td style="white-space: nowrap">{{ pair.exchange }}</td>
+                                                <td style="white-space: nowrap"><img src="/img/exchanges/{{ pair.exchange }}.png" title="{{ pair.exchange }}" alt="{{ pair.exchange }}" width="16px" height="16px"></td>
                                                 <td style="white-space: nowrap"><a target="blank" href="/tradingview/{{ pair.exchange }}:{{ pair.symbol }}">{{ pair.symbol }}</td>
                                                 <td>{{ pair.state }}</td>
                                                 <td><strong>{{ pair.capital }}</strong></td>
