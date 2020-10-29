@@ -9,16 +9,16 @@
         <table class="table table-bordered table-sm table-hover">
           <thead>
           <tr>
-            <th scope="col">Exchange</th>
+            <th scope="col" title="Exchange">E</th>
             <th scope="col">Symbol</th>
             <th scope="col">Amount</th>
             <th scope="col">Currency</th>
             <th scope="col">Profit</th>
             <th scope="col">Entry</th>
-            <th scope="col">UpdatedAt</th>
-            <th scope="col">CreatedAt</th>
-            <th scope="col">Side</th>
-            <th scope="col">Action</th>
+            <th scope="col">Updated</th>
+            <th scope="col">Created</th>
+            <th scope="col" title="Side">S</th>
+            <th scope="col" title="Action">A</th>
           </tr>
 
           </thead>
@@ -81,19 +81,19 @@
           <table class="table table-bordered table-sm table-hover">
             <thead>
             <tr>
-              <th scope="col">Exchange</th>
+              <th scope="col" title="Exchange">E</th>
               <th scope="col">Symbol</th>
               <th scope="col">Type</th>
-              <th scope="col">ID</th>
+              <th scope="col">Id</th>
               <th scope="col">Price</th>
               <th scope="col">Amount</th>
               <th scope="col">Retry</th>
               <th scope="col">OurId</th>
-              <th scope="col">CreatedAt</th>
-              <th scope="col">UpdatedAt</th>
+              <th scope="col">Created</th>
+              <th scope="col">Updated</th>
               <th scope="col">Status</th>
-              <th scope="col">Side</th>
-              <th scope="col">Action</th>
+              <th scope="col" title="Side">S</th>
+              <th scope="col" title="Action">A</th>
             </tr>
 
             </thead>
