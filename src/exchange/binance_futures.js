@@ -67,7 +67,7 @@ module.exports = class BinanceFutures {
       }, 2000);
 
       setTimeout(async () => {
-        await me.initPublicWebsocket(symbols, config);
+        await me.initPublicWebsocket(symbols);
       }, 5000);
     } else {
       me.logger.info('Binance Futures: Starting as anonymous; no trading possible');
@@ -316,7 +316,7 @@ module.exports = class BinanceFutures {
     return false;
   }
 
-  async initPublicWebsocket(symbols, config) {
+  async initPublicWebsocket(symbols) {
     const me = this;
 
     const allSubscriptions = [];
@@ -329,102 +329,111 @@ module.exports = class BinanceFutures {
 
     // "A single connection can listen to a maximum of 200 streams."; let us have some window frames
     _.chunk(allSubscriptions, 180).forEach((allSubscriptionsChunk, indexConnection) => {
-      const ws = new WebSocket('wss://fstream.binance.com/stream');
-
-      ws.onerror = function(event) {
-        me.logger.error(
-          `Binance Futures: Public stream (${indexConnection}) error: ${JSON.stringify([event.code, event.message])}`
-        );
-      };
-
-      let subscriptionTimeouts = {};
-
-      ws.onopen = function() {
-        me.logger.info(`Binance Futures: Public stream (${indexConnection}) opened.`);
-
-        me.logger.info(
-          `Binance Futures: Needed Websocket (${indexConnection}) subscriptions: ${JSON.stringify(
-            allSubscriptionsChunk.length
-          )}`
-        );
-
-        // "we are only allowed to send 5 requests per second"; let us have some window frames
-        _.chunk(allSubscriptionsChunk, 15).forEach((subscriptionChunk, index) => {
-          subscriptionTimeouts[index] = setTimeout(() => {
-            me.logger.debug(
-              `Binance Futures: Public stream (${indexConnection}) subscribing: ${JSON.stringify(subscriptionChunk)}`
-            );
-
-            ws.send(
-              JSON.stringify({
-                method: 'SUBSCRIBE',
-                params: subscriptionChunk,
-                id: Math.floor(Math.random() * Math.floor(100))
-              })
-            );
-
-            delete subscriptionTimeouts[index];
-          }, (index + 1) * 1500);
-        });
-      };
-
-      ws.onmessage = async function(event) {
-        if (event.type && event.type === 'message') {
-          const body = JSON.parse(event.data);
-
-          if (body.stream && body.stream.toLowerCase().includes('@bookticker')) {
-            me.eventEmitter.emit(
-              'ticker',
-              new TickerEvent(
-                me.getName(),
-                body.data.s,
-                (me.tickers[body.data.s] = new Ticker(
-                  me.getName(),
-                  body.data.s,
-                  moment().format('X'),
-                  parseFloat(body.data.b),
-                  parseFloat(body.data.a)
-                ))
-              )
-            );
-          } else if (body.stream && body.stream.toLowerCase().includes('@kline')) {
-            await me.candleImporter.insertThrottledCandles([
-              new ExchangeCandlestick(
-                me.getName(),
-                body.data.s,
-                body.data.k.i,
-                Math.round(body.data.k.t / 1000),
-                parseFloat(body.data.k.o),
-                parseFloat(body.data.k.h),
-                parseFloat(body.data.k.l),
-                parseFloat(body.data.k.c),
-                parseFloat(body.data.k.v)
-              )
-            ]);
-          }
-        }
-      };
-
-      ws.onclose = function(event) {
-        me.logger.error(
-          `Binance Futures: Public Stream (${indexConnection}) connection closed: ${JSON.stringify([
-            event.code,
-            event.message
-          ])}`
-        );
-
-        Object.values(subscriptionTimeouts).forEach(timeout => {
-          clearTimeout(timeout);
-        });
-
-        subscriptionTimeouts = {};
-
-        setTimeout(async () => {
-          me.logger.info(`Binance Futures: Public stream (${indexConnection}) connection reconnect`);
-          await me.initPublicWebsocket(symbols, config);
-        }, 1000 * 30);
-      };
+      me.initPublicWebsocketChunk(allSubscriptionsChunk, indexConnection);
     });
+  }
+
+  /**
+   * A per websocket init function scope to filter maximum allowed subscriptions per connection
+   *
+   * @param {string[]} subscriptions
+   * @param {int} indexConnection
+   */
+  initPublicWebsocketChunk(subscriptions, indexConnection) {
+    const me = this;
+    const ws = new WebSocket('wss://fstream.binance.com/stream');
+
+    ws.onerror = function(event) {
+      me.logger.error(
+        `Binance Futures: Public stream (${indexConnection}) error: ${JSON.stringify([event.code, event.message])}`
+      );
+    };
+
+    let subscriptionTimeouts = {};
+
+    ws.onopen = function() {
+      me.logger.info(`Binance Futures: Public stream (${indexConnection}) opened.`);
+
+      me.logger.info(
+        `Binance Futures: Needed Websocket (${indexConnection}) subscriptions: ${JSON.stringify(subscriptions.length)}`
+      );
+
+      // "we are only allowed to send 5 requests per second"; but limit it also for the "SUBSCRIBE" itself who knows upcoming changes on this
+      _.chunk(subscriptions, 15).forEach((subscriptionChunk, index) => {
+        subscriptionTimeouts[index] = setTimeout(() => {
+          me.logger.debug(
+            `Binance Futures: Public stream (${indexConnection}) subscribing: ${JSON.stringify(subscriptionChunk)}`
+          );
+
+          ws.send(
+            JSON.stringify({
+              method: 'SUBSCRIBE',
+              params: subscriptionChunk,
+              id: Math.floor(Math.random() * Math.floor(100))
+            })
+          );
+
+          delete subscriptionTimeouts[index];
+        }, (index + 1) * 1500);
+      });
+    };
+
+    ws.onmessage = async function(event) {
+      if (event.type && event.type === 'message') {
+        const body = JSON.parse(event.data);
+
+        if (body.stream && body.stream.toLowerCase().includes('@bookticker')) {
+          me.eventEmitter.emit(
+            'ticker',
+            new TickerEvent(
+              me.getName(),
+              body.data.s,
+              (me.tickers[body.data.s] = new Ticker(
+                me.getName(),
+                body.data.s,
+                moment().format('X'),
+                parseFloat(body.data.b),
+                parseFloat(body.data.a)
+              ))
+            )
+          );
+        } else if (body.stream && body.stream.toLowerCase().includes('@kline')) {
+          await me.candleImporter.insertThrottledCandles([
+            new ExchangeCandlestick(
+              me.getName(),
+              body.data.s,
+              body.data.k.i,
+              Math.round(body.data.k.t / 1000),
+              parseFloat(body.data.k.o),
+              parseFloat(body.data.k.h),
+              parseFloat(body.data.k.l),
+              parseFloat(body.data.k.c),
+              parseFloat(body.data.k.v)
+            )
+          ]);
+        }
+      }
+    };
+
+    ws.onclose = function(event) {
+      me.logger.error(
+        `Binance Futures: Public Stream (${indexConnection}) connection closed: ${JSON.stringify([
+          event.code,
+          event.message
+        ])}`
+      );
+
+      Object.values(subscriptionTimeouts).forEach(timeout => {
+        clearTimeout(timeout);
+      });
+
+      subscriptionTimeouts = {};
+
+      setTimeout(async () => {
+        me.logger.info(`Binance Futures: Public stream (${indexConnection}) connection reconnect`);
+        await me.initPublicWebsocketChunk(subscriptions, indexConnection);
+      }, 1000 * 30);
+    };
   }
 
   async initUserWebsocket() {
