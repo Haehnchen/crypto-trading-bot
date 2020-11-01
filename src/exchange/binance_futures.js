@@ -319,8 +319,8 @@ module.exports = class BinanceFutures {
     const me = this;
     const ws = new WebSocket('wss://fstream.binance.com/stream');
 
-    ws.onerror = function(e) {
-      me.logger.info(`Binance Futures: Public stream error: ${String(e)}`);
+    ws.onerror = function(event) {
+      me.logger.error(`Binance Futures: Public stream error: ${JSON.stringify(event)}`);
     };
 
     ws.onopen = function() {
@@ -387,11 +387,11 @@ module.exports = class BinanceFutures {
       }
     };
 
-    ws.onclose = function() {
-      me.logger.info('Binance futures: Public stream connection closed.');
+    ws.onclose = function(event) {
+      me.logger.error(`Binance Futures: Public stream connection closed: ${JSON.stringify(event)}`);
 
       setTimeout(async () => {
-        me.logger.info('Binance futures: Public stream connection reconnect');
+        me.logger.info('Binance Futures: Public stream connection reconnect');
         await me.initPublicWebsocket(symbols, config);
       }, 1000 * 30);
     };
@@ -450,8 +450,8 @@ module.exports = class BinanceFutures {
       }
     }, 1000 * 60 * 10);
 
-    ws.onclose = function() {
-      me.logger.info('Binance futures: User stream connection closed.');
+    ws.onclose = function(event) {
+      me.logger.error(`Binance futures: User stream connection closed: ${JSON.stringify(event)}`);
       clearInterval(heartbeat);
 
       setTimeout(async () => {
