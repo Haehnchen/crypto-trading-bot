@@ -325,8 +325,10 @@ module.exports = class BinanceFutures {
       allSubscriptions.push(...symbol.periods.map(p => `${symbol.symbol.toLowerCase()}@kline_${p}`));
     });
 
+    me.logger.info(`Binance Futures: Public stream subscriptions: ${allSubscriptions.length}`);
+
     // "A single connection can listen to a maximum of 200 streams."; let us have some window frames
-    _.chunk(new Set(allSubscriptions), 180).forEach((allSubscriptionsChunk, indexConnection) => {
+    _.chunk(allSubscriptions, 180).forEach((allSubscriptionsChunk, indexConnection) => {
       const ws = new WebSocket('wss://fstream.binance.com/stream');
 
       ws.onerror = function(event) {
