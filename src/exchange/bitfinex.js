@@ -694,7 +694,6 @@ module.exports = class Bitfinex {
     });
 
     ws.onBalanceInfoUpdate({}, balanceInfo => {
-      this.logger.debug(`BalanceInfoUpdate updtate: ${JSON.stringify(balanceInfo)}`);
       this.balanceInfo = balanceInfo;
     });
 
