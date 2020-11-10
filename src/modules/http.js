@@ -75,6 +75,11 @@ module.exports = class Http {
       return Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100;
     });
 
+    const up = new Date();
+    twig.extendFunction('uptime', function() {
+      return moment(up).toNow(true);
+    });
+
     twig.extendFilter('format_json', function(value) {
       return JSON.stringify(value, null, '\t');
     });
