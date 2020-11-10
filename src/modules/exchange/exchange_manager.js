@@ -20,7 +20,7 @@ module.exports = class ExchangeManager {
       .map(exchange => exchange.getName())
       .forEach(exchangeName => {
         const pairs = this.instances.symbols.filter(symbol => {
-          return symbol.exchange === exchangeName && symbol.state === 'watch';
+          return symbol.exchange === exchangeName && ['watch', 'trade'].includes(symbol.state);
         });
 
         if (pairs.length === 0) {

@@ -54,7 +54,7 @@ module.exports = class Trade {
 
     const notifyActivePairs = this.instances.symbols
       .filter(symbol => {
-        return symbol.state === 'watch';
+        return ['watch', 'trade'].includes(symbol.state);
       })
       .map(symbol => {
         return `${symbol.exchange}.${symbol.symbol}`;
