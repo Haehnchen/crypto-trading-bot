@@ -30,7 +30,7 @@ module.exports = class Backtest {
     });
   }
 
-  getBacktestResult(tickIntervalInMinutes, hours, strategy, candlePeriod, exchange, pair, options) {
+  getBacktestResult(tickIntervalInMinutes, hours, strategy, candlePeriod, exchange, pair, options,initial_capital) {
     return new Promise(async resolve => {
       const start = moment()
         .startOf('hour')
@@ -132,7 +132,7 @@ module.exports = class Backtest {
           };
         });
       
-      let backtestSummary = await this.getBacktestSummary(signals)
+      let backtestSummary = await this.getBacktestSummary(signals,initial_capital)
       resolve({
         summary : backtestSummary,
         rows: rows.slice().reverse(),
@@ -148,10 +148,10 @@ module.exports = class Backtest {
     });
   }
 
-  getBacktestSummary(signals) {
+  getBacktestSummary(signals,initial_capital) {
     return new Promise(async resolve => {
 
-      let initialCapital = 10000;           //1000 $ Initial Capital
+      let initialCapital = Number(initial_capital);           //1000 $ Initial Capital
       let workingCapital = initialCapital;  //Capital that changes after every trade
       
       let lastPosition;                     //Holds Info about last action
