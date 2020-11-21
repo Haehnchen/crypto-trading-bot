@@ -34,6 +34,20 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header">
+                                <h3 class="card-title">Summary</h3>
+                            </div>
+                            <!-- /.card-header -->
+                            <div class="card-body">
+                                {% include 'components/backtest_summary.html.twig' with {
+                                    'summary': summary
+                                } only %}
+                            </div>
+                            <!-- /.card-body -->
+                        </div>
+                        <!-- /.card -->
+                        
+                        <div class="card">
+                            <div class="card-header">
                                 <h3 class="card-title">Chart</h3>
                             </div>
                             <!-- /.card-header -->
