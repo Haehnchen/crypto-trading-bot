@@ -151,7 +151,7 @@ module.exports = class Binance {
     try {
       result = await this.client.order(payload);
     } catch (e) {
-      this.logger.error(`Binance: order create error: ${JSON.stringify(e.message, order, payload)}`);
+      this.logger.error(`Binance: order create error: ${JSON.stringify(e.code, e.message, order, payload)}`);
 
       if ((e.message && e.message.toLowerCase().includes('insufficient balance')) || (e.code && e.code === -2010)) {
         return ExchangeOrder.createRejectedFromOrder(order, `${e.code} - ${e.message}`);

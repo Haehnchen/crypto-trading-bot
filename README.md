@@ -25,7 +25,7 @@ As most trading bots just provide basic buy and sell signals they provide many s
  * [Bitmex Testnet](https://www.bitmex.com/register/jS4mLN)
  * [Binance](https://www.binance.com/?ref=17569916)
  * [Binance Margin](https://www.binance.com/?ref=17569916)
- * [Binance Futures](https://www.binance.com/?ref=17569916)
+ * [Binance Futures](https://www.binance.com/en/futures/ref/302644)
  * [Coinbase Pro](https://www.coinbase.com/join/5a2ae60e76531100d3af2ee5)
  * [Bitfinex](https://www.bitfinex.com/?refcode=kDLceRHa) (margin wallet)
  * [Bybit](https://www.bybit.com/app/register?ref=46AK7) with leverage configuration
