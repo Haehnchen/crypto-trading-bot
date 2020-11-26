@@ -58,6 +58,15 @@ module.exports = class CandlestickRepository {
     });
   }
 
+  getCandlePeriods(exchange, symbol) {
+    return new Promise(resolve => {
+      const stmt = this.db.prepare(
+        `SELECT DISTINCT period from candlesticks where exchange = ? AND symbol = ? ORDER BY period ASC`
+      );
+      resolve(stmt.all([exchange, symbol]).map(row => row.period));
+    });   
+  }
+
   insertCandles(exchangeCandlesticks) {
     return new Promise(resolve => {
       const upsert = this.db.prepare(

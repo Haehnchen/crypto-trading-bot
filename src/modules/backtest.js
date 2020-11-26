@@ -11,14 +11,16 @@ module.exports = class Backtest {
     this.projectDir = projectDir;
   }
 
-  getBacktestPairs() {
-    const pairs = [];
-
-    this.instances.symbols.forEach(symbol => {
-      pairs.push(`${symbol.exchange}.${symbol.symbol}`);
-    });
-
-    return pairs.sort();
+  async getBacktestPairs() {
+    let pairs = [];
+    for (const symbol of this.instances.symbols) {
+      const periods = await this.exchangeCandleCombine.fetchCandlePeriods(symbol.exchange, symbol.symbol);
+      pairs.push({
+        name: `${symbol.exchange}.${symbol.symbol}`,
+        options: periods
+      });
+    }
+    return pairs;
   }
 
   getBacktestStrategies() {
