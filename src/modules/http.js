@@ -125,7 +125,7 @@ module.exports = class Http {
     app.get('/backtest', async (req, res) => {
       res.render('../templates/backtest.html.twig', {
         strategies: this.backtest.getBacktestStrategies(),
-        pairs: this.backtest.getBacktestPairs()
+        pairs: await this.backtest.getBacktestPairs()
       });
     });
 

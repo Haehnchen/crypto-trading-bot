@@ -40,7 +40,7 @@
                                                     <label for="form-pair">Pair</label>
                                                     <select class="form-control" id="form-pair" name="pair" required>
                                                         {% for pair in pairs %}
-                                                            <option>{{ pair }}</option>
+                                                            <option data-options="{% if pair.options %}{{ pair.options|format_json|escape('html') }}{% endif %}">{{ pair.name }}</option>
                                                         {% endfor %}
                                                     </select>
                                                 </div>
@@ -58,9 +58,11 @@
                                                 <div class="form-group">
                                                     <label for="form-candle-period">Candle Period</label>
                                                     <select class="form-control" id="form-candle-period" name="candle_period" required>
-                                                        {% for period in ['1m', '5m', '15m', '1h', '4h'] %}
-                                                            <option value="{{ period }}" {% if period == '15m' %}selected{% endif %}>{{ period }}</option>
-                                                        {% endfor %}
+                                                        {% if pairs|length > 0 %}
+                                                            {% for period in pairs[0].options %}
+                                                                <option value="{{ period }}" {% if period == '15m' %}selected{% endif %}>{{ period }}</option>
+                                                            {% endfor %}                                                        
+                                                        {% endif %}
                                                     </select>
                                                 </div>
 
