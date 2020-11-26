@@ -49,17 +49,21 @@ module.exports = class BinanceFutures {
 
     if (config.key && config.secret && config.key.length > 0 && config.secret.length > 0) {
       setInterval(async () => {
-        me.throttler.addTask('binance_futures_sync_orders', me.ccxtExchangeOrder.syncOrders());
+        me.throttler.addTask('binance_futures_sync_orders', async () => {
+          await me.ccxtExchangeOrder.syncOrders();
+        });
       }, 1000 * 30);
 
       setInterval(async () => {
-        me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi());
+        me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi.bind(me));
       }, 1000 * 36);
 
       setTimeout(async () => {
         await ccxtClient.fetchMarkets();
-        me.throttler.addTask('binance_futures_sync_orders', me.ccxtExchangeOrder.syncOrders());
-        me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi());
+        me.throttler.addTask('binance_futures_sync_orders', async () => {
+          await me.ccxtExchangeOrder.syncOrders();
+        });
+        me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi.bind(me));
       }, 1000);
 
       setTimeout(async () => {
@@ -468,14 +472,14 @@ module.exports = class BinanceFutures {
           const order = BinanceFutures.createRestOrderFromWebsocket(message.o);
 
           me.logger.info(`Binance Futures: ORDER_TRADE_UPDATE event: ${JSON.stringify([message.e, message.o, order])}`);
-          me.throttler.addTask('binance_futures_sync_orders', me.ccxtExchangeOrder.syncOrders(), 3000);
+          me.throttler.addTask('binance_futures_sync_orders', me.ccxtExchangeOrder.syncOrders.bind(me), 3000);
           me.ccxtExchangeOrder.triggerPlainOrder(order);
         }
 
         if (message.e && message.e.toUpperCase() === 'ACCOUNT_UPDATE') {
           me.accountUpdate(message);
 
-          me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi(), 3000);
+          me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi.bind(me), 3000);
         }
       }
     };
