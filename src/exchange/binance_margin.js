@@ -406,15 +406,18 @@ module.exports = class BinanceMargin {
       if (isRemoveEvent) {
         this.logger.info(`Binance Margin: Removing non open order: ${orderStatus} - ${JSON.stringify(event)}`);
         this.orderbag.delete(event.orderId);
+        this.throttler.addTask('binance_margin_sync_balances', this.syncBalances.bind(this), 500);
       }
 
       // sync all open orders and get entry based fire them in parallel
-      this.throttler.addTask('binance_margin_sync_orders', this.syncOrders());
+      this.throttler.addTask('binance_margin_sync_orders', this.syncOrders.bind(this));
 
       // set last order price to our trades. so we have directly profit and entry prices
       this.throttler.addTask(
         `binance_margin_sync_trades_for_entries_${event.symbol}`,
-        this.syncTradesForEntries([event.symbol]),
+        async () => {
+          await this.syncTradesForEntries([event.symbol]);
+        },
         300
       );
 
@@ -430,7 +433,7 @@ module.exports = class BinanceMargin {
       // we dont get the margin information here;
       // so we would only be able to calculate longs, so do a full sync on API
 
-      this.throttler.addTask('binance_margin_sync_balances', this.syncBalances());
+      this.throttler.addTask('binance_margin_sync_balances', this.syncBalances.bind(this), 500);
     }
   }
 
@@ -459,6 +462,7 @@ module.exports = class BinanceMargin {
     }
 
     if (!accountInfo || !accountInfo.userAssets) {
+      this.logger.error(`Binance Margin: invalid sync balances response: ${JSON.stringify(accountInfo)}`);
       return;
     }
 

@@ -102,11 +102,13 @@ module.exports = class Bybit {
               (function f() {
                 me.throttler.addTask(
                   `bybit_sync_all_orders`,
-                  me.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol)),
+                  async () => {
+                    await me.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol));
+                  },
                   1245
                 );
 
-                me.throttler.addTask(`bybit_sync_positions`, me.syncPositionViaRestApi(), 1245);
+                me.throttler.addTask(`bybit_sync_positions`, me.syncPositionViaRestApi.bind(me), 1245);
                 return f;
               })(),
               60000
@@ -196,7 +198,9 @@ module.exports = class Bybit {
 
           me.throttler.addTask(
             `bybit_sync_all_orders`,
-            me.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol)),
+            async () => {
+              await me.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol));
+            },
             1245
           );
         } else if (data.data && data.topic && data.topic.toLowerCase() === 'position') {
@@ -215,7 +219,7 @@ module.exports = class Bybit {
             me.positions[position.symbol] = position;
           });
 
-          me.throttler.addTask(`bybit_sync_positions`, me.syncPositionViaRestApi(), 1545);
+          me.throttler.addTask(`bybit_sync_positions`, me.syncPositionViaRestApi.bind(me), 1545);
         }
       }
     };
