@@ -26,7 +26,7 @@ $(function() {
         optionTag.html('');
         $.each(JSON.parse(options), function(key, value) {
           optionTag
-          .append($('<option>', { value : key })
+          .append($('<option>', { value : value })
           .text(value));
      });
     }
