@@ -1,3 +1,4 @@
+const moment = require('moment');
 const Candlestick = require('../../dict/candlestick');
 
 module.exports = class CandlestickRepository {
@@ -61,9 +62,11 @@ module.exports = class CandlestickRepository {
   getCandlePeriods(exchange, symbol) {
     return new Promise(resolve => {
       const stmt = this.db.prepare(
-        `SELECT DISTINCT period from candlesticks where exchange = ? AND symbol = ? ORDER BY period ASC`
+        `SELECT DISTINCT period FROM candlesticks 
+        WHERE exchange = ? AND symbol = ? and time > ? 
+        GROUP BY period ORDER BY period ASC`
       );
-      resolve(stmt.all([exchange, symbol]).map(row => row.period));
+      resolve(stmt.all([exchange, symbol,  moment().subtract(90, 'days').unix()]).map(row => row.period));
     });   
   }
 
