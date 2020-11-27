@@ -77,6 +77,12 @@ scratch. This page gets rid of all links and provides the needed markup only.
                                 {% for desk in desks %}
                                     <li><a href="/desks/{{ loop.index - 1 }}" class="dropdown-item">{{ desk }} </a></li>
                                 {% endfor %}
+
+                                <div class="dropdown-divider"></div>
+
+                                {% for desk in desks %}
+                                    <li><a href="/desks/{{ loop.index - 1 }}/fullscreen" class="dropdown-item"><i class="fas fa-expand text-sm text-muted"></i> &nbsp; {{ desk }}</a></li>
+                                {% endfor %}
                             </ul>
                         </li>
                     {% endif %}
