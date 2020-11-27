@@ -58,6 +58,19 @@ module.exports = class CandlestickRepository {
     });
   }
 
+  getCandlePeriods(exchange, symbol) {
+    return new Promise(resolve => {
+      const stmt = this.db.prepare(
+        `SELECT period from candlesticks where exchange = ? AND symbol = ? AND time > ? group by period ORDER BY period`
+      );
+
+      // only fetch candles newer the 5 days
+      const since = Math.round(new Date(new Date() - 1000 * 60 * 60 * 24 * 5).getTime() / 1000);
+
+      resolve(stmt.all([exchange, symbol, since]).map(row => row.period));
+    });
+  }
+
   insertCandles(exchangeCandlesticks) {
     return new Promise(resolve => {
       const upsert = this.db.prepare(

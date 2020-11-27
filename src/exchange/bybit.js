@@ -4,12 +4,12 @@ const moment = require('moment');
 const request = require('request');
 const crypto = require('crypto');
 const _ = require('lodash');
-const Ticker = require('./../dict/ticker');
-const TickerEvent = require('./../event/ticker_event');
-const Order = require('./../dict/order');
+const Ticker = require('../dict/ticker');
+const TickerEvent = require('../event/ticker_event');
+const Order = require('../dict/order');
 const ExchangeCandlestick = require('../dict/exchange_candlestick');
 
-const resample = require('./../utils/resample');
+const resample = require('../utils/resample');
 
 const Position = require('../dict/position');
 const ExchangeOrder = require('../dict/exchange_order');
@@ -17,12 +17,13 @@ const ExchangeOrder = require('../dict/exchange_order');
 const orderUtil = require('../utils/order_util');
 
 module.exports = class Bybit {
-  constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter) {
+  constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter, throttler) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;
     this.candleImporter = candleImporter;
     this.requestClient = requestClient;
+    this.throttler = throttler;
 
     this.apiKey = undefined;
     this.apiSecret = undefined;
@@ -78,7 +79,7 @@ module.exports = class Bybit {
 
       symbols.forEach(symbol => {
         ws.send(JSON.stringify({ op: 'subscribe', args: [`kline.${symbol.symbol}.${symbol.periods.join('|')}`] }));
-        ws.send(JSON.stringify({ op: 'subscribe', args: [`instrument.${symbol.symbol}`] }));
+        ws.send(JSON.stringify({ op: 'subscribe', args: [`instrument_info.100ms.${symbol.symbol}`] }));
       });
 
       if (config.key && config.secret && config.key.length > 0 && config.secret.length > 0) {
@@ -99,8 +100,15 @@ module.exports = class Bybit {
           me.intervals.push(
             setInterval(
               (function f() {
-                me.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol));
-                me.syncPositionViaRestApi();
+                me.throttler.addTask(
+                  `bybit_sync_all_orders`,
+                  async () => {
+                    await me.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol));
+                  },
+                  1245
+                );
+
+                me.throttler.addTask(`bybit_sync_positions`, me.syncPositionViaRestApi.bind(me), 1245);
                 return f;
               })(),
               60000
@@ -144,14 +152,21 @@ module.exports = class Bybit {
           );
 
           await me.candleImporter.insertThrottledCandles([candleStick]);
-        } else if (data.data && data.topic && data.topic.startsWith('instrument.')) {
-          data.data.forEach(instrument => {
-            // not always given
+        } else if (data.data && data.topic && data.topic.startsWith('instrument_info.')) {
+          let instruments = [];
+          if (data.data.update) {
+            instruments = data.data.update;
+          } else if (data.data.last_price_e4) {
+            instruments = [data.data];
+          }
 
-            const price = instrument.last_price;
-            if (!price) {
+          instruments.forEach(instrument => {
+            // update and init
+            if (!instrument.last_price_e4) {
               return;
             }
+
+            const price = instrument.last_price_e4 / 10000;
 
             let bid = price;
             let ask = price;
@@ -161,8 +176,8 @@ module.exports = class Bybit {
             // add price spread around the last price; as we not getting the bid and ask of the orderbook directly
             // prevent also floating issues
             if (symbol in me.tickSizes) {
-              bid = orderUtil.calculateNearestSize(bid - me.tickSizes[symbol], me.tickSizes[symbol]);
-              ask = orderUtil.calculateNearestSize(ask + me.tickSizes[symbol], me.tickSizes[symbol]);
+              bid = parseFloat(orderUtil.calculateNearestSize(bid - me.tickSizes[symbol], me.tickSizes[symbol]));
+              ask = parseFloat(orderUtil.calculateNearestSize(ask + me.tickSizes[symbol], me.tickSizes[symbol]));
             }
 
             eventEmitter.emit(
@@ -180,6 +195,14 @@ module.exports = class Bybit {
           Bybit.createOrders(orders).forEach(order => {
             me.triggerOrder(order);
           });
+
+          me.throttler.addTask(
+            `bybit_sync_all_orders`,
+            async () => {
+              await me.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol));
+            },
+            1245
+          );
         } else if (data.data && data.topic && data.topic.toLowerCase() === 'position') {
           const positionsRaw = data.data;
           const positions = [];
@@ -195,6 +218,8 @@ module.exports = class Bybit {
           Bybit.createPositionsWithOpenStateOnly(positions).forEach(position => {
             me.positions[position.symbol] = position;
           });
+
+          me.throttler.addTask(`bybit_sync_positions`, me.syncPositionViaRestApi.bind(me), 1545);
         }
       }
     };
@@ -285,6 +310,7 @@ module.exports = class Bybit {
       currentPositions[position.symbol] = position;
     }
 
+    this.logger.debug(`Bybit: Positions via API updated: ${Object.keys(currentPositions).length}`);
     this.positions = currentPositions;
   }
 
@@ -423,13 +449,13 @@ module.exports = class Bybit {
     const isConditionalOrder = this.isConditionalExchangeOrder(order);
 
     if (isConditionalOrder) {
-      if (!this.tickers[order.symbol]) {
+      if (!this.tickers[order.getSymbol()]) {
         this.logger.error('Bybit: base_price based on ticker for conditional not found');
         return undefined;
       }
 
       // current ticker price is required on this api
-      parameters.base_price = this.tickers[order.symbol].bid;
+      parameters.base_price = this.tickers[order.getSymbol()].bid;
     }
 
     const parametersSorted = {};
@@ -449,7 +475,7 @@ module.exports = class Bybit {
       url = `${this.getBaseUrl()}/open-api/order/create?${querystring.stringify(parametersSorted)}`;
     }
 
-    await this.updateLeverage(order.symbol);
+    await this.updateLeverage(order.getSymbol());
 
     const result = await this.requestClient.executeRequestRetry(
       {
@@ -579,13 +605,18 @@ module.exports = class Bybit {
     // use default leverage to "3"
     const leverageSize = _.get(config, 'extra.bybit_leverage', 5);
     if (leverageSize < 0 || leverageSize > 100) {
-      throw `Invalid leverage size for: ${leverageSize} ${symbol}`;
+      throw Error(`Invalid leverage size for: ${leverageSize} ${symbol}`);
     }
 
     // we dont get the selected leverage value in websocket or api endpoints
     // so we update them only in a given time window; system overload is often blocked
     if (symbol in this.leverageUpdated && this.leverageUpdated[symbol] > moment().subtract(45, 'minutes')) {
       this.logger.debug(`Bybit: leverage update not needed: ${symbol}`);
+      return;
+    }
+
+    if (await this.getPositionForSymbol(symbol)) {
+      this.logger.debug(`Bybit: leverage update with open position not needed: ${symbol}`);
       return;
     }
 
@@ -610,8 +641,8 @@ module.exports = class Bybit {
           Accept: 'application/json'
         }
       },
-      result => {
-        return result && result.response && result.response.statusCode >= 500;
+      r => {
+        return r && r.response && r.response.statusCode >= 500;
       }
     );
 
@@ -700,7 +731,7 @@ module.exports = class Bybit {
   }
 
   isConditionalExchangeOrder(order) {
-    return [ExchangeOrder.TYPE_STOP, ExchangeOrder.TYPE_STOP_LIMIT].includes(order.type);
+    return [ExchangeOrder.TYPE_STOP, ExchangeOrder.TYPE_STOP_LIMIT].includes(order.getType());
   }
 
   async cancelAll(symbol) {
@@ -715,18 +746,18 @@ module.exports = class Bybit {
 
   async updateOrder(id, order) {
     if (!order.amount && !order.price) {
-      throw 'Invalid amount / price for update';
+      throw Error('Invalid amount / price for update');
     }
 
     const currentOrder = await this.findOrderById(id);
     if (!currentOrder) {
-      return;
+      return undefined;
     }
 
     // cancel order; mostly it can already be canceled
     await this.cancelOrder(id);
 
-    return await this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
+    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
   }
 
   /**
@@ -763,7 +794,19 @@ module.exports = class Bybit {
   }
 
   static createOrders(orders) {
-    return orders.map(order => {
+    return orders.map(originOrder => {
+      const order = originOrder;
+
+      // some endpoints / websocket request merge extra field into nested "ext_fields"; just merge them into main
+      for (const [key, value] of Object.entries(order.ext_fields || {})) {
+        // dont overwrite?
+        if (key in order) {
+          continue;
+        }
+
+        order[key] = value;
+      }
+
       let retry = false;
 
       let status;
@@ -814,9 +857,20 @@ module.exports = class Bybit {
         orderType = ExchangeOrder.TYPE_STOP_LIMIT;
       }
 
+      // new format
+      if (orderType === ExchangeOrder.TYPE_LIMIT && order.stop_order_type === 'Stop') {
+        orderType = ExchangeOrder.TYPE_STOP_LIMIT;
+      }
+
       let { price } = order;
       if (orderType === 'stop') {
-        price = order.stop_px;
+        // old stuff; can be dropped?
+        price = parseFloat(order.stop_px || undefined);
+
+        // new format
+        if (!price || price === 0.0) {
+          price = parseFloat(order.trigger_price);
+        }
       }
 
       const options = {};
@@ -839,7 +893,11 @@ module.exports = class Bybit {
       }
 
       if (!status) {
-        throw `Invalid status:${JSON.stringify([order])}`;
+        throw Error(`Bybit: Invalid exchange order price:${JSON.stringify([order])}`);
+      }
+
+      if (!price || price === 0) {
+        throw Error(`Bybit: Invalid exchange order price:${JSON.stringify([order])}`);
       }
 
       return new ExchangeOrder(
@@ -869,79 +927,13 @@ module.exports = class Bybit {
     symbols.forEach(symbol => {
       // there is not full active order state; we need some more queries
       ['Created', 'New', 'PartiallyFilled'].forEach(orderStatus => {
-        promises.push(
-          new Promise(async resolve => {
-            const parameter = {
-              api_key: this.apiKey,
-              limit: 100,
-              order_status: orderStatus,
-              symbol: symbol,
-              timestamp: new Date().getTime() // 1 min in the future
-            };
-
-            parameter.sign = crypto
-              .createHmac('sha256', this.apiSecret)
-              .update(querystring.stringify(parameter))
-              .digest('hex');
-
-            const url = `${this.getBaseUrl()}/open-api/order/list?${querystring.stringify(parameter)}`;
-            const result = await this.requestClient.executeRequestRetry(
-              {
-                url: url,
-                headers: {
-                  'Content-Type': 'application/json',
-                  Accept: 'application/json'
-                }
-              },
-              result => {
-                return result && result.response && result.response.statusCode >= 500;
-              }
-            );
-
-            const { error } = result;
-            const { response } = result;
-            const { body } = result;
-
-            if (error || !response || response.statusCode !== 200) {
-              this.logger.error(
-                `Bybit: Invalid orders response:${JSON.stringify({
-                  error: error,
-                  body: body,
-                  orderStatus: orderStatus
-                })}`
-              );
-              resolve([]);
-              return;
-            }
-
-            let json;
-            try {
-              json = JSON.parse(body);
-            } catch (e) {
-              json = [];
-            }
-
-            if (!json.result) {
-              this.logger.error(
-                `Bybit: Invalid orders json:${JSON.stringify({ body: body, orderStatus: orderStatus })}`
-              );
-              resolve([]);
-              return;
-            }
-
-            resolve(json.result.data || []);
-          })
-        );
-      });
-
-      // stop order are special endpoint
-      promises.push(
-        new Promise(async resolve => {
+        promises.push(async () => {
           const parameter = {
             api_key: this.apiKey,
             limit: 100,
+            order_status: orderStatus,
             symbol: symbol,
-            timestamp: new Date().getTime()
+            timestamp: new Date().getTime() // 1 min in the future
           };
 
           parameter.sign = crypto
@@ -949,7 +941,7 @@ module.exports = class Bybit {
             .update(querystring.stringify(parameter))
             .digest('hex');
 
-          const url = `${this.getBaseUrl()}/open-api/stop-order/list?${querystring.stringify(parameter)}`;
+          const url = `${this.getBaseUrl()}/open-api/order/list?${querystring.stringify(parameter)}`;
           const result = await this.requestClient.executeRequestRetry(
             {
               url: url,
@@ -958,8 +950,8 @@ module.exports = class Bybit {
                 Accept: 'application/json'
               }
             },
-            result => {
-              return result && result.response && result.response.statusCode >= 500;
+            r => {
+              return r && r.response && r.response.statusCode >= 500;
             }
           );
 
@@ -968,9 +960,15 @@ module.exports = class Bybit {
           const { body } = result;
 
           if (error || !response || response.statusCode !== 200) {
-            this.logger.error(`Bybit: Invalid order update:${JSON.stringify({ error: error, body: body })}`);
-            resolve([]);
-            return;
+            this.logger.error(
+              `Bybit: Invalid orders response:${JSON.stringify({
+                error: error,
+                body: body,
+                orderStatus: orderStatus
+              })}`
+            );
+
+            throw new Error();
           }
 
           let json;
@@ -981,25 +979,84 @@ module.exports = class Bybit {
           }
 
           if (!json.result || !json.result.data) {
-            this.logger.error(`Bybit: Invalid stop-order json:${JSON.stringify({ body: body })}`);
-            resolve([]);
-            return;
+            this.logger.error(`Bybit: Invalid orders json:${JSON.stringify({ body: body })}`);
+
+            throw new Error('Invalid orders json');
           }
 
-          const orders = json.result.data.filter(order => order.stop_order_status === 'Untriggered');
-          resolve(orders);
-        })
-      );
+          return json.result.data;
+        });
+      });
+
+      // stop order are special endpoint
+      promises.push(async () => {
+        const parameter = {
+          api_key: this.apiKey,
+          limit: 100,
+          symbol: symbol,
+          timestamp: new Date().getTime()
+        };
+
+        parameter.sign = crypto
+          .createHmac('sha256', this.apiSecret)
+          .update(querystring.stringify(parameter))
+          .digest('hex');
+
+        const url = `${this.getBaseUrl()}/open-api/stop-order/list?${querystring.stringify(parameter)}`;
+        const result = await this.requestClient.executeRequestRetry(
+          {
+            url: url,
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            }
+          },
+          r => {
+            return r && r.response && r.response.statusCode >= 500;
+          }
+        );
+
+        const { error } = result;
+        const { response } = result;
+        const { body } = result;
+
+        if (error || !response || response.statusCode !== 200) {
+          this.logger.error(`Bybit: Invalid order update:${JSON.stringify({ error: error, body: body })}`);
+
+          throw new Error(`Invalid stop-order update`);
+        }
+
+        let json;
+        try {
+          json = JSON.parse(body);
+        } catch (e) {
+          json = [];
+        }
+
+        if (!json.result || !json.result.data) {
+          this.logger.error(`Bybit: Invalid stop-order json:${JSON.stringify({ body: body })}`);
+
+          throw new Error(`Invalid stop-order update`);
+        }
+
+        return json.result.data.filter(order => order.stop_order_status === 'Untriggered');
+      });
     });
 
-    const results = await Promise.all(promises);
+    let results;
+    try {
+      results = await Promise.all(promises.map(fn => fn()));
+    } catch (e) {
+      this.logger.error(`Bybit: Orders via API updated stopped: ${e.message}`);
+      return;
+    }
 
     const orders = [];
     results.forEach(order => {
       orders.push(...order);
     });
 
-    this.logger.debug('Bybit: Orders via API updated');
+    this.logger.debug(`Bybit: Orders via API updated: ${orders.length}`);
     this.fullOrdersUpdate(orders);
   }
 
@@ -1026,8 +1083,8 @@ module.exports = class Bybit {
           Accept: 'application/json'
         }
       },
-      result => {
-        return result && result.response && result.response.statusCode >= 500;
+      r => {
+        return r && r.response && r.response.statusCode >= 500;
       }
     );
 
@@ -1046,7 +1103,6 @@ module.exports = class Bybit {
       return;
     }
 
-    this.logger.debug('Bybit: Positions via API updated');
     this.fullPositionsUpdate(json.result);
   }
 

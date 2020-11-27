@@ -3,8 +3,12 @@ const fs = require('fs');
 const ta = require('../../src/utils/technical_analysis');
 
 describe('#technical_analysis for candles', () => {
+  const createCandleFixtures = function() {
+    return JSON.parse(fs.readFileSync(`${__dirname}/fixtures/xbt-usd-5m.json`, 'utf8'));
+  };
+
   it('technical_analysis for candles are returned', async () => {
-    const result = await ta.getIndicatorsLookbacks(createCandleFixtures().reverse());
+    const result = await ta.getPredefinedIndicators(createCandleFixtures().reverse());
 
     assert.equal(result.ema_55.length, 490);
     assert.equal(result.sma_200.length, 291);
@@ -222,7 +226,7 @@ describe('#technical_analysis for candles', () => {
     assert.equal(volumeByPrice.volume > 0, true);
     assert.equal(result.volume_by_price[0].length, 12);
 
-    assert.equal(result.zigzag.filter(v => v.turningPoint == true).length > 0, true);
+    assert.equal(result.zigzag.filter(v => v.turningPoint === true).length > 0, true);
 
     assert.equal(result.volume_profile.length, 14);
 
@@ -264,8 +268,4 @@ describe('#technical_analysis for candles', () => {
     });
     assert.deepEqual(ta.getPivotPointsWithWicks(lows, 4, 4), { low: { close: 1, low: 0.8 } });
   });
-
-  var createCandleFixtures = function() {
-    return JSON.parse(fs.readFileSync(`${__dirname}/fixtures/xbt-usd-5m.json`, 'utf8'));
-  };
 });

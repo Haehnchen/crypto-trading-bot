@@ -5,8 +5,7 @@ const PairState = require('../../dict/pair_state');
 const ExchangeOrder = require('../../dict/exchange_order');
 
 module.exports = class OrderExecutor {
-  constructor(exchangeManager, tickers, systemUtil, logger, pairStateManager) {
-    this.pairStateManager = pairStateManager;
+  constructor(exchangeManager, tickers, systemUtil, logger) {
     this.exchangeManager = exchangeManager;
     this.tickers = tickers;
     this.logger = logger;
@@ -20,9 +19,16 @@ module.exports = class OrderExecutor {
   /**
    * Keep open orders in orderbook at first position
    */
-  adjustOpenOrdersPrice() {
+  adjustOpenOrdersPrice(...pairStates) {
     for (const orderId in this.runningOrders) {
       if (this.runningOrders[orderId] < moment().subtract(2, 'minutes')) {
+        this.logger.debug(
+          `OrderAdjust: adjustOpenOrdersPrice timeout cleanup: ${JSON.stringify([
+            orderId,
+            this.runningOrders[orderId]
+          ])}`
+        );
+
         delete this.runningOrders[orderId];
       }
     }
@@ -50,20 +56,6 @@ module.exports = class OrderExecutor {
         return;
       }
 
-      // order not known by exchange cleanup
-      const lastExchangeOrder = await exchange.findOrderById(exchangeOrder.id);
-      if (!lastExchangeOrder || lastExchangeOrder.status !== ExchangeOrder.STATUS_OPEN) {
-        this.logger.debug(
-          `OrderAdjust: managed order does not exists maybe filled; cleanup: ${JSON.stringify([
-            exchangeOrder.id,
-            pairState.getExchange(),
-            pairState.getSymbol(),
-            lastExchangeOrder
-          ])}`
-        );
-        return;
-      }
-
       this.runningOrders[exchangeOrder.id] = new Date();
 
       const price = await this.getCurrentPrice(
@@ -78,6 +70,23 @@ module.exports = class OrderExecutor {
             pairState.getExchange(),
             pairState.getSymbol(),
             exchangeOrder.getLongOrShortSide()
+          ])}`
+        );
+
+        delete this.runningOrders[exchangeOrder.id];
+
+        return;
+      }
+
+      // order not known by exchange cleanup
+      const lastExchangeOrder = await exchange.findOrderById(exchangeOrder.id);
+      if (!lastExchangeOrder || lastExchangeOrder.status !== ExchangeOrder.STATUS_OPEN) {
+        this.logger.debug(
+          `OrderAdjust: managed order does not exists maybe filled; cleanup: ${JSON.stringify([
+            exchangeOrder.id,
+            pairState.getExchange(),
+            pairState.getSymbol(),
+            lastExchangeOrder
           ])}`
         );
 
@@ -156,7 +165,7 @@ module.exports = class OrderExecutor {
     };
 
     return Promise.all(
-      this.pairStateManager.all().map(pairState => {
+      pairStates.map(pairState => {
         return visitExchangeOrder(pairState);
       })
     );

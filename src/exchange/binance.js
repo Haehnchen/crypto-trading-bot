@@ -1,9 +1,10 @@
 const BinanceClient = require('binance-api-node').default;
 
 const moment = require('moment');
-const ExchangeCandlestick = require('./../dict/exchange_candlestick');
-const Ticker = require('./../dict/ticker');
-const TickerEvent = require('./../event/ticker_event');
+const _ = require('lodash');
+const ExchangeCandlestick = require('../dict/exchange_candlestick');
+const Ticker = require('../dict/ticker');
+const TickerEvent = require('../event/ticker_event');
 const ExchangeOrder = require('../dict/exchange_order');
 const OrderUtil = require('../utils/order_util');
 const Position = require('../dict/position');
@@ -12,16 +13,16 @@ const OrderBag = require('./utils/order_bag');
 const TradesUtil = require('./utils/trades_util');
 
 module.exports = class Binance {
-  constructor(eventEmitter, logger, queue, candleImport) {
+  constructor(eventEmitter, logger, queue, candleImport, throttler) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;
     this.candleImport = candleImport;
+    this.throttler = throttler;
 
     this.client = undefined;
     this.exchangePairs = {};
     this.symbols = [];
-    this.positions = [];
     this.trades = {};
     this.tickers = {};
     this.balances = [];
@@ -49,38 +50,34 @@ module.exports = class Binance {
 
       // we need balance init; websocket sending only on change
       // also sync by time
-      setInterval(
-        (function f() {
-          me.syncBalances();
-          return f;
-        })(),
-        60 * 60 * 1 * 1000
-      );
+      setTimeout(async () => {
+        await me.syncPairInfo();
+        await me.syncBalances();
+        await me.syncOrders();
 
-      setInterval(
-        (function f() {
-          me.syncTradesForEntries();
-          return f;
-        })(),
-        60 * 60 * 1 * 1000
-      );
+        // positions needs a ticker price; which needs a websocket event
+        setTimeout(async () => {
+          const initSymbols = (await me.getPositions()).map(p => p.getSymbol());
+          me.logger.info(`Binance: init trades for positions: ${JSON.stringify(initSymbols)}`);
+          await me.syncTradesForEntries(initSymbols);
+        }, 12312);
+      }, 1823);
 
-      setInterval(
-        (function f() {
-          me.syncOrders();
-          return f;
-        })(),
-        1000 * 30
-      );
+      setInterval(async () => {
+        await me.syncBalances();
+      }, 5 * 60 * 1312);
 
-      // since pairs
-      setInterval(
-        (function f() {
-          me.syncPairInfo();
-          return f;
-        })(),
-        60 * 60 * 15 * 1000
-      );
+      setInterval(async () => {
+        await me.syncTradesForEntries();
+      }, 16 * 60 * 1391);
+
+      setInterval(async () => {
+        await me.syncOrders();
+      }, 30 * 1310);
+
+      setInterval(async () => {
+        await me.syncPairInfo();
+      }, 30 * 60 * 1532);
     } else {
       this.logger.info('Binance: Starting as anonymous; no trading possible');
     }
@@ -154,7 +151,7 @@ module.exports = class Binance {
     try {
       result = await this.client.order(payload);
     } catch (e) {
-      this.logger.error(`Binance: order create error: ${JSON.stringify(e.message, order, payload)}`);
+      this.logger.error(`Binance: order create error: ${JSON.stringify(e.code, e.message, order, payload)}`);
 
       if ((e.message && e.message.toLowerCase().includes('insufficient balance')) || (e.code && e.code === -2010)) {
         return ExchangeOrder.createRejectedFromOrder(order, `${e.code} - ${e.message}`);
@@ -171,7 +168,7 @@ module.exports = class Binance {
   async cancelOrder(id) {
     const order = await this.findOrderById(id);
     if (!order) {
-      return;
+      return undefined;
     }
 
     try {
@@ -180,8 +177,18 @@ module.exports = class Binance {
         orderId: id
       });
     } catch (e) {
-      this.logger.error(`Binance: cancel order error: ${e}`);
-      return;
+      const message = String(e).toLowerCase();
+
+      // "Error: Unknown order sent."
+      if (message.includes('unknown order sent')) {
+        this.logger.info(`Binance: cancel order not found remove it: ${JSON.stringify([e, id])}`);
+        this.orderbag.delete(id);
+        return ExchangeOrder.createCanceled(order);
+      }
+
+      this.logger.error(`Binance: cancel order error: ${JSON.stringify([e, id])}`);
+
+      return undefined;
     }
 
     this.orderbag.delete(id);
@@ -240,7 +247,17 @@ module.exports = class Binance {
       let retry = false;
 
       let status;
-      const orderStatus = order.status.toLowerCase().replace('_', '');
+
+      let sourceStatus;
+      if (order.status) {
+        sourceStatus = order.status; // REST
+      } else if (order.orderStatus) {
+        sourceStatus = order.orderStatus; // websocket
+      } else {
+        throw new Error(`Invalid order status: ${JSON.stringify(order)}`);
+      }
+
+      const orderStatus = sourceStatus.toLowerCase().replace('_', '');
 
       // https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md#enum-definitions
       if (['new', 'partiallyfilled', 'pendingnew'].includes(orderStatus)) {
@@ -257,7 +274,16 @@ module.exports = class Binance {
         retry = true;
       }
 
-      const ordType = order.type.toLowerCase().replace(/[\W_]+/g, '');
+      let sourceOrderStatus;
+      if (order.type) {
+        sourceOrderStatus = order.type; // REST
+      } else if (order.orderType) {
+        sourceOrderStatus = order.orderType; // websocket
+      } else {
+        throw new Error(`Invalid order type: ${JSON.stringify(order)}`);
+      }
+
+      const ordType = sourceOrderStatus.toLowerCase().replace(/[\W_]+/g, '');
 
       // secure the value
       let orderType;
@@ -279,17 +305,66 @@ module.exports = class Binance {
           break;
       }
 
+      let amount;
+      if (order.origQty) {
+        amount = order.origQty; // REST
+      } else if (order.quantity) {
+        amount = order.quantity; // websocket
+      } else {
+        throw new Error(`Invalid order amount: ${JSON.stringify(order)}`);
+      }
+
+      if (order.totalTradeQuantity) {
+        // websocket
+        const totalTradeQuantity = parseFloat(order.totalTradeQuantity);
+        if (totalTradeQuantity > 0) {
+          amount -= totalTradeQuantity;
+        }
+      } else if (order.executedQty) {
+        // REST
+        const executedQty = parseFloat(order.executedQty);
+        if (executedQty > 0) {
+          amount -= executedQty;
+        }
+      }
+
+      if (amount < 0) {
+        throw new Error(`Invalid order amount: ${JSON.stringify(amount, order)}`);
+      }
+
+      let clientOrderId;
+      if (order.clientOrderId) {
+        clientOrderId = order.clientOrderId; // REST
+      } else if (order.newClientOrderId) {
+        clientOrderId = order.newClientOrderId; // websocket
+      }
+
+      let createdAt;
+      if (order.transactTime) {
+        createdAt = order.transactTime; // REST
+      } else if (order.time) {
+        createdAt = order.time; // REST
+      } else if (order.creationTime) {
+        createdAt = order.creationTime; // websocket
+      }
+
+      // secure the value
+      const side = order.side.toLowerCase();
+      if (!['buy', 'sell'].includes(side)) {
+        throw new Error(`Invalid order side: ${JSON.stringify(order)}`);
+      }
+
       return new ExchangeOrder(
         order.orderId,
         order.symbol,
         status,
         parseFloat(order.price),
-        parseFloat(order.origQty),
+        parseFloat(amount),
         retry,
-        order.clientOrderId,
-        order.side.toLowerCase() === 'buy' ? 'buy' : 'sell', // secure the value,
+        clientOrderId,
+        side,
         orderType,
-        new Date(order.transactTime ? order.transactTime : order.time),
+        createdAt ? new Date(createdAt) : undefined,
         new Date(),
         order
       );
@@ -434,18 +509,18 @@ module.exports = class Binance {
 
   async updateOrder(id, order) {
     if (!order.amount && !order.price) {
-      throw 'Invalid amount / price for update';
+      throw new Error('Invalid amount / price for update');
     }
 
     const currentOrder = await this.findOrderById(id);
     if (!currentOrder) {
-      return;
+      return undefined;
     }
 
     // cancel order; mostly it can already be canceled
     await this.cancelOrder(id);
 
-    return await this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
+    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
   }
 
   getName() {
@@ -458,19 +533,31 @@ module.exports = class Binance {
 
       // clean orders with state is switching from open to close
       const orderStatus = event.orderStatus.toLowerCase();
-      if (
-        ['canceled', 'filled', 'rejected'].includes(orderStatus) &&
-        event.orderId &&
-        this.orderbag.get(event.orderId)
-      ) {
+      const isRemoveEvent =
+        ['canceled', 'filled', 'rejected'].includes(orderStatus) && event.orderId && this.orderbag.get(event.orderId);
+
+      if (isRemoveEvent) {
+        this.logger.info(`Binance: Removing non open order: ${orderStatus} - ${JSON.stringify(event)}`);
         this.orderbag.delete(event.orderId);
+        this.throttler.addTask('binance_sync_balances', this.syncBalances.bind(this), 5000);
       }
 
       // sync all open orders and get entry based fire them in parallel
-      await this.syncOrders();
+      this.throttler.addTask('binance_sync_orders', this.syncOrders.bind(this));
 
       // set last order price to our trades. so we have directly profit and entry prices
-      await this.syncTradesForEntries([event.symbol]);
+      this.throttler.addTask(
+        `binance_sync_trades_for_entries_${event.symbol}`,
+        async () => {
+          await this.syncTradesForEntries([event.symbol]);
+        },
+        300
+      );
+
+      if ('orderId' in event) {
+        const exchangeOrder = Binance.createOrders(event)[0];
+        this.orderbag.triggerOrder(exchangeOrder);
+      }
     }
 
     // get balances and same them internally; allows to take open positions
@@ -483,7 +570,7 @@ module.exports = class Binance {
 
         if (parseFloat(balance.available) + parseFloat(balance.locked) > 0) {
           balances.push({
-            available: parseFloat(balance.available),
+            available: parseFloat(balance.available) + parseFloat(balance.locked),
             locked: parseFloat(balance.locked),
             asset: asset
           });
@@ -491,6 +578,8 @@ module.exports = class Binance {
       }
 
       this.balances = balances;
+
+      this.throttler.addTask('binance_sync_balances', this.syncBalances.bind(this), 5000);
     }
   }
 
@@ -536,7 +625,7 @@ module.exports = class Binance {
       .filter(b => parseFloat(b.free) + parseFloat(b.locked) > 0)
       .map(balance => {
         return {
-          available: parseFloat(balance.free),
+          available: parseFloat(balance.free) + parseFloat(balance.locked),
           locked: parseFloat(balance.locked),
           asset: balance.asset
         };
@@ -552,19 +641,27 @@ module.exports = class Binance {
   async syncTradesForEntries(symbols = []) {
     // fetch all based on our allowed symbol capital
     if (symbols.length === 0) {
-      symbols = this.symbols
+      const allSymbols = this.symbols
         .filter(
           s =>
             s.trade &&
             ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0))
         )
         .map(s => s.symbol);
+
+      // we need position first and randomly add other
+      const positionSymbols = _.shuffle((await this.getPositions()).map(p => p.getSymbol()));
+      const unknown = _.shuffle(allSymbols).filter(s => !positionSymbols.includes(s));
+
+      positionSymbols.push(...unknown);
+
+      symbols = positionSymbols;
     }
 
-    this.logger.debug(`Binance: Sync trades for entries: ${symbols.length}`);
+    this.logger.debug(`Binance: Sync trades for entries: ${symbols.length} - ${JSON.stringify(symbols)}`);
 
     const promises = symbols.map(symbol => {
-      return new Promise(async resolve => {
+      return async () => {
         let symbolOrders;
 
         try {
@@ -573,8 +670,8 @@ module.exports = class Binance {
             limit: 10
           });
         } catch (e) {
-          this.logger.error(`Binance: Error on symbol order fetch: ${String(e)}`);
-          return resolve(undefined);
+          this.logger.info(`Binance: Sync trades error for entries: ${symbol} - ${String(e)}`);
+          return undefined;
         }
 
         const orders = symbolOrders
@@ -590,23 +687,49 @@ module.exports = class Binance {
             (a, b) => b.time - a.time
           )
           .map(order => {
+            let price = parseFloat(order.price);
+
+            // market order is not having price info, we need to calulcate it
+            if (price === 0 && order.type && order.type.toLowerCase() === 'market') {
+              const executedQty = parseFloat(order.executedQty);
+              const cummulativeQuoteQty = parseFloat(order.cummulativeQuoteQty);
+
+              if (cummulativeQuoteQty !== 0 && executedQty !== 0) {
+                price = cummulativeQuoteQty / executedQty;
+              }
+            }
+
             return {
               side: order.side.toLowerCase(),
-              price: parseFloat(order.price),
+              price: price,
               symbol: order.symbol,
               time: new Date(order.time),
               size: parseFloat(order.executedQty)
             };
           });
 
-        return resolve({ symbol: symbol, orders: orders });
-      });
+        return { symbol: symbol, orders: orders };
+      };
     });
 
-    (await Promise.all(promises)).forEach(o => {
-      if (o) {
-        this.trades[o.symbol] = o.orders;
+    // no queue for trigger; its timing relevant
+    if (promises.length === 1) {
+      const result = await promises[0]();
+      if (result) {
+        this.trades[result.symbol] = result.orders;
       }
+
+      return;
+    }
+
+    // add to queue
+    promises.forEach(p => {
+      this.queue.addQueue3(async () => {
+        const result = await p();
+        if (result) {
+          this.trades[result.symbol] = result.orders;
+        }
+      });
     });
   }
 

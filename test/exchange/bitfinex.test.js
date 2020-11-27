@@ -316,7 +316,7 @@ describe('#bitfinex exchange implementation', function() {
     assert.equal((await bitfinex.getOrders()).filter(p => p.symbol === 'BTCUSD').length, 0);
   });
 
-  it('test that order is updated', async () => {
+  it('test that order is updated for long', async () => {
     const fixturesOrders = Bitfinex.createExchangeOrders(createResponse('on-orders.json'));
 
     const bitfinex = new Bitfinex();
@@ -329,13 +329,13 @@ describe('#bitfinex exchange implementation', function() {
       }
     };
 
-    const exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createPriceUpdateOrder(121212, 12, 'long'));
+    const exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createUpdateOrder(121212, 12, 0.001));
 
     assert.strictEqual(exchangeOrder.symbol, 'BCHBTC');
-    assert.deepStrictEqual(myChanges, { id: 12345, price: '12' });
+    assert.deepStrictEqual(myChanges, { id: 12345, price: '12', amount: '0.001' });
   });
 
-  it('test that order is updated for short must give positive price', async () => {
+  it('test that order is updated for short', async () => {
     const fixturesOrders = Bitfinex.createExchangeOrders(createResponse('on-orders.json'));
 
     const bitfinex = new Bitfinex();
@@ -348,10 +348,24 @@ describe('#bitfinex exchange implementation', function() {
       }
     };
 
-    const exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createPriceUpdateOrder(121212, -12, 'long'));
+    bitfinex.orders = {
+      12345: new ExchangeOrder(
+        12345,
+        'BCHBTC',
+        'open',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'sell',
+        ExchangeOrder.TYPE_LIMIT
+      )
+    };
+
+    const exchangeOrder = await bitfinex.updateOrder(12345, OurOrder.createUpdateOrder(12345, -12, -0.001));
 
     assert.strictEqual(exchangeOrder.symbol, 'BCHBTC');
-    assert.deepStrictEqual(myChanges, { id: 12345, price: '12' });
+    assert.deepStrictEqual(myChanges, { id: 12345, price: '12', amount: '-0.001' });
   });
 
   it('test orders are canceled', async () => {
@@ -399,6 +413,45 @@ describe('#bitfinex exchange implementation', function() {
 
     assert.strictEqual(cancelIds.includes(25035356), true);
     assert.strictEqual(cancelIds.includes(55555), true);
+  });
+
+  it('test cancel order is already canceled', async () => {
+    const bitfinex = new Bitfinex(
+      {},
+      {
+        error: () => {},
+        info: () => {}
+      }
+    );
+
+    bitfinex.orders = {
+      55555: new ExchangeOrder(
+        '55555',
+        'FOOUSD',
+        'open',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'buy',
+        ExchangeOrder.TYPE_LIMIT
+      )
+    };
+
+    bitfinex.client = {
+      cancelOrder: async () => {
+        throw new Error('Order not found');
+      }
+    };
+
+    assert.strictEqual(1, (await bitfinex.getOrdersForSymbol('FOOUSD')).length);
+
+    const order = await bitfinex.cancelOrder('55555');
+
+    assert.strictEqual('55555', order.id);
+    assert.strictEqual('canceled', order.status);
+
+    assert.strictEqual(0, (await bitfinex.getOrdersForSymbol('FOOUSD')).length);
   });
 
   it('test orders that a single order can be canceled', async () => {

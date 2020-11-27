@@ -25,7 +25,7 @@ As most trading bots just provide basic buy and sell signals they provide many s
  * [Bitmex Testnet](https://www.bitmex.com/register/jS4mLN)
  * [Binance](https://www.binance.com/?ref=17569916)
  * [Binance Margin](https://www.binance.com/?ref=17569916)
- * [Binance Futures](https://www.binance.com/?ref=17569916)
+ * [Binance Futures](https://www.binance.com/en/futures/ref/302644)
  * [Coinbase Pro](https://www.coinbase.com/join/5a2ae60e76531100d3af2ee5)
  * [Bitfinex](https://www.bitfinex.com/?refcode=kDLceRHa) (margin wallet)
  * [Bybit](https://www.bybit.com/app/register?ref=46AK7) with leverage configuration
@@ -92,7 +92,7 @@ sqlite3 bot.db < bot.sql
 Lets start it
 
 ```
-node index.js trade
+npm start
 ```
 
 ## How to use: Docker
@@ -180,6 +180,10 @@ webserver.ip: 127.0.0.1
 
 ![Webserver UI](documentation/cryptobot.png "Webserver UI")
 
+### Trades / Positions / Orders
+
+![Webserver UI](documentation/trades.png "Trades / Positions / Orders")
+
 ### Backtesting
 
 Currently there is a the UI for backtesting
@@ -199,6 +203,15 @@ node index.js backfill -e bitmex -p 1m -s XRPZ18
 ## Strategies
 
 For custom strategies use [var/strategies](var/strategies) folder.
+
+```
+# simple file structure
+var/strategies/your_strategy.js
+
+# or wrap strategy into any sub folder depth
+var/strategies/my_strategy/my_strategy.js
+var/strategies/subfolder1/our_strategy/our_strategy.js
+```
 
 Find some example strategies inside [modules/strategy/strategies](modules/strategy/strategies)
 
@@ -236,6 +249,31 @@ Find some example strategies inside [modules/strategy/strategies](modules/strate
     ],
 ```
 
+### Tick Interval
+
+Per default every strategy is "ticked" every full minute with a ~10sec time window. If you want to tick every 15 minutes or less see possible examples below.
+
+Supported units are "m" (minute) and "s" (seconds)
+
+```json
+{
+   "strategies":[
+      {
+         "strategy":"cci",
+         "interval":"15m"
+      },
+      {
+         "strategy":"cci2",
+         "interval":"30s"
+      },
+      {
+         "strategy":"cci3",
+         "interval":"60m"
+      }
+   ]
+}
+```
+
 ## Trading
 
 ### Capital
@@ -250,6 +288,7 @@ You should only provide one of them, first wins.
         'trade': {
             'capital': 0.015, // this will buy 0.015 BTC
             'currency_capital': 50,  // this will use 50 EUR and buys the equal amount of BTC (example: BTC price 3000 use 50 EUR. will result in 0.016 BTC)
+            'balance_percent': 75,  // this will use 75 % of your exchange margin tradable balance. Currently implemented only on Bitfinex exchange.
         },
     })
 ```
@@ -301,6 +340,7 @@ Other bots with possible design pattern
  * https://github.com/Ekliptor/WolfBot
  * https://github.com/andresilvasantos/bitprophet
  * https://github.com/kavehs87/PHPTradingBot
+ * https://github.com/Superalgos/Superalgos
 
 ### Strategies
 
@@ -311,3 +351,6 @@ Some strategies based on technical indicators for collection some ideas
  * https://github.com/xFFFFF/Gekko-Strategies
  * https://github.com/sthewissen/Mynt/tree/master/src/Mynt.Core/Strategies
  * https://github.com/Ekliptor/WolfBot/tree/master/src/Strategies
+ * https://github.com/Superalgos/Strategy-BTC-WeakHandsBuster
+ * https://github.com/Superalgos/Strategy-BTC-BB-Top-Bounce
+ 

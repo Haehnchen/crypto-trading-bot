@@ -5,6 +5,7 @@ const auth = require('basic-auth');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const moment = require('moment');
+const OrderUtil = require('../utils/order_util');
 
 module.exports = class Http {
   constructor(
@@ -18,6 +19,7 @@ module.exports = class Http {
     candleExportHttp,
     candleImporter,
     ordersHttp,
+    tickers,
     projectDir
   ) {
     this.systemUtil = systemUtil;
@@ -31,6 +33,7 @@ module.exports = class Http {
     this.candleImporter = candleImporter;
     this.ordersHttp = ordersHttp;
     this.projectDir = projectDir;
+    this.tickers = tickers;
   }
 
   start() {
@@ -62,6 +65,19 @@ module.exports = class Http {
     const desks = this.systemUtil.getConfig('desks', []).map(desk => desk.name);
     twig.extendFunction('desks', function() {
       return desks;
+    });
+
+    twig.extendFunction('node_version', function() {
+      return process.version;
+    });
+
+    twig.extendFunction('memory_usage', function() {
+      return Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100;
+    });
+
+    const up = new Date();
+    twig.extendFunction('uptime', function() {
+      return moment(up).toNow(true);
     });
 
     twig.extendFilter('format_json', function(value) {
@@ -109,7 +125,7 @@ module.exports = class Http {
     app.get('/backtest', async (req, res) => {
       res.render('../templates/backtest.html.twig', {
         strategies: this.backtest.getBacktestStrategies(),
-        pairs: this.backtest.getBacktestPairs()
+        pairs: await this.backtest.getBacktestPairs()
       });
     });
 
@@ -125,7 +141,8 @@ module.exports = class Http {
           req.body.candle_period,
           pair[0],
           pair[1],
-          req.body.options ? JSON.parse(req.body.options) : {}
+          req.body.options ? JSON.parse(req.body.options) : {},
+          req.body.initial_capital
         )
       );
     });
@@ -318,6 +335,10 @@ module.exports = class Http {
     });
 
     app.get('/trades', async (req, res) => {
+      res.render('../templates/trades.html.twig');
+    });
+
+    app.get('/trades.json', async (req, res) => {
       const positions = [];
       const orders = [];
 
@@ -350,20 +371,23 @@ module.exports = class Http {
 
         const myOrders = await exchange.getOrders();
         myOrders.forEach(order => {
-          orders.push({
+          const items = {
             exchange: exchange.getName(),
             order: order
-          });
+          };
+
+          const ticker = this.tickers.get(exchange.getName(), order.symbol);
+          if (ticker) {
+            items.percent_to_price = OrderUtil.getPercentDifferent(order.price, ticker.bid);
+          }
+
+          orders.push(items);
         });
       }
 
-      res.render('../templates/trades.html.twig', {
-        orders: orders,
-        positions: positions.sort(
-          (a, b) =>
-            (!a.position.createdAt ? 0 : a.position.createdAt.getTime()) -
-            (!b.position.createdAt ? 0 : b.position.createdAt.getTime())
-        )
+      res.json({
+        orders: orders.sort((a, b) => a.order.symbol.localeCompare(b.order.symbol)),
+        positions: positions.sort((a, b) => a.position.symbol.localeCompare(b.position.symbol))
       });
     });
 

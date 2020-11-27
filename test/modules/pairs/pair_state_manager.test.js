@@ -3,10 +3,18 @@ const PairStateManager = require('../../../src/modules/pairs/pair_state_manager'
 
 const ExchangeOrder = require('../../../src/dict/exchange_order');
 const Order = require('../../../src/dict/order');
+const OrderCapital = require('../../../src/dict/order_capital');
 
 describe('#pair state manager', function() {
   it('test pair state changes', () => {
-    const manager = new PairStateManager({ info: () => {}, debug: () => {} });
+    const manager = new PairStateManager(
+      { info: () => {}, debug: () => {} },
+      { getSymbolCapital: () => OrderCapital.createAsset(12) },
+      { getConfig: () => 1 },
+      {},
+      {},
+      { addInterval: () => {}, clearInterval: () => {} }
+    );
 
     manager.update('foo1', 'BTCUSD2', 'long', { foobar: 'test' });
     manager.update('foo2', 'BTCUSD3', 'short', { foobar: 'test' });
@@ -48,5 +56,57 @@ describe('#pair state manager', function() {
 
     assert.equal(manager.get('foo4', 'BTCUSD5', 'order', { foo: 'foo' }).getExchangeOrder().symbol, 'FOOUSD');
     assert.equal(manager.get('foo4', 'BTCUSD5', 'order', { foo: 'foo' }).exchangeOrder.symbol, 'FOOUSD');
+  });
+
+  it('test pair state should be cleared', () => {
+    const manager = new PairStateManager(
+      { info: () => {}, debug: () => {} },
+      { getSymbolCapital: () => OrderCapital.createAsset(12) },
+      { getConfig: () => 1 },
+      {},
+      {},
+      { addInterval: () => {}, clearInterval: () => {} }
+    );
+
+    manager.update('foo1', 'BTCUSD2', 'long', { foobar: 'test' });
+    const state = manager.get('foo1', 'BTCUSD2');
+    assert.equal(state.getSymbol(), 'BTCUSD2');
+
+    assert.equal(state.clear(), undefined);
+  });
+
+  it('test pair state provides callback and calls internal functions', async () => {
+    let addIntervalCallback;
+
+    let onPairStateExecutionTick;
+    let adjustOpenOrdersPrice;
+
+    const manager = new PairStateManager(
+      { info: () => {}, debug: () => {} },
+      { getSymbolCapital: () => OrderCapital.createAsset(12) },
+      { getConfig: () => 1 },
+      {
+        onPairStateExecutionTick: pairState => {
+          onPairStateExecutionTick = pairState;
+        }
+      },
+      {
+        adjustOpenOrdersPrice: pairState => {
+          adjustOpenOrdersPrice = pairState;
+        }
+      },
+      {
+        addInterval: (name, delay, func) => {
+          addIntervalCallback = func;
+        }
+      }
+    );
+
+    manager.update('foo1', 'BTCUSD2', 'long', { foobar: 'test' });
+
+    await addIntervalCallback();
+
+    assert.equal(onPairStateExecutionTick.getSymbol(), 'BTCUSD2');
+    assert.equal(adjustOpenOrdersPrice.getSymbol(), 'BTCUSD2');
   });
 });

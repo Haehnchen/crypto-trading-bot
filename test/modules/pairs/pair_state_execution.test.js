@@ -3,6 +3,7 @@ const PairStateExecution = require('../../../src/modules/pairs/pair_state_execut
 const ExchangeOrder = require('../../../src/dict/exchange_order');
 const Position = require('../../../src/dict/position');
 const PairState = require('../../../src/dict/pair_state');
+const OrderCapital = require('../../../src/dict/order_capital');
 
 describe('#pair state execution', function() {
   it('test limit open order trigger for long', async () => {
@@ -10,9 +11,8 @@ describe('#pair state execution', function() {
 
     const executor = new PairStateExecution(
       undefined,
-      undefined,
       {
-        calculateOrderSize: () => {
+        calculateOrderSizeCapital: () => {
           return 1337;
         }
       },
@@ -25,7 +25,9 @@ describe('#pair state execution', function() {
       undefined
     );
 
-    await executor.executeOrder('exchange', 'BTCUSD', 'long', {});
+    await executor.pairStateExecuteOrder(
+      PairState.createLong('exchange', 'BTCUSD', OrderCapital.createAsset(1337), {}, true, () => {})
+    );
 
     assert.equal(myOrder.symbol, 'BTCUSD');
     assert.equal(myOrder.side, 'long');
@@ -41,9 +43,8 @@ describe('#pair state execution', function() {
 
     const executor = new PairStateExecution(
       undefined,
-      undefined,
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -56,7 +57,9 @@ describe('#pair state execution', function() {
       undefined
     );
 
-    await executor.executeOrder('exchange', 'BTCUSD', 'long', { market: true });
+    await executor.pairStateExecuteOrder(
+      PairState.createLong('exchange', 'BTCUSD', OrderCapital.createAsset(1337), { market: true }, {}, () => {})
+    );
 
     assert.equal(myOrder.symbol, 'BTCUSD');
     assert.equal(myOrder.side, 'long');
@@ -71,9 +74,8 @@ describe('#pair state execution', function() {
 
     const executor = new PairStateExecution(
       undefined,
-      undefined,
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -86,7 +88,9 @@ describe('#pair state execution', function() {
       undefined
     );
 
-    await executor.executeOrder('exchange', 'BTCUSD', 'short', {});
+    await executor.pairStateExecuteOrder(
+      PairState.createShort('exchange', 'BTCUSD', OrderCapital.createAsset(1337), {}, true, () => {})
+    );
 
     assert.equal(myOrder.symbol, 'BTCUSD');
     assert.equal(myOrder.side, 'short');
@@ -102,9 +106,8 @@ describe('#pair state execution', function() {
 
     const executor = new PairStateExecution(
       undefined,
-      undefined,
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -117,7 +120,9 @@ describe('#pair state execution', function() {
       undefined
     );
 
-    await executor.executeOrder('exchange', 'BTCUSD', 'short', { market: true });
+    await executor.pairStateExecuteOrder(
+      PairState.createShort('exchange', 'BTCUSD', OrderCapital.createAsset(1337), { market: true }, true, () => {})
+    );
 
     assert.equal(myOrder.symbol, 'BTCUSD');
     assert.equal(myOrder.side, 'short');
@@ -131,14 +136,13 @@ describe('#pair state execution', function() {
     let myOrder;
 
     const executor = new PairStateExecution(
-      undefined,
       {
         get: () => {
           return { calculateAmount: v => v };
         }
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -166,14 +170,13 @@ describe('#pair state execution', function() {
     let myOrder;
 
     const executor = new PairStateExecution(
-      undefined,
       {
         get: () => {
           return { calculateAmount: v => v };
         }
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -205,14 +208,13 @@ describe('#pair state execution', function() {
     };
 
     const executor = new PairStateExecution(
-      undefined,
       {
         get: () => {
           return { calculateAmount: v => v };
         }
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -236,25 +238,17 @@ describe('#pair state execution', function() {
   });
 
   it('test buy/sell directly filled', async () => {
-    const clearCalls = [];
-
     const logMessages = {
       info: []
     };
 
     const executor = new PairStateExecution(
       {
-        clear: (exchange, symbol) => {
-          clearCalls.push([exchange, symbol]);
-        },
-        get: () => new PairState('foobar', 'ADAUSDT', 'long', {}, true)
-      },
-      {
         getPosition: async () => undefined,
         getOrders: async () => []
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -279,18 +273,20 @@ describe('#pair state execution', function() {
       }
     );
 
-    await executor.onSellBuyPair({ exchange: 'foobar', symbol: 'ADAUSDT' }, 'long');
+    const clearCalls = [];
+    await executor.onSellBuyPair(
+      PairState.createLong('foobar', 'ADAUSDT', OrderCapital.createAsset(1337), {}, true, () => {
+        clearCalls.push([]);
+      })
+    );
 
-    assert.strictEqual(clearCalls[0][0], 'foobar');
-    assert.strictEqual(clearCalls[0][1], 'ADAUSDT');
+    assert.strictEqual(clearCalls.length, 1);
 
     assert.strictEqual(logMessages.info.filter(msg => msg.includes('position open order')).length, 1);
     assert.strictEqual(logMessages.info.filter(msg => msg.includes('directly filled clearing state')).length, 1);
   });
 
   it('test buy/sell rejected and state is cleared', async () => {
-    const clearCalls = [];
-
     const logMessages = {
       info: [],
       error: []
@@ -298,17 +294,11 @@ describe('#pair state execution', function() {
 
     const executor = new PairStateExecution(
       {
-        clear: (exchange, symbol) => {
-          clearCalls.push([exchange, symbol]);
-        },
-        get: () => new PairState('foobar', 'ADAUSDT', 'long', {}, true)
-      },
-      {
         getPosition: async () => undefined,
         getOrders: async () => []
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -336,29 +326,32 @@ describe('#pair state execution', function() {
       }
     );
 
-    await executor.onSellBuyPair({ exchange: 'foobar', symbol: 'ADAUSDT' }, 'long');
+    const clearCalls = [];
+    await executor.onSellBuyPair(
+      PairState.createLong(
+        'foobar',
+        'ADAUSDT',
+        OrderCapital.createAsset(1337),
+        () => {},
+        true,
+        () => {
+          clearCalls.push([]);
+        }
+      )
+    );
 
-    assert.strictEqual(clearCalls[0][0], 'foobar');
-    assert.strictEqual(clearCalls[0][1], 'ADAUSDT');
+    assert.strictEqual(clearCalls.length, 1);
 
     assert.strictEqual(logMessages.info.filter(msg => msg.includes('position open order')).length, 1);
     assert.strictEqual(logMessages.error.filter(msg => msg.includes('order rejected clearing pair state')).length, 1);
   });
 
   it('test buy/sell directly filled for closing an order', async () => {
-    const clearCalls = [];
-
     const logMessages = {
       info: []
     };
 
     const executor = new PairStateExecution(
-      {
-        clear: (exchange, symbol) => {
-          clearCalls.push([exchange, symbol]);
-        },
-        get: () => new PairState('foobar', 'ADAUSDT', 'long', {}, true)
-      },
       {
         getPosition: async () => new Position('ADAUSDT', 'long', 1337),
         getOrders: async () => [],
@@ -367,7 +360,7 @@ describe('#pair state execution', function() {
         }
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -392,36 +385,34 @@ describe('#pair state execution', function() {
       }
     );
 
-    await executor.onClosePair({ exchange: 'foobar', symbol: 'ADAUSDT' });
+    const clearCalls = [];
+    const pairState = new PairState('foobar', 'ADAUSDT', 'long', {}, true, () => {
+      clearCalls.push([]);
+    });
 
-    assert.strictEqual(clearCalls[0][0], 'foobar');
-    assert.strictEqual(clearCalls[0][1], 'ADAUSDT');
+    await executor.onClosePair(pairState);
+
+    assert.strictEqual(clearCalls.length, 1);
 
     assert.strictEqual(logMessages.info.filter(msg => msg.includes('position close order')).length, 1);
     assert.strictEqual(logMessages.info.filter(msg => msg.includes('directly filled clearing state')).length, 1);
   });
 
   it('test onPairStateExecutionTick calling', async () => {
-    const clearCalls = [];
-
     const logMessages = {
       error: []
     };
 
-    const pairState = new PairState('foobar', 'ADAUSDT', 'long', {}, true);
+    const clearCalls = [];
+    const pairState = new PairState('foobar', 'ADAUSDT', 'long', {}, true, () => {
+      clearCalls.push([]);
+    });
 
     for (let i = 0; i < 20; i++) {
       pairState.triggerRetry();
     }
 
     const executor = new PairStateExecution(
-      {
-        clear: (exchange, symbol) => {
-          clearCalls.push([exchange, symbol]);
-        },
-        get: () => pairState,
-        all: () => [pairState]
-      },
       {
         getPosition: async () => new Position('ADAUSDT', 'long', 1337),
         getOrders: async () => [],
@@ -430,7 +421,7 @@ describe('#pair state execution', function() {
         }
       },
       {
-        calculateOrderSize: async () => {
+        calculateOrderSizeCapital: async () => {
           return 1337;
         }
       },
@@ -456,11 +447,9 @@ describe('#pair state execution', function() {
       }
     );
 
-    await executor.onPairStateExecutionTick();
+    await executor.onPairStateExecutionTick(pairState);
 
-    assert.strictEqual(clearCalls[0][0], 'foobar');
-    assert.strictEqual(clearCalls[0][1], 'ADAUSDT');
-
+    assert.strictEqual(clearCalls.length, 1);
     assert.strictEqual(logMessages.error.filter(msg => msg.includes('max retries')).length, 1);
   });
 });

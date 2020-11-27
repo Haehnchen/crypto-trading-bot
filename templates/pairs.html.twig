@@ -34,21 +34,21 @@
                                     <table class="table table-bordered table-hover">
                                         <thead>
                                         <tr>
-                                            <th scope="col">Exchange</th>
+                                            <th scope="col" title="Exchange">E</th>
                                             <th scope="col">Symbol</th>
                                             <th scope="col">State</th>
                                             <th scope="col">Capital</th>
                                             <th scope="col">Strategies</th>
                                             <th scope="col">Options</th>
                                             <th scope="col">Process</th>
-                                            <th scope="col">Limit</th>
+                                            <th scope="col">Action</th>
                                         </tr>
 
                                         </thead>
                                         <tbody>
                                         {% for pair in pairs %}
                                             <tr>
-                                                <td style="white-space: nowrap">{{ pair.exchange }}</td>
+                                                <td style="white-space: nowrap"><img src="/img/exchanges/{{ pair.exchange }}.png" title="{{ pair.exchange }}" alt="{{ pair.exchange }}" width="16px" height="16px"></td>
                                                 <td style="white-space: nowrap"><a target="blank" href="/tradingview/{{ pair.exchange }}:{{ pair.symbol }}">{{ pair.symbol }}</td>
                                                 <td>{{ pair.state }}</td>
                                                 <td><strong>{{ pair.capital }}</strong></td>

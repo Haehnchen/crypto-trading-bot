@@ -1,0 +1,67 @@
+<table class="table table-bordered table-sm table-hover backtest-table">
+    <tr>
+        <td>
+            Initial Capital
+        </td>
+        <td>
+            {{ summary.initialCapital }} $
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Final Capital
+        </td>
+        <td>
+            {{ summary.finalCapital }} $
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Net Return on Investment
+        </td>
+        <td>
+            {{ summary.netProfit }} %
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Sharpe Ratio
+        </td>
+        <td>
+            {{ summary.sharpeRatio }}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Average Return Per Trade
+        </td>
+        <td>
+            {{ summary.averagePNLPercent }} % 
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Total Number of Trades
+        </td>
+        <td>
+            {{ summary.trades.total }}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Number of Winning Trades
+        </td>
+        <td>
+            {{ summary.trades.profitableCount }} 
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Percentage of Winning Trades
+        </td>
+        <td>
+            {{ summary.trades.profitabilityPercent }}
+        </td>
+    </tr>
+</table>
+

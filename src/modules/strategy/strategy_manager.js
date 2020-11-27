@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const _ = require('lodash');
 const IndicatorBuilder = require('./dict/indicator_builder');
 const IndicatorPeriod = require('./dict/indicator_period');
@@ -26,6 +27,16 @@ module.exports = class StrategyManager {
 
     const dirs = [`${__dirname}/strategies`, `${this.projectDir}/var/strategies`];
 
+    const recursiveReadDirSyncWithDirectoryOnly = (p, a = []) => {
+      if (fs.statSync(p).isDirectory()) {
+        fs.readdirSync(p)
+          .filter(f => !f.startsWith('.') && fs.statSync(path.join(p, f)).isDirectory())
+          .map(f => recursiveReadDirSyncWithDirectoryOnly(a[a.push(path.join(p, f)) - 1], a));
+      }
+
+      return a;
+    };
+
     dirs.forEach(dir => {
       if (!fs.existsSync(dir)) {
         return;
@@ -36,9 +47,23 @@ module.exports = class StrategyManager {
           strategies.push(new (require(`${dir}/${file.substr(0, file.length - 3)}`))());
         }
       });
+
+      // Allow strategies to be wrapped by any folder depth:
+      // "foo/bar" => "foo/bar/bar.js"
+      recursiveReadDirSyncWithDirectoryOnly(dir).forEach(folder => {
+        const filename = `${folder}/${path.basename(folder)}.js`;
+
+        if (fs.existsSync(filename)) {
+          strategies.push(new (require(filename))());
+        }
+      });
     });
 
     return (this.strategies = strategies);
+  }
+
+  findStrategy(strategyName) {
+    return this.getStrategies().find(strategy => strategy.getName() === strategyName);
   }
 
   async executeStrategy(strategyName, context, exchange, symbol, options) {
@@ -52,7 +77,7 @@ module.exports = class StrategyManager {
 
     const indicatorPeriod = new IndicatorPeriod(context, results);
 
-    const strategy = this.getStrategies().find(strategy => strategy.getName() === strategyName);
+    const strategy = this.findStrategy(strategyName);
 
     const strategyResult = await strategy.period(indicatorPeriod, options);
     if (typeof strategyResult !== 'undefined' && !(strategyResult instanceof SignalResult)) {

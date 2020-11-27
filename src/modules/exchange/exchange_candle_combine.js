@@ -25,6 +25,10 @@ module.exports = class ExchangeCandleCombine {
     );
   }
 
+  async fetchCandlePeriods(mainExchange, symbol) {
+    return this.candlestickRepository.getCandlePeriods(mainExchange, symbol);
+  }
+
   async combinedCandles(candlesAwait, mainExchange, symbol, period, exchanges = []) {
     const currentTime = Math.round(new Date().getTime() / 1000);
 

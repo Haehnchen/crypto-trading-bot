@@ -1,4 +1,12 @@
 module.exports = class Position {
+  static get SIDE_LONG() {
+    return 'long';
+  }
+
+  static get SIDE_SHORT() {
+    return 'short';
+  }
+
   /**
    * @param symbol 'BTCUSD'
    * @param side "long" or "short"
@@ -33,11 +41,11 @@ module.exports = class Position {
   }
 
   isShort() {
-    return this.side === 'short';
+    return this.getSide() === 'short';
   }
 
   isLong() {
-    return this.side === 'long';
+    return this.getSide() === 'long';
   }
 
   getAmount() {

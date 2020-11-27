@@ -1,26 +1,15 @@
 const assert = require('assert');
-const { createLogger } = require('winston');
-const fs = require('fs');
 const StopLossCalculator = require('../../../src/modules/order/stop_loss_calculator');
 const Position = require('../../../src/dict/position');
 const Ticker = require('../../../src/dict/ticker');
 const Tickers = require('../../../src/storage/tickers');
 
 describe('#stop loss order calculation', function() {
+  const fakeLogger = { info: () => {} };
   it('calculate stop lose for long', async () => {
     const tickers = new Tickers();
     tickers.set(new Ticker('noop', 'BTCUSD', undefined, 6500.66, 6502.99));
-
-    const calculator = new StopLossCalculator(
-      tickers,
-      createLogger({
-        transports: [
-          new (require('winston').transports.Stream)({
-            stream: fs.createWriteStream('/dev/null')
-          })
-        ]
-      })
-    );
+    const calculator = new StopLossCalculator(tickers, fakeLogger);
 
     const result = await calculator.calculateForOpenPosition(
       'noop',
@@ -42,16 +31,7 @@ describe('#stop loss order calculation', function() {
     const tickers = new Tickers();
     tickers.set(new Ticker('noop', 'BTCUSD', undefined, 6500.66, 6502.99));
 
-    const calculator = new StopLossCalculator(
-      tickers,
-      createLogger({
-        transports: [
-          new (require('winston').transports.Stream)({
-            stream: fs.createWriteStream('/dev/null')
-          })
-        ]
-      })
-    );
+    const calculator = new StopLossCalculator(tickers, fakeLogger);
 
     const result = await calculator.calculateForOpenPosition(
       'noop',
@@ -65,16 +45,7 @@ describe('#stop loss order calculation', function() {
     const tickers = new Tickers();
     tickers.set(new Ticker('noop', 'BTCUSD', undefined, 6500.66, 6502.99));
 
-    const calculator = new StopLossCalculator(
-      tickers,
-      createLogger({
-        transports: [
-          new (require('winston').transports.Stream)({
-            stream: fs.createWriteStream('/dev/null')
-          })
-        ]
-      })
-    );
+    const calculator = new StopLossCalculator(tickers, fakeLogger);
 
     const result = await calculator.calculateForOpenPosition(
       'noop',
@@ -89,16 +60,7 @@ describe('#stop loss order calculation', function() {
     const tickers = new Tickers();
     tickers.set(new Ticker('noop', 'BTCUSD', undefined, 6500.66, 6301));
 
-    const calculator = new StopLossCalculator(
-      tickers,
-      createLogger({
-        transports: [
-          new (require('winston').transports.Stream)({
-            stream: fs.createWriteStream('/dev/null')
-          })
-        ]
-      })
-    );
+    const calculator = new StopLossCalculator(tickers, fakeLogger);
 
     const result = await calculator.calculateForOpenPosition(
       'noop',
@@ -112,16 +74,7 @@ describe('#stop loss order calculation', function() {
     const tickers = new Tickers();
     tickers.set(new Ticker('noop', 'BTCUSD', undefined, 6796, 6502.99));
 
-    const calculator = new StopLossCalculator(
-      tickers,
-      createLogger({
-        transports: [
-          new (require('winston').transports.Stream)({
-            stream: fs.createWriteStream('/dev/null')
-          })
-        ]
-      })
-    );
+    const calculator = new StopLossCalculator(tickers, fakeLogger);
 
     const result = await calculator.calculateForOpenPosition(
       'noop',

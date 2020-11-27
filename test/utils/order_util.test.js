@@ -73,4 +73,12 @@ describe('#order util', function() {
 
     assert.equal(orderUtil.calculateNearestSize(-149.87974, 0.01), -149.87);
   });
+
+  it('calculate percent change', () => {
+    assert.strictEqual(50, orderUtil.getPercentDifferent(0.5, 1));
+    assert.strictEqual(50, orderUtil.getPercentDifferent(1, 0.5));
+
+    assert.strictEqual('1.20', orderUtil.getPercentDifferent(0.004036, 0.004085).toFixed(2));
+    assert.strictEqual('1.20', orderUtil.getPercentDifferent(0.004085, 0.004036).toFixed(2));
+  });
 });

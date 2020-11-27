@@ -1,0 +1,69 @@
+<table class="table table-bordered table-sm table-hover backtest-table">
+    <thead>
+    <tr>
+        <th scope="col">Time</th>
+        <th scope="col">Price</th>
+        <th scope="col">Signal</th>
+
+        {% for key, fields in extra_fields %}
+            <th scope="col">{{ fields.label|default(key) }}</th>
+        {% endfor %}
+
+        <th scope="col"><a href="#" class="button-debug-toggle-all">Debug <i class="fa fa-eye"></i></a></th>
+    </tr>
+
+    </thead>
+    <tbody>
+    {% for row in rows %}
+        <tr>
+            <td style="white-space: nowrap">{{ row.time|date('y-m-d H:i:s') }}</td>
+            <td>{{ row.price|default }}</td>
+            <td>
+                {% if row.result is defined %}
+                    {% if row.result.signal == 'long' %}
+                        <i class="fas fa-chevron-circle-up text-success"></i>
+                    {% elseif row.result.signal == 'short' %}
+                        <i class="fas fa-chevron-circle-down text-danger"></i>
+                    {% elseif row.result.signal == 'close' %}
+                        <i class="fa fa-times"></i>
+                    {% endif %}
+                {% endif %}
+            </td>
+
+            {% for column in row.columns|default([]) %}
+                {% if column.type == 'cross' or column.type == 'histogram' %}
+                    {% set color = '' %}
+
+                    {% if column.state == 'over' %}
+                        {% set color = 'text-success' %}
+                    {% elseif column.state == 'below' %}
+                        {% set color = 'text-danger' %}
+                    {% endif %}
+
+                    <td class="{{ color|default }}">{{ column.value }}</td>
+                {% elseif column.type == 'oscillator' %}
+                    {% set color = '' %}
+
+                    {% if column.state == 'over' %}
+                        {% set color = 'text-danger' %}
+                    {% elseif column.state == 'below' %}
+                        {% set color = 'text-success' %}
+                    {% endif %}
+
+                    <td class="{{ color|default }}">{{ column.value }}</td>
+                {% elseif column.type == 'icon' %}
+                    <td class="text-{{ column.value }}">{% if column.value is defined %}<i class="fas fa-circle"></i>{% endif %}</td>
+                {% else %}
+                    <td>{{ column.value }}</td>
+                {% endif %}
+            {% endfor %}
+
+            <td style="word-break: break-all;">
+                        <span class="debug-toggle hide">
+                            <a href="#" class="button-debug-toggle"><i class="fa fa-eye"></i></a><span class="debug-text text-muted">{{ row|json_encode }}</span>
+                        </span>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

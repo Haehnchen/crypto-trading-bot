@@ -1,17 +1,16 @@
-const _ = require('lodash');
-
 const Order = require('../../dict/order');
 
 module.exports = class OrdersHttp {
-  constructor(backtest, tickers, orderExecutor, exchangeManager) {
+  constructor(backtest, tickers, orderExecutor, exchangeManager, pairConfig) {
     this.backtest = backtest;
     this.tickers = tickers;
     this.orderExecutor = orderExecutor;
     this.exchangeManager = exchangeManager;
+    this.pairConfig = pairConfig;
   }
 
   getPairs() {
-    return this.backtest.getBacktestPairs();
+    return this.pairConfig.getAllPairNames();
   }
 
   getOrders(pair) {

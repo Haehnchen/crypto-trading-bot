@@ -14,12 +14,11 @@ module.exports = class Trade {
     tickers,
     tickerDatabaseListener,
     exchangeOrderWatchdogListener,
-    orderExecutor,
-    pairStateExecution,
     systemUtil,
     logsRepository,
     tickerLogRepository,
-    exchangePositionWatcher
+    exchangePositionWatcher,
+    pairStateManager
   ) {
     this.eventEmitter = eventEmitter;
     this.instances = instances;
@@ -30,12 +29,11 @@ module.exports = class Trade {
     this.tickers = tickers;
     this.tickerDatabaseListener = tickerDatabaseListener;
     this.exchangeOrderWatchdogListener = exchangeOrderWatchdogListener;
-    this.orderExecutor = orderExecutor;
-    this.pairStateExecution = pairStateExecution;
     this.systemUtil = systemUtil;
     this.logsRepository = logsRepository;
     this.tickerLogRepository = tickerLogRepository;
     this.exchangePositionWatcher = exchangePositionWatcher;
+    this.pairStateManager = pairStateManager;
   }
 
   start() {
@@ -47,7 +45,7 @@ module.exports = class Trade {
         process.exit();
       }, 7500);
 
-      await this.pairStateExecution.onTerminate();
+      await this.pairStateManager.onTerminate();
 
       process.exit();
     });
@@ -56,7 +54,7 @@ module.exports = class Trade {
 
     const notifyActivePairs = this.instances.symbols
       .filter(symbol => {
-        return symbol.state === 'watch';
+        return ['watch', 'trade'].includes(symbol.state);
       })
       .map(symbol => {
         return `${symbol.exchange}.${symbol.symbol}`;
@@ -76,9 +74,9 @@ module.exports = class Trade {
       console.log('Trade module: warmup done; starting ticks');
       this.logger.info('Trade module: warmup done; starting ticks');
 
-      setInterval(() => {
-        eventEmitter.emit('tick', {});
-      }, this.systemUtil.getConfig('tick.default', 20100));
+      setTimeout(async () => {
+        await me.tickListener.startStrategyIntervals();
+      }, 1000);
 
       // order create tick
       setInterval(() => {
@@ -126,18 +124,6 @@ module.exports = class Trade {
 
     eventEmitter.on(PositionStateChangeEvent.EVENT_NAME, async event => {
       await me.exchangeOrderWatchdogListener.onPositionChanged(event);
-    });
-
-    let running;
-    eventEmitter.on('tick_ordering', async () => {
-      if (typeof running === 'undefined' || running < moment().subtract(20, 'seconds')) {
-        running = new Date();
-        await me.pairStateExecution.onPairStateExecutionTick();
-        await me.orderExecutor.adjustOpenOrdersPrice();
-        running = undefined;
-      } else {
-        me.logger.debug('tick_ordering still running');
-      }
     });
   }
 };

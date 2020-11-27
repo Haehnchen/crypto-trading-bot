@@ -1,4 +1,5 @@
 const Order = require('./order');
+const OrderCapital = require('./order_capital');
 const ExchangeOrder = require('./exchange_order');
 
 module.exports = class PairState {
@@ -18,9 +19,51 @@ module.exports = class PairState {
     return 'cancel';
   }
 
-  constructor(exchange, symbol, state, options, adjustedPrice) {
+  /**
+   * @param exchange String
+   * @param symbol String
+   * @param capital {OrderCapital}
+   * @param options
+   * @param adjustedPrice bool
+   * @param clearCallback
+   * @returns {PairState}
+   */
+  static createLong(exchange, symbol, capital, options, adjustedPrice, clearCallback) {
+    if (!(capital instanceof OrderCapital)) {
+      throw new Error('TypeError: invalid OrderCapital');
+    }
+
+    const state = new PairState(exchange, symbol, PairState.STATE_LONG, options, adjustedPrice, clearCallback);
+    state.capital = capital;
+    return state;
+  }
+
+  /**
+   * @param exchange String
+   * @param symbol String
+   * @param capital {OrderCapital}
+   * @param options
+   * @param adjustedPrice bool
+   * @param clearCallback
+   * @returns {PairState}
+   */
+  static createShort(exchange, symbol, capital, options, adjustedPrice, clearCallback) {
+    if (!(capital instanceof OrderCapital)) {
+      throw new Error('TypeError: invalid OrderCapital');
+    }
+
+    const state = new PairState(exchange, symbol, PairState.STATE_SHORT, options, adjustedPrice, clearCallback);
+    state.capital = capital;
+    return state;
+  }
+
+  constructor(exchange, symbol, state, options, adjustedPrice, clearCallback) {
     if (![PairState.STATE_LONG, PairState.STATE_SHORT, PairState.STATE_CLOSE, PairState.STATE_CANCEL].includes(state)) {
-      throw `Invalidate state: ${state}`;
+      throw new Error(`Invalidate state: ${state}`);
+    }
+
+    if (typeof clearCallback !== 'function') {
+      throw new Error(`clearCallback not given`);
     }
 
     this.time = new Date();
@@ -32,6 +75,8 @@ module.exports = class PairState {
     this.exchangeOrder = undefined;
     this.retries = 0;
     this.adjustedPrice = adjustedPrice;
+    this.clearCallback = clearCallback;
+    this.cleared = false;
   }
 
   /**
@@ -62,12 +107,24 @@ module.exports = class PairState {
     return this.state;
   }
 
+  clear() {
+    this.cleared = true;
+    return this.clearCallback();
+  }
+
   getOptions() {
     return this.options;
   }
 
   getTime() {
     return this.time;
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  isCleared() {
+    return this.cleared;
   }
 
   /**
@@ -82,8 +139,12 @@ module.exports = class PairState {
     return this.retries;
   }
 
+  getCapital() {
+    return this.capital;
+  }
+
   triggerRetry() {
-    return (this.retries += 1);
+    this.retries += 1;
   }
 
   /**

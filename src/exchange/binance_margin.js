@@ -3,10 +3,11 @@
 const BinanceClient = require('binance-api-node').default;
 
 const moment = require('moment');
+const _ = require('lodash');
 const Binance = require('./binance');
-const ExchangeCandlestick = require('./../dict/exchange_candlestick');
-const Ticker = require('./../dict/ticker');
-const TickerEvent = require('./../event/ticker_event');
+const ExchangeCandlestick = require('../dict/exchange_candlestick');
+const Ticker = require('../dict/ticker');
+const TickerEvent = require('../event/ticker_event');
 const ExchangeOrder = require('../dict/exchange_order');
 const OrderUtil = require('../utils/order_util');
 const TradesUtil = require('./utils/trades_util');
@@ -15,11 +16,12 @@ const Order = require('../dict/order');
 const OrderBag = require('./utils/order_bag');
 
 module.exports = class BinanceMargin {
-  constructor(eventEmitter, logger, queue, candleImport) {
+  constructor(eventEmitter, logger, queue, candleImport, throttler) {
     this.eventEmitter = eventEmitter;
     this.candleImport = candleImport;
     this.logger = logger;
     this.queue = queue;
+    this.throttler = throttler;
 
     this.client = undefined;
     this.exchangePairs = {};
@@ -52,40 +54,36 @@ module.exports = class BinanceMargin {
 
       // we need balance init; websocket sending only on change
       // also sync by time
-      setInterval(
-        (function f() {
-          me.syncBalances();
-          return f;
-        })(),
-        60 * 60 * 1 * 1000
-      );
+      setTimeout(async () => {
+        await me.syncPairInfo();
+        await me.syncBalances();
+        await me.syncOrders();
 
-      setInterval(
-        (function f() {
-          me.syncTradesForEntries();
-          return f;
-        })(),
-        60 * 60 * 1 * 1000
-      );
+        // positions needs a ticker price; which needs a websocket event
+        setTimeout(async () => {
+          const initSymbols = (await me.getPositions()).map(p => p.getSymbol());
+          me.logger.info(`Binance Margin: init trades for positions: ${JSON.stringify(initSymbols)}`);
+          await me.syncTradesForEntries(initSymbols);
+        }, 13312);
+      }, 1523);
 
-      setInterval(
-        (function f() {
-          me.syncOrders();
-          return f;
-        })(),
-        1000 * 30
-      );
+      setInterval(async () => {
+        await me.syncBalances();
+      }, 5 * 60 * 1198);
 
-      // since pairs
-      setInterval(
-        (function f() {
-          me.syncPairInfo();
-          return f;
-        })(),
-        60 * 60 * 15 * 1000
-      );
+      setInterval(async () => {
+        await me.syncTradesForEntries();
+      }, 15 * 60 * 1098);
+
+      setInterval(async () => {
+        await me.syncOrders();
+      }, 30 * 1232);
+
+      setInterval(async () => {
+        await me.syncPairInfo();
+      }, 30 * 60 * 1051);
     } else {
-      this.logger.info('Binance: Starting as anonymous; no trading possible');
+      this.logger.info('Binance Margin: Starting as anonymous; no trading possible');
     }
 
     const { eventEmitter } = this;
@@ -176,8 +174,9 @@ module.exports = class BinanceMargin {
     try {
       result = await this.client.marginOrder(payload);
     } catch (e) {
-      this.logger.error(`Binance: order create error: ${JSON.stringify([e.code, e.message, order, payload])}`);
+      this.logger.error(`Binance Margin: order create error: ${JSON.stringify([e.code, e.message, order, payload])}`);
 
+      // @TODO: retry possible: [-3007,"You have pending transcation, please try again later." // typo "transcation" externally ;)
       // -2010: insufficient balance
       // -XXXX: borrow amount has exceed
       if (
@@ -209,7 +208,17 @@ module.exports = class BinanceMargin {
         orderId: id
       });
     } catch (e) {
-      this.logger.error(`Binance: cancel order error: ${e}`);
+      const message = String(e).toLowerCase();
+
+      // "Error: Unknown order sent."
+      if (message.includes('unknown order sent')) {
+        this.logger.info(`Binance Margin: cancel order not found remove it: ${JSON.stringify([e, id])}`);
+        this.orderbag.delete(id);
+        return ExchangeOrder.createCanceled(order);
+      }
+
+      this.logger.error(`Binance Margin: cancel order error: ${JSON.stringify([e, id])}`);
+
       return undefined;
     }
 
@@ -371,6 +380,7 @@ module.exports = class BinanceMargin {
 
     const currentOrder = await this.findOrderById(id);
     if (!currentOrder) {
+      this.logger.debug(`Binance Margin: Order to update not found: ${JSON.stringify([id, order])}`);
       return undefined;
     }
 
@@ -386,23 +396,35 @@ module.exports = class BinanceMargin {
 
   async onWebSocketEvent(event) {
     if (event.eventType && event.eventType === 'executionReport' && ('orderStatus' in event || 'orderId' in event)) {
-      this.logger.debug(`Binance: Got executionReport order event: ${JSON.stringify(event)}`);
+      this.logger.debug(`Binance Margin: Got executionReport order event: ${JSON.stringify(event)}`);
 
       // clean orders with state is switching from open to close
       const orderStatus = event.orderStatus.toLowerCase();
-      if (
-        ['canceled', 'filled', 'rejected'].includes(orderStatus) &&
-        event.orderId &&
-        this.orderbag.get(event.orderId)
-      ) {
+      const isRemoveEvent =
+        ['canceled', 'filled', 'rejected'].includes(orderStatus) && event.orderId && this.orderbag.get(event.orderId);
+
+      if (isRemoveEvent) {
+        this.logger.info(`Binance Margin: Removing non open order: ${orderStatus} - ${JSON.stringify(event)}`);
         this.orderbag.delete(event.orderId);
+        this.throttler.addTask('binance_margin_sync_balances', this.syncBalances.bind(this), 500);
       }
 
       // sync all open orders and get entry based fire them in parallel
-      await this.syncOrders();
+      this.throttler.addTask('binance_margin_sync_orders', this.syncOrders.bind(this));
 
       // set last order price to our trades. so we have directly profit and entry prices
-      await this.syncTradesForEntries([event.symbol]);
+      this.throttler.addTask(
+        `binance_margin_sync_trades_for_entries_${event.symbol}`,
+        async () => {
+          await this.syncTradesForEntries([event.symbol]);
+        },
+        300
+      );
+
+      if ('orderId' in event && !isRemoveEvent) {
+        const exchangeOrder = Binance.createOrders(event)[0];
+        this.orderbag.triggerOrder(exchangeOrder);
+      }
     }
 
     // get balances and same them internally; allows to take open positions
@@ -411,19 +433,19 @@ module.exports = class BinanceMargin {
       // we dont get the margin information here;
       // so we would only be able to calculate longs, so do a full sync on API
 
-      await this.syncBalances();
+      this.throttler.addTask('binance_margin_sync_balances', this.syncBalances.bind(this), 500);
     }
   }
 
   async syncOrders() {
-    this.logger.debug(`Binance: Sync orders`);
+    this.logger.debug(`Binance Margin: Sync orders`);
 
     // false equal to all symbols
     let openOrders = [];
     try {
       openOrders = await this.client.marginOpenOrders(false);
     } catch (e) {
-      this.logger.error(`Binance: error sync orders: ${String(e)}`);
+      this.logger.error(`Binance Margin: error sync orders: ${String(e)}`);
       return;
     }
 
@@ -435,15 +457,16 @@ module.exports = class BinanceMargin {
     try {
       accountInfo = await this.client.marginAccountInfo();
     } catch (e) {
-      this.logger.error(`Binance: error sync balances: ${String(e)}`);
+      this.logger.error(`Binance Margin: error sync balances: ${String(e)}`);
       return;
     }
 
     if (!accountInfo || !accountInfo.userAssets) {
+      this.logger.error(`Binance Margin: invalid sync balances response: ${JSON.stringify(accountInfo)}`);
       return;
     }
 
-    this.logger.debug('Binance: Sync balances');
+    this.logger.debug('Binance Margin: Sync balances');
 
     this.balances = BinanceMargin.createMarginBalances(accountInfo.userAssets);
   }
@@ -457,19 +480,27 @@ module.exports = class BinanceMargin {
   async syncTradesForEntries(symbols = []) {
     // fetch all based on our allowed symbol capital
     if (symbols.length === 0) {
-      symbols = this.symbols
+      const allSymbols = this.symbols
         .filter(
           s =>
             s.trade &&
             ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0))
         )
         .map(s => s.symbol);
+
+      // we need position first and randomly add other
+      const positionSymbols = _.shuffle((await this.getPositions()).map(p => p.getSymbol()));
+      const unknown = _.shuffle(allSymbols).filter(s => !positionSymbols.includes(s));
+
+      positionSymbols.push(...unknown);
+
+      symbols = positionSymbols;
     }
 
-    this.logger.debug(`Binance: Sync trades for entries: ${symbols.length}`);
+    this.logger.debug(`Binance Margin: Sync trades for entries: ${symbols.length} - ${JSON.stringify(symbols)}`);
 
     const promises = symbols.map(symbol => {
-      return new Promise(async resolve => {
+      return async () => {
         let symbolOrders;
 
         try {
@@ -478,8 +509,8 @@ module.exports = class BinanceMargin {
             limit: 10
           });
         } catch (e) {
-          this.logger.error(`Binance: Error on symbol order fetch: ${String(e)}`);
-          return resolve(undefined);
+          this.logger.info(`Binance Margin: Sync trades error for entries: ${symbol} - ${String(e)}`);
+          return undefined;
         }
 
         const orders = symbolOrders
@@ -495,23 +526,49 @@ module.exports = class BinanceMargin {
             (a, b) => b.time - a.time
           )
           .map(order => {
+            let price = parseFloat(order.price);
+
+            // market order is not having price info, we need to calulcate it
+            if (price === 0 && order.type && order.type.toLowerCase() === 'market') {
+              const executedQty = parseFloat(order.executedQty);
+              const cummulativeQuoteQty = parseFloat(order.cummulativeQuoteQty);
+
+              if (cummulativeQuoteQty !== 0 && executedQty !== 0) {
+                price = cummulativeQuoteQty / executedQty;
+              }
+            }
+
             return {
               side: order.side.toLowerCase(),
-              price: parseFloat(order.price),
+              price: price,
               symbol: order.symbol,
               time: new Date(order.time),
               size: parseFloat(order.executedQty)
             };
           });
 
-        return resolve({ symbol: symbol, orders: orders });
-      });
+        return { symbol: symbol, orders: orders };
+      };
     });
 
-    (await Promise.all(promises)).forEach(o => {
-      if (o) {
-        this.trades[o.symbol] = o.orders;
+    // no queue for trigger; its timing relevant
+    if (promises.length === 1) {
+      const result = await promises[0]();
+      if (result) {
+        this.trades[result.symbol] = result.orders;
       }
+
+      return;
+    }
+
+    // add to queue
+    promises.forEach(p => {
+      this.queue.addQueue2(async () => {
+        const result = await p();
+        if (result) {
+          this.trades[result.symbol] = result.orders;
+        }
+      });
     });
   }
 
@@ -538,7 +595,7 @@ module.exports = class BinanceMargin {
       exchangePairs[pair.symbol] = pairInfo;
     });
 
-    this.logger.info(`Binance: pairs synced: ${pairs.symbols.length}`);
+    this.logger.info(`Binance Margin: pairs synced: ${pairs.symbols.length}`);
     this.exchangePairs = exchangePairs;
   }
 

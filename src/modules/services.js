@@ -49,6 +49,7 @@ const TickerLogRepository = require('../modules/repository/ticker_log_repository
 const TickerRepository = require('../modules/repository/ticker_repository');
 const CandlestickResample = require('../modules/system/candlestick_resample');
 const RequestClient = require('../utils/request_client');
+const Throttler = require('../utils/throttler');
 const Queue = require('../utils/queue');
 
 const Bitmex = require('../exchange/bitmex');
@@ -116,6 +117,7 @@ let exchangePositionWatcher;
 let tickerRepository;
 let ordersHttp;
 let pairConfig;
+let throttler;
 
 const parameters = {};
 
@@ -170,7 +172,7 @@ module.exports = {
       return backtest;
     }
 
-    return (backtest = new Backtest(this.getInstances(), this.getStrategyManager(), this.getExchangeCandleCombine()));
+    return (backtest = new Backtest(this.getInstances(), this.getStrategyManager(), this.getExchangeCandleCombine(), parameters.projectDir));
   },
 
   getStopLossCalculator: function() {
@@ -351,7 +353,8 @@ module.exports = {
     return (strategyManager = new StrategyManager(
       this.getTechnicalAnalysisValidator(),
       this.getExchangeCandleCombine(),
-      this.getLogger()
+      this.getLogger(),
+      parameters.projectDir
     ));
   },
 
@@ -367,6 +370,7 @@ module.exports = {
       this.getCandleExportHttp(),
       this.getCandleImporter(),
       this.getOrdersHttp(),
+      this.getTickers(),
       parameters.projectDir
     );
   },
@@ -393,8 +397,7 @@ module.exports = {
       this.getExchangeManager(),
       this.getTickers(),
       this.getSystemUtil(),
-      this.getLogger(),
-      this.getPairStateManager()
+      this.getLogger()
     ));
   },
 
@@ -437,7 +440,13 @@ module.exports = {
       return pairStateManager;
     }
 
-    return (pairStateManager = new PairStateManager(this.getLogger()));
+    return (pairStateManager = new PairStateManager(
+      this.getLogger(),
+      this.getPairConfig(),
+      this.getSystemUtil(),
+      this.getPairStateExecution(),
+      this.getOrderExecutor()
+    ));
   },
 
   getPairStateExecution: function() {
@@ -446,7 +455,6 @@ module.exports = {
     }
 
     return (pairStateExecution = new PairStateExecution(
-      this.getPairStateManager(),
       this.getExchangeManager(),
       this.getOrderCalculator(),
       this.getOrderExecutor(),
@@ -544,7 +552,8 @@ module.exports = {
       this.getBacktest(),
       this.getTickers(),
       this.getOrderExecutor(),
-      this.getExchangeManager()
+      this.getExchangeManager(),
+      this.getPairConfig()
     ));
   },
 
@@ -566,6 +575,14 @@ module.exports = {
       this.getEventEmitter(),
       this.getLogger()
     ));
+  },
+
+  getThrottler: function() {
+    if (throttler) {
+      return throttler;
+    }
+
+    return (throttler = new Throttler(this.getLogger()));
   },
 
   getExchanges: function() {
@@ -590,7 +607,13 @@ module.exports = {
         this.getQueue(),
         this.getCandleImporter()
       ),
-      new Binance(this.getEventEmitter(), this.getLogger(), this.getQueue(), this.getCandleImporter()),
+      new Binance(
+        this.getEventEmitter(),
+        this.getLogger(),
+        this.getQueue(),
+        this.getCandleImporter(),
+        this.getThrottler()
+      ),
       new CoinbasePro(
         this.getEventEmitter(),
         this.getLogger(),
@@ -605,7 +628,8 @@ module.exports = {
         this.getCandlestickResample(),
         this.getLogger(),
         this.getQueue(),
-        this.getCandleImporter()
+        this.getCandleImporter(),
+        this.getThrottler()
       ),
       new FTX(
         this.getEventEmitter(),
@@ -621,9 +645,16 @@ module.exports = {
         this.getCandlestickResample(),
         this.getLogger(),
         this.getQueue(),
-        this.getCandleImporter()
+        this.getCandleImporter(),
+        this.getThrottler()
       ),
-      new BinanceMargin(this.getEventEmitter(), this.getLogger(), this.getQueue(), this.getCandleImporter()),
+      new BinanceMargin(
+        this.getEventEmitter(),
+        this.getLogger(),
+        this.getQueue(),
+        this.getCandleImporter(),
+        this.getThrottler()
+      ),
       new Noop()
     ]);
   },
@@ -641,12 +672,11 @@ module.exports = {
       this.getTickers(),
       this.getTickerDatabaseListener(),
       this.getExchangeOrderWatchdogListener(),
-      this.getOrderExecutor(),
-      this.getPairStateExecution(),
       this.getSystemUtil(),
       this.getLogsRepository(),
       this.getTickerLogRepository(),
-      this.getExchangePositionWatcher()
+      this.getExchangePositionWatcher(),
+      this.getPairStateManager(),
     );
   },
 

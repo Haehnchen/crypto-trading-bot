@@ -48,6 +48,18 @@ describe('#bitmex exchange implementation', function() {
 
     assert.equal(orders[5].status, 'canceled');
     assert.equal(orders[5].type, 'stop');
+
+    assert.equal(orders[6].type, 'stop');
+    assert.equal(orders[6].price, 11020);
+
+    assert.equal(orders[7].type, 'stop_limit');
+    assert.equal(orders[7].price, 11081.5);
+
+    assert.equal(orders[8].type, 'stop');
+    assert.equal(orders[8].price, 2.593);
+
+    assert.equal(orders[9].type, 'stop');
+    assert.equal(orders[9].price, 10465);
   });
 
   it('test that request body for order is created (limit order)', () => {
