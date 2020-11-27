@@ -59,9 +59,11 @@ new TradingView.widget(
                             <div class="card-header">
                                 <h3 class="card-title mr-2">{{ desk.name }}</h3>
 
+                                <a title="Fullscreen" href="/desks/{{ id }}/fullscreen?interval={{ interval > 0 ? interval : desk.intervals[0] }}" class="badge bg-cyan"><i class="fas fa-expand"></i></a>
+
                                 {% if desk.intervals|length > 0 %}
                                     {% for interval in desk.intervals|default([]) %}
-                                        <a href="/desks/{{ id }}?interval={{ interval }}" class="badge bg-primary">{{ interval }}</a>
+                                        <a title="Interval {{ interval }}" href="/desks/{{ id }}?interval={{ interval }}" class="badge bg-primary">{{ interval }}</a>
                                     {% endfor %}
                                 {% endif %}
                             </div>

@@ -1,0 +1,37 @@
+<html lang="en">
+
+<head>
+    <title>Desk: {{ desk.name }} | Crypto Bot</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+<div class="tradingview-widget-container">
+    <div id="tradingview_d2fc8"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script type="text/javascript">
+      new TradingView.widget(
+        {
+          "autosize": true,
+          "symbol": "{{ watchlist[0] }}",
+          "interval": "{{ interval > 0 ? interval : desk.intervals[0] }}",
+          "theme": "light",
+          "style": "1",
+          "locale": "en",
+          "watchlist": {{ watchlist|json_encode }},
+          "container_id": "tradingview_d2fc8",
+          "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+          "studies": [
+            "RSI@tv-basicstudies"
+          ],
+        }
+      );
+    </script>
+</div>
+</body>
+</html>

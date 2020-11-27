@@ -177,6 +177,16 @@ module.exports = class Http {
       });
     });
 
+    app.get('/desks/:desk/fullscreen', (req, res) => {
+      const configElement = this.systemUtil.getConfig('desks')[req.params.desk];
+      res.render('../templates/tradingview_desk.html.twig', {
+        desk: configElement,
+        interval: req.query.interval || undefined,
+        id: req.params.desk,
+        watchlist: configElement.pairs.map(i => i.symbol)
+      });
+    });
+
     app.get('/tools/candles', async (req, res) => {
       const options = {
         pairs: await this.candleExportHttp.getPairs(),
