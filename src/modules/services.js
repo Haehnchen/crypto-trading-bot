@@ -552,7 +552,8 @@ module.exports = {
       this.getBacktest(),
       this.getTickers(),
       this.getOrderExecutor(),
-      this.getExchangeManager()
+      this.getExchangeManager(),
+      this.getPairConfig()
     ));
   },
 

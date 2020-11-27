@@ -45,4 +45,19 @@ module.exports = class PairConfig {
 
     return undefined;
   }
+
+  /**
+   * Get all instance pairs sorted
+   *
+   * @returns string[]
+   */
+  getAllPairNames() {
+    const pairs = [];
+
+    this.instances.symbols.forEach(symbol => {
+      pairs.push(`${symbol.exchange}.${symbol.symbol}`);
+    });
+
+    return pairs.sort();
+  }
 };
