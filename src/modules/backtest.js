@@ -15,11 +15,13 @@ module.exports = class Backtest {
     // @TODO: resolve n+1 problem (issue on big database)
     const asyncs = this.instances.symbols.map(symbol => {
       return async () => {
-        const periods = await this.exchangeCandleCombine.fetchCandlePeriods(symbol.exchange, symbol.symbol);
+        // its much too slow to fetch this
+        // const periods = await this.exchangeCandleCombine.fetchCandlePeriods(symbol.exchange, symbol.symbol);
+        const periods = [];
 
         return {
           name: `${symbol.exchange}.${symbol.symbol}`,
-          options: periods.length > 0 ? periods : ['1m', '5m', '15m', '1h', '4h']
+          options: periods.length > 0 ? periods : ['15m', '1m', '5m', '1h', '4h']
         };
       };
     });
