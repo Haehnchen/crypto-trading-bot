@@ -12,15 +12,19 @@ module.exports = class Backtest {
   }
 
   async getBacktestPairs() {
-    let pairs = [];
-    for (const symbol of this.instances.symbols) {
-      const periods = await this.exchangeCandleCombine.fetchCandlePeriods(symbol.exchange, symbol.symbol);
-      pairs.push({
-        name: `${symbol.exchange}.${symbol.symbol}`,
-        options: periods
-      });
-    }
-    return pairs;
+    // @TODO: resolve n+1 problem (issue on big database)
+    const asyncs = this.instances.symbols.map(symbol => {
+      return async () => {
+        const periods = await this.exchangeCandleCombine.fetchCandlePeriods(symbol.exchange, symbol.symbol);
+
+        return {
+          name: `${symbol.exchange}.${symbol.symbol}`,
+          options: periods.length > 0 ? periods : ['1m', '5m', '15m', '1h', '4h']
+        };
+      };
+    });
+
+    return Promise.all(asyncs.map(fn => fn()));
   }
 
   getBacktestStrategies() {
@@ -32,7 +36,7 @@ module.exports = class Backtest {
     });
   }
 
-  getBacktestResult(tickIntervalInMinutes, hours, strategy, candlePeriod, exchange, pair, options,initial_capital) {
+  getBacktestResult(tickIntervalInMinutes, hours, strategy, candlePeriod, exchange, pair, options, initial_capital) {
     return new Promise(async resolve => {
       const start = moment()
         .startOf('hour')
@@ -133,10 +137,10 @@ module.exports = class Backtest {
             signals: signals
           };
         });
-      
-      let backtestSummary = await this.getBacktestSummary(signals,initial_capital)
+
+      const backtestSummary = await this.getBacktestSummary(signals, initial_capital);
       resolve({
-        summary : backtestSummary,
+        summary: backtestSummary,
         rows: rows.slice().reverse(),
         signals: signals.slice().reverse(),
         candles: JSON.stringify(candles),
@@ -150,136 +154,124 @@ module.exports = class Backtest {
     });
   }
 
-  getBacktestSummary(signals,initial_capital) {
+  getBacktestSummary(signals, initial_capital) {
     return new Promise(async resolve => {
+      const initialCapital = Number(initial_capital); // 1000 $ Initial Capital
+      let workingCapital = initialCapital; // Capital that changes after every trade
 
-      let initialCapital = Number(initial_capital);           //1000 $ Initial Capital
-      let workingCapital = initialCapital;  //Capital that changes after every trade
-      
-      let lastPosition;                     //Holds Info about last action
-      
-      let averagePNLPercent = 0;            //Average ROI or PNL Percentage
+      let lastPosition; // Holds Info about last action
 
-      let trades = {                        
-        profitableCount: 0,                 //Number of Profitable Trades
-        lossMakingCount: 0,                 //Number of Trades that caused a loss
-        total: 0,                           //Totol number of Trades
-        profitabilityPercent: 0             //Percentage Of Trades that were profitable
-      }
+      let averagePNLPercent = 0; // Average ROI or PNL Percentage
 
-      let cumulativePNLPercent = 0;         //Sum of all the PNL Percentages
-      let pnlRateArray = [];                //Array of all PNL Percentages of all the trades
-      
-      //Iterate over all the signals
+      const trades = {
+        profitableCount: 0, // Number of Profitable Trades
+        lossMakingCount: 0, // Number of Trades that caused a loss
+        total: 0, // Totol number of Trades
+        profitabilityPercent: 0 // Percentage Of Trades that were profitable
+      };
+
+      let cumulativePNLPercent = 0; // Sum of all the PNL Percentages
+      const pnlRateArray = []; // Array of all PNL Percentages of all the trades
+
+      // Iterate over all the signals
       for (let s = 0; s < signals.length; s++) {
+        const signalObject = signals[s];
+        const signalType = signalObject.result._signal; // Can be long,short,close
 
-        let signalObject = signals[s]
-        let signalType = signalObject.result._signal      // Can be long,short,close
+        // When a trade is closed
+        if (signalType == 'close') {
+          // Increment the total trades counter
+          trades.total += 1;
 
+          // Entry Position Details
+          const entrySignalType = lastPosition.result._signal; // Long or Short
+          const entryPrice = lastPosition.price; // Price during the trade entry
+          const tradedQuantity = Number((workingCapital / entryPrice).toFixed(2)); // Quantity
 
-        //When a trade is closed
-        if (signalType == "close") {
+          // Exit Details
+          const exitPrice = signalObject.price; // Price during trade exit
+          const exitValue = Number((tradedQuantity * exitPrice).toFixed(2)); // Price * Quantity
 
-          //Increment the total trades counter
-          trades.total = trades.total + 1
+          // Trade Details
+          let pnlValue = 0; // Profit or Loss Value
 
-          //Entry Position Details
-          let entrySignalType = lastPosition.result._signal                       //Long or Short
-          let entryPrice = lastPosition.price                                     //Price during the trade entry
-          let tradedQuantity = Number((workingCapital / entryPrice).toFixed(2))   //Quantity
-
-          //Exit Details
-          let exitPrice = signalObject.price                                      //Price during trade exit
-          let exitValue = Number((tradedQuantity * exitPrice).toFixed(2))         //Price * Quantity
-
-          //Trade Details
-          let pnlValue = 0                                                        // Profit or Loss Value
-
-          //When the position is Long
-          if (entrySignalType == "long") {
-
+          // When the position is Long
+          if (entrySignalType == 'long') {
             if (exitPrice > entryPrice) {
-              //Long Trade is Profitable
-              trades.profitableCount = trades.profitableCount + 1
+              // Long Trade is Profitable
+              trades.profitableCount += 1;
             }
 
-            //Set the PNL
-            pnlValue = exitValue - workingCapital
-            
-          } else if (entrySignalType == "short") {
-
+            // Set the PNL
+            pnlValue = exitValue - workingCapital;
+          } else if (entrySignalType == 'short') {
             if (exitPrice < entryPrice) {
-              //Short Trade is Profitable
-              trades.profitableCount = trades.profitableCount + 1
+              // Short Trade is Profitable
+              trades.profitableCount += 1;
             }
 
-            //Set the PNL
-            pnlValue = - (exitValue - workingCapital)
+            // Set the PNL
+            pnlValue = -(exitValue - workingCapital);
           }
 
-          
-          //Percentage Return
-          let pnlPercent = Number(((pnlValue / workingCapital)*100).toFixed(2));
+          // Percentage Return
+          const pnlPercent = Number(((pnlValue / workingCapital) * 100).toFixed(2));
 
-          //Summation of Percentage Return
-          cumulativePNLPercent = cumulativePNLPercent + pnlPercent;
-          
-          //Maintaining the Percentage array
-          pnlRateArray.push(pnlPercent)
+          // Summation of Percentage Return
+          cumulativePNLPercent += pnlPercent;
 
-          //Update Working Cap
-          workingCapital = workingCapital + pnlValue
-        }
-        else if (signalType == "long" || signalType == "short") {
-          //Enter into a position
+          // Maintaining the Percentage array
+          pnlRateArray.push(pnlPercent);
+
+          // Update Working Cap
+          workingCapital += pnlValue;
+        } else if (signalType == 'long' || signalType == 'short') {
+          // Enter into a position
           lastPosition = signalObject;
         }
-
-
       }
 
-      //Lossmaking Trades
-      trades.lossMakingCount = trades.total - trades.profitableCount
+      // Lossmaking Trades
+      trades.lossMakingCount = trades.total - trades.profitableCount;
 
       // Calculating the Sharpe Ratio ----------------------------------------------------------
-      
-      //Average PNL Percent
-      averagePNLPercent = Number((cumulativePNLPercent/trades.total).toFixed(2))
 
-      //Initialize Sum of Mean Square Differences
-      let msdSum = 0
-      
-      //(Mean - value)^2
-      for(let p=0;p<pnlRateArray.length;p++){
-        //Sum of Mean Square Differences
-        msdSum = msdSum + Number(((averagePNLPercent - pnlRateArray[p])^2).toFixed(2))
+      // Average PNL Percent
+      averagePNLPercent = Number((cumulativePNLPercent / trades.total).toFixed(2));
+
+      // Initialize Sum of Mean Square Differences
+      let msdSum = 0;
+
+      // (Mean - value)^2
+      for (let p = 0; p < pnlRateArray.length; p++) {
+        // Sum of Mean Square Differences
+        msdSum += Number(((averagePNLPercent - pnlRateArray[p]) ^ 2).toFixed(2));
       }
 
-      let variance = Number((msdSum/trades.total).toFixed(2))   // Variance
+      const variance = Number((msdSum / trades.total).toFixed(2)); // Variance
 
-      let stdDeviation = Math.sqrt(variance)                    //STD Deviation from the mean
+      const stdDeviation = Math.sqrt(variance); // STD Deviation from the mean
 
-      //TODO:  Test the Sharpe Ratio
-      let sharpeRatio = Number(((averagePNLPercent-3.0)/stdDeviation).toFixed(2))
-      
+      // TODO:  Test the Sharpe Ratio
+      const sharpeRatio = Number(((averagePNLPercent - 3.0) / stdDeviation).toFixed(2));
+
       // -- End of Sharpe Ratio Calculation
 
+      // Net Profit
+      const netProfit = Number((((workingCapital - initialCapital) / initialCapital) * 100).toFixed(2));
 
-      //Net Profit
-      let netProfit = Number((((workingCapital - initialCapital) / initialCapital) * 100).toFixed(2))
+      trades.profitabilityPercent = Number(((trades.profitableCount * 100) / trades.total).toFixed(2));
 
-      trades.profitabilityPercent = Number((trades.profitableCount*100/trades.total).toFixed(2))
-
-      let summary = {
-        sharpeRatio:sharpeRatio,
-        averagePNLPercent:averagePNLPercent,
+      const summary = {
+        sharpeRatio: sharpeRatio,
+        averagePNLPercent: averagePNLPercent,
         netProfit: netProfit,
         initialCapital: initialCapital,
         finalCapital: Number(workingCapital.toFixed(2)),
         trades: trades
-      }
+      };
 
-      resolve(summary)
-    })
+      resolve(summary);
+    });
   }
 };
