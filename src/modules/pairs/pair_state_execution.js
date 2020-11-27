@@ -60,14 +60,12 @@ module.exports = class PairStateExecution {
         ])}`
       );
 
-      const pairOptions = pair.options;
       if (position) {
         // If we have open position and we want to switch short/long, we need to add position size to order size
-        pairState.positionAmount = position.getAmount();
+        pairState.options = pairState.options || {};
+        pairState.options.positionAmount = position.getAmount();
       }
       const exchangeOrder = await this.pairStateExecuteOrder(pairState);
-
-      const exchangeOrder = await this.executeOrder(pair.exchange, pair.symbol, side, pairOptions);
       if (exchangeOrder) {
         if (exchangeOrder.shouldCancelOrderProcess()) {
           // check if we need to to cancel the process
@@ -278,8 +276,8 @@ module.exports = class PairStateExecution {
       return;
     }
 
-    if (pair.positionAmount) {
-      orderSize = parseFloat(orderSize) + Math.abs(pair.positionAmount);
+    if (options.positionAmount) {
+      orderSize = parseFloat(orderSize) + Math.abs(options.positionAmount);
     }
 
     // inverse price for short

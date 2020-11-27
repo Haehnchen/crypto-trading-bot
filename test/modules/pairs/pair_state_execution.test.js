@@ -69,6 +69,71 @@ describe('#pair state execution', function() {
     assert.equal(myOrder.hasAdjustedPrice(), false);
   });
 
+  it('test limit open order trigger for long when we have short position', async () => {
+    let myOrder;
+
+    const executor = new PairStateExecution(
+      undefined,
+      {
+        calculateOrderSizeCapital: () => {
+          return 1337;
+        }
+      },
+      {
+        executeOrder: (exchange, order) => {
+          myOrder = order;
+          return undefined;
+        }
+      },
+      undefined
+    );
+
+    await executor.pairStateExecuteOrder(
+      PairState.createLong('exchange', 'BTCUSD', OrderCapital.createAsset(1369), {positionAmount: -1337}, true, () => {})
+    );
+
+    assert.equal(myOrder.symbol, 'BTCUSD');
+    assert.equal(myOrder.side, 'long');
+    assert.equal(myOrder.price, undefined);
+    assert.equal(myOrder.amount, 1337*2);
+    assert.equal(myOrder.type, 'limit');
+    assert.equal(myOrder.options.post_only, true);
+    assert.equal(myOrder.hasAdjustedPrice(), true);
+  });
+
+  
+  it('test limit open order trigger for short when we have long position', async () => {
+    let myOrder;
+
+    const executor = new PairStateExecution(
+      undefined,
+      {
+        calculateOrderSizeCapital: () => {
+          return 1337;
+        }
+      },
+      {
+        executeOrder: (exchange, order) => {
+          myOrder = order;
+          return undefined;
+        }
+      },
+      undefined
+    );
+
+    await executor.pairStateExecuteOrder(
+      PairState.createShort('exchange', 'BTCUSD', OrderCapital.createAsset(1369), {positionAmount: 1337}, true, () => {})
+    );
+
+    assert.equal(myOrder.symbol, 'BTCUSD');
+    assert.equal(myOrder.side, 'short');
+    assert.equal(myOrder.price, undefined);
+    assert.equal(myOrder.amount, -1337*2);
+    assert.equal(myOrder.type, 'limit');
+    assert.equal(myOrder.options.post_only, true);
+    assert.equal(myOrder.hasAdjustedPrice(), true);
+  });
+
   it('test limit open order trigger for short', async () => {
     let myOrder;
 

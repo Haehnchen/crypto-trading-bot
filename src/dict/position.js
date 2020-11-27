@@ -18,7 +18,7 @@ module.exports = class Position {
    * @param raw
    */
   constructor(symbol, side, amount, profit, updatedAt, entry, createdAt, raw = undefined) {
-    if (!['long', 'short'].includes(side)) {
+    if (![Position.SIDE_LONG, Position.SIDE_SHORT].includes(side)) {
       throw new Error(`Invalid position direction given:${side}`);
     }
 
@@ -41,11 +41,11 @@ module.exports = class Position {
   }
 
   isShort() {
-    return this.getSide() === 'short';
+    return this.getSide() === Position.SIDE_SHORT;
   }
 
   isLong() {
-    return this.getSide() === 'long';
+    return this.getSide() === Position.SIDE_LONG;
   }
 
   getAmount() {
@@ -62,6 +62,10 @@ module.exports = class Position {
 
   getEntry() {
     return this.entry;
+  }
+
+  getSide() {
+    return this.side;
   }
 
   getCreatedAt() {
