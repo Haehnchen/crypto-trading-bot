@@ -2,6 +2,18 @@
 
 <head>
     <title>Desk: {{ desk.name }} | Crypto Bot</title>
+
+    <link rel="icon" href="{{ '/favicon.ico' }}"/>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="{{ '/css/adminlte.min.css' }}">
+    <!-- style -->
+    <link rel="stylesheet" href="{{ '/css/style.css' }}">
+    <!-- Google Font: Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+
     <style>
         body {
             margin: 0;
@@ -11,6 +23,20 @@
 </head>
 
 <body>
+
+<nav class="navbar navbar-expand-sm bg-light">
+    <ul class="navbar-nav">
+        <a class="navbar-brand" href="/">Crypto-Bot</a>
+
+        {% set desks = desks() %}
+        {% for deskName in desks %}
+            <li class="nav-item">
+                <a class="nav-link" href="/desks/{{ loop.index - 1 }}/fullscreen"> {{ deskName }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</nav>
+
 <div class="tradingview-widget-container">
     <div id="tradingview_d2fc8"></div>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
