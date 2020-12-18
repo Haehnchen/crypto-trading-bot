@@ -139,13 +139,12 @@ describe('#bitmex exchange implementation', function() {
 
     const order = await bybit.order(Order.createMarketOrder('BTCUSD', 12));
 
-    assert.strictEqual(true, myOptions[0].url.includes('&order_type=Market&qty=12&side=Buy&symbol=BTCUSD'));
     assert.strictEqual(myOptions[0].method, 'POST');
-    assert.strictEqual(true, myOptions[0].url.includes('&timestamp'));
-    assert.strictEqual(true, myOptions[0].url.includes('&sign'));
+    assert.strictEqual(true, myOptions[0].body.includes('timestamp'));
+    assert.strictEqual(true, myOptions[0].body.includes('sign'));
 
     assert.strictEqual(myOptions[1].method, 'GET');
-    assert.strictEqual(true, myOptions[1].url.includes('/open-api/order/list?'));
+    assert.strictEqual(true, myOptions[1].url.includes('/v2/private/order/list?'));
     assert.strictEqual(true, myOptions[1].url.includes('&symbol=BTCUSD'));
     assert.strictEqual(true, myOptions[1].url.includes('&timestamp'));
     assert.strictEqual(true, myOptions[1].url.includes('&sign'));

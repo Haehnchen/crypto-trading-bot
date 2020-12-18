@@ -102,6 +102,10 @@ module.exports = class ExchangeOrder {
     return this.type;
   }
 
+  getSymbol() {
+    return this.symbol;
+  }
+
   isReduceOnly() {
     return this.options.reduce_only && this.options.reduce_only === true;
   }

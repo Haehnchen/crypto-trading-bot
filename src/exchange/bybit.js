@@ -78,7 +78,12 @@ module.exports = class Bybit {
       me.logger.info('Bybit: Connection opened.');
 
       symbols.forEach(symbol => {
-        ws.send(JSON.stringify({ op: 'subscribe', args: [`kline.${symbol.symbol}.${symbol.periods.join('|')}`] }));
+        symbol.periods.forEach(p => {
+          const periodMinute = resample.convertPeriodToMinute(p);
+
+          ws.send(JSON.stringify({ op: 'subscribe', args: [`klineV2.${periodMinute}.${symbol.symbol}`] }));
+        });
+
         ws.send(JSON.stringify({ op: 'subscribe', args: [`instrument_info.100ms.${symbol.symbol}`] }));
       });
 
@@ -295,7 +300,9 @@ module.exports = class Bybit {
   fullPositionsUpdate(positions) {
     const openPositions = [];
 
-    for (const position of positions) {
+    for (const positionItem of positions) {
+      const position = positionItem.data;
+
       if (position.symbol in this.positions && !['buy', 'sell'].includes(position.side.toLowerCase())) {
         delete this.positions[position.symbol];
         continue;
@@ -470,9 +477,9 @@ module.exports = class Bybit {
 
     let url;
     if (isConditionalOrder) {
-      url = `${this.getBaseUrl()}/open-api/stop-order/create?${querystring.stringify(parametersSorted)}`;
+      url = `${this.getBaseUrl()}/v2/private/stop-order/create`;
     } else {
-      url = `${this.getBaseUrl()}/open-api/order/create?${querystring.stringify(parametersSorted)}`;
+      url = `${this.getBaseUrl()}/v2/private/order/create`;
     }
 
     await this.updateLeverage(order.getSymbol());
@@ -484,7 +491,8 @@ module.exports = class Bybit {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json'
-        }
+        },
+        body: JSON.stringify(parametersSorted)
       },
       result => {
         return result && result.response && result.response.statusCode >= 500;
@@ -551,7 +559,7 @@ module.exports = class Bybit {
           .update(querystring.stringify(parametersSorted2))
           .digest('hex');
 
-        const url1 = `${this.getBaseUrl()}/open-api/order/list?${querystring.stringify(parametersSorted2)}`;
+        const url1 = `${this.getBaseUrl()}/v2/private/order/list?${querystring.stringify(parametersSorted2)}`;
         const placedOrder = await this.requestClient.executeRequestRetry(
           {
             method: 'GET',
@@ -635,11 +643,12 @@ module.exports = class Bybit {
     const result = await this.requestClient.executeRequestRetry(
       {
         method: 'POST',
-        url: `${this.getBaseUrl()}/user/leverage/save?${querystring.stringify(parameters)}`,
+        url: `${this.getBaseUrl()}/user/leverage/save`,
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json'
-        }
+        },
+        body: JSON.stringify(parameters)
       },
       r => {
         return r && r.response && r.response.statusCode >= 500;
@@ -669,7 +678,7 @@ module.exports = class Bybit {
   async cancelOrder(id) {
     const order = await this.findOrderById(id);
     if (!order) {
-      return;
+      return undefined;
     }
 
     const isConditionalOrder = this.isConditionalExchangeOrder(order);
@@ -677,6 +686,7 @@ module.exports = class Bybit {
     const parameters = {
       api_key: this.apiKey,
       [isConditionalOrder ? 'stop_order_id' : 'order_id']: id,
+      symbol: order.getSymbol(),
       timestamp: new Date().getTime()
     };
 
@@ -687,9 +697,9 @@ module.exports = class Bybit {
 
     let url;
     if (isConditionalOrder) {
-      url = `${this.getBaseUrl()}/open-api/stop-order/cancel?${querystring.stringify(parameters)}`;
+      url = `${this.getBaseUrl()}/v2/private/stop-order/cancel?${querystring.stringify(parameters)}`;
     } else {
-      url = `${this.getBaseUrl()}/open-api/order/cancel?${querystring.stringify(parameters)}`;
+      url = `${this.getBaseUrl()}/v2/private/order/cancel?${querystring.stringify(parameters)}`;
     }
 
     const result = await this.requestClient.executeRequestRetry(
@@ -699,7 +709,8 @@ module.exports = class Bybit {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json'
-        }
+        },
+        body: JSON.stringify(parameters)
       },
       result => {
         return result && result.response && result.response.statusCode >= 500;
@@ -712,22 +723,24 @@ module.exports = class Bybit {
 
     if (error || !response || response.statusCode !== 200) {
       this.logger.error(`Bybit: Invalid order cancel:${JSON.stringify({ error: error, body: body })}`);
-      return;
+      return undefined;
     }
 
     const json = JSON.parse(body);
     if (!json.result) {
       this.logger.error(`Bybit: Invalid order cancel body:${JSON.stringify({ body: body, id: order })}`);
-      return;
+      return undefined;
     }
 
-    let returnOrder;
-    Bybit.createOrders([json.result]).forEach(order => {
-      this.triggerOrder(order);
-      returnOrder = order;
-    });
+    if (id !== json.result.order_id && id !== json.result.stop_order_id) {
+      this.logger.error(`Bybit: Invalid order cancel body:${JSON.stringify({ body: body, id: order })}`);
+      return undefined;
+    }
 
-    return returnOrder;
+    const exchangeOrder = ExchangeOrder.createCanceled(order);
+    this.triggerOrder(exchangeOrder);
+
+    return exchangeOrder;
   }
 
   isConditionalExchangeOrder(order) {
@@ -941,7 +954,7 @@ module.exports = class Bybit {
             .update(querystring.stringify(parameter))
             .digest('hex');
 
-          const url = `${this.getBaseUrl()}/open-api/order/list?${querystring.stringify(parameter)}`;
+          const url = `${this.getBaseUrl()}/v2/private/order/list?${querystring.stringify(parameter)}`;
           const result = await this.requestClient.executeRequestRetry(
             {
               url: url,
@@ -1002,7 +1015,7 @@ module.exports = class Bybit {
           .update(querystring.stringify(parameter))
           .digest('hex');
 
-        const url = `${this.getBaseUrl()}/open-api/stop-order/list?${querystring.stringify(parameter)}`;
+        const url = `${this.getBaseUrl()}/v2/private/stop-order/list?${querystring.stringify(parameter)}`;
         const result = await this.requestClient.executeRequestRetry(
           {
             url: url,
@@ -1074,7 +1087,7 @@ module.exports = class Bybit {
       .update(querystring.stringify(parameter))
       .digest('hex');
 
-    const url = `${this.getBaseUrl()}/position/list?${querystring.stringify(parameter)}`;
+    const url = `${this.getBaseUrl()}/v2/private/position/list?${querystring.stringify(parameter)}`;
     const result = await this.requestClient.executeRequestRetry(
       {
         url: url,
