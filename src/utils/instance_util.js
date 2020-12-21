@@ -58,9 +58,17 @@ module.exports = {
       request('https://api.binance.com/api/v1/exchangeInfo', (_error, _res, body) => {
         const pairs = [];
 
-        const content = JSON.parse(body);
+        let content;
+        try {
+          content = JSON.parse(body);
+        } catch (e) {
+          console.log(`Binance init issues: ${String(e)} ${body}`);
+          resolve([]);
+          return;
+        }
 
         if (!content.symbols) {
+          console.log(`Binance symbol format issues: ${body}`);
           resolve([]);
           return;
         }
