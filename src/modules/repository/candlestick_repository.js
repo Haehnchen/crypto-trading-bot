@@ -52,9 +52,13 @@ module.exports = class CandlestickRepository {
   getExchangePairs() {
     return new Promise(resolve => {
       const stmt = this.db.prepare(
-        'select exchange, symbol from candlesticks group by exchange, symbol order by exchange, symbol'
+        'select exchange, symbol from candlesticks WHERE period != "1m" AND time > ? group by exchange, symbol order by exchange, symbol'
       );
-      resolve(stmt.all());
+
+      // only fetch candles newer the 5 days
+      const since = Math.round(new Date(new Date() - 1000 * 60 * 60 * 24 * 2).getTime() / 1000);
+
+      resolve(stmt.all([since]));
     });
   }
 
