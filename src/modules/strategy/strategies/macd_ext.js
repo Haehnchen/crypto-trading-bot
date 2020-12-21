@@ -68,9 +68,23 @@ module.exports = class MacdExt {
     return SignalResult.createEmptySignal(debug);
   }
 
+  getBacktestColumns() {
+    return [
+      {
+        label: 'histogram',
+        value: 'histogram',
+        type: 'histogram'
+      }
+    ];
+  }
+
   getOptions() {
     return {
-      period: '15m'
+      period: '15m',
+      default_ma_type: 'EMA',
+      fast_period: 12,
+      slow_period: 26,
+      signal_period: 9
     };
   }
-};
+}
