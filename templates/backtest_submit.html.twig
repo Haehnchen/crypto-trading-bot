@@ -64,10 +64,14 @@
                             </div>
                             <!-- /.card-header -->
                             <div class="card-body table-responsive p-0">
-                                {% include 'components/backtest_table.html.twig' with {
-                                    'rows': signals,
-                                    'extra_fields': extra_fields,
-                                } only %}
+                                {% if signals|length > 0 %}
+                                    {% include 'components/backtest_table.html.twig' with {
+                                        'rows': signals,
+                                        'extra_fields': extra_fields,
+                                    } only %}
+                                {% else %}
+                                    <p class="text-muted text-center">No signals given</p>
+                                {% endif %}
                             </div>
                             <!-- /.card-body -->
                         </div>

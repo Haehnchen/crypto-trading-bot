@@ -54,3 +54,13 @@ nav {
     user-select: none;
 }
 /*end base*/
+
+.col-rotate {
+    vertical-align:bottom;
+}
+
+.col-rotate span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    display: inline-block;
+}

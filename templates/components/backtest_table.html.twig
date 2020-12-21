@@ -3,13 +3,13 @@
     <tr>
         <th scope="col">Time</th>
         <th scope="col">Price</th>
-        <th scope="col">Signal</th>
+        <th scope="col" class="col-rotate text-xs text-center"><span>Signal</span></th>
 
         {% for key, fields in extra_fields %}
-            <th scope="col">{{ fields.label|default(key) }}</th>
+            <th scope="col" class="col-rotate text-muted text-xs text-center"><span>{{ fields.label|default(key) }}</span></th>
         {% endfor %}
 
-        <th scope="col"><a href="#" class="button-debug-toggle-all">Debug <i class="fa fa-eye"></i></a></th>
+        <th scope="col" class="col-rotate d text-xs"><span><a href="#" class="button-debug-toggle-all">Debug</a></span></th>
     </tr>
 
     </thead>

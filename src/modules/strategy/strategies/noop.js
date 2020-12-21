@@ -59,11 +59,10 @@ module.exports = class {
 
     const intl = new Intl.NumberFormat('en-US', { minimumSignificantDigits: 3, maximumSignificantDigits: 4 });
 
-    const currentValue = currentValues.volume_profile;
-    currentValues.ranges = currentValue
+    currentValues.ranges = (indicatorPeriod.getIndicator('volume_profile') || [])
       .sort((a, b) => b.totalVolume - a.totalVolume)
       .slice(0, 3)
-      .map(v => `${intl.format(v.rangeStart)}-${intl.format(v.rangeEnd)} ${intl.format(v.totalVolume)}`)
+      .map(v => `${intl.format(v.rangeStart)}-${intl.format(v.rangeEnd)}`)
       .join(', ');
 
     return SignalResult.createEmptySignal(currentValues);
