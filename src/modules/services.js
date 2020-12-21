@@ -540,7 +540,7 @@ module.exports = {
       return candleExportHttp;
     }
 
-    return (candleExportHttp = new CandleExportHttp(this.getCandlestickRepository()));
+    return (candleExportHttp = new CandleExportHttp(this.getCandlestickRepository(), this.getPairConfig()));
   },
 
   getOrdersHttp: function() {

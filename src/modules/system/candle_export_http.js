@@ -1,6 +1,7 @@
 module.exports = class CandleExportHttp {
-  constructor(candlestickRepository) {
+  constructor(candlestickRepository, pairConfig) {
     this.candlestickRepository = candlestickRepository;
+    this.pairConfig = pairConfig;
   }
 
   async getCandles(exchange, symbol, period, start, end) {
@@ -8,6 +9,13 @@ module.exports = class CandleExportHttp {
   }
 
   async getPairs() {
-    return this.candlestickRepository.getExchangePairs();
+    return this.pairConfig.getAllPairNames().map(p => {
+      const split = p.split('.');
+
+      return {
+        exchange: split[0],
+        symbol: split[1]
+      };
+    });
   }
 };
