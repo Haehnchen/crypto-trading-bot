@@ -200,11 +200,9 @@ module.exports = class TickListener {
           const timeoutWindow = timeout + (Math.floor(Math.random() * 9000) + 5000);
 
           me.logger.info(
-            `"${symbol.exchange}" - "${symbol.symbol}" - "${type.name}" init strategy "${strategy.strategy}" in ${(
-              timeoutWindow /
-              60 /
-              1000
-            ).toFixed(3)} minutes`
+            `"${symbol.exchange}" - "${symbol.symbol}" - "${type.name}" - init strategy "${
+              strategy.strategy
+            }" (${myInterval}) in ${(timeoutWindow / 60 / 1000).toFixed(3)} minutes`
           );
 
           setTimeout(() => {

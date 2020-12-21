@@ -15,11 +15,13 @@ module.exports = class IndicatorPeriod {
 
     return this.strategyContext.lastSignal;
   }
-  
-    
-  // Context return for the current strategy, usable to get the previous strategy signals and current positions.
-  // Usable in a strategy by calling indicatorPeriod.getStrategyContext() --> then you can use the result to grab the 
-  // current entry, last signal, etc..
+
+  /**
+   * Context return for the current strategy, usable to get the previous strategy signals and current positions.
+   *
+   * Usable in a strategy by calling indicatorPeriod.getStrategyContext() --> then you can use the result to grab the
+   * current entry, last signal, etc..
+   */
   getStrategyContext() {
     return this.strategyContext;
   }

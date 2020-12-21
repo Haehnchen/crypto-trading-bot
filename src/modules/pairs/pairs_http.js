@@ -23,7 +23,7 @@ module.exports = class PairsHttp {
             state: symbol.state,
             has_position: position !== undefined,
             capital: `${_.get(symbol, 'trade.capital', 0)} / ${_.get(symbol, 'trade.currency_capital', 0)}`,
-            strategies: symbol.trade.strategies || [],
+            strategies: symbol.strategies || [],
             weight: 0
           };
 
