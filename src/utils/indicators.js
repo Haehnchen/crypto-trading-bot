@@ -133,7 +133,7 @@ function executeTulindIndicator(source, indicator, tulindOptions) {
 
 module.exports = {
   // indicators which source is Candles
-  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked'],
+  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked', 'heikin_ashi'],
 
   bb: (source, indicator) => 
     executeTulindIndicator(source, indicator, {
@@ -290,6 +290,51 @@ module.exports = {
       }
 
       resolve({ [indicator.key]: result });
+    });
+  },
+
+  heikin_ashi: function(source, indicator) {
+    return new Promise(resolve => {
+
+      const { HeikinAshi } = require('technicalindicators');
+
+      const input = {
+        close: [],
+        high: [],
+        low: [],
+        open: [],
+        timestamp: [],
+        volume: []
+      };
+
+      source.forEach(candle => {
+        input.close.push(candle.close)
+        input.high.push(candle.high)
+        input.low.push(candle.low)
+        input.open.push(candle.open)
+        input.timestamp.push(candle.time)
+        input.volume.push(candle.volume)
+      })
+
+      const f = new HeikinAshi(input);
+
+      const results = f.getResult();
+
+      const candles = [];
+
+      const length = (results.open || []).length;
+      for (let i = 0; i < length; i++) {
+        candles.push({
+          close: results.close[i],
+          high: results.high[i],
+          low: results.low[i],
+          open: results.open[i],
+          time: results.timestamp[i],
+          volume: results.volume[i]
+        });
+      }
+
+      resolve({ [indicator.key]: candles });
     });
   },
 

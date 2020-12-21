@@ -105,6 +105,10 @@ describe('#technical_analysis for candles', () => {
         key: 'candles'
       },
       {
+        indicator: 'heikin_ashi',
+        key: 'heikin_ashi'
+      },
+      {
         indicator: 'stoch',
         key: 'stoch'
       },
@@ -207,6 +211,11 @@ describe('#technical_analysis for candles', () => {
     assert.equal(result.candles[0].time, lookbacks[0].time);
     assert.equal(result.candles[0].time < lookbacks[1].time, true);
     assert.equal(result.candles[result.candles.length - 1].time, lookbacks[result.candles.length - 1].time);
+
+    assert.equal(result.heikin_ashi.length, lookbacks.length);
+    assert.equal(result.heikin_ashi[0].time, lookbacks[0].time);
+    assert.equal(result.heikin_ashi[0].time < lookbacks[1].time, true);
+    assert.equal(result.heikin_ashi[result.heikin_ashi.length - 1].time, lookbacks[result.heikin_ashi.length - 1].time);
 
     assert.equal(result.hma.length > 0, true);
     assert.equal(result.hma[0] > 0, true);
