@@ -205,6 +205,23 @@ module.exports = class TickListener {
             }" (${myInterval}) in ${(timeoutWindow / 60 / 1000).toFixed(3)} minutes`
           );
 
+          const strategyIntervalCallback = async () => {
+            /*
+            // logging can be high traffic on alot of pairs
+            me.logger.debug(
+              `"${symbol.exchange}" - "${symbol.symbol}" - "${type.name}" strategy running "${strategy.strategy}"`
+            );
+            */
+
+            if (type.name === 'watch') {
+              await me.visitStrategy(strategy, symbol);
+            } else if (type.name === 'trade') {
+              await me.visitTradeStrategy(strategy, symbol);
+            } else {
+              throw new Error(`Invalid strategy type${type.name}`);
+            }
+          };
+
           setTimeout(() => {
             me.logger.info(
               `"${symbol.exchange}" - "${symbol.symbol}" - "${type.name}" first strategy run "${
@@ -212,23 +229,12 @@ module.exports = class TickListener {
               }" now every ${(interval / 60 / 1000).toFixed(2)} minutes`
             );
 
-            setInterval(() => {
-              queue.add(async () => {
-                /*
-                // logging can be high traffic on alot of pairs
-                me.logger.debug(
-                  `"${symbol.exchange}" - "${symbol.symbol}" - "${type.name}" strategy running "${strategy.strategy}"`
-                );
-                */
+            // first run call
+            queue.add(strategyIntervalCallback);
 
-                if (type.name === 'watch') {
-                  await me.visitStrategy(strategy, symbol);
-                } else if (type.name === 'trade') {
-                  await me.visitTradeStrategy(strategy, symbol);
-                } else {
-                  throw new Error(`Invalid strategy type${type.name}`);
-                }
-              });
+            // continuous run
+            setInterval(() => {
+              queue.add(strategyIntervalCallback);
             }, interval);
           }, timeoutWindow);
         });
