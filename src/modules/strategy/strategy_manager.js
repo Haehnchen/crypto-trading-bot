@@ -4,6 +4,7 @@ const _ = require('lodash');
 const IndicatorBuilder = require('./dict/indicator_builder');
 const IndicatorPeriod = require('./dict/indicator_period');
 const ta = require('../../utils/technical_analysis');
+const Resample = require('../../utils/resample');
 const StrategyContext = require('../../dict/strategy_context');
 const Ticker = require('../../dict/ticker');
 const SignalResult = require('./dict/signal_result');
@@ -172,12 +173,19 @@ module.exports = class StrategyManager {
         };
       });
 
+      // filter candles in the futures: eg current non closed candle
+      const periodAsMinute = Resample.convertPeriodToMinute(period) * 60;
+      const unixtime = Math.floor(Date.now() / 1000);
+      const olderThenCurrentPeriod = unixtime - (unixtime % periodAsMinute) - periodAsMinute * 0.1;
+
       const lookbacks = await this.exchangeCandleCombine.fetchCombinedCandles(
         exchange,
         symbol,
         period,
-        foreignExchanges
+        foreignExchanges,
+        olderThenCurrentPeriod
       );
+
       if (lookbacks[exchange].length > 0) {
         // check if candle to close time is outside our allow time window
         if (

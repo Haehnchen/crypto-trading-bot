@@ -5,9 +5,9 @@ module.exports = class ExchangeCandleCombine {
     this.candlestickRepository = candlestickRepository;
   }
 
-  async fetchCombinedCandles(mainExchange, symbol, period, exchanges = []) {
+  async fetchCombinedCandles(mainExchange, symbol, period, exchanges = [], olderThen = undefined) {
     return this.combinedCandles(
-      this.candlestickRepository.getLookbacksForPair(mainExchange, symbol, period),
+      this.candlestickRepository.getLookbacksForPair(mainExchange, symbol, period, 750, olderThen),
       mainExchange,
       symbol,
       period,
