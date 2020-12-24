@@ -21,7 +21,7 @@
                 <td>
                     Net Return on Investment
                 </td>
-                <td>
+                <td class="{{ summary.netProfit > 0 ? 'text-success' : 'text-danger' }}">
                     {{ summary.netProfit }} %
                 </td>
             </tr>
@@ -42,7 +42,7 @@
                 <td>
                     Average Return Per Trade
                 </td>
-                <td>
+                <td class="{{ summary.averagePNLPercent > 0 ? 'text-success' : 'text-danger' }}">
                     {{ summary.averagePNLPercent }} %
                 </td>
             </tr>

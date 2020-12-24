@@ -49,7 +49,6 @@ module.exports = class Backtest {
 
       const rows = [];
       let current = start;
-      let lastSignal;
 
       // mock repository for window selection of candles
       const periodCache = {};
@@ -76,23 +75,65 @@ module.exports = class Backtest {
         }
       };
 
+      // store last triggered signal info
+      const lastSignal = {
+        price: undefined,
+        signal: undefined
+      };
+
+      // store missing profit because of early close
+      const lastSignalClosed = {
+        price: undefined,
+        signal: undefined
+      };
+
       const end = moment().unix();
       while (current < end) {
         const strategyManager = new StrategyManager({}, mockedRepository, {}, this.projectDir);
 
-        const item = await strategyManager.executeStrategyBacktest(strategy, exchange, pair, options, lastSignal);
+        const item = await strategyManager.executeStrategyBacktest(
+          strategy,
+          exchange,
+          pair,
+          options,
+          lastSignal.signal
+        );
         item.time = current;
 
         // so change in signal
         let currentSignal = item.result ? item.result.getSignal() : undefined;
-        if (currentSignal === lastSignal) {
+        if (currentSignal === lastSignal.signal) {
           currentSignal = undefined;
         }
 
+        // position profit
+        if (lastSignal.signal === 'long' && lastSignal.price) {
+          item.profit = parseFloat(((item.price / lastSignal.price - 1) * 100).toFixed(2));
+        } else if (lastSignal.signal === 'short' && lastSignal.price) {
+          item.profit = parseFloat(((lastSignal.price / item.price - 1) * 100).toFixed(2));
+        }
+
         if (['long', 'short'].includes(currentSignal)) {
-          lastSignal = currentSignal;
+          lastSignal.signal = currentSignal;
+          lastSignal.price = item.price;
+
+          lastSignalClosed.signal = undefined;
+          lastSignalClosed.price = undefined;
         } else if (currentSignal === 'close') {
-          lastSignal = undefined;
+          lastSignalClosed.signal = lastSignal.signal;
+          lastSignalClosed.price = lastSignal.price;
+
+          lastSignal.signal = undefined;
+          lastSignal.price = undefined;
+        }
+
+        // calculate missing profits because of closed position until next event
+        if (!currentSignal && lastSignalClosed.price) {
+          if (lastSignalClosed.signal === 'long' && lastSignalClosed.price) {
+            item.lastPriceClosed = parseFloat(((item.price / lastSignalClosed.price - 1) * 100).toFixed(2));
+          } else if (lastSignalClosed.signal === 'short' && lastSignalClosed.price) {
+            item.lastPriceClosed = parseFloat(((lastSignalClosed.price / item.price - 1) * 100).toFixed(2));
+          }
         }
 
         rows.push(item);

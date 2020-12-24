@@ -3,6 +3,7 @@
     <tr>
         <th scope="col">Time</th>
         <th scope="col">Price</th>
+        <th scope="col">Profit</th>
         <th scope="col" class="col-rotate text-xs text-center"><span>Signal</span></th>
 
         {% for key, fields in extra_fields %}
@@ -18,6 +19,15 @@
         <tr>
             <td style="white-space: nowrap">{{ row.time|date('y-m-d H:i:s') }}</td>
             <td>{{ row.price|default }}</td>
+            <td>
+                {% if row.profit is defined %}
+                    <span class="{{ row.profit > 0 ? 'text-success' : 'text-danger' }} {{ row.result.signal|default == 'close' ? ' font-weight-bold' : '' }}">{{ row.profit|round(2) }} %</span>
+                {% endif %}
+
+                {% if row.lastPriceClosed is defined %}
+                    <span style="opacity: 0.4;" class="{{ row.lastPriceClosed > 0 ? 'text-success' : 'text-danger' }}">{{ row.lastPriceClosed|round(2) }} %</span>
+                {% endif %}
+            </td>
             <td>
                 {% if row.result is defined %}
                     {% if row.result.signal == 'long' %}
