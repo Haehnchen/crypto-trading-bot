@@ -195,4 +195,34 @@ module.exports = class CcxtExchangeOrder {
 
     return CcxtUtil.createExchangeOrder(ccxtOrder);
   }
+
+  static createEmpty(logger) {
+    const Empty = class extends CcxtExchangeOrder {
+      constructor(myLogger) {
+        super(undefined, undefined, myLogger);
+      }
+
+      async createOrder(order) {
+        logger.info(`Empty CCXT state: createOrder stopped`);
+        return undefined;
+      }
+
+      async syncOrders() {
+        logger.info(`Empty CCXT state: syncOrders stopped`);
+        return [];
+      }
+
+      async updateOrder(id, order) {
+        logger.info(`Empty CCXT state: updateOrder stopped`);
+        return [];
+      }
+
+      async cancelOrder(id) {
+        logger.info(`Empty CCXT state: cancelOrder stopped`);
+        return [];
+      }
+    };
+
+    return new Empty(logger);
+  }
 };

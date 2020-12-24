@@ -18,7 +18,7 @@ module.exports = class BinanceFutures {
     this.throttler = throttler;
     this.exchange = null;
 
-    this.ccxtExchangeOrder = undefined;
+    this.ccxtExchangeOrder = CcxtExchangeOrder.createEmpty(logger);
 
     this.positions = {};
     this.orders = {};

@@ -24,7 +24,7 @@ module.exports = class Ftx {
 
     this.apiKey = undefined;
     this.apiSecret = undefined;
-    this.ccxtExchangeOrder = undefined;
+    this.ccxtExchangeOrder = CcxtExchangeOrder.createEmpty(logger);
 
     this.positions = {};
     this.orders = {};
