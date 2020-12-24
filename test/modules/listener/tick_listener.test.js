@@ -19,7 +19,7 @@ describe('#tick listener for order', function() {
       },
       {
         getPosition: async () => {
-          return [];
+          return undefined;
         }
       },
       {
@@ -68,7 +68,7 @@ describe('#tick listener for order', function() {
       },
       {
         getPosition: async () => {
-          return [];
+          return undefined;
         }
       },
       {},
