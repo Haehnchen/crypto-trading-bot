@@ -26,7 +26,12 @@ module.exports = class Backtest {
       };
     });
 
-    return Promise.all(asyncs.map(fn => fn()));
+    const promise = await Promise.all(asyncs.map(fn => fn()));
+    return promise.sort((a, b) => {
+      const x = a.name;
+      const y = b.name;
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
   }
 
   getBacktestStrategies() {

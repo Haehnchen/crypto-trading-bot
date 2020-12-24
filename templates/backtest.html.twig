@@ -7,7 +7,7 @@
     <div class="content-wrapper">
         <!-- Content Header (Page header) -->
         <section class="content-header">
-            <div class="container-fluid">
+            <div class="container">
                 <div class="row mb-2">
                     <div class="col-sm-6">
                         <h1>Backtesting</h1>
@@ -25,7 +25,7 @@
 
         <!-- Main content -->
         <div class="content">
-            <div class="container-fluid">
+            <div class="container">
                 <div class="row">
                     <div class="col-md-12">
                         <div class="card">
@@ -38,16 +38,17 @@
                                             <div class="col-sm">
                                                 <div class="form-group">
                                                     <label for="form-pair">Pair</label>
-                                                    <select class="form-control" id="form-pair" name="pair" required>
+                                                    <select class="form-control chosen-select" id="form-pair" name="pair" data-placeholder="Select one or multiple symbols" required multiple>
                                                         {% for pair in pairs %}
                                                             <option data-options="{% if pair.options %}{{ pair.options|format_json|escape('html') }}{% endif %}">{{ pair.name }}</option>
                                                         {% endfor %}
                                                     </select>
+                                                    <small class="form-text text-muted">Select one for detail view or multiple for a profit overview</small>
                                                 </div>
 
                                                 <div class="form-group">
                                                     <label for="form-strategies">Strategy</label>
-                                                    <select class="form-control" id="form-strategies" name="strategy" required>
+                                                    <select class="form-control chosen-select" id="form-strategies" name="strategy" required>
                                                         <option disabled selected value> -- select an option -- </option>
                                                         {% for strategy in strategies %}
                                                             <option data-options="{% if strategy.options %}{{ strategy.options|format_json|escape('html') }}{% endif %}">{{ strategy.name }}</option>
@@ -64,11 +65,14 @@
                                                             {% endfor %}                                                        
                                                         {% endif %}
                                                     </select>
+
+                                                    <small class="form-text text-muted">Candle frequency of the chart on result page</small>
                                                 </div>
 
                                                 <div class="form-group">
                                                     <label for="form-hours">Last Hours</label>
                                                     <input class="form-control" id="form-hours" name="hours" value="168" required>
+                                                    <small class="form-text text-muted">Starting window until now</small>
                                                 </div>
                                             </div>
 
@@ -76,16 +80,19 @@
                                                 <div class="form-group">
                                                     <label for="form-initial-capital">Initial Capital </label>
                                                     <input class="form-control" id="form-initial-capital" name="initial_capital" value="10000" required>
+                                                    <small class="form-text text-muted">Starting capital for calculating trades and their profit and losses</small>
                                                 </div>
 
                                                 <div class="form-group">
                                                     <label for="form-tick-interval">Signal Tick Interval (in minutes)</label>
                                                     <input class="form-control" id="form-tick-interval" name="ticker_interval" value="15" required>
+                                                    <small class="form-text text-muted">Interval in which the strategy is mainly run</small>
                                                 </div>
 
                                                 <div class="form-group">
                                                     <label for="form-options">Strategy Options</label>
                                                     <textarea class="form-control" id="form-options" rows="6" name="options"></textarea>
+                                                    <small class="form-text text-muted">Options provided by the strategy itself</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -111,4 +118,9 @@
 
 {% block javascript %}
 <script src="/js/backtest-form.js?v={{ asset_version() }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.jquery.min.js" integrity="sha512-rMGGF4wg1R73ehtnxXBt5mbUfN9JUJwbk21KMlnLZDJh7BkPmeovBuddZCENJddHYYMkCh9hPFnPmS9sspki8g==" crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block stylesheet %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.min.css" integrity="sha512-yVvxUQV0QESBt1SyZbNJMAwyKvFTLMyXSyBHDO4BG5t7k/Lw34tyqlSDlKIrIENIzCl+RVUNjmCPG+V/GMesRw==" crossorigin="anonymous" />
 {% endblock %}
