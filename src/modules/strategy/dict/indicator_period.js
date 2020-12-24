@@ -9,11 +9,15 @@ module.exports = class IndicatorPeriod {
   }
 
   getLastSignal() {
-    if (!this.strategyContext || !this.strategyContext.lastSignal) {
+    if (!this.strategyContext || !this.strategyContext.getLastSignal()) {
       return undefined;
     }
 
-    return this.strategyContext.lastSignal;
+    return this.strategyContext.getLastSignal();
+  }
+
+  getProfit() {
+    return this.strategyContext.getProfit();
   }
 
   /**

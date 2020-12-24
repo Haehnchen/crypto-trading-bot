@@ -32,6 +32,10 @@ module.exports = class Position {
     this.raw = raw;
   }
 
+  getSide() {
+    return this.side;
+  }
+
   isShort() {
     return this.side === 'short';
   }

@@ -2,6 +2,7 @@ const moment = require('moment');
 const _ = require('lodash');
 const StrategyManager = require('./strategy/strategy_manager');
 const Resample = require('../utils/resample');
+const CommonUtil = require('../utils/common_util');
 
 module.exports = class Backtest {
   constructor(instances, strategyManager, exchangeCandleCombine, projectDir) {
@@ -101,7 +102,8 @@ module.exports = class Backtest {
           exchange,
           pair,
           options,
-          lastSignal.signal
+          lastSignal.signal,
+          lastSignal.price
         );
         item.time = current;
 
@@ -112,10 +114,8 @@ module.exports = class Backtest {
         }
 
         // position profit
-        if (lastSignal.signal === 'long' && lastSignal.price) {
-          item.profit = parseFloat(((item.price / lastSignal.price - 1) * 100).toFixed(2));
-        } else if (lastSignal.signal === 'short' && lastSignal.price) {
-          item.profit = parseFloat(((lastSignal.price / item.price - 1) * 100).toFixed(2));
+        if (lastSignal.price) {
+          item.profit = CommonUtil.getProfitAsPercent(lastSignal.signal, item.price, lastSignal.price);
         }
 
         if (['long', 'short'].includes(currentSignal)) {
