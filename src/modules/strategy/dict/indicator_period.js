@@ -20,6 +20,14 @@ module.exports = class IndicatorPeriod {
     return this.strategyContext.getProfit();
   }
 
+  isShort() {
+    return this.getLastSignal() === 'short';
+  }
+
+  isLong() {
+    return this.getLastSignal() === 'long';
+  }
+
   /**
    * Context return for the current strategy, usable to get the previous strategy signals and current positions.
    *

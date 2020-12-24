@@ -193,6 +193,9 @@ module.exports = class Backtest {
         signals: signals.slice().reverse(),
         candles: JSON.stringify(candles),
         extra_fields: this.strategyManager.getBacktestColumns(strategy),
+        strategy: strategy,
+        start: new Date(start * 1000),
+        end: candles[0] ? candles[0].date : new Date(),
         configuration: {
           exchange: exchange,
           symbol: pair,

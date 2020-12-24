@@ -17,9 +17,9 @@
     <tbody>
     {% for row in rows %}
         <tr>
-            <td style="white-space: nowrap">{{ row.time|date('y-m-d H:i:s') }}</td>
-            <td>{{ row.price|default }}</td>
-            <td>
+            <td class="no-wrap">{{ row.time|date('y-m-d H:i:s') }}</td>
+            <td class="no-wrap">{{ row.price|default }}</td>
+            <td class="no-wrap">
                 {% if row.profit is defined %}
                     <span class="{{ row.profit > 0 ? 'text-success' : 'text-danger' }} {{ row.result.signal|default == 'close' ? ' font-weight-bold' : '' }}">{{ row.profit|round(2) }} %</span>
                 {% endif %}

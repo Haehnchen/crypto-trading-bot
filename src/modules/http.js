@@ -143,7 +143,7 @@ module.exports = class Http {
           return {
             pair: pair,
             result: await this.backtest.getBacktestResult(
-              parseInt(req.body.ticker_interval),
+              parseInt(req.body.ticker_interval, 10),
               req.body.hours,
               req.body.strategy,
               req.body.candle_period,

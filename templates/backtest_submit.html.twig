@@ -14,7 +14,7 @@
             <div class="container">
                 <div class="row mb-2">
                     <div class="col-sm-6">
-                        <h1>Backtesting Results</h1>
+                        <h1>Backtesting Results <span class="text-muted"> - {{ strategy }} - {{ configuration.period }}</span></h1>
                     </div>
                     <div class="col-sm-6">
                         <ol class="breadcrumb float-sm-right">
@@ -34,7 +34,7 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title">Summary</h3>
+                                <h3 class="card-title">Summary <span class="text-muted"> - {{ start|date('y-m-d H:i:s') }} - {{ end|date('y-m-d H:i:s') }}</span></h3>
                             </div>
                             <!-- /.card-header -->
                             <div class="card-body">
@@ -52,7 +52,7 @@
                             </div>
                             <!-- /.card-header -->
                             <div class="card-body table-responsive p-0">
-                                <div class="chart" data-candles="{{ candles|e('html') }}" data-title="{{ configuration.exchange }} - {{ configuration.symbol }} - {{ configuration.period }} - espend.de"></div>
+                                <div class="chart" data-candles="{{ candles|e('html') }}" data-title="{{ configuration.exchange }} - {{ configuration.symbol }} - {{ strategy }} - {{ configuration.period }} - espend.de"></div>
                             </div>
                             <!-- /.card-body -->
                         </div>

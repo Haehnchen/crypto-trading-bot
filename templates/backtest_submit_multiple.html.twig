@@ -35,7 +35,7 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title">{{ backtest.pair }}</h3>
+                                <h3 class="card-title">{{ backtest.pair }} <span class="text-muted"> - {{ backtest.result.strategy }} - {{ backtest.result.configuration.period }} - {{ backtest.result.start|date('y-m-d H:i:s') }} - {{ backtest.result.end|date('y-m-d H:i:s') }}</span></h3>
                             </div>
                             <!-- /.card-header -->
                             <div class="card-body">
