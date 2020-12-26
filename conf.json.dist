@@ -48,8 +48,8 @@
             "port": 465
         },
         "telegram" : {
-            "chat_id": null,
-            "token": null
+            "chat_id": null, // "-1001324121927"
+            "token": null // "1297510163:AAHUW4vhsfdLtStmg4BpmIXDN3bepGGM3Hs"
         }
     },
     "webserver": {
