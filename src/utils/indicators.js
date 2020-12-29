@@ -133,7 +133,7 @@ function executeTulindIndicator(source, indicator, tulindOptions) {
 
 module.exports = {
   // indicators which source is Candles
-  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked', 'heikin_ashi'],
+  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked', 'heikin_ashi', 'psar'],
 
   bb: (source, indicator) => 
     executeTulindIndicator(source, indicator, {
@@ -290,6 +290,28 @@ module.exports = {
       }
 
       resolve({ [indicator.key]: result });
+    });
+  },
+
+  psar: function(source, indicator) {
+    return new Promise(resolve => {
+      const { options = {} } = indicator;
+      const { step = 0.02, max = 0.2 } = options;
+
+      const input = {
+        high: [],
+        low: [],
+        step: step,
+        max: max
+      };
+
+      source.forEach(candle => {
+        input.high.push(candle.high)
+        input.low.push(candle.low)
+      })
+
+      const { PSAR } = require('technicalindicators');
+      resolve({ [indicator.key]: new PSAR(input).getResult() });
     });
   },
 
