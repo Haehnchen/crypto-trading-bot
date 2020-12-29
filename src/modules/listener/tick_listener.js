@@ -1,6 +1,5 @@
 const moment = require('moment');
 const _ = require('lodash');
-const { default: PQueue } = require('p-queue');
 const StrategyContext = require('../../dict/strategy_context');
 
 module.exports = class TickListener {
@@ -161,8 +160,6 @@ module.exports = class TickListener {
   async startStrategyIntervals() {
     this.logger.info(`Starting strategy intervals`);
 
-    const queue = new PQueue({ concurrency: this.systemUtil.getConfig('tick.pair_signal_concurrency', 10) });
-
     const me = this;
 
     const types = [
@@ -230,11 +227,13 @@ module.exports = class TickListener {
             );
 
             // first run call
-            queue.add(strategyIntervalCallback);
+            setTimeout(async () => {
+              await strategyIntervalCallback();
+            }, 1000 + Math.floor(Math.random() * (800 - 300 + 1)) + 100);
 
             // continuous run
-            setInterval(() => {
-              queue.add(strategyIntervalCallback);
+            setInterval(async () => {
+              await strategyIntervalCallback();
             }, interval);
           }, timeoutWindow);
         });
