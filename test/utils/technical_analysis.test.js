@@ -118,7 +118,11 @@ describe('#technical_analysis for candles', () => {
       },
       {
         indicator: 'hma',
-        key: 'hma'
+        key: 'hma',
+        options: {
+          length: 9,
+          source: 'low'
+        }
       },
       {
         indicator: 'vwma',
