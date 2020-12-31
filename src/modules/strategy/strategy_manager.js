@@ -215,8 +215,9 @@ module.exports = class StrategyManager {
           validateLookbacks &&
           !this.technicalAnalysisValidator.isValidCandleStickLookback(lookbacks[exchange].slice(), period)
         ) {
-          // too noisy for now; @TODO provide a logging throttle
-          // this.logger.error('Outdated candle stick period detected: ' + JSON.stringify([period, strategyName, exchange, symbol]))
+          this.logger.info(
+            `Strategy skipped: outdated candle sticks: ${JSON.stringify([period, strategyName, exchange, symbol])}`
+          );
 
           // stop current run
           return {};
