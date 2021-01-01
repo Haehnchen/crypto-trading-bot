@@ -16,14 +16,17 @@ module.exports = class PairsHttp {
           const position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
           const state = await this.pairStateManager.get(symbol.exchange, symbol.symbol);
 
+          const strategiesTrade = symbol.trade && symbol.trade.strategies ? symbol.trade.strategies : [];
+
           const item = {
             exchange: symbol.exchange,
             symbol: symbol.symbol,
             watchdogs: symbol.watchdogs,
-            state: symbol.state,
+            is_trading: strategiesTrade.length > 0,
             has_position: position !== undefined,
             capital: `${_.get(symbol, 'trade.capital', 0)} / ${_.get(symbol, 'trade.currency_capital', 0)}`,
             strategies: symbol.strategies || [],
+            strategies_trade: strategiesTrade,
             weight: 0
           };
 

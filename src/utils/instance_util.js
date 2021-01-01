@@ -30,8 +30,7 @@ module.exports = {
             let result = {
               symbol: pair.name,
               periods: ['1m', '15m', '1h'],
-              exchange: 'ftx',
-              state: 'watch'
+              exchange: 'ftx'
             };
 
             if (callback) {
@@ -84,8 +83,7 @@ module.exports = {
             let result = {
               symbol: pair.symbol,
               periods: ['1m', '15m', '1h'],
-              exchange: 'binance',
-              state: 'watch'
+              exchange: 'binance'
             };
 
             if (callback) {
@@ -181,8 +179,7 @@ module.exports = {
             let result = {
               symbol: pair.symbol,
               periods: ['1m', '15m', '1h'],
-              exchange: 'bitmex',
-              state: 'watch'
+              exchange: 'bitmex'
             };
 
             if (callback) {
@@ -217,8 +214,7 @@ module.exports = {
             let result = {
               symbol: pair.symbol,
               periods: ['1m', '15m', '1h'],
-              exchange: 'binance_futures',
-              state: 'watch'
+              exchange: 'binance_futures'
             };
 
             if (callback) {
@@ -248,8 +244,7 @@ module.exports = {
             let result = {
               symbol: pair.pair.toUpperCase(),
               periods: ['1m', '15m', '1h'],
-              exchange: 'bitfinex',
-              state: 'watch'
+              exchange: 'bitfinex'
             };
 
             if (callback) {
@@ -279,8 +274,7 @@ module.exports = {
             let result = {
               symbol: pair.name,
               periods: ['1m', '15m', '1h'],
-              exchange: 'bybit',
-              state: 'watch'
+              exchange: 'bybit'
             };
 
             if (callback) {

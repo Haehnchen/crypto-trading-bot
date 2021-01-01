@@ -293,6 +293,69 @@ You should only provide one of them, first wins.
     })
 ```
 
+### Live Strategy
+
+Every strategy stat should be live must be places inside `trade`. 
+
+```json
+  {
+    "trade": {
+      "strategies": [
+        {
+          "strategy": "dip_catcher",
+          "interval": "15m",
+          "options": {
+            "period": "15m"
+          }
+        }
+      ]
+    }
+  }
+```
+
+Inside logs, visible via browser ui, you can double check the strategies init process after the application started. 
+
+```
+[info] Starting strategy intervals
+[info] "binance_futures" - "ETHUSDT" - "trade" - init strategy "dip_catcher" (15m) in 11.628 minutes
+[info] "binance_futures" - "BTCUSDT" - "trade" first strategy run "dip_catcher" now every 15.00 minutes
+```
+
+### Full Trade Example
+
+An example `instance.js` which trades can be found inside `instance.js.dist_trade`. Rename it or move the content to you file.
+
+```js
+const c = (module.exports = {});
+
+c.symbols = [
+  {
+    symbol: 'ETHUSDT',
+    exchange: 'binance_futures',
+    periods: ['1m', '15m', '1h'],
+    trade: {
+      currency_capital: 10,
+      strategies: [
+        {
+          strategy: 'dip_catcher',
+          interval: '15m',
+          options: {
+            period: '15m'
+          }
+        }
+      ]
+    },
+    watchdogs: [
+      {
+        name: 'risk_reward_ratio',
+        target_percent: 3.1,
+        stop_percent: 2.1
+      }
+    ]
+  }
+];
+```
+
 ### Margin / Leverage
 
 Per pair you can set used margin before orders are created; depending on exchange

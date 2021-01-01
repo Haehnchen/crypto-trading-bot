@@ -52,13 +52,9 @@ module.exports = class Trade {
 
     const instanceId = crypto.randomBytes(4).toString('hex');
 
-    const notifyActivePairs = this.instances.symbols
-      .filter(symbol => {
-        return ['watch', 'trade'].includes(symbol.state);
-      })
-      .map(symbol => {
-        return `${symbol.exchange}.${symbol.symbol}`;
-      });
+    const notifyActivePairs = this.instances.symbols.map(symbol => {
+      return `${symbol.exchange}.${symbol.symbol}`;
+    });
 
     const message = `Start: ${instanceId} - ${os.hostname()} - ${os.platform()} - ${moment().format()} - ${notifyActivePairs.join(
       ', '
