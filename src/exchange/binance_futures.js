@@ -472,7 +472,13 @@ module.exports = class BinanceFutures {
           const order = BinanceFutures.createRestOrderFromWebsocket(message.o);
 
           me.logger.info(`Binance Futures: ORDER_TRADE_UPDATE event: ${JSON.stringify([message.e, message.o, order])}`);
-          me.throttler.addTask('binance_futures_sync_orders', me.ccxtExchangeOrder.syncOrders.bind(me), 3000);
+          me.throttler.addTask(
+            'binance_futures_sync_orders',
+            async () => {
+              await me.ccxtExchangeOrder.syncOrders();
+            },
+            3000
+          );
           me.ccxtExchangeOrder.triggerPlainOrder(order);
         }
 
