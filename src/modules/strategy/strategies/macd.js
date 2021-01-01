@@ -1,88 +1,103 @@
 const SignalResult = require('../dict/signal_result');
 
-module.exports = class MACD {
+module.exports = class Macd {
   getName() {
     return 'macd';
   }
 
   buildIndicator(indicatorBuilder, options) {
     if (!options.period) {
-      throw 'Invalid period';
+      throw Error('Invalid period');
     }
 
-    indicatorBuilder.add('macd', 'macd', options.period);
+    indicatorBuilder.add('macd', 'macd_ext', options.period, options);
 
-    indicatorBuilder.add('sma200', 'sma', options.period, {
-      length: 200
+    indicatorBuilder.add('hma', 'hma', options.period, {
+      length: 9
     });
 
-    indicatorBuilder.add('ema200', 'ema', options.period, {
+    indicatorBuilder.add('sma200', 'sma', options.period, {
       length: 200
     });
   }
 
   period(indicatorPeriod) {
-    return this.macd(
-      indicatorPeriod.getPrice(),
-      indicatorPeriod.getIndicator('sma200'),
-      indicatorPeriod.getIndicator('ema200'),
-      indicatorPeriod.getIndicator('macd'),
-      indicatorPeriod.getLastSignal()
-    );
-  }
+    const sma200Full = indicatorPeriod.getIndicator('sma200');
+    const macdFull = indicatorPeriod.getIndicator('macd');
+    const hmaFull = indicatorPeriod.getIndicator('hma');
 
-  async macd(price, sma200Full, ema200Full, macdFull, lastSignal) {
-    if (!macdFull || !ema200Full || macdFull.length < 2 || sma200Full.length < 2 || ema200Full.length < 2) {
-      return;
+    if (!macdFull || !sma200Full || !hmaFull || macdFull.length < 2 || sma200Full.length < 2) {
+      return undefined;
     }
 
-    // remove incomplete candle
-    const sma200 = sma200Full.slice(0, -1);
-    const ema200 = ema200Full.slice(0, -1);
-    const macd = macdFull.slice(0, -1);
+    const hma = hmaFull.slice(-1)[0];
+    const sma200 = sma200Full.slice(-1)[0];
+    const macd = macdFull.slice(-2);
+
+    // overall trend filter
+    const long = hma >= sma200;
+
+    const lastSignal = indicatorPeriod.getLastSignal();
 
     const debug = {
-      sma200: sma200.slice(-1)[0],
-      ema200: ema200.slice(-1)[0],
-      histogram: macd.slice(-1)[0].histogram,
-      last_signal: lastSignal
+      sma200: sma200[0],
+      histogram: macd[0].histogram,
+      last_signal: lastSignal,
+      long: long
     };
 
-    const before = macd.slice(-2)[0].histogram;
-    const last = macd.slice(-1)[0].histogram;
+    const current = macd[0].histogram;
+    const before = macd[1].histogram;
 
     // trend change
-    if ((lastSignal === 'long' && before > 0 && last < 0) || (lastSignal === 'short' && before < 0 && last > 0)) {
-      return SignalResult.createSignal('close', 'debug');
-    }
-
-    // sma long
-    let long = price >= sma200.slice(-1)[0];
-
-    // ema long
-    if (!long) {
-      long = price >= ema200.slice(-1)[0];
+    if ((lastSignal === 'long' && before > 0 && current < 0) || (lastSignal === 'short' && before < 0 && current > 0)) {
+      return SignalResult.createSignal('close', debug);
     }
 
     if (long) {
       // long
-      if (before < 0 && last > 0) {
-        return SignalResult.createSignal('long', 'debug');
+      if (before < 0 && current > 0) {
+        return SignalResult.createSignal('long', debug);
       }
     } else {
       // short
 
-      if (before > 0 && last < 0) {
-        return SignalResult.createSignal('short', 'debug');
+      if (before > 0 && current < 0) {
+        return SignalResult.createSignal('short', debug);
       }
     }
 
     return SignalResult.createEmptySignal(debug);
   }
 
+  getBacktestColumns() {
+    return [
+      {
+        label: 'trend',
+        value: row => {
+          if (typeof row.long !== 'boolean') {
+            return undefined;
+          }
+
+          return row.long === true ? 'success' : 'danger';
+        },
+        type: 'icon'
+      },
+      {
+        label: 'histogram',
+        value: 'histogram',
+        type: 'histogram'
+      }
+    ];
+  }
+
   getOptions() {
     return {
-      period: '15m'
+      period: '15m',
+      default_ma_type: 'EMA',
+      fast_period: 12,
+      slow_period: 26,
+      signal_period: 9
     };
   }
 };
