@@ -194,13 +194,15 @@ Currently there is a the UI for backtesting
 
 ![Webserver UI](documentation/manual_order.png "Manual Orders")
 
-## Fill data
+## Build In Strategies
 
-```
-node index.js backfill -e bitmex -p 1m -s XRPZ18
-```
+Common strategy with indicators are inside, which most of the time are not profitable. See some more advanced strategy in the list below
 
-## Strategies
+ * [dip_catcher](src/modules/strategy/strategies/dip_catcher/README.md)
+
+Find some example strategies inside [src/modules/strategy/strategies](src/modules/strategy/strategies)
+
+## Custom Strategies
 
 For custom strategies use [var/strategies](var/strategies) folder.
 
@@ -212,8 +214,6 @@ var/strategies/your_strategy.js
 var/strategies/my_strategy/my_strategy.js
 var/strategies/subfolder1/our_strategy/our_strategy.js
 ```
-
-Find some example strategies inside [modules/strategy/strategies](modules/strategy/strategies)
 
 ## Tools / Watchdog
 
@@ -376,6 +376,16 @@ Per pair you can set used margin before orders are created; depending on exchang
             'bybit_leverage': 5,
         },
     })    
+```
+
+## Tools
+
+### Fill data
+
+*outdated*, but there as an automatic filling on startup ~1000 candles from the past (depending on exchange) and continuously fetched when running
+
+```
+node index.js backfill -e bitmex -p 1m -s XRPZ18
 ```
 
 ## Signals
