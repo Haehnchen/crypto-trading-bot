@@ -199,6 +199,7 @@ Currently there is a the UI for backtesting
 Common strategy with indicators are inside, which most of the time are not profitable. See some more advanced strategy in the list below
 
  * [dip_catcher](src/modules/strategy/strategies/dip_catcher/README.md)
+ * [dca_dipper](src/modules/strategy/strategies/dca_dipper/README.md) - **Long term invest** Dollar-Cost Averaging (DCA) Dip Investor Strategy
 
 Find some example strategies inside [src/modules/strategy/strategies](src/modules/strategy/strategies)
 
