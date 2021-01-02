@@ -519,20 +519,6 @@ module.exports = class BinanceFutures {
         order.symbol = order.symbol.replace('USDT', '/USDT');
         return super.createOrder(order);
       }
-
-      async syncOrders() {
-        const orders = await super.syncOrders();
-
-        if (Array.isArray(orders)) {
-          orders.forEach(order => {
-            order.symbol = order.symbol.replace('/USDT', 'USDT');
-          });
-
-          logger.debug(`Binance Futures: orders synced "${orders.length}"`);
-        }
-
-        return orders;
-      }
     };
 
     return new CcxtExchangeOrderExtends(ccxtClient, symbols, logger, {
@@ -541,6 +527,11 @@ module.exports = class BinanceFutures {
       },
       convertOrder: (client, order) => {
         order.symbol = order.symbol.replace('/USDT', 'USDT');
+
+        // ccxt does not pipe the stopPrice
+        if (['trailing_stop_market', 'stop_market'].includes(order.type) && order.info.stopPrice) {
+          order.price = parseFloat(order.info.stopPrice);
+        }
       },
       createOrder: order => {
         const request = {

@@ -72,6 +72,12 @@ module.exports = class CcxtExchangeOrder {
       return undefined;
     }
 
+    if (this.callbacks && 'convertOrder' in this.callbacks) {
+      orders.forEach(o => {
+        this.callbacks.convertOrder(this.ccxtClient, o);
+      });
+    }
+
     const result = CcxtUtil.createExchangeOrders(orders);
 
     if (this.callbacks && 'syncOrders' in this.callbacks) {

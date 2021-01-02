@@ -31,6 +31,7 @@ module.exports = class CcxtUtil {
         orderType = ExchangeOrder.TYPE_LIMIT;
         break;
       case 'stop':
+      case 'stopmarket': // currently: binance_futures only
         orderType = ExchangeOrder.TYPE_STOP;
         break;
       case 'stoplimit':
@@ -38,6 +39,10 @@ module.exports = class CcxtUtil {
         break;
       case 'market':
         orderType = ExchangeOrder.TYPE_MARKET;
+        break;
+      case 'trailingstop':
+      case 'trailingstopmarket': // currently: binance_futures only
+        orderType = ExchangeOrder.TYPE_TRAILING_STOP;
         break;
       default:
         orderType = ExchangeOrder.TYPE_UNKNOWN;
