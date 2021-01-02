@@ -1,6 +1,8 @@
 const moment = require('moment');
 const _ = require('lodash');
 const StrategyContext = require('../../dict/strategy_context');
+const Order = require('../../dict/order');
+const OrderCapital = require('../../dict/order_capital');
 
 module.exports = class TickListener {
   constructor(
@@ -12,7 +14,9 @@ module.exports = class TickListener {
     exchangeManager,
     pairStateManager,
     logger,
-    systemUtil
+    systemUtil,
+    orderExecutor,
+    orderCalculator
   ) {
     this.tickers = tickers;
     this.instances = instances;
@@ -23,6 +27,8 @@ module.exports = class TickListener {
     this.pairStateManager = pairStateManager;
     this.logger = logger;
     this.systemUtil = systemUtil;
+    this.orderExecutor = orderExecutor;
+    this.orderCalculator = orderCalculator;
 
     this.notified = {};
   }
@@ -37,10 +43,10 @@ module.exports = class TickListener {
 
     const strategyKey = strategy.strategy;
 
-    let context = StrategyContext.create(ticker);
+    let context = StrategyContext.create(strategy.options, ticker, true);
     const position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
     if (position) {
-      context = StrategyContext.createFromPosition(ticker, position);
+      context = StrategyContext.createFromPosition(strategy.options, ticker, position, true);
     }
 
     const result = await this.strategyManager.executeStrategy(
@@ -101,10 +107,10 @@ module.exports = class TickListener {
 
     const strategyKey = strategy.strategy;
 
-    let context = StrategyContext.create(ticker);
+    let context = StrategyContext.create(strategy.options, ticker);
     const position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
     if (position) {
-      context = StrategyContext.createFromPosition(ticker, position);
+      context = StrategyContext.createFromPosition(strategy.options, ticker, position);
     }
 
     const result = await this.strategyManager.executeStrategy(
@@ -114,8 +120,15 @@ module.exports = class TickListener {
       symbol.symbol,
       strategy.options || {}
     );
+
     if (!result) {
       return;
+    }
+
+    // handle orders inside strategy
+    const placedOrder = result.getPlaceOrder();
+    if (placedOrder.length > 0) {
+      await this.placeStrategyOrders(placedOrder, symbol);
     }
 
     const signal = result.getSignal();
@@ -155,6 +168,20 @@ module.exports = class TickListener {
     this.notified[noteKey] = new Date();
 
     await this.pairStateManager.update(symbol.exchange, symbol.symbol, signal);
+  }
+
+  async placeStrategyOrders(placedOrder, symbol) {
+    for (const order of placedOrder) {
+      const amount = await this.orderCalculator.calculateOrderSizeCapital(
+        symbol.exchange,
+        symbol.symbol,
+        OrderCapital.createCurrency(order.amount_currency)
+      );
+
+      const exchangeOrder = Order.createLimitPostOnlyOrder(symbol.symbol, Order.SIDE_LONG, order.price, amount);
+
+      await this.orderExecutor.executeOrderWithAmountAndPrice(symbol.exchange, exchangeOrder);
+    }
   }
 
   async startStrategyIntervals() {

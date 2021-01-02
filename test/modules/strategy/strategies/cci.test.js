@@ -130,6 +130,6 @@ describe('#strategy cci', () => {
   });
 
   let createStrategyContext = price => {
-    return new StrategyContext(new Ticker('goo', 'goo', 'goo', price));
+    return new StrategyContext({}, new Ticker('goo', 'goo', 'goo', price));
   };
 });

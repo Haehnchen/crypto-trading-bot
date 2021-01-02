@@ -57,7 +57,7 @@ describe('#strategy AwesomeOscillatorCrossZero', () => {
   it('AwesomeOscillatorCrossZero long (close)', async () => {
     const aoCross = new AwesomeOscillatorCrossZero();
 
-    let context = new StrategyContext(new Ticker('goo', 'goo', 'goo', 404));
+    let context = new StrategyContext({}, new Ticker('goo', 'goo', 'goo', 404));
     context.lastSignal = 'long';
 
     assert.equal(
@@ -72,7 +72,7 @@ describe('#strategy AwesomeOscillatorCrossZero', () => {
       ).getSignal()
     );
 
-    context = new StrategyContext(new Ticker('goo', 'goo', 'goo', 404));
+    context = new StrategyContext({}, new Ticker('goo', 'goo', 'goo', 404));
     context.lastSignal = 'short';
 
     assert.equal(
@@ -119,7 +119,7 @@ describe('#strategy AwesomeOscillatorCrossZero', () => {
   it('AwesomeOscillatorCrossZero short (close)', async () => {
     const aoCross = new AwesomeOscillatorCrossZero();
 
-    const context = new StrategyContext(new Ticker('goo', 'goo', 'goo', 394));
+    const context = new StrategyContext({}, new Ticker('goo', 'goo', 'goo', 394));
     context.lastSignal = 'short';
 
     assert.equal(
@@ -136,6 +136,6 @@ describe('#strategy AwesomeOscillatorCrossZero', () => {
   });
 
   let createStrategyContext = price => {
-    return new StrategyContext(new Ticker('goo', 'goo', 'goo', price));
+    return new StrategyContext({}, new Ticker('goo', 'goo', 'goo', price));
   };
 });

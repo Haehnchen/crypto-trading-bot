@@ -93,6 +93,6 @@ describe('#strategy obv_pump_dump', () => {
   });
 
   let createStrategyContext = () => {
-    return new StrategyContext(new Ticker('goo', 'goo', 'goo', 394, 394));
+    return new StrategyContext({}, new Ticker('goo', 'goo', 'goo', 394, 394));
   };
 });

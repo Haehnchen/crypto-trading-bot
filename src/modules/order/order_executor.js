@@ -171,6 +171,33 @@ module.exports = class OrderExecutor {
     );
   }
 
+  /**
+   * Exchanges need "amount" and "price" to be normalized for creating orders, allow this to happen here
+   *
+   * @param exchangeName
+   * @param {Order} order
+   * @returns {Promise<unknown>}
+   */
+  executeOrderWithAmountAndPrice(exchangeName, order) {
+    const exchangeInstance = this.exchangeManager.get(exchangeName);
+    if (!exchangeInstance) {
+      this.logger.error(`executeOrderWithAmountAndPrice: Invalid exchange: ${exchangeName}`);
+      return undefined;
+    }
+
+    const amount = exchangeInstance.calculateAmount(order.getAmount(), order.getSymbol());
+    if (amount) {
+      order.amount = parseFloat(amount);
+    }
+
+    const price = exchangeInstance.calculatePrice(order.getPrice(), order.getSymbol());
+    if (price) {
+      order.price = parseFloat(price);
+    }
+
+    return this.executeOrder(exchangeName, order);
+  }
+
   executeOrder(exchangeName, order) {
     return new Promise(async resolve => {
       await this.triggerOrder(resolve, exchangeName, order);

@@ -1,16 +1,20 @@
 module.exports = class StrategyContext {
-  constructor(ticker) {
+  constructor(options, ticker, isBacktest) {
     this.bid = ticker.bid;
     this.ask = ticker.ask;
+
+    this.options = options;
 
     this.lastSignal = undefined;
     this.amount = undefined;
     this.entry = undefined;
     this.profit = undefined;
+
+    this.backtest = isBacktest;
   }
 
-  static createFromPosition(ticker, position) {
-    const context = new StrategyContext(ticker);
+  static createFromPosition(options, ticker, position, isBacktest = false) {
+    const context = new StrategyContext(options, ticker, isBacktest);
 
     context.amount = position.getAmount();
     context.lastSignal = position.getSide();
@@ -36,7 +40,21 @@ module.exports = class StrategyContext {
     return this.profit;
   }
 
-  static create(ticker) {
-    return new StrategyContext(ticker);
+  /**
+   * @returns {any}
+   */
+  getOptions() {
+    return this.options;
+  }
+
+  /**
+   * @returns boolean
+   */
+  isBacktest() {
+    return this.backtest;
+  }
+
+  static create(options, ticker, isBacktest) {
+    return new StrategyContext(options, ticker, isBacktest);
   }
 };

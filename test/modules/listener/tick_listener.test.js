@@ -86,7 +86,7 @@ describe('#tick listener for order', function() {
     assert.deepEqual(calls, [
       'FOOBAR',
       'FOOUSD',
-      { price: undefined, strategy: 'foobar', raw: '{"_debug":{},"_signal":"short"}' },
+      { price: undefined, strategy: 'foobar', raw: '{"_debug":{},"_signal":"short","placeOrders":[]}' },
       'short',
       'foobar'
     ]);

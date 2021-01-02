@@ -39,7 +39,7 @@ describe('#strategy manager', () => {
   };
 
   let createStrategyContext = () => {
-    return new StrategyContext(new Ticker('goo', 'goo', 'goo', 6000, 6000));
+    return new StrategyContext({}, new Ticker('goo', 'goo', 'goo', 6000, 6000));
   };
 
   let createTechnicalAnalysisValidator = () => {

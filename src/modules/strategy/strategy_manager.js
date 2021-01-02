@@ -69,10 +69,19 @@ module.exports = class StrategyManager {
     return this.getStrategies().find(strategy => strategy.getName() === strategyName);
   }
 
+  /**
+   *
+   * @param strategyName
+   * @param context
+   * @param exchange
+   * @param symbol
+   * @param options
+   * @returns {Promise<SignalResult|undefined>}
+   */
   async executeStrategy(strategyName, context, exchange, symbol, options) {
     const results = await this.getTaResult(strategyName, exchange, symbol, options, true);
     if (!results || Object.keys(results).length === 0) {
-      return;
+      return undefined;
     }
 
     // remove candle pipe
@@ -84,7 +93,7 @@ module.exports = class StrategyManager {
 
     const strategyResult = await strategy.period(indicatorPeriod, options);
     if (typeof strategyResult !== 'undefined' && !(strategyResult instanceof SignalResult)) {
-      throw `Invalid strategy return:${strategyName}`;
+      throw new Error(`Invalid strategy return:${strategyName}`);
     }
 
     return strategyResult;
@@ -113,6 +122,7 @@ module.exports = class StrategyManager {
       const amount = lastSignal === 'short' ? -1 : 1;
 
       context = StrategyContext.createFromPosition(
+        options,
         new Ticker(exchange, symbol, undefined, price, price),
         new Position(
           symbol,
@@ -121,10 +131,11 @@ module.exports = class StrategyManager {
           CommonUtil.getProfitAsPercent(lastSignal, price, lastSignalEntry),
           undefined,
           lastSignalEntry
-        )
+        ),
+        true
       );
     } else {
-      context = StrategyContext.create(new Ticker(exchange, symbol, undefined, price, price));
+      context = StrategyContext.create(options, new Ticker(exchange, symbol, undefined, price, price), true);
     }
 
     context.lastSignal = lastSignal;

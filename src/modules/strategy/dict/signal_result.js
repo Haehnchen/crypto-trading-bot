@@ -1,9 +1,12 @@
 const _ = require('lodash');
 
+const Order = require('../../../dict/order');
+
 module.exports = class SignalResult {
   constructor() {
     this._debug = {};
     this._signal = undefined;
+    this.placeOrders = [];
   }
 
   mergeDebug(debug) {
@@ -32,6 +35,22 @@ module.exports = class SignalResult {
 
   getSignal() {
     return this._signal;
+  }
+
+  placeBuyOrder(amountCurrency, price) {
+    this.placeOrders.push({
+      side: Order.SIDE_LONG,
+      amount_currency: amountCurrency,
+      price: price
+    });
+  }
+
+  /**
+   *
+   * @returns {[Order]}
+   */
+  getPlaceOrder() {
+    return this.placeOrders;
   }
 
   static createSignal(signal, debug = {}) {

@@ -221,7 +221,9 @@ module.exports = {
       this.getExchangeManager(),
       this.getPairStateManager(),
       this.getLogger(),
-      this.getSystemUtil()
+      this.getSystemUtil(),
+      this.getOrderExecutor(),
+      this.getOrderCalculator()
     ));
   },
 
