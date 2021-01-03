@@ -183,8 +183,14 @@ module.exports = class Http {
     });
 
     app.get('/pairs', async (req, res) => {
+      const pairs = await this.pairsHttp.getTradePairs();
+
       res.render('../templates/pairs.html.twig', {
-        pairs: await this.pairsHttp.getTradePairs()
+        pairs: pairs,
+        stats: {
+          positions: pairs.filter(p => p.has_position === true).length,
+          trading: pairs.filter(p => p.is_trading === true).length
+        }
       });
     });
 

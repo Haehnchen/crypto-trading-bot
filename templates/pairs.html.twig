@@ -29,9 +29,25 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="card">
-                            <div class="card-body">
+                            <div class="card-header">
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <input value="" placeholder="Search" class="filter-pairs">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-sm-right">
+                                            <strong>Trading:</strong> {{ stats.trading }} <span class="text-muted"> - </span>
+                                            <strong>Positions:</strong> {{ stats.positions }} <span class="text-muted"> - </span>
+                                            <strong>Total Pairs:</strong> {{ pairs.length }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                              <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-hover">
+                                    <table class="table table-bordered table-hover table-pairs">
                                         <thead>
                                         <tr>
                                             <th scope="col" title="Exchange">E</th>
@@ -48,9 +64,9 @@
                                         </thead>
                                         <tbody>
                                         {% for pair in pairs %}
-                                            <tr>
+                                            <tr data-search="{{ pair.exchange }}.{{ pair.symbol }}">
                                                 <td class="no-wrap"><img src="/img/exchanges/{{ pair.exchange }}.png" title="{{ pair.exchange }}" alt="{{ pair.exchange }}" width="16px" height="16px"></td>
-                                                <td class="no-wrap"><a target="blank" href="/tradingview/{{ pair.exchange }}:{{ pair.symbol }}">{{ pair.symbol }}</td>
+                                                <td class="no-wrap row-pair"><a target="blank" href="/tradingview/{{ pair.exchange }}:{{ pair.symbol }}">{{ pair.symbol }}</td>
                                                 <td class="no-wrap">{{ pair.is_trading ? '<i class="fas fa-cart-plus font-weight-bold"></i>' : '<i class="fas fa-eye text-muted"></i>' }}</td>
                                                 <td class="no-wrap"><strong>{{ pair.capital }}</strong></td>
                                                 <td class="text-muted"><span class="span-md">{% if pair.strategies.length > 0 %}{{ pair.strategies|json_encode }}{% endif %}</span></td>
@@ -102,4 +118,8 @@
         <!-- /.content -->
     </div>
     <!-- /.content-wrapper -->
+{% endblock %}
+
+{% block javascript %}
+<script src="/js/pairs.js?v={{ asset_version() }}"></script>
 {% endblock %}

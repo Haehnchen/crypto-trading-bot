@@ -45,9 +45,9 @@ module.exports = class PairsHttp {
         })
     );
 
-    return pairs.sort((a, b) => {
-      return b.weight - a.weight;
-    });
+    return pairs
+      .sort((a, b) => `${a.exchange}.${a.symbol}`.localeCompare(`${b.exchange}.${b.symbol}`))
+      .sort((a, b) => b.weight - a.weight);
   }
 
   async triggerOrder(exchangeName, symbol, action) {
