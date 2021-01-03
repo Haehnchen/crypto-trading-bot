@@ -38,9 +38,9 @@
 
                                     <div class="form-group mb-2">
                                         <label for="form-pair">Pair</label>
-                                        <select class="form-control" id="form-pair" name="pair" required>
+                                        <select class="form-control chosen-select" id="form-pair" name="pair" required>
                                             {% for pair in pairs|default([]) %}
-                                                <option value="{{ pair.exchange }}.{{ pair.symbol }}" {% if pair.symbol == symbol|default and pair.exchange == exchange|default %}selected{% endif %}>{{ pair.exchange|capitalize }}.{{ pair.symbol }}</option>
+                                                <option value="{{ pair.exchange }}.{{ pair.symbol }}" {% if pair.symbol == symbol|default and pair.exchange == exchange|default %}selected{% endif %}>{{ pair.exchange }}.{{ pair.symbol }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
@@ -98,62 +98,71 @@
                         <!-- /.card -->
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-bordered table-hover">
-                                        {% if candles is defined %}
-                                            <h2>{{ exchange }} {{ symbol }} - {{ period }}</h2>
+                {% if candles is defined %}
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h4>{{ exchange }} {{ symbol }} - {{ period }}</h4>
 
-                                            <div class="form-group">
-                                                <h6>JSON ({{ candles|length }})</h6>
-                                                <textarea class="form-control" style="width:100%; height: 150px">{{ candles_json }}</textarea>
-                                            </div>
+                                    <strong>JSON ({{ candles|length }})</strong>
+                                    <textarea class="form-control text-sm" style="width:100%; height: 300px">{{ candles_json }}</textarea>
 
-                                            <div class="form-group">
-                                                <h6>Overview ({{ candles|length }})</h6>
-                                                <div class="table-responsive">
-                                                    <table class="table table-bordered table-sm table-hover">
-                                                        <thead>
-                                                        <tr>
-                                                            <th scope="col">Time</th>
-                                                            <th scope="col">Open</th>
-                                                            <th scope="col">High</th>
-                                                            <th scope="col">Low</th>
-                                                            <th scope="col">Close</th>
-                                                            <th scope="col">Volume</th>
-                                                        </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                        {% for candle in candles %}
-                                                            <tr>
-                                                                <td>{{ candle.time|date('y-m-d H:i:s') }}</td>
-                                                                <td>{{ candle.open }}</td>
-                                                                <td>{{ candle.high }}</td>
-                                                                <td>{{ candle.low }}</td>
-                                                                <td>{{ candle.close }}</td>
-                                                                <td>{{ candle.volume }}</td>
-                                                            </tr>
-                                                        {% endfor %}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        {% endif %}
+                                    <br>
+
+                                    <strong>Overview ({{ candles|length }})</strong>
+
+                                    <table class="table table-bordered table-sm table-hover">
+                                        <thead>
+                                        <tr>
+                                            <th scope="col">Time</th>
+                                            <th scope="col">Open</th>
+                                            <th scope="col">High</th>
+                                            <th scope="col">Low</th>
+                                            <th scope="col">Close</th>
+                                            <th scope="col">Volume</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for candle in candles %}
+                                            <tr>
+                                                <td>{{ candle.time|date('y-m-d H:i:s') }}</td>
+                                                <td>{{ candle.open }}</td>
+                                                <td>{{ candle.high }}</td>
+                                                <td>{{ candle.low }}</td>
+                                                <td>{{ candle.close }}</td>
+                                                <td>{{ candle.volume }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
                                     </table>
-                                </div>
+                                 </div>
+                                <!-- /.card-body -->
                             </div>
-                            <!-- /.card-body -->
+                            <!-- /.card -->
                         </div>
-                        <!-- /.card -->
                     </div>
-                </div>
+                {% endif %}
                 <!-- /.row -->
             </div><!-- /.container-fluid -->
         </div>
         <!-- /.content -->
     </div>
     <!-- /.content-wrapper -->
+{% endblock %}
+
+
+{% block javascript %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.jquery.min.js" integrity="sha512-rMGGF4wg1R73ehtnxXBt5mbUfN9JUJwbk21KMlnLZDJh7BkPmeovBuddZCENJddHYYMkCh9hPFnPmS9sspki8g==" crossorigin="anonymous"></script>
+
+<script>
+$(function() {
+  $('.chosen-select').chosen();
+});
+
+</script>
+{% endblock %}
+
+{% block stylesheet %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.min.css" integrity="sha512-yVvxUQV0QESBt1SyZbNJMAwyKvFTLMyXSyBHDO4BG5t7k/Lw34tyqlSDlKIrIENIzCl+RVUNjmCPG+V/GMesRw==" crossorigin="anonymous" />
 {% endblock %}
