@@ -10,39 +10,38 @@ module.exports = class PairsHttp {
 
   async getTradePairs() {
     const pairs = await Promise.all(
-      this.instances.symbols
-        .filter(symbol => !(_.get(symbol, 'trade.capital', 0) <= 0 && _.get(symbol, 'trade.currency_capital', 0) <= 0))
-        .map(async symbol => {
-          const position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
-          const state = await this.pairStateManager.get(symbol.exchange, symbol.symbol);
+      this.instances.symbols.map(async symbol => {
+        const position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
+        const state = await this.pairStateManager.get(symbol.exchange, symbol.symbol);
 
-          const strategiesTrade = symbol.trade && symbol.trade.strategies ? symbol.trade.strategies : [];
+        const strategiesTrade = symbol.trade && symbol.trade.strategies ? symbol.trade.strategies : [];
 
-          const item = {
-            exchange: symbol.exchange,
-            symbol: symbol.symbol,
-            watchdogs: symbol.watchdogs,
-            is_trading: strategiesTrade.length > 0,
-            has_position: position !== undefined,
-            capital: `${_.get(symbol, 'trade.capital', 0)} / ${_.get(symbol, 'trade.currency_capital', 0)}`,
-            strategies: symbol.strategies || [],
-            strategies_trade: strategiesTrade,
-            weight: 0
-          };
+        const item = {
+          exchange: symbol.exchange,
+          symbol: symbol.symbol,
+          watchdogs: symbol.watchdogs,
+          is_trading: strategiesTrade.length > 0,
+          has_position: position !== undefined,
+          trade_capital: _.get(symbol, 'trade.capital', 0),
+          trade_currency_capital: _.get(symbol, 'trade.currency_capital', 0),
+          strategies: symbol.strategies || [],
+          strategies_trade: strategiesTrade,
+          weight: 0
+        };
 
-          // open position wins over default state
-          if (item.has_position) {
-            item.weight += 1;
-          }
+        // open position wins over default state
+        if (item.has_position) {
+          item.weight += 1;
+        }
 
-          // processing items must win
-          if (state && state.state) {
-            item.process = state.state;
-            item.weight += 2;
-          }
+        // processing items must win
+        if (state && state.state) {
+          item.process = state.state;
+          item.weight += 2;
+        }
 
-          return item;
-        })
+        return item;
+      })
     );
 
     return pairs

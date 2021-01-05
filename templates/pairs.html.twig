@@ -80,27 +80,29 @@
                                                 </td>
                                                 <td style="white-space: nowrap">{{ pair.process }}</td>
                                                 <td class="text-right"  style="white-space: nowrap">
-                                                    <form action="/pairs/{{ pair.exchange }}-{{ pair.symbol }}" method="post" style="margin:0; padding:0">
-                                                        <div class="btn-group btn-group-sm">
-                                                            {% if pair.has_position|default(false) == false and not pair.process %}
-                                                                <button name="action" value="long" data-toggle="tooltip" title="Limit Long" class="btn btn-success btn-sm"><i class="fas fa-cart-plus"></i> Long</button>
-                                                                <button name="action" value="short" data-toggle="tooltip" title="Limit Short" class="btn btn-danger btn-sm"><i class="fas fa-shopping-cart"></i> Short</button>
+                                                    {% if pair.trade_capital > 0 or pair.trade_currency_capital > 0 %}
+                                                        <form action="/pairs/{{ pair.exchange }}-{{ pair.symbol }}" method="post" style="margin:0; padding:0">
+                                                            <div class="btn-group btn-group-sm">
+                                                                {% if pair.has_position|default(false) == false and not pair.process %}
+                                                                    <button name="action" value="long" data-toggle="tooltip" title="Limit Long" class="btn btn-success btn-sm"><i class="fas fa-cart-plus"></i> Long</button>
+                                                                    <button name="action" value="short" data-toggle="tooltip" title="Limit Short" class="btn btn-danger btn-sm"><i class="fas fa-shopping-cart"></i> Short</button>
 
 
-                                                                <button name="action" value="long_market" data-toggle="tooltip" title="Market Long" class="btn btn-success btn-sm"><i class="fas fa-cart-plus"></i></button>
-                                                                <button name="action" value="short_market" data-toggle="tooltip" title="Market Short" class="btn btn-danger btn-sm"><i class="fas fa-shopping-cart"></i></button>
-                                                            {% endif %}
+                                                                    <button name="action" value="long_market" data-toggle="tooltip" title="Market Long" class="btn btn-success btn-sm"><i class="fas fa-cart-plus"></i></button>
+                                                                    <button name="action" value="short_market" data-toggle="tooltip" title="Market Short" class="btn btn-danger btn-sm"><i class="fas fa-shopping-cart"></i></button>
+                                                                {% endif %}
 
-                                                            {% if pair.has_position|default(false) and not pair.process %}
-                                                                <button name="action" value="close" data-toggle="tooltip" title="Limit Close" class="btn btn-dark btn-sm"><i class="fas fa-window-close"></i> Close</button>
-                                                                <button name="action" value="close_market" data-toggle="tooltip" title="Market Close" class="btn btn-dark btn-sm"><i class="fas fa-window-close"></i></button>
-                                                            {% endif %}
+                                                                {% if pair.has_position|default(false) and not pair.process %}
+                                                                    <button name="action" value="close" data-toggle="tooltip" title="Limit Close" class="btn btn-dark btn-sm"><i class="fas fa-window-close"></i> Close</button>
+                                                                    <button name="action" value="close_market" data-toggle="tooltip" title="Market Close" class="btn btn-dark btn-sm"><i class="fas fa-window-close"></i></button>
+                                                                {% endif %}
 
-                                                            {% if pair.process|default %}
-                                                                <button name="action" value="cancel" data-toggle="tooltip" title="close" class="btn btn-primary btn-sm"><i class="fas fa-trash"></i> Cancel</button>
-                                                            {% endif %}
-                                                        </div>
-                                                    </form>
+                                                                {% if pair.process|default %}
+                                                                    <button name="action" value="cancel" data-toggle="tooltip" title="close" class="btn btn-primary btn-sm"><i class="fas fa-trash"></i> Cancel</button>
+                                                                {% endif %}
+                                                            </div>
+                                                        </form>
+                                                    {% endif %}
                                                 </td>
                                             </tr>
                                         {% endfor %}
