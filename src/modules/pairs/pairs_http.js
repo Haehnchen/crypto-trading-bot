@@ -15,6 +15,7 @@ module.exports = class PairsHttp {
         const state = await this.pairStateManager.get(symbol.exchange, symbol.symbol);
 
         const strategiesTrade = symbol.trade && symbol.trade.strategies ? symbol.trade.strategies : [];
+        const strategies = symbol.strategies || [];
 
         const item = {
           exchange: symbol.exchange,
@@ -24,9 +25,10 @@ module.exports = class PairsHttp {
           has_position: position !== undefined,
           trade_capital: _.get(symbol, 'trade.capital', 0),
           trade_currency_capital: _.get(symbol, 'trade.currency_capital', 0),
-          strategies: symbol.strategies || [],
+          strategies: strategies,
           strategies_trade: strategiesTrade,
-          weight: 0
+          weight: 0,
+          strategy_names: [...strategies, ...strategiesTrade].map(s => s.strategy)
         };
 
         // open position wins over default state
