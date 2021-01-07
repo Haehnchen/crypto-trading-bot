@@ -17,14 +17,17 @@ module.exports = class PairsHttp {
         const strategiesTrade = symbol.trade && symbol.trade.strategies ? symbol.trade.strategies : [];
         const strategies = symbol.strategies || [];
 
+        const tradeCapital = _.get(symbol, 'trade.capital', 0);
+        const tradeCurrencyCapital = _.get(symbol, 'trade.currency_capital', 0);
+
         const item = {
           exchange: symbol.exchange,
           symbol: symbol.symbol,
           watchdogs: symbol.watchdogs,
-          is_trading: strategiesTrade.length > 0,
+          is_trading: strategiesTrade.length > 0 || tradeCapital > 0 || tradeCurrencyCapital > 0,
           has_position: position !== undefined,
-          trade_capital: _.get(symbol, 'trade.capital', 0),
-          trade_currency_capital: _.get(symbol, 'trade.currency_capital', 0),
+          trade_capital: tradeCapital,
+          trade_currency_capital: tradeCurrencyCapital,
           strategies: strategies,
           strategies_trade: strategiesTrade,
           weight: 0,
