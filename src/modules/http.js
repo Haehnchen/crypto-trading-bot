@@ -391,6 +391,8 @@ module.exports = class Http {
         myPositions.forEach(position => {
           // simply converting of asset to currency value
           let currencyValue;
+          let currencyProfit;
+
           if (
             (exchangeName.includes('bitmex') && ['XBTUSD', 'ETHUSD'].includes(position.symbol)) ||
             exchangeName.includes('bybit')
@@ -404,7 +406,10 @@ module.exports = class Http {
           positions.push({
             exchange: exchangeName,
             position: position,
-            currency: currencyValue
+            currency: currencyValue,
+            currencyProfit: position.getProfit()
+              ? currencyValue + (currencyValue / 100) * position.getProfit()
+              : undefined
           });
         });
 

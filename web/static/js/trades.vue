@@ -33,6 +33,9 @@
               <template v-if="!!position.currency">
                 {{ position.currency|filter_price }}
               </template>
+              <template v-if="!!position.currencyProfit">
+                <span class="text-muted"> / {{ position.currencyProfit|filter_price }}</span>
+              </template>
             </td>
             <td>
             <span v-if="typeof position.position.profit !== 'undefined'" v-bind:class="{ 'text-success': position.position.profit >= 0, 'text-danger': position.position.profit < 0 }">
