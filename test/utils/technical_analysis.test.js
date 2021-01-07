@@ -125,6 +125,26 @@ describe('#technical_analysis for candles', () => {
         }
       },
       {
+        indicator: 'wma',
+        key: 'wma'
+      },
+      {
+        indicator: 'dema',
+        key: 'dema'
+      },
+      {
+        indicator: 'tema',
+        key: 'tema'
+      },
+      {
+        indicator: 'trima',
+        key: 'trima'
+      },
+      {
+        indicator: 'kama',
+        key: 'kama'
+      },
+      {
         indicator: 'vwma',
         key: 'vwma'
       },
@@ -168,6 +188,12 @@ describe('#technical_analysis for candles', () => {
 
     assert.equal(result.ema_55.length, 490);
     assert.equal(result.sma_200.length, 291);
+
+    assert.equal(result.wma.length > 0, true);
+    assert.equal(result.dema.length > 0, true);
+    assert.equal(result.tema.length > 0, true);
+    assert.equal(result.trima.length > 0, true);
+    assert.equal(result.kama.length > 0, true);
 
     assert.equal(result.rsi.length > 0, true);
     assert.equal(result.mfi.length > 0, true);
