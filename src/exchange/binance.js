@@ -448,7 +448,8 @@ module.exports = class Binance {
 
       for (const pair in capitals) {
         // just a hack to get matching pairs with capital eg: "BTCUSDT" needs a capital of "BTC"
-        if (!pair.startsWith(asset)) {
+        // workaround: eg "BTCUPDOWN" is breaking the match
+        if (!pair.startsWith(asset) || pair.startsWith(`${asset}UP`) || pair.startsWith(`${asset}DOWN`)) {
           continue;
         }
 
