@@ -431,13 +431,17 @@ module.exports = class Binance {
       .filter(
         s =>
           s.trade &&
-          ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0))
+          ((s.trade.capital && s.trade.capital > 0) ||
+            (s.trade.currency_capital && s.trade.currency_capital > 0) ||
+            (s.trade.strategies && s.trade.strategies.length > 0))
       )
       .forEach(s => {
         if (s.trade.capital > 0) {
           capitals[s.symbol] = s.trade.capital;
         } else if (s.trade.currency_capital > 0 && this.tickers[s.symbol] && this.tickers[s.symbol].bid) {
           capitals[s.symbol] = s.trade.currency_capital / this.tickers[s.symbol].bid;
+        } else {
+          capitals[s.symbol] = 0;
         }
       });
 
