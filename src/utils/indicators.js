@@ -115,6 +115,8 @@ function executeTulindIndicator(source, indicator, tulindOptions) {
     // execute indicator
     tulind.indicators[indicatorName].indicator(sources, options, function(err, res) {
       let finalResult = res[0];
+
+    // console.log(indicatorName,tulindOptions);
       const { results } = tulindOptions;
       if (results !== undefined) {
         // if indicator returns multiple results, extract them
@@ -133,7 +135,7 @@ function executeTulindIndicator(source, indicator, tulindOptions) {
 
 module.exports = {
   // indicators which source is Candles
-  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked', 'heikin_ashi', 'psar', 'hma'],
+  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi','linreg','tema', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked', 'heikin_ashi', 'psar', 'hma'],
 
   bb: (source, indicator) => 
     executeTulindIndicator(source, indicator, {
@@ -143,16 +145,13 @@ module.exports = {
 
   obv: (...args) => executeTulindIndicator(...args, { sources: ['close', 'volume'] }),
   ao: (...args) => executeTulindIndicator(...args, { sources: ['high', 'low'] }),
-  mfi: (...args) =>
-    executeTulindIndicator(...args, { sources: ['high', 'low', 'close', 'volume'], options: { length: 14 } }),
+  mfi: (...args) =>    executeTulindIndicator(...args, { sources: ['high', 'low', 'close', 'volume'], options: { length: 14 } }),
   sma: (...args) => executeTulindIndicator(...args, { options: { length: 14 } }),
   ema: (...args) => executeTulindIndicator(...args, { options: { length: 14 } }),
-  wma: (...args) => executeTulindIndicator(...args, { options: { length: 9 } }),
-  dema: (...args) => executeTulindIndicator(...args, { options: { length: 9 } }),
-  tema: (...args) => executeTulindIndicator(...args, { options: { length: 9 } }),
-  trima: (...args) => executeTulindIndicator(...args, { options: { length: 9 } }),
-  kama: (...args) => executeTulindIndicator(...args, { options: { length: 9 } }),
   rsi: (...args) => executeTulindIndicator(...args, { options: { length: 14 } }),
+  linreg: (...args) => executeTulindIndicator(...args, { options: { length: 25 } }),
+  tema: (...args) => executeTulindIndicator(...args, { options: { length: 25 } }),
+  kama: (...args) => executeTulindIndicator(...args, { options: { length: 25 } }),
   roc: (...args) => executeTulindIndicator(...args, { options: { length: 6 } }),
   atr: (...args) => executeTulindIndicator(...args, { sources: ['high', 'low', 'close'], options: { length: 14 } }),
 
