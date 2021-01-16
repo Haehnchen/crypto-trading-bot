@@ -10,10 +10,8 @@ module.exports = class Throttler {
     }
 
     if (key in this.tasks) {
-      this.logger.debug(`Throttler clear existing event: ${key} - ${timeout}ms`);
-
-      clearTimeout(this.tasks[key]);
-      delete this.tasks[key];
+      this.logger.debug(`Throttler already existing task: ${key} - ${timeout}ms`);
+      return;
     }
 
     const me = this;
