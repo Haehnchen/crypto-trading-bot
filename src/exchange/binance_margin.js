@@ -431,9 +431,14 @@ module.exports = class BinanceMargin {
       }
     }
 
+    // account transfer / withdraws; should be followed by a "outboundAccountPosition", but throttled anyways
+    if (event.eventType && event.eventType === 'balanceUpdate') {
+      this.throttler.addTask('binance_sync_balances', this.syncBalances.bind(this), 1000);
+    }
+
     // get balances and same them internally; allows to take open positions
     // Format we get: balances: {'EOS': {"available": 12, "locked": 8}}
-    if (event.eventType && event.eventType === 'account' && 'balances' in event) {
+    if (event.eventType && ['outboundAccountPosition', 'account'].includes(event.eventType) && 'balances' in event) {
       // we dont get the margin information here;
       // so we would only be able to calculate longs, so do a full sync on API
 
