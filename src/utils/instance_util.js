@@ -209,7 +209,7 @@ module.exports = {
         const content = JSON.parse(body);
 
         content.symbols
-          .filter(p => p.status.toUpperCase() === 'TRADING')
+          .filter(p => p.status.toUpperCase() === 'TRADING' && p.contractType.toUpperCase() === 'PERPETUAL')
           .forEach(pair => {
             let result = {
               symbol: pair.symbol,
