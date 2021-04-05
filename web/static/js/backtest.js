@@ -1,4 +1,11 @@
 $(function() {
+  $('span .debug-text').each(function(index, el){
+    const json = JSON.parse($(el).text());
+    $(el).text('');
+    const formatter = new JSONFormatter(json, Infinity, {});
+    el.appendChild(formatter.render());
+  });
+
   $('table.backtest-table').on('click', 'a.button-debug-toggle', function(e) {
     e.preventDefault();
     $(this)
