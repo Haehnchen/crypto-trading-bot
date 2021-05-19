@@ -50,6 +50,11 @@
         "telegram" : {
             "chat_id": null,
             "token": null
+        },
+        "notifier": {
+            "enable": false,
+            "sound": true,
+            "wait": true,
         }
     },
     "webserver": {

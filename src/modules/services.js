@@ -7,6 +7,7 @@ const _ = require('lodash');
 const Sqlite = require('better-sqlite3');
 const Notify = require('../notify/notify');
 const Slack = require('../notify/slack');
+const Notifier = require('../notify/notifier');
 const Mail = require('../notify/mail');
 const Telegram = require('../notify/telegram');
 
@@ -334,6 +335,11 @@ module.exports = {
     const telegram = _.get(config, 'notify.telegram');
     if (telegram && telegram.chat_id && telegram.chat_id.length > 0 && telegram.token && telegram.token.length > 0) {
       notifiers.push(new Telegram(this.createTelegram(), telegram, this.getLogger()));
+    }
+
+    const notifier = _.get(config, 'notify.notifier');
+    if (notifier && notifier.enable) {
+      notifiers.push(new Notifier(notifier, this.getLogger()));
     }
 
     return (notify = new Notify(notifiers));
