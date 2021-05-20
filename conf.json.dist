@@ -54,7 +54,7 @@
         "notifier": {
             "enable": false,
             "sound": true,
-            "wait": true,
+            "wait": true
         }
     },
     "webserver": {
