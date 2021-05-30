@@ -210,7 +210,7 @@ module.exports = class StrategyManager {
       // filter candles in the futures: eg current non closed candle
       const periodAsMinute = Resample.convertPeriodToMinute(period) * 60;
       const unixtime = Math.floor(Date.now() / 1000);
-      const olderThenCurrentPeriod = unixtime - (unixtime % periodAsMinute) - periodAsMinute * 0.1;
+      const olderThenCurrentPeriod = unixtime - (unixtime % periodAsMinute) + periodAsMinute * 0.1;
 
       const lookbacks = await this.exchangeCandleCombine.fetchCombinedCandles(
         exchange,
