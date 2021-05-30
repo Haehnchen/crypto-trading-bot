@@ -224,7 +224,7 @@ module.exports = class StrategyManager {
         // check if candle to close time is outside our allow time window
         if (
           validateLookbacks &&
-          !this.technicalAnalysisValidator.isValidCandleStickLookback(lookbacks[exchange].slice(), period)
+          !this.technicalAnalysisValidator.isValidCandleStickLookback(lookbacks[exchange].slice(), period, this.logger)
         ) {
           this.logger.info(
             `Strategy skipped: outdated candle sticks: ${JSON.stringify([period, strategyName, exchange, symbol])}`

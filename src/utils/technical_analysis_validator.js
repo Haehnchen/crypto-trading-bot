@@ -1,7 +1,7 @@
 const Resample = require('../utils/resample');
 
 module.exports = class TechnicalAnalysisValidator {
-  isValidCandleStickLookback(lookbackNewestFirst, period) {
+  isValidCandleStickLookback(lookbackNewestFirst, period, logger) {
     if (lookbackNewestFirst.length === 0) {
       return false;
     }
@@ -28,6 +28,9 @@ module.exports = class TechnicalAnalysisValidator {
     const candleOpenToCurrentTime = Math.abs((Math.floor(Date.now() / 1000) - lookbackNewestFirst[0].time) / 60);
 
     if (candleOpenToCurrentTime > allowedOutdatedWindow) {
+      if(logger) {
+        logger.info(`${Date.now() / 1000} - ${lookbackNewestFirst[0].time / 1000}`)
+      }
       return false;
     }
 
