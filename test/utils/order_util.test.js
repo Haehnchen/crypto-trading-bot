@@ -72,6 +72,7 @@ describe('#order util', function() {
     assert.equal(orderUtil.calculateNearestSize(50.88, 1), 50);
 
     assert.equal(orderUtil.calculateNearestSize(-149.87974, 0.01), -149.87);
+    assert.equal(orderUtil.calculateNearestSize(0.0017034, "0.00000100"), 0.001703);
   });
 
   it('calculate percent change', () => {

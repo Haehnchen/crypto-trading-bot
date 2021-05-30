@@ -149,7 +149,8 @@ module.exports = class BinanceMargin {
   }
 
   async order(order) {
-    const payload = Binance.createOrderBody(order);
+    order.amount = this.calculateAmount(order.amount, order.symbol)
+    const payload = BinanceMargin.createOrderBody(order);
 
     // on open position for need to repay via AUTO_REPAY else be borrowing via MARGIN_BUY
     const position = await this.getPositionForSymbol(order.getSymbol());
@@ -440,6 +441,44 @@ module.exports = class BinanceMargin {
     }
   }
 
+  static createOrderBody(order) {
+    if (!order.getAmount() && !order.getPrice() && !order.getSymbol()) {
+      throw Error('Invalid amount for update');
+    }
+
+    const myOrder = {
+      symbol: order.getSymbol(),
+      side: order.isShort() ? 'SELL' : 'BUY',
+      quantity: order.getAmount()
+    };
+
+    let orderType;
+    const type = order.getType();
+    if (!type || type === 'limit') {
+      orderType = 'LIMIT';
+      myOrder.price = order.getPrice();
+    } else if (type === 'stop') {
+      orderType = 'STOP_LOSS_LIMIT';
+      myOrder.stopPrice = order.getPrice();
+      myOrder.price = order.getPrice();
+      myOrder.timeInForce = 'GTC';
+    } else if (type === 'market') {
+      orderType = 'MARKET';
+    }
+
+    if (!orderType) {
+      throw Error('Invalid order type');
+    }
+
+    myOrder.type = orderType;
+
+    if (order.id) {
+      myOrder.newClientOrderId = order.getId();
+    }
+
+    return myOrder;
+  }
+
   async syncOrders() {
     this.logger.debug(`Binance Margin: Sync orders`);
 
@@ -591,7 +630,7 @@ module.exports = class BinanceMargin {
       }
 
       const lotSize = pair.filters.find(f => f.filterType === 'LOT_SIZE');
-      if (priceFilter) {
+      if (lotSize) {
         pairInfo.lot_size = parseFloat(lotSize.stepSize);
       }
 
