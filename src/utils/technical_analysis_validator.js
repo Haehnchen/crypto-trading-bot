@@ -29,7 +29,7 @@ module.exports = class TechnicalAnalysisValidator {
 
     if (candleOpenToCurrentTime > allowedOutdatedWindow) {
       if(logger) {
-        logger.info(`${Date.now() / 1000} - ${lookbackNewestFirst[0].time / 1000}`)
+        logger.info(`${Date.now() / 1000} - ${lookbackNewestFirst[0].time}`)
       }
       return false;
     }
