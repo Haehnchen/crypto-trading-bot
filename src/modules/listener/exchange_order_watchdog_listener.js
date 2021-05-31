@@ -158,6 +158,10 @@ module.exports = class ExchangeOrderWatchdogListener {
         return;
       }
 
+      if (price === "NaN") {
+        logger.error(`Why price is NaN ${JSON.stringify({ price, symbol: position.getSymbol() })},`)
+      }
+
       const order = Order.createStopLossOrder(position.getSymbol(), price, orderChange.amount);
 
       try {
