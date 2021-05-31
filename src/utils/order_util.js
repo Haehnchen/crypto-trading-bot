@@ -46,6 +46,7 @@ module.exports = {
    * @returns {*}
    */
   calculateNearestSize: (num, tickSize) => {
+    tickSize = parseFloat(tickSize)
     const number = Math.trunc(num / tickSize) * tickSize;
 
     // fix float issues:
