@@ -41,7 +41,7 @@ module.exports = class StopLossCalculator {
       }
 
       if (position.side === 'long') {
-        if (price < ticker.ask) {
+        if (price > ticker.ask) {
           this.logger.info(
             `Ticker out of range stop loss (long): ${JSON.stringify(position)}${JSON.stringify(ticker)}`
           );
@@ -50,7 +50,7 @@ module.exports = class StopLossCalculator {
           return;
         }
       } else if (position.side === 'short') {
-        if (price > ticker.bid) {
+        if (price < ticker.bid) {
           this.logger.info(
             `Ticker out of range stop loss (short): ${JSON.stringify(position)}${JSON.stringify(ticker)}`
           );
