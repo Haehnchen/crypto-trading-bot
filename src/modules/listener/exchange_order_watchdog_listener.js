@@ -146,7 +146,7 @@ module.exports = class ExchangeOrderWatchdogListener {
       }
 
       // create
-      let price = stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss);
+      let price = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss);
       if (!price) {
         console.log('Stop loss: auto price skipping');
         return;
