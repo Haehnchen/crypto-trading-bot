@@ -520,6 +520,7 @@ module.exports = class BinanceMargin {
       return;
     }
 
+    this.logger.debug(`TODO: REMOVE: Binance Margin: sync orders: ${JSON.stringify(openOrders)}`);
     this.orderbag.set(Binance.createOrders(...openOrders));
   }
 

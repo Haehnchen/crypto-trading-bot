@@ -297,6 +297,9 @@ module.exports = class Binance {
         case 'stoplimit':
           orderType = ExchangeOrder.TYPE_STOP_LIMIT;
           break;
+        case 'stoplosslimit':
+          orderType = ExchangeOrder.TYPE_STOP;
+          break
         case 'market':
           orderType = ExchangeOrder.TYPE_MARKET;
           break;
