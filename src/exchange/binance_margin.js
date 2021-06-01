@@ -537,7 +537,7 @@ module.exports = class BinanceMargin {
       return;
     }
 
-    this.logger.debug(`Binance Margin: Sync balances: ${JSON.stringify(accountInfo.userAssets)}`);
+    this.logger.debug(`Binance Margin: Sync balances`);
 
     this.balances = BinanceMargin.createMarginBalances(accountInfo.userAssets);
   }
