@@ -3,7 +3,7 @@ version: '3.7'
 services:
   bot:
     container_name: crypto-trading-bot
-    image: hdthuan/node:10
+    image: hdthuan/crypto-trading-bot-image
     build:
         context: .
         dockerfile: Dockerfile.dev

@@ -1,0 +1,20 @@
+patch-package
+--- a/node_modules/bitmex-realtime-api/lib/deltaParser.js
++++ b/node_modules/bitmex-realtime-api/lib/deltaParser.js
+@@ -33,6 +33,16 @@ module.exports = {
+    * @return {Array}            Updated data.
+    */
+   onAction(action, tableName, symbol, client, data) {
++    // temp fix for new orders when none existed previously
++    if (
++        tableName === "order" &&
++        action === "insert" &&
++        !isInitialized(tableName, symbol, client)
++    ) {
++        data.keys = ["orderID"];
++        return this._partial(tableName, symbol, client, data);
++    }
++
+     // Deltas before the getSymbol() call returns can be safely discarded.
+     if (action !== 'partial' && !isInitialized(tableName, symbol, client)) return [];
+     // Partials initialize the table, so there's a different signature.
