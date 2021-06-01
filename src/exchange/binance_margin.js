@@ -167,6 +167,7 @@ module.exports = class BinanceMargin {
       // repay: close position
       if ((order.isLong() && position.isShort()) || (order.isShort() && position.isLong())) {
         payload.sideEffectType = 'AUTO_REPAY';
+        payload.amount = this.overrideRepayAmount(payload.amount, position.symbol)
       }
     }
 
@@ -226,6 +227,29 @@ module.exports = class BinanceMargin {
     this.orderbag.delete(id);
 
     return ExchangeOrder.createCanceled(order);
+  }
+
+  /**
+   * Need to recalculate the repay amount base on borrowed amount
+   *
+   * @param amount amount of payload
+   * @param symbol the exchange symbol
+   */
+  overrideRepayAmount(amount, symbol) {
+    for(const balance of this.balances) {
+      // foreach balances to see what balance is matched with symbol
+      const { asset } = balance;
+      // the hacky way!!!
+      if (!symbol.startsWith(asset)){
+        continue;
+      }
+      // if amount is over borrowed, 
+      // we use borrowed for AUTO_REPAY effect
+      if(amount > balance.borrowed){
+        return balance.borrowed
+      }
+    }
+    return amount
   }
 
   async cancelAll(symbol) {
@@ -508,7 +532,7 @@ module.exports = class BinanceMargin {
       return;
     }
 
-    this.logger.debug('Binance Margin: Sync balances');
+    this.logger.debug(`Binance Margin: Sync balances: ${JSON.stringify(accountInfo.userAssets)}`);
 
     this.balances = BinanceMargin.createMarginBalances(accountInfo.userAssets);
   }
@@ -649,7 +673,8 @@ module.exports = class BinanceMargin {
         return {
           available: parseFloat(balance.netAsset),
           locked: parseFloat(balance.locked),
-          asset: balance.asset
+          asset: balance.asset,
+          borrowed: parseFloat(balance.borrowed)
         };
       });
   }
