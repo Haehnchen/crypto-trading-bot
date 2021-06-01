@@ -149,6 +149,7 @@ module.exports = class BinanceMargin {
   }
 
   async order(order) {
+    order.amount = this.calculateAmount(order.amount, order.symbol)
     const payload = Binance.createOrderBody(order);
 
     // on open position for need to repay via AUTO_REPAY else be borrowing via MARGIN_BUY
@@ -591,7 +592,7 @@ module.exports = class BinanceMargin {
       }
 
       const lotSize = pair.filters.find(f => f.filterType === 'LOT_SIZE');
-      if (priceFilter) {
+      if (lotSize) {
         pairInfo.lot_size = parseFloat(lotSize.stepSize);
       }
 
