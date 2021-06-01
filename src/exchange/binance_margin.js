@@ -167,7 +167,7 @@ module.exports = class BinanceMargin {
       // repay: close position
       if ((order.isLong() && position.isShort()) || (order.isShort() && position.isLong())) {
         payload.sideEffectType = 'AUTO_REPAY';
-        payload.quantity = this.overrideRepayQuantity(payload.quantity, payload.symbol)
+        payload.quantity = this.overrideRepayQuantity(payload.quantity, payload.symbol, payload.side)
         if (payload.quantity === 0) {
           this.logger.info(`Binance Margin: order create error: No need REPAY: ${JSON.stringify([order, payload])}`);
           return ExchangeOrder.createRejectedFromOrder(order, `No borrow - No repay`);
@@ -244,7 +244,10 @@ module.exports = class BinanceMargin {
    * @param quantity quantity of payload
    * @param symbol the exchange symbol
    */
-  overrideRepayQuantity(quantity, symbol) {
+  overrideRepayQuantity(quantity, symbol, side) {
+    if(side && side.toLowerCase() === "sell") {
+      return quantity
+    }
     for (const balance of this.balances) {
       // foreach balances to see what balance is matched with symbol
       const { asset } = balance;
