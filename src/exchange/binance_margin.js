@@ -167,7 +167,7 @@ module.exports = class BinanceMargin {
       // repay: close position
       if ((order.isLong() && position.isShort()) || (order.isShort() && position.isLong())) {
         payload.sideEffectType = 'AUTO_REPAY';
-        payload.amount = this.overrideRepayAmount(payload.amount, position.symbol)
+        payload.quantity = this.overrideRepayQuantity(payload.quantity, payload.symbol)
       }
     }
 
@@ -230,12 +230,12 @@ module.exports = class BinanceMargin {
   }
 
   /**
-   * Need to recalculate the repay amount base on borrowed amount
+   * Need to recalculate the repay quantity base on borrowed quantity
    *
-   * @param amount amount of payload
+   * @param quantity quantity of payload
    * @param symbol the exchange symbol
    */
-  overrideRepayAmount(amount, symbol) {
+  overrideRepayQuantity(quantity, symbol) {
     for(const balance of this.balances) {
       // foreach balances to see what balance is matched with symbol
       const { asset } = balance;
@@ -243,13 +243,13 @@ module.exports = class BinanceMargin {
       if (!symbol.startsWith(asset)){
         continue;
       }
-      // if amount is over borrowed, 
+      // if quantity is over borrowed,
       // we use borrowed for AUTO_REPAY effect
-      if(amount > balance.borrowed){
+      if(quantity > balance.borrowed){
         return balance.borrowed
       }
     }
-    return amount
+    return quantity
   }
 
   async cancelAll(symbol) {
