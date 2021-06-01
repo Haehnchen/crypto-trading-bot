@@ -1,4 +1,4 @@
-image: node:10
+image: hdthuan/node:10
 pipelines:
   default:
     - step:

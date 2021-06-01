@@ -1,4 +1,4 @@
-FROM node:10
+FROM hdthuan/node:10
 
 # Install build-essential, sqlite in order
 RUN apt-get update && apt-get install -y \
