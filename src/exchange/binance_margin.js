@@ -189,7 +189,7 @@ module.exports = class BinanceMargin {
         return ExchangeOrder.createRejectedFromOrder(order, `${e.code} - ${e.message}`);
       }
 
-      if (e.code && e.code === -1013 && payload.type === "STOP_LOSS_LIMIT" && payload.sideEffectType === "AUTO_REPAY") {
+      if (e.code && e.code === -1013 && payload.sideEffectType === "AUTO_REPAY") {
         this.logger.info(`Binance Margin: order create error: No need REPAY: ${JSON.stringify([e.code, e.message, order, payload])}`);
         return ExchangeOrder.createRejectedFromOrder(order, `${e.code} - ${e.message}`);
       }
