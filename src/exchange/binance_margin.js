@@ -176,8 +176,6 @@ module.exports = class BinanceMargin {
     try {
       result = await this.client.marginOrder(payload);
     } catch (e) {
-      this.logger.error(`Binance Margin: order create error: ${JSON.stringify([e.code, e.message, order, payload])}`);
-
       // @TODO: retry possible: [-3007,"You have pending transcation, please try again later." // typo "transcation" externally ;)
       // -2010: insufficient balance
       // -XXXX: borrow amount has exceed
@@ -187,8 +185,15 @@ module.exports = class BinanceMargin {
             e.message.toLowerCase().includes('borrow amount has exceed'))) ||
         (e.code && e.code === -2010)
       ) {
+        this.logger.error(`Binance Margin: order create error: ${JSON.stringify([e.code, e.message, order, payload])}`);
         return ExchangeOrder.createRejectedFromOrder(order, `${e.code} - ${e.message}`);
       }
+
+      if (e.code && e.code === -1013 && payload.type === "STOP_LOSS_LIMIT" && payload.sideEffectType === "AUTO_REPAY") {
+        this.logger.info(`Binance Margin: order create error: No need REPAY: ${JSON.stringify([e.code, e.message, order, payload])}`);
+        return ExchangeOrder.createRejectedFromOrder(order, `${e.code} - ${e.message}`);
+      }
+      this.logger.error(`Binance Margin: order create error: ${JSON.stringify([e.code, e.message, order, payload])}`);
 
       return undefined;
     }
@@ -236,16 +241,16 @@ module.exports = class BinanceMargin {
    * @param symbol the exchange symbol
    */
   overrideRepayQuantity(quantity, symbol) {
-    for(const balance of this.balances) {
+    for (const balance of this.balances) {
       // foreach balances to see what balance is matched with symbol
       const { asset } = balance;
       // the hacky way!!!
-      if (!symbol.startsWith(asset)){
+      if (!symbol.startsWith(asset)) {
         continue;
       }
       // if quantity is over borrowed,
       // we use borrowed for AUTO_REPAY effect
-      if(quantity > balance.borrowed){
+      if (quantity > balance.borrowed) {
         return balance.borrowed
       }
     }
