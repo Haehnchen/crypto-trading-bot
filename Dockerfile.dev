@@ -12,7 +12,7 @@ COPY . /usr/src/app
 # Bundle app source
 
 # Apply all patches in app
-RUN npm install --production \
+RUN npm install \
     && npm run postinstall
 
 EXPOSE 8080

@@ -168,6 +168,10 @@ module.exports = class BinanceMargin {
       if ((order.isLong() && position.isShort()) || (order.isShort() && position.isLong())) {
         payload.sideEffectType = 'AUTO_REPAY';
         payload.quantity = this.overrideRepayQuantity(payload.quantity, payload.symbol)
+        if (payload.quantity === 0) {
+          this.logger.info(`Binance Margin: order create error: No need REPAY: ${JSON.stringify([e.code, e.message, order, payload])}`);
+          return ExchangeOrder.createRejectedFromOrder(order, `No borrow - No repay`);
+        }
       }
     }
 
