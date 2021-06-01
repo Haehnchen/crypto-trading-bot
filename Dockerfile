@@ -9,8 +9,7 @@ WORKDIR /usr/src/app
 
 # Install app dependencies
 COPY package.json /usr/src/app/
-RUN npm install --production && \
-    npm cache clean --force
+RUN npm install --production
 
 # Bundle app source
 COPY . /usr/src/app
