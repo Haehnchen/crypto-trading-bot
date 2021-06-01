@@ -1,0 +1,9 @@
+FROM hdthuan/crypto-bot-pre-build:1
+# Install build-essential, sqlite in order
+WORKDIR /usr/src/app
+
+# Install app dependencies
+COPY . /usr/src/app
+
+EXPOSE 8080
+CMD ["npm", "run", "start"]

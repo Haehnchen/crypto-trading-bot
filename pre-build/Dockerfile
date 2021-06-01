@@ -8,14 +8,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /usr/src/app
 
 # Install app dependencies
-COPY package.json /usr/src/app/
-RUN npm install --production
-
-# Bundle app source
 COPY . /usr/src/app
+RUN npm install --production
 
 # Apply all patches in app
 RUN npm run postinstall
-
-EXPOSE 8080
-CMD ["npm", "run", "start"]
