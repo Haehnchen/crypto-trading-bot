@@ -7,6 +7,11 @@ module.exports = class LogsHttp {
 
   async getLogsPageVariables(request, response) {
     let excludeLevels = request.query.exclude_levels || [];
+    let limit = 200
+
+    if(request.query.limit) {
+      limit = parseInt(request.query.limit)
+    }
 
     if (excludeLevels.length === 0 && !('filters' in request.cookies)) {
       excludeLevels = ['debug'];
@@ -17,7 +22,7 @@ module.exports = class LogsHttp {
     });
 
     return {
-      logs: await this.logsRepository.getLatestLogs(excludeLevels),
+      logs: await this.logsRepository.getLatestLogs(excludeLevels, limit),
       levels: await this.logsRepository.getLevels(),
       form: {
         excludeLevels: excludeLevels
