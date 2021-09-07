@@ -68,7 +68,7 @@
                                                 <td class="no-wrap"><img src="/img/exchanges/{{ pair.exchange }}.png" title="{{ pair.exchange }}" alt="{{ pair.exchange }}" width="16px" height="16px"></td>
                                                 <td class="no-wrap row-pair"><a target="blank" href="/tradingview/{{ pair.exchange }}:{{ pair.symbol }}">{{ pair.symbol }}</td>
                                                 <td class="no-wrap">{{ pair.is_trading ? '<i class="fas fa-cart-plus font-weight-bold" title="Trade"></i>' : '<i class="fas fa-eye text-muted" title="Watch"></i>' }}</td>
-                                                <td class="no-wrap">{% if pair.is_trading %}{{ pair.trade_capital|default(0) }} / {{ pair.trade_currency_capital|default(0) }} {% endif %}</td>
+                                                <td class="no-wrap">{% if pair.is_trading %}{{ pair.trade_capital|default(0) }} / {{ pair.trade_currency_capital|default(0) }} / {{ pair.trade_balance_percent|default(0) }}% {% endif %}</td>
                                                 <td class="text-muted"><span class="span-md">{% if pair.strategies.length > 0 %}{{ pair.strategies|json_encode }}{% endif %}</span></td>
                                                 <td class="text-muted"><span class="span-md">{% if pair.strategies_trade.length > 0 %}{{ pair.strategies_trade|json_encode }}{% endif %}</span></td>
                                                 <td class="text-muted">
@@ -80,7 +80,7 @@
                                                 </td>
                                                 <td style="white-space: nowrap">{{ pair.process }}</td>
                                                 <td class="text-right"  style="white-space: nowrap">
-                                                    {% if pair.trade_capital > 0 or pair.trade_currency_capital > 0 %}
+                                                    {% if pair.trade_capital > 0 or pair.trade_currency_capital > 0 or pair.trade_balance_percent > 0 %}
                                                         <form action="/pairs/{{ pair.exchange }}-{{ pair.symbol }}" method="post" style="margin:0; padding:0">
                                                             <div class="btn-group btn-group-sm">
                                                                 {% if pair.has_position|default(false) == false and not pair.process %}

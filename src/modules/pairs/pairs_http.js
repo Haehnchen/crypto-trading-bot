@@ -19,15 +19,18 @@ module.exports = class PairsHttp {
 
         const tradeCapital = _.get(symbol, 'trade.capital', 0);
         const tradeCurrencyCapital = _.get(symbol, 'trade.currency_capital', 0);
+        const tradeBalancePercent = _.get(symbol, 'trade.balance_percent', 0);
 
         const item = {
           exchange: symbol.exchange,
           symbol: symbol.symbol,
           watchdogs: symbol.watchdogs,
-          is_trading: strategiesTrade.length > 0 || tradeCapital > 0 || tradeCurrencyCapital > 0,
+          is_trading:
+            strategiesTrade.length > 0 || tradeCapital > 0 || tradeCurrencyCapital > 0 || tradeBalancePercent > 0,
           has_position: position !== undefined,
           trade_capital: tradeCapital,
           trade_currency_capital: tradeCurrencyCapital,
+          trade_balance_percent: tradeBalancePercent,
           strategies: strategies,
           strategies_trade: strategiesTrade,
           weight: 0,
