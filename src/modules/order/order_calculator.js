@@ -29,30 +29,15 @@ module.exports = class OrderCalculator {
 
     const exchange = this.exchangeManager.get(exchangeName);
 
-    // spot exchanges wants to buy assets
-    if (!exchange.isInverseSymbol(symbol)) {
-      if (asset) {
-        return exchange.calculateAmount(asset, symbol);
-      }
-
-      const amount = balancePercent
-        ? (exchange.getBalance() * balancePercent) / 100
-        : await this.convertCurrencyToAsset(exchangeName, symbol, currency);
-
-      return amount ? exchange.calculateAmount(amount, symbol) : undefined;
+    let amountCurrency = balancePercent ? (exchange.getTradableBalance() * balancePercent) / 100 : currency;
+    let amountAsset = asset;
+    if (!amountAsset) {
+      amountAsset = await this.convertCurrencyToAsset(exchangeName, symbol, amountCurrency);
     }
-
-    // contracts exchange / pairs need inverse
-    if (currency) {
-      return exchange.calculateAmount(currency, symbol);
+    if (!amountCurrency) {
+      amountCurrency = await this.convertAssetToCurrency(exchangeName, symbol, asset);
     }
-
-    if (balancePercent) {
-      return (exchange.getBalance() * balancePercent) / 100;
-    }
-
-    const amount = await this.convertAssetToCurrency(exchangeName, symbol, asset);
-    return amount ? exchange.calculateAmount(amount, symbol) : undefined;
+    return exchange.calculateAmount(exchange.isInverseSymbol(symbol) ? amountCurrency : amountAsset, symbol);
   }
 
   async calculateOrderSize(exchangeName, symbol) {
