@@ -19,40 +19,24 @@ module.exports = class OrderCalculator {
    * @returns {Promise<?Number>}
    */
   async calculateOrderSizeCapital(exchangeName, symbol, capital) {
-    const asset = capital.getAsset();
-    const currency = capital.getCurrency();
     const balancePercent = capital.getBalance();
-
-    if (!asset && !currency && !balancePercent) {
-      throw new Error(`Invalid capital`);
-    }
-
     const exchange = this.exchangeManager.get(exchangeName);
 
-    // spot exchanges wants to buy assets
-    if (!exchange.isInverseSymbol(symbol)) {
-      if (asset) {
-        return exchange.calculateAmount(asset, symbol);
-      }
+    let amountAsset = capital.getAsset();
+    let amountCurrency = balancePercent
+      ? (exchange.getTradableBalance() * balancePercent) / 100
+      : capital.getCurrency();
 
-      const amount = balancePercent
-        ? (exchange.getBalance() * balancePercent) / 100
-        : await this.convertCurrencyToAsset(exchangeName, symbol, currency);
-
-      return amount ? exchange.calculateAmount(amount, symbol) : undefined;
+    if (!amountAsset && !amountCurrency) {
+      throw new Error(`Invalid capital`);
     }
-
-    // contracts exchange / pairs need inverse
-    if (currency) {
-      return exchange.calculateAmount(currency, symbol);
+    if (!amountAsset) {
+      amountAsset = await this.convertCurrencyToAsset(exchangeName, symbol, amountCurrency);
     }
-
-    if (balancePercent) {
-      return (exchange.getBalance() * balancePercent) / 100;
+    if (!amountCurrency) {
+      amountCurrency = await this.convertAssetToCurrency(exchangeName, symbol, amountAsset);
     }
-
-    const amount = await this.convertAssetToCurrency(exchangeName, symbol, asset);
-    return amount ? exchange.calculateAmount(amount, symbol) : undefined;
+    return exchange.calculateAmount(exchange.isInverseSymbol(symbol) ? amountCurrency : amountAsset, symbol);
   }
 
   async calculateOrderSize(exchangeName, symbol) {
