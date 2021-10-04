@@ -524,7 +524,8 @@ module.exports = class Bitfinex {
     const ws = new BFX({
       version: 2,
       transform: true,
-      autoOpen: true
+      autoReconnect: true,
+      packetWDDelay: 10 * 1000 // - watch-dog forced reconnection delay
     }).ws();
 
     ws.on('error', err => {
@@ -627,7 +628,8 @@ module.exports = class Bitfinex {
     const ws = new BFX({
       version: 2,
       transform: true,
-      autoOpen: true,
+      autoReconnect: true,
+      packetWDDelay: 10 * 1000, // - watch-dog forced reconnection delay
       apiKey: apiKey,
       apiSecret: apiSecret
     }).ws();
