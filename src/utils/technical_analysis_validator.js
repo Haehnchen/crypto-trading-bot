@@ -1,4 +1,4 @@
-const Resample = require('../utils/resample');
+const Resample = require('./resample');
 
 module.exports = class TechnicalAnalysisValidator {
   isValidCandleStickLookback(lookbackNewestFirst, period) {
@@ -11,7 +11,7 @@ module.exports = class TechnicalAnalysisValidator {
     }
 
     // check if candle to close no outside candle size with a little buffer
-    let factor = 1.76;
+    let factor = 2;
 
     // we only get candles if we trades inside this range
     // as low timeframes can be silent allow some failings
