@@ -691,13 +691,15 @@ module.exports = {
 
     const config = this.getConfig();
 
-    return mail.createTransport(
-      `smtps://${config.notify.mail.username}:${config.notify.mail.password}@${config.notify.mail.server}:${config
-        .notify.mail.password || 465}`,
-      {
-        from: config.notify.mail.username
-      }
-    );
+    return mail.createTransport({
+        host: config.notify.mail.server,
+        port: config.notify.mail.port,
+        secure: config.notify.mail.port == 465 ? true : false,
+        auth: {
+            user: config.notify.mail.username,
+            pass: config.notify.mail.password,
+        },
+    });
   },
 
   createTelegram: function() {
