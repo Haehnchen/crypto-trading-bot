@@ -81,6 +81,19 @@ module.exports = class Ftx {
         return CcxtUtil.createExchangeOrders(
           (await client.privateGetConditionalOrders()).result.map(r => client.parseOrder(r))
         );
+      },
+      createOrder: order => {
+        const request = {
+          args: {}
+        };
+
+        if (order.isReduceOnly()) {
+          request.args.reduceOnly = true;
+        }
+
+        if (order.getType() === Order.TYPE_STOP) {
+          request.args.stopPrice = order.getPrice();
+        }
       }
     });
 
