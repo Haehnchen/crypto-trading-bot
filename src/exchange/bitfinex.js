@@ -524,7 +524,11 @@ module.exports = class Bitfinex {
     const ws = new BFX({
       version: 2,
       transform: true,
-      autoOpen: true
+      ws: {
+        autoReconnect: true,
+        reconnectDelay: 10 * 1000,
+        packetWDDelay: 60 * 1000 // - watch-dog forced reconnection delay
+      }
     }).ws();
 
     ws.on('error', err => {
@@ -533,12 +537,6 @@ module.exports = class Bitfinex {
 
     ws.on('close', () => {
       me.logger.error(`Bitfinex: public websocket ${index} Connection closed; reconnecting soon`);
-
-      // retry connecting after some second to not bothering on high load
-      setTimeout(() => {
-        me.logger.info(`Bitfinex: public websocket ${index} Connection reconnect`);
-        ws.open();
-      }, 10000);
     });
 
     ws.on('open', () => {
@@ -627,9 +625,13 @@ module.exports = class Bitfinex {
     const ws = new BFX({
       version: 2,
       transform: true,
-      autoOpen: true,
       apiKey: apiKey,
-      apiSecret: apiSecret
+      apiSecret: apiSecret,
+      ws: {
+        autoReconnect: true,
+        reconnectDelay: 10 * 1000,
+        packetWDDelay: 60 * 1000 // - watch-dog forced reconnection delay
+      }
     }).ws();
 
     const me = this;
@@ -642,15 +644,9 @@ module.exports = class Bitfinex {
 
     ws.on('close', () => {
       me.logger.error('Bitfinex: Authenticated Websocket Connection closed; reconnecting soon');
-
-      // retry connecting after some second to not bothering on high load
-      setTimeout(() => {
-        me.logger.info('Bitfinex: Authenticated Websocket Connection reconnect');
-        ws.open();
-      }, 10000);
     });
 
-    ws.on('open', () => {
+    ws.once('open', () => {
       me.logger.debug('Bitfinex: Authenticated Websocket Connection open');
 
       // authenticate
