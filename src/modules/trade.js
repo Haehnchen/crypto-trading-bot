@@ -50,17 +50,17 @@ module.exports = class Trade {
       process.exit();
     });
 
-    const instanceId = crypto.randomBytes(4).toString('hex');
+    // const instanceId = crypto.randomBytes(4).toString('hex');
+    //
+    // const notifyActivePairs = this.instances.symbols.map(symbol => {
+    //   return `${symbol.exchange}.${symbol.symbol}`;
+    // });
 
-    const notifyActivePairs = this.instances.symbols.map(symbol => {
-      return `${symbol.exchange}.${symbol.symbol}`;
-    });
+    // const message = `Start: ${instanceId} - ${os.hostname()} - ${os.platform()} - ${moment().format()} - ${notifyActivePairs.join(
+    //   ', '
+    // )}`;
 
-    const message = `Start: ${instanceId} - ${os.hostname()} - ${os.platform()} - ${moment().format()} - ${notifyActivePairs.join(
-      ', '
-    )}`;
-
-    this.notify.send(message);
+    // this.notify.send(message);
 
     const me = this;
     const { eventEmitter } = this;
