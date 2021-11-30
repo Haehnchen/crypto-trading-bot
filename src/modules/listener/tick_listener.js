@@ -80,8 +80,9 @@ module.exports = class TickListener {
       // console.log('blocked')
     } else {
       this.notified[symbol.exchange + symbol.symbol + strategyKey] = new Date();
+      const debugMessage = this.getResultDebugMessage(strategy.options);
       this.notifier.send(
-        `[${signal} (${strategyKey})` + `] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask} - ${result.getDebug()}`
+        `[${signal} (${strategyKey})] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask} ${debugMessage}`
       );
 
       // log signal
@@ -155,9 +156,12 @@ module.exports = class TickListener {
     this.logger.info(
       [new Date().toISOString(), signal, strategyKey, symbol.exchange, symbol.symbol, ticker.ask].join(' ')
     );
+
+    const debugMessage = this.getResultDebugMessage(strategy.options);
     this.notifier.send(
-      `[${signal} (${strategyKey})] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask} - ${result.getDebug()}`
+      `[${signal} (${strategyKey})] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask} ${debugMessage}`
     );
+
     this.signalLogger.signal(
       symbol.exchange,
       symbol.symbol,
@@ -302,5 +306,9 @@ module.exports = class TickListener {
     const interval = minutes * unit * 1000;
     const number = Math.ceil(new Date().getTime() / interval) * interval;
     return new Date(number).getTime() - new Date().getTime();
+  }
+
+  getResultDebugMessage(result) {
+    return result && result.message ? result.message : '';
   }
 };
