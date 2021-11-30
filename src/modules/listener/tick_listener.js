@@ -153,7 +153,9 @@ module.exports = class TickListener {
     this.logger.info(
       [new Date().toISOString(), signal, strategyKey, symbol.exchange, symbol.symbol, ticker.ask].join(' ')
     );
-    this.notifier.send(`[${signal} (${strategyKey})] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask}`);
+    this.notifier.send(
+      `[${signal} (${strategyKey})] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask} - ${result.getDebug()}`
+    );
     this.signalLogger.signal(
       symbol.exchange,
       symbol.symbol,
