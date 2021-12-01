@@ -40,52 +40,64 @@
 <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 
 
-  <script type="text/javascript">
-  new TradingView.widget(
-    {
-      "autosize": true,
-      "symbol": "{{ symbol }}",
-            "interval": "15",
-            "theme": "Light",
-            "style": "1",
-            "locale": "en",
-            "toolbar_bg": "#f1f3f6",
-            "enable_publishing": false,
-            "allow_symbol_change": true,
-            "container_id": "tradingview",
-            "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-            "studies": [
-                "BB@tv-basicstudies",
-                "CCI@tv-basicstudies",
-                "MACD@tv-basicstudies",
-                "MAExp@tv-basicstudies",
-                "RSI@tv-basicstudies",
-                "StochasticRSI@tv-basicstudies"
-            ],
+<script type="text/javascript">
+  const td = new TradingView.widget(
+  {
+    'autosize': true,
+    'symbol': "{{ symbol }}",
+            'interval': '15',
+            'theme': 'Light',
+            'style': '1',
+            'locale': 'en',
+            'toolbar_bg': '#f1f3f6',
+            'enable_publishing': false,
+            'allow_symbol_change': true,
+            'container_id': 'tradingview',
+            'timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+            'studies': [
+                {
+                 "id": "MAExp@tv-basicstudies",
+                 "inputs": {
+                   "length": 200
+                 }
+               },{
+                 "id": "MAExp@tv-basicstudies",
+                 "inputs": {
+                   "length": 40
+                 }
+               },
+            ]
         }
     );
 
     new TradingView.widget(
         {
-            "autosize": true,
-            "symbol": "{{ symbol }}",
-            "interval": "60",
-            "theme": "Light",
-            "style": "1",
-            "locale": "en",
-            "toolbar_bg": "#f1f3f6",
-            "enable_publishing": false,
-            "allow_symbol_change": true,
-            "container_id": "tradingview_2",
-            "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-            "studies": [
-                "BB@tv-basicstudies",
-                "CCI@tv-basicstudies",
-                "MACD@tv-basicstudies",
-                "MAExp@tv-basicstudies",
-                "RSI@tv-basicstudies",
-                "StochasticRSI@tv-basicstudies"
-            ],
+            'autosize': true,
+            'symbol': "{{ symbol }}",
+            'interval': '60',
+            'theme': 'Light',
+            'style': '1',
+            'locale': 'en',
+            'toolbar_bg': '#f1f3f6',
+            'enable_publishing': false,
+            'allow_symbol_change': true,
+            'container_id': 'tradingview_2',
+            'timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+            'studies': [
+                {
+                 "id": "MAExp@tv-basicstudies",
+                 // "version": 60,
+                 "inputs": {
+                   "length": 200
+                 }
+               },{
+                 "id": "MAExp@tv-basicstudies",
+                 // "version": 60,
+                 "inputs": {
+                   "length": 40
+                 }
+               },
+            ]
         }
     );
 </script>
