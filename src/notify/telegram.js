@@ -1,3 +1,5 @@
+const promiseRetry = require('promise-retry');
+
 module.exports = class Telegram {
   constructor(telegraf, config, logger) {
     this.telegraf = telegraf;
@@ -12,9 +14,28 @@ module.exports = class Telegram {
       this.logger.error('Telegram: No chat id given');
       return;
     }
-    this.telegraf.telegram.sendMessage(chatId, message).catch(err => {
-      this.logger.error(`Mailer: ${JSON.stringify(err)}`);
-      console.log(err);
-    });
+
+    const me = this;
+
+    promiseRetry(
+      function(retry, number) {
+        return me.telegraf.telegram.sendMessage(chatId, message).catch(function(err) {
+          if (err.code === 429) {
+            retry(err);
+          }
+
+          throw err;
+        });
+      },
+      {
+        minTimeout: 3000
+      }
+    ).then(
+      function() {},
+      function(err) {
+        this.logger.error(`Mailer: ${JSON.stringify(err)}`);
+        console.log(err);
+      }
+    );
   }
 };
