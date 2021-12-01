@@ -17,21 +17,24 @@ module.exports = class Dema {
 
   period(indicatorPeriod, options) {
     const allCandles = indicatorPeriod.getIndicator('candles');
-    const lastCandle = allCandles[allCandles.length - 1];
-    const penultimateCandle = allCandles[allCandles.length - 2];
+    const lastCandle = indicatorPeriod.getLatestIndicator('candles');
+    const compareCandleIndex =
+      options.compareCandle > allCandles.length ? 0 : allCandles.length - options.compareCandle - 1;
+    const compareCandle = allCandles[compareCandleIndex];
 
     const debug = {
       lastCandle: lastCandle,
-      penultimateCandle: penultimateCandle
+      compareCandle: compareCandle,
+      compareCandleIndex: compareCandleIndex
     };
 
     const pricePercentage = lastCandle.close * options.thresholdPercentage;
     const signal = SignalResult.createEmptySignal(debug);
 
-    if (penultimateCandle !== undefined) {
-      if (penultimateCandle.close * 1 + pricePercentage <= lastCandle.high) {
+    if (compareCandle !== undefined) {
+      if (compareCandle.close * 1 + pricePercentage <= lastCandle.high) {
         signal.setSignal('long');
-      } else if (penultimateCandle.close * 1 - penultimateCandle.close >= lastCandle.low) {
+      } else if (compareCandle.close * 1 - compareCandle.close >= lastCandle.low) {
         signal.setSignal('short');
       }
     }
@@ -46,6 +49,7 @@ module.exports = class Dema {
   getOptions() {
     return {
       period: '1h',
+      compareCandle: 60,
       thresholdPercentage: 0.05
     };
   }
