@@ -48,7 +48,7 @@ module.exports = class Dema {
 
   getOptions() {
     return {
-      period: '1h',
+      period: '1m',
       compareCandle: 60,
       thresholdPercentage: 0.05
     };

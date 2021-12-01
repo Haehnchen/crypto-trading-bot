@@ -11,11 +11,11 @@ module.exports = class Dema {
     }
 
     indicatorBuilder.add('adx_dmi', 'adx_dmi', options.period, {
-      period: 14
+      period: options.adx_length
     });
   }
 
-  period(indicatorPeriod, options) {
+  period(indicatorPeriod) {
     const adx = indicatorPeriod.getLatestIndicator('adx_dmi');
     const lastSignal = indicatorPeriod.getLastSignal();
     const debug = {
@@ -42,8 +42,8 @@ module.exports = class Dema {
 
   getOptions() {
     return {
-      period: '1h',
-      thresholdPercentage: 0.05
+      period: '15m',
+      adx_length: 14
     };
   }
 };
