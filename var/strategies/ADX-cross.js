@@ -2,7 +2,7 @@ const SignalResult = require('../../src/modules/strategy/dict/signal_result.js')
 
 module.exports = class Dema {
   getName() {
-    return 'ADX crossed';
+    return 'ADX cross';
   }
 
   buildIndicator(indicatorBuilder, options) {
