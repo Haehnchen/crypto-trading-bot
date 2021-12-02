@@ -50,7 +50,11 @@ module.exports = class Trade {
       process.exit();
     });
 
-    const message = `Signals bot restarted - ${moment().format()} `;
+    const notifyActivePairs = this.instances.symbols.map(symbol => {
+      return `${symbol.exchange}.${symbol.symbol}`;
+    });
+
+    const message = `Signals bot restarted - ${moment().format()} - Pairs active: ${notifyActivePairs.join(', ')}`;
 
     this.notify.send(message);
 
