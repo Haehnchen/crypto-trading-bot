@@ -51,6 +51,7 @@
     "twig": "^1.15.1",
     "typescript": "^3.9.2",
     "winston": "^3.2.1",
+    "winston-telegram": "^2.5.0",
     "ws": "^7.3.0",
     "zero-fill": "^2.2.3"
   },
