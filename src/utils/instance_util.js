@@ -103,13 +103,14 @@ module.exports = {
   /**
    * Init helper for Binance to fetch all USDT pairs with spot only
    * @param callback
+   * @param ignoreCrossMargin
    * @returns {Promise<unknown>}
    */
-  binanceInitSpotUsd: async callback => {
+  binanceInitSpotUsd: async (callback, filterCrossMargin = true) => {
     const crossMarginPairs = await module.exports.binanceCrossMarginPairs();
 
     return module.exports.binanceInitUsd((result, pair) => {
-      if (pair.isMarginTradingAllowed && crossMarginPairs.includes(pair.baseAsset)) {
+      if (filterCrossMargin && pair.isMarginTradingAllowed && crossMarginPairs.includes(pair.baseAsset)) {
         return undefined;
       }
 
