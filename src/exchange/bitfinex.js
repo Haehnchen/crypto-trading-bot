@@ -7,9 +7,11 @@ const ExchangeCandlestick = require('../dict/exchange_candlestick');
 const Ticker = require('../dict/ticker');
 const Position = require('../dict/position');
 
-const TickerEvent = require('../event/ticker_event.js');
+const TickerEvent = require('../event/ticker_event');
 const ExchangeOrder = require('../dict/exchange_order');
-const OrderUtil = require('../utils/order_util');
+
+// const BFX_PRICE_PRECISION = 5; // https://docs.bitfinex.com/docs#price-precision
+// const BFX_AMOUNT_PRECISION = 8; // https://docs.bitfinex.com/docs#amount-precision
 
 module.exports = class Bitfinex {
   constructor(eventEmitter, logger, requestClient, candleImport) {
@@ -17,9 +19,8 @@ module.exports = class Bitfinex {
     this.candleImport = candleImport;
     this.logger = logger;
     this.positions = {};
-    this.orders = [];
+    this.orders = {};
     this.requestClient = requestClient;
-    this.exchangePairs = {};
     this.tickers = {};
   }
 
@@ -60,16 +61,7 @@ module.exports = class Bitfinex {
     if (!isAuthed) {
       this.logger.info('Bitfinex: Starting as anonymous; no trading possible');
     } else {
-      const me = this;
       this.client = this.openAuthenticatedPublicWebsocket(config.key, config.secret);
-
-      setInterval(
-        (function f() {
-          me.syncSymbolDetails();
-          return f;
-        })(),
-        60 * 60 * 30 * 1000
-      );
     }
   }
 
@@ -89,7 +81,13 @@ module.exports = class Bitfinex {
     const myPositions = Bitfinex.createPositions([position]);
 
     if (myPositions.length > 0) {
-      this.positions[myPositions[0].symbol] = myPositions[0];
+      const [firstPosition] = myPositions;
+      // copy position create time
+      if (this.positions[firstPosition.symbol] && this.positions[firstPosition.symbol].createdAt) {
+        firstPosition.createdAt = this.positions[firstPosition.symbol].createdAt;
+      }
+
+      this.positions[firstPosition.symbol] = firstPosition;
     }
   }
 
@@ -158,119 +156,75 @@ module.exports = class Bitfinex {
   }
 
   async getOrders() {
-    const orders = [];
-
-    for (const key in this.orders) {
-      if (this.orders[key].status === 'open') {
-        orders.push(this.orders[key]);
-      }
-    }
-
-    return orders;
+    return Object.values(this.orders).filter(order => order.status === 'open');
   }
 
   async getOrdersForSymbol(symbol) {
-    const orders = [];
-
-    for (const key in this.orders) {
-      const order = this.orders[key];
-
-      if (order.status === 'open' && order.symbol === symbol) {
-        orders.push(order);
-      }
-    }
-
-    return orders;
+    return Object.values(this.orders).filter(order => order.status === 'open' && order.symbol === symbol);
   }
 
   /**
-   * LTC: 0.008195 => 0.00820
+   * https://docs.bitfinex.com/docs#price-precision
+   * The precision level of all trading prices is based on significant figures. All pairs on Bitfinex use up to 5 significant digits and up to 8 decimals (e.g. 1.2345, 123.45, 1234.5, 0.00012345). Prices submit with a precision larger than 5 will be cut by the API.
    *
    * @param price
-   * @param symbol
-   * @returns {*}
+   * @returns {float}
    */
-  calculatePrice(price, symbol) {
-    const size =
-      !(symbol in this.exchangePairs) || !this.exchangePairs[symbol].tick_size
-        ? '0.001'
-        : this.exchangePairs[symbol].tick_size;
-
-    return OrderUtil.calculateNearestSize(price, size);
+  calculatePrice(price) {
+    // return Number.parseFloat(Number.parseFloat(price).toPrecision(BFX_PRICE_PRECISION));
+    return Number.parseFloat(price);
   }
 
   /**
-   * LTC: 0.65 => 1
+   * https://docs.bitfinex.com/docs#amount-precision
+   * The amount field allows up to 8 decimals. Anything exceeding this will be rounded to the 8th decimal.
    *
    * @param amount
-   * @param symbol
    * @returns {*}
    */
-  calculateAmount(amount, symbol) {
-    const size =
-      !(symbol in this.exchangePairs) || !this.exchangePairs[symbol].lot_size
-        ? '0.001'
-        : this.exchangePairs[symbol].lot_size;
-
-    return OrderUtil.calculateNearestSize(amount, size);
+  calculateAmount(amount) {
+    // return Number.parseFloat(Number.parseFloat(amount).toPrecision(BFX_AMOUNT_PRECISION));
+    return Number.parseFloat(amount);
   }
 
   async getPositions() {
-    const positions = [];
-
-    for (const symbol in this.positions) {
-      let position = this.positions[symbol];
-
-      if (position.entry && this.tickers[position.symbol]) {
-        if (position.side === 'long') {
-          position = Position.createProfitUpdate(
-            position,
-            (this.tickers[position.symbol].bid / position.entry - 1) * 100
-          );
-        } else if (position.side === 'short') {
-          position = Position.createProfitUpdate(
-            position,
-            (position.entry / this.tickers[position.symbol].ask - 1) * 100
-          );
-        }
-      }
-
-      positions.push(position);
-    }
-
-    return positions;
+    return new Promise(resolve => {
+      const positions = Object.values(this.positions).map(position =>
+        position.entry && this.tickers[position.symbol]
+          ? Position.createProfitUpdate(
+              position,
+              (position.side === Position.SIDE_LONG
+                ? this.tickers[position.symbol].bid / position.entry - 1
+                : position.entry / this.tickers[position.symbol].ask - 1) * 100
+            )
+          : position
+      );
+      resolve(positions);
+    });
   }
 
   getPositionForSymbol(symbol) {
     return new Promise(resolve => {
-      for (const key in this.positions) {
-        const position = this.positions[key];
-
-        if (position.symbol === symbol) {
-          resolve(position);
-          return;
-        }
-      }
-
-      return resolve();
+      const position = Object.values(this.positions).find(pos => pos.symbol === symbol);
+      resolve(position);
     });
   }
 
   async cancelOrder(id) {
-    const order = await this.findOrderById(id);
+    // external lib does not support string as id; must be int
+    // is failing in a timeout
+    let cancelOrderId = id;
+    if (typeof id === 'string' && id.match(/^\d+$/)) {
+      cancelOrderId = parseInt(id, 10);
+    }
+
+    const order = await this.findOrderById(cancelOrderId);
     if (!order) {
       return undefined;
     }
 
-    // external lib does not support string as id; must be int
-    // is failing in a timeout
-    if (typeof id === 'string' && id.match(/^\d+$/)) {
-      id = parseInt(id);
-    }
-
-    let result;
     try {
-      result = await this.client.cancelOrder(id);
+      await this.client.cancelOrder(cancelOrderId);
     } catch (e) {
       this.logger.error(`Bitfinex: cancel order error: ${e}`);
 
@@ -292,64 +246,17 @@ module.exports = class Bitfinex {
   }
 
   async findOrderById(id) {
-    return (await this.getOrders()).find(order => order.id === id || order.id == id);
+    const orders = await this.getOrders();
+    return orders.find(order => parseInt(order.id, 10) === id);
   }
 
   async cancelAll(symbol) {
-    const orders = [];
-
-    for (const order of await this.getOrdersForSymbol(symbol)) {
-      orders.push(await this.cancelOrder(order.id));
-    }
-
-    return orders;
-  }
-
-  async syncSymbolDetails() {
-    this.logger.debug('Bitfinex: Sync symbol details');
-
-    const result = await this.requestClient.executeRequestRetry(
-      {
-        url: 'https://api.bitfinex.com/v1/symbols_details',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
-        }
-      },
-      r => {
-        return r.response && r.response.statusCode >= 500;
-      }
+    const orders = await this.getOrdersForSymbol(symbol);
+    return Promise.all(
+      orders.map(o => {
+        return this.cancelOrder(o.id);
+      })
     );
-
-    const exchangePairs = {};
-
-    JSON.parse(result.body)
-      .filter(product => product.margin === true)
-      .forEach(product => {
-        const minSize = parseFloat(product.minimum_order_size);
-        let prec = 0;
-
-        if (minSize > 130) {
-          prec = 4;
-        } else if (minSize > 30) {
-          prec = 3;
-        } else if (minSize > 1) {
-          prec = 2;
-        } else if (minSize > 0.1) {
-          prec = 1;
-        }
-
-        const increment = `0.${'0'.repeat(
-          prec + product.price_precision - (product.pair.substring(3, 6).toUpperCase() === 'USD' ? 3 : 0)
-        )}1`;
-
-        exchangePairs[product.pair.substring(0, 3).toUpperCase()] = {
-          lot_size: increment,
-          tick_size: increment
-        };
-      });
-
-    this.exchangePairs = exchangePairs;
   }
 
   /**
@@ -359,7 +266,7 @@ module.exports = class Bitfinex {
    */
   triggerOrder(order) {
     if (!(order instanceof ExchangeOrder)) {
-      throw 'Invalid order given';
+      throw new Error(`Invalid order given`);
     }
 
     // dont overwrite state closed order
@@ -387,12 +294,8 @@ module.exports = class Bitfinex {
       // order.reject_reason = 'post only'
     }
 
-    const bitfinex_id = order.id;
-    const created_at = order.status;
-    // let filled_size = n(position[7]).subtract(ws_order[6]).format('0.00000000')
-    const bitfinex_status = order.status;
+    const bitfinexId = order.id;
     const { price } = order;
-    const { price_avg } = order;
 
     let orderType;
     switch (order.type.toLowerCase().replace(/[\W_]+/g, '')) {
@@ -417,14 +320,15 @@ module.exports = class Bitfinex {
     }
 
     const orderValues = {};
-    if (order._fieldKeys) {
-      order._fieldKeys.map(k => {
+    if ('_fieldKeys' in order) {
+      const { _fieldKeys: fieldKeys } = order;
+      fieldKeys.forEach(k => {
         orderValues[k] = order[k];
       });
     }
 
     return new ExchangeOrder(
-      bitfinex_id,
+      bitfinexId,
       Bitfinex.formatSymbol(order.symbol),
       status,
       price,
@@ -490,7 +394,7 @@ module.exports = class Bitfinex {
           Bitfinex.formatSymbol(position.symbol),
           position.amount < 0 ? 'short' : 'long',
           position.amount,
-          undefined,
+          position.plPerc,
           new Date(),
           position.basePrice,
           new Date()
@@ -502,7 +406,7 @@ module.exports = class Bitfinex {
     return symbol.substring(0, 1) === 't' ? symbol.substring(1) : symbol;
   }
 
-  isInverseSymbol(symbol) {
+  isInverseSymbol() {
     return false;
   }
 
@@ -522,9 +426,12 @@ module.exports = class Bitfinex {
     me.logger.debug(`Bitfinex: public websocket ${index} chunks connecting: ${JSON.stringify(subscriptions)}`);
 
     const ws = new BFX({
-      version: 2,
       transform: true,
-      autoOpen: true
+      ws: {
+        autoReconnect: true,
+        reconnectDelay: 10 * 1000,
+        packetWDDelay: 60 * 1000 // - watch-dog forced reconnection delay
+      }
     }).ws();
 
     ws.on('error', err => {
@@ -533,15 +440,9 @@ module.exports = class Bitfinex {
 
     ws.on('close', () => {
       me.logger.error(`Bitfinex: public websocket ${index} Connection closed; reconnecting soon`);
-
-      // retry connecting after some second to not bothering on high load
-      setTimeout(() => {
-        me.logger.info(`Bitfinex: public websocket ${index} Connection reconnect`);
-        ws.open();
-      }, 10000);
     });
 
-    ws.on('open', () => {
+    ws.once('open', () => {
       me.logger.info(
         `Bitfinex: public websocket ${index} connection open. Subscription to ${subscriptions.length} channels`
       );
@@ -627,9 +528,13 @@ module.exports = class Bitfinex {
     const ws = new BFX({
       version: 2,
       transform: true,
-      autoOpen: true,
       apiKey: apiKey,
-      apiSecret: apiSecret
+      apiSecret: apiSecret,
+      ws: {
+        autoReconnect: true,
+        reconnectDelay: 10 * 1000,
+        packetWDDelay: 60 * 1000 // - watch-dog forced reconnection delay
+      }
     }).ws();
 
     const me = this;
@@ -642,15 +547,9 @@ module.exports = class Bitfinex {
 
     ws.on('close', () => {
       me.logger.error('Bitfinex: Authenticated Websocket Connection closed; reconnecting soon');
-
-      // retry connecting after some second to not bothering on high load
-      setTimeout(() => {
-        me.logger.info('Bitfinex: Authenticated Websocket Connection reconnect');
-        ws.open();
-      }, 10000);
     });
 
-    ws.on('open', () => {
+    ws.once('open', () => {
       me.logger.debug('Bitfinex: Authenticated Websocket Connection open');
 
       // authenticate

@@ -29,7 +29,7 @@ program
       throw new Error('Not all options are given');
     }
 
-    await services.boot();
+    await services.boot(__dirname);
 
     const cmd = new Backfill();
     await cmd.execute(options.exchange, options.symbol, options.period, options.date);

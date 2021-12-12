@@ -237,7 +237,7 @@ module.exports = class Backtest {
           // Entry Position Details
           const entrySignalType = lastPosition.result._signal; // Long or Short
           const entryPrice = lastPosition.price; // Price during the trade entry
-          const tradedQuantity = Number((workingCapital / entryPrice).toFixed(2)); // Quantity
+          const tradedQuantity = Number((workingCapital / entryPrice)); // Quantity
 
           // Exit Details
           const exitPrice = signalObject.price; // Price during trade exit

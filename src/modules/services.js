@@ -43,6 +43,7 @@ const PairConfig = require('../modules/pairs/pair_config');
 const SystemUtil = require('../modules/system/system_util');
 const TechnicalAnalysisValidator = require('../utils/technical_analysis_validator');
 const WinstonSqliteTransport = require('../utils/winston_sqlite_transport');
+const WinstonTelegramLogger = require('winston-telegram');
 const LogsHttp = require('./system/logs_http');
 const LogsRepository = require('../modules/repository/logs_repository');
 const TickerLogRepository = require('../modules/repository/ticker_log_repository');
@@ -172,7 +173,12 @@ module.exports = {
       return backtest;
     }
 
-    return (backtest = new Backtest(this.getInstances(), this.getStrategyManager(), this.getExchangeCandleCombine(), parameters.projectDir));
+    return (backtest = new Backtest(
+      this.getInstances(),
+      this.getStrategyManager(),
+      this.getExchangeCandleCombine(),
+      parameters.projectDir
+    ));
   },
 
   getStopLossCalculator: function() {
@@ -297,7 +303,7 @@ module.exports = {
       return logger;
     }
 
-    return (logger = createLogger({
+    logger = createLogger({
       format: format.combine(format.timestamp(), format.json()),
       transports: [
         new transports.File({
@@ -313,7 +319,23 @@ module.exports = {
           table: 'logs'
         })
       ]
-    }));
+    });
+
+    const config = this.getConfig();
+    const telegram = _.get(config, 'log.telegram');
+
+    if (
+      telegram &&
+      telegram.chatId &&
+      telegram.chatId.length > 0 &&
+      telegram.token &&
+      telegram.token.length > 0 &&
+      telegram.chatId.length > 0
+    ) {
+      logger.add(new WinstonTelegramLogger(telegram));
+    }
+
+    return logger;
   },
 
   getNotifier: function() {
@@ -678,7 +700,7 @@ module.exports = {
       this.getLogsRepository(),
       this.getTickerLogRepository(),
       this.getExchangePositionWatcher(),
-      this.getPairStateManager(),
+      this.getPairStateManager()
     );
   },
 
@@ -691,13 +713,15 @@ module.exports = {
 
     const config = this.getConfig();
 
-    return mail.createTransport(
-      `smtps://${config.notify.mail.username}:${config.notify.mail.password}@${config.notify.mail.server}:${config
-        .notify.mail.password || 465}`,
-      {
-        from: config.notify.mail.username
+    return mail.createTransport({
+      host: config.notify.mail.server,
+      port: config.notify.mail.port,
+      secure: config.notify.mail.port == 465 ? true : false,
+      auth: {
+        user: config.notify.mail.username,
+        pass: config.notify.mail.password
       }
-    );
+    });
   },
 
   createTelegram: function() {
