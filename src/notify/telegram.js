@@ -33,7 +33,7 @@ module.exports = class Telegram {
     ).then(
       function() {},
       function(err) {
-        this.logger.error(`Mailer: ${JSON.stringify(err)}`);
+        me.logger.error(`Mailer: ${JSON.stringify(err)}`);
         console.log(err);
       }
     );
