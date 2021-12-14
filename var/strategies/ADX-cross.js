@@ -15,7 +15,7 @@ module.exports = class Dema {
     });
   }
 
-  period(indicatorPeriod) {
+  period(indicatorPeriod, options) {
     const adx = indicatorPeriod.getLatestIndicator('adx_dmi');
     const lastSignal = indicatorPeriod.getLastSignal();
     const debug = {
@@ -25,7 +25,7 @@ module.exports = class Dema {
 
     const signal = SignalResult.createEmptySignal(debug);
 
-    if (adx.adx > 20) {
+    if (adx !== undefined && adx.adx >= options.threshold) {
       if (adx.pdi > adx.mdi && lastSignal !== 'long') {
         signal.setSignal('long');
       } else if (adx.pdi < adx.mdi && lastSignal !== 'short') {
@@ -43,6 +43,7 @@ module.exports = class Dema {
   getOptions() {
     return {
       period: '15m',
+      threshold: 20,
       adx_length: 14
     };
   }
