@@ -70,7 +70,7 @@ module.exports = class TickListener {
     }
 
     const signalWindow = moment()
-      .subtract(30, 'minutes')
+      .subtract(120, 'minutes')
       .toDate();
 
     if (
