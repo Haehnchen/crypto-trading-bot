@@ -6,6 +6,13 @@ const OurOrder = require('../../src/dict/order');
 const ExchangeOrder = require('../../src/dict/exchange_order');
 const Ticker = require('../../src/dict/ticker');
 
+const createResponse = function(filename) {
+  const response = JSON.parse(fs.readFileSync(`${__dirname}/bitfinex/${filename}`, 'utf8')).map(
+    item => Object.assign(item, { _fieldKeys: ['status'] }) // fake magic object of lib
+  );
+  return response;
+};
+
 describe('#bitfinex exchange implementation', function() {
   it('positions are extracted', () => {
     const pos = Bitfinex.createPositions(
@@ -43,47 +50,58 @@ describe('#bitfinex exchange implementation', function() {
     assert.equal(orders[0].raw.status, 'ACTIVE');
   });
 
-  it('test that symbol sizes are provided', async () => {
+  it('test calculate amount', async () => {
+    // Amount Precision // https://docs.bitfinex.com/docs#amount-precision
+    // The amount field allows up to 8 decimals. Anything exceeding this will be rounded to the 8th decimal.
     const bitfinex = new Bitfinex(
       {},
       {
         debug: () => {}
       },
-      {
-        executeRequestRetry: async () => {
-          return {
-            body: JSON.stringify([
-              {
-                pair: 'btcusd',
-                price_precision: 5,
-                initial_margin: '30.0',
-                minimum_margin: '15.0',
-                maximum_order_size: '2000.0',
-                minimum_order_size: '0.004',
-                expiration: 'NA',
-                margin: true
-              },
-              {
-                pair: 'ltcbtc',
-                price_precision: 2,
-                initial_margin: '30.0',
-                minimum_margin: '15.0',
-                maximum_order_size: '5000.0',
-                minimum_order_size: '0.4',
-                expiration: 'NA',
-                margin: true
-              }
-            ])
-          };
-        }
-      }
+      {}
     );
 
-    await bitfinex.syncSymbolDetails();
+    assert.equal(bitfinex.calculateAmount(1234.5678912, 'BTC'), 1234.5678912);
+    assert.equal(bitfinex.calculateAmount(1.2345678912, 'LTC'), 1.2345678912);
+    assert.equal(bitfinex.calculateAmount(0.00012345678912345, 'FOOBAR'), 0.00012345678912345);
+  });
 
-    assert.equal(bitfinex.calculateAmount(1234.44444, 'BTC'), 1234.444);
-    assert.equal(bitfinex.calculateAmount(1234.444, 'LTC'), 1234.4439);
-    assert.equal(bitfinex.calculateAmount(1234.444, 'FOOBAR'), 1234.444);
+  it('test calculate price', async () => {
+    // Price Precision https://docs.bitfinex.com/docs#price-precision
+    // The precision level of all trading prices is based on significant figures. All pairs on Bitfinex use up to 5 significant digits and up to 8 decimals (e.g. 1.2345, 123.45, 1234.5, 0.00012345). Prices submit with a precision larger than 5 will be cut by the API.
+    // No need to round on take actions client side
+    const bitfinex = new Bitfinex(
+      {},
+      {
+        debug: () => {}
+      },
+      {}
+    );
+
+    assert.equal(bitfinex.calculatePrice(1234.5678912, 'BTC'), 1234.5678912);
+    assert.equal(bitfinex.calculatePrice(1.2345678912, 'LTC'), 1.2345678912);
+    assert.equal(bitfinex.calculatePrice(0.00010203451, 'FOOBAR'), 0.00010203451);
+  });
+
+  it('test find positions', async () => {
+    const bitfinex = new Bitfinex();
+
+    bitfinex.tickers.BTCUSD = new Ticker('foobar', 'BTCUSD', undefined, 13.12, 13.13);
+
+    bitfinex.onPositionUpdate(Position.unserialize(['tBTCUSD', 'ACTIVE', 0.1, 12.12]));
+    bitfinex.onPositionUpdate(Position.unserialize(['tLTCUSD', 'CLOSED', 0.1, 12.12]));
+
+    const position = await bitfinex.getPositionForSymbol('BTCUSD');
+    delete position.updatedAt;
+    delete position.createdAt;
+    assert.deepEqual(position, {
+      amount: 0.1,
+      entry: 12.12,
+      profit: undefined,
+      raw: undefined,
+      side: 'long',
+      symbol: 'BTCUSD'
+    });
   });
 
   it('test that order options are created (short)', async () => {
@@ -406,8 +424,8 @@ describe('#bitfinex exchange implementation', function() {
 
     const exchangeOrder = await bitfinex.cancelAll('FOOUSD');
 
-    assert.strictEqual(exchangeOrder.find(o => o.id == 25035356).id, 25035356);
-    assert.strictEqual(exchangeOrder.find(o => o.id == 55555).id, '55555');
+    assert.strictEqual(exchangeOrder.find(o => o.id === 25035356).id, 25035356);
+    assert.strictEqual(exchangeOrder.find(o => o.id === '55555').id, '55555');
 
     assert.strictEqual(Object.keys(bitfinex.orders).length, 0);
 
@@ -496,11 +514,4 @@ describe('#bitfinex exchange implementation', function() {
     await bitfinex.cancelOrder('25035356');
     assert.strictEqual(cancelIds.includes(25035356), true);
   });
-
-  let createResponse = function(filename) {
-    return JSON.parse(fs.readFileSync(`${__dirname}/bitfinex/${filename}`, 'utf8')).map(item => {
-      item._fieldKeys = ['status']; // fake magic object of lib
-      return item;
-    });
-  };
 });
