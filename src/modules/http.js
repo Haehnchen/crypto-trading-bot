@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const moment = require('moment');
 const OrderUtil = require('../utils/order_util');
 
+const backtestMap = {};
 module.exports = class Http {
   constructor(
     systemUtil,
@@ -92,7 +93,13 @@ module.exports = class Http {
       strict_variables: false
     });
 
-    app.use(express.urlencoded({ limit: '12mb', extended: true, parameterLimit: 50000 }));
+    app.use(
+      express.urlencoded({
+        limit: '12mb',
+        extended: true,
+        parameterLimit: 50000
+      })
+    );
     app.use(cookieParser());
     app.use(compression());
     app.use(express.static(`${this.projectDir}/web/static`, { maxAge: 3600000 * 24 }));
@@ -156,18 +163,26 @@ module.exports = class Http {
         };
       });
 
-      const backtests = await Promise.all(asyncs.map(fn => fn()));
-
-      // single details view
-      if (backtests.length === 1) {
-        res.render('../templates/backtest_submit.html.twig', backtests[0].result);
-        return;
-      }
-
-      // multiple view
-      res.render('../templates/backtest_submit_multiple.html.twig', {
-        backtests: backtests
+      const key = moment().unix();
+      backtestMap[key] = Promise.all(asyncs.map(fn => fn())).then(values => {
+        backtestMap[key] = values;
       });
+
+      console.log(backtestMap[key]);
+      // // single details view
+      // if (backtests.length === 1) {
+      //   res.render('../templates/backtest_submit.html.twig', backtests[0].result);
+      //   return;
+      // }
+      //
+      // // multiple view
+      // res.render('../templates/backtest_submit_multiple.html.twig', {
+      //   backtests: backtests
+      // });
+    });
+
+    app.get('/backtest/result/:backtestKey', (req, res) => {
+      res.send({ ready: backtestMap[req.params.backtestKey] });
     });
 
     app.get('/tradingview/:symbol', (req, res) => {
