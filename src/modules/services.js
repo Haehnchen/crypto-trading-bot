@@ -151,11 +151,11 @@ module.exports = {
       return db;
     }
 
-    const myDb = Sqlite('bot.db');
+    const myDb = Sqlite('C:\\temp\\crypto-trading-bot\\bot.db');
     myDb.pragma('journal_mode = WAL');
 
     myDb.pragma('SYNCHRONOUS = 1;');
-    myDb.pragma('LOCKING_MODE = EXCLUSIVE;');
+    // myDb.pragma('LOCKING_MODE = EXCLUSIVE;');
 
     return (db = myDb);
   },

@@ -104,7 +104,7 @@ module.exports = class Trade {
     });
 
     eventEmitter.on('orderbook', function(orderbookEvent) {
-      // console.log(orderbookEvent.orderbook)
+      console.log(orderbookEvent.orderbook);
     });
 
     eventEmitter.on('order', async event => me.createOrderListener.onCreateOrder(event));
