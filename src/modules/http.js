@@ -5,9 +5,12 @@ const auth = require('basic-auth');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const moment = require('moment');
+const { fork } = require('child_process');
 const OrderUtil = require('../utils/order_util');
 
-const backtestMap = {};
+const backtestPendingPairs = {};
+const backtestResults = {};
+
 module.exports = class Http {
   constructor(
     systemUtil,
@@ -143,46 +146,61 @@ module.exports = class Http {
         pairs = [pairs];
       }
 
-      const asyncs = pairs.map(pair => {
-        return async () => {
-          const p = pair.split('.');
-
-          return {
-            pair: pair,
-            result: await this.backtest.getBacktestResult(
-              parseInt(req.body.ticker_interval, 10),
-              req.body.hours,
-              req.body.strategy,
-              req.body.candle_period,
-              p[0],
-              p[1],
-              req.body.options ? JSON.parse(req.body.options) : {},
-              req.body.initial_capital
-            )
-          };
-        };
-      });
-
       const key = moment().unix();
-      backtestMap[key] = Promise.all(asyncs.map(fn => fn())).then(values => {
-        backtestMap[key] = values;
+
+      backtestPendingPairs[key] = [];
+      backtestResults[key] = [];
+
+      pairs.forEach(pair => {
+        backtestPendingPairs[key].push(pair);
+
+        const forked = fork('src/command/backtest.js');
+
+        forked.send({
+          pair,
+          tickIntervalInMinutes: parseInt(req.body.ticker_interval, 10),
+          hours: req.body.hours,
+          strategy: req.body.strategy,
+          candlePeriod: req.body.candle_period,
+          options: req.body.options ? JSON.parse(req.body.options) : {},
+          initial_capital: req.body.initial_capital,
+          projectDir: `${__dirname}/../..`
+        });
+
+        forked.on('message', msg => {
+          backtestPendingPairs[key].splice(backtestPendingPairs[key].indexOf(pair), 1);
+          backtestResults[key].push({
+            pair: pair,
+            result: msg.results
+          });
+        });
       });
 
-      console.log(backtestMap[key]);
-      // // single details view
-      // if (backtests.length === 1) {
-      //   res.render('../templates/backtest_submit.html.twig', backtests[0].result);
-      //   return;
-      // }
-      //
-      // // multiple view
-      // res.render('../templates/backtest_submit_multiple.html.twig', {
-      //   backtests: backtests
-      // });
+      res.render('../templates/backtest-pending-results.html.twig', {
+        key: key
+      });
     });
 
-    app.get('/backtest/result/:backtestKey', (req, res) => {
-      res.send({ ready: backtestMap[req.params.backtestKey] });
+    app.get('/backtest/result/:backtestKey', async (req, res) => {
+      res.send({
+        ready:
+          backtestPendingPairs[req.params.backtestKey] === undefined
+            ? false
+            : backtestPendingPairs[req.params.backtestKey].length === 0
+      });
+    });
+
+    app.get('/backtest/redirect/:backtestKey', (req, res) => {
+      const backtests = backtestResults[req.params.backtestKey];
+      if (backtests.length === 1) {
+        res.render('../templates/backtest_submit.html.twig', backtests[0].result);
+        return;
+      }
+
+      // multiple view
+      res.render('../templates/backtest_submit_multiple.html.twig', {
+        backtests: backtests
+      });
     });
 
     app.get('/tradingview/:symbol', (req, res) => {

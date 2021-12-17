@@ -44,7 +44,20 @@ module.exports = class Backtest {
     });
   }
 
-  getBacktestResult(tickIntervalInMinutes, hours, strategy, candlePeriod, exchange, pair, options, initial_capital) {
+  getBacktestResult(
+    tickIntervalInMinutes,
+    hours,
+    strategy,
+    candlePeriod,
+    exchange,
+    pair,
+    options,
+    initial_capital,
+    projectDir
+  ) {
+    if (projectDir) {
+      this.projectDir = projectDir;
+    }
     return new Promise(async resolve => {
       const start = moment()
         .startOf('hour')
@@ -94,7 +107,16 @@ module.exports = class Backtest {
       };
 
       const end = moment().unix();
+      const timeStart = moment().unix();
+      let logIterations = 0;
       while (current < end) {
+        logIterations += 1;
+
+        if (logIterations > 1000) {
+          console.log(new Date(current * 1000));
+          logIterations = 0;
+        }
+
         const strategyManager = new StrategyManager({}, mockedRepository, {}, this.projectDir);
 
         const item = await strategyManager.executeStrategyBacktest(
@@ -186,6 +208,8 @@ module.exports = class Backtest {
           };
         });
 
+      console.log(`Took: ${moment().unix() - timeStart} seconds`);
+
       const backtestSummary = await this.getBacktestSummary(signals, initial_capital);
       resolve({
         summary: backtestSummary,
@@ -230,14 +254,14 @@ module.exports = class Backtest {
         const signalType = signalObject.result._signal; // Can be long,short,close
 
         // When a trade is closed
-        if (signalType == 'close') {
+        if (signalType === 'close') {
           // Increment the total trades counter
           trades.total += 1;
 
           // Entry Position Details
           const entrySignalType = lastPosition.result._signal; // Long or Short
           const entryPrice = lastPosition.price; // Price during the trade entry
-          const tradedQuantity = Number((workingCapital / entryPrice)); // Quantity
+          const tradedQuantity = Number(workingCapital / entryPrice); // Quantity
 
           // Exit Details
           const exitPrice = signalObject.price; // Price during trade exit
@@ -247,22 +271,23 @@ module.exports = class Backtest {
           let pnlValue = 0; // Profit or Loss Value
 
           // When the position is Long
-          if (entrySignalType == 'long') {
+          // eslint-disable-next-line eqeqeq
+          if (entrySignalType === 'long') {
             if (exitPrice > entryPrice) {
               // Long Trade is Profitable
               trades.profitableCount += 1;
             }
 
             // Set the PNL
-            pnlValue = exitValue - workingCapital;
-          } else if (entrySignalType == 'short') {
+            pnlValue = exitValue - workingCapital - workingCapital * 0.006;
+          } else if (entrySignalType === 'short') {
             if (exitPrice < entryPrice) {
               // Short Trade is Profitable
               trades.profitableCount += 1;
             }
 
             // Set the PNL
-            pnlValue = -(exitValue - workingCapital);
+            pnlValue = -(exitValue - workingCapital) - workingCapital * 0.006;
           }
 
           // Percentage Return
