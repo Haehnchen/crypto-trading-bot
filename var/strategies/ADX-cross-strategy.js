@@ -11,7 +11,6 @@ module.exports = class Dema {
     }
 
     indicatorBuilder.add('macd_ext', 'macd_ext', options.period);
-
     indicatorBuilder.add('adx_dmi', 'adx_dmi', options.period, {
       period: options.adx_length
     });
