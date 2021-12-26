@@ -29,7 +29,7 @@ module.exports = class Backfill {
 
       console.log(`Got: ${candles.length} candles`);
 
-      start = _.max(candles.map(r => new Date(r.time * 1000)));
+      start = new Date(_.max(candles.map(r => r.time)) * 1000);
     } while (candles.length > 10);
 
     console.log('finish');
