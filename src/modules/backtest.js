@@ -44,7 +44,20 @@ module.exports = class Backtest {
     });
   }
 
-  getBacktestResult(tickIntervalInMinutes, hours, strategy, candlePeriod, exchange, pair, options, initial_capital) {
+  getBacktestResult(
+    tickIntervalInMinutes,
+    hours,
+    strategy,
+    candlePeriod,
+    exchange,
+    pair,
+    options,
+    initialCapital,
+    projectDir
+  ) {
+    if (projectDir) {
+      this.projectDir = projectDir;
+    }
     return new Promise(async resolve => {
       const start = moment()
         .startOf('hour')
@@ -186,7 +199,7 @@ module.exports = class Backtest {
           };
         });
 
-      const backtestSummary = await this.getBacktestSummary(signals, initial_capital);
+      const backtestSummary = await this.getBacktestSummary(signals, initialCapital);
       resolve({
         summary: backtestSummary,
         rows: rows.slice().reverse(),
@@ -205,10 +218,10 @@ module.exports = class Backtest {
     });
   }
 
-  getBacktestSummary(signals, initial_capital) {
-    return new Promise(async resolve => {
-      const initialCapital = Number(initial_capital); // 1000 $ Initial Capital
-      let workingCapital = initialCapital; // Capital that changes after every trade
+  getBacktestSummary(signals, initialCapital) {
+    return new Promise(resolve => {
+      const initialCapitalNumber = Number(initialCapital); // 1000 $ Initial Capital
+      let workingCapital = initialCapitalNumber; // Capital that changes after every trade
 
       let lastPosition; // Holds Info about last action
 
@@ -227,17 +240,17 @@ module.exports = class Backtest {
       // Iterate over all the signals
       for (let s = 0; s < signals.length; s++) {
         const signalObject = signals[s];
-        const signalType = signalObject.result._signal; // Can be long,short,close
+        const signalType = signalObject.result.getSignal(); // Can be long,short,close
 
         // When a trade is closed
-        if (signalType == 'close') {
+        if (signalType === 'close') {
           // Increment the total trades counter
           trades.total += 1;
 
           // Entry Position Details
-          const entrySignalType = lastPosition.result._signal; // Long or Short
+          const entrySignalType = lastPosition.result.getSignal(); // Long or Short
           const entryPrice = lastPosition.price; // Price during the trade entry
-          const tradedQuantity = Number((workingCapital / entryPrice)); // Quantity
+          const tradedQuantity = Number(workingCapital / entryPrice); // Quantity
 
           // Exit Details
           const exitPrice = signalObject.price; // Price during trade exit
@@ -247,7 +260,7 @@ module.exports = class Backtest {
           let pnlValue = 0; // Profit or Loss Value
 
           // When the position is Long
-          if (entrySignalType == 'long') {
+          if (entrySignalType === 'long') {
             if (exitPrice > entryPrice) {
               // Long Trade is Profitable
               trades.profitableCount += 1;
@@ -255,7 +268,7 @@ module.exports = class Backtest {
 
             // Set the PNL
             pnlValue = exitValue - workingCapital;
-          } else if (entrySignalType == 'short') {
+          } else if (entrySignalType === 'short') {
             if (exitPrice < entryPrice) {
               // Short Trade is Profitable
               trades.profitableCount += 1;
@@ -276,7 +289,7 @@ module.exports = class Backtest {
 
           // Update Working Cap
           workingCapital += pnlValue;
-        } else if (signalType == 'long' || signalType == 'short') {
+        } else if (signalType === 'long' || signalType === 'short') {
           // Enter into a position
           lastPosition = signalObject;
         }
@@ -309,7 +322,7 @@ module.exports = class Backtest {
       // -- End of Sharpe Ratio Calculation
 
       // Net Profit
-      const netProfit = Number((((workingCapital - initialCapital) / initialCapital) * 100).toFixed(2));
+      const netProfit = Number((((workingCapital - initialCapitalNumber) / initialCapitalNumber) * 100).toFixed(2));
 
       trades.profitabilityPercent = Number(((trades.profitableCount * 100) / trades.total).toFixed(2));
 
@@ -317,7 +330,7 @@ module.exports = class Backtest {
         sharpeRatio: sharpeRatio,
         averagePNLPercent: averagePNLPercent,
         netProfit: netProfit,
-        initialCapital: initialCapital,
+        initialCapital: initialCapitalNumber,
         finalCapital: Number(workingCapital.toFixed(2)),
         trades: trades
       };

@@ -5,7 +5,11 @@ const auth = require('basic-auth');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const moment = require('moment');
+const { fork } = require('child_process');
 const OrderUtil = require('../utils/order_util');
+
+const backtestPendingPairs = {};
+const backtestResults = {};
 
 module.exports = class Http {
   constructor(
@@ -92,7 +96,13 @@ module.exports = class Http {
       strict_variables: false
     });
 
-    app.use(express.urlencoded({ limit: '12mb', extended: true, parameterLimit: 50000 }));
+    app.use(
+      express.urlencoded({
+        limit: '12mb',
+        extended: true,
+        parameterLimit: 50000
+      })
+    );
     app.use(cookieParser());
     app.use(compression());
     app.use(express.static(`${this.projectDir}/web/static`, { maxAge: 3600000 * 24 }));
@@ -136,29 +146,52 @@ module.exports = class Http {
         pairs = [pairs];
       }
 
-      const asyncs = pairs.map(pair => {
-        return async () => {
-          const p = pair.split('.');
+      const key = moment().unix();
 
-          return {
+      backtestPendingPairs[key] = [];
+      backtestResults[key] = [];
+
+      pairs.forEach(pair => {
+        backtestPendingPairs[key].push(pair);
+
+        const forked = fork('src/command/backtest.js');
+
+        forked.send({
+          pair,
+          tickIntervalInMinutes: parseInt(req.body.ticker_interval, 10),
+          hours: req.body.hours,
+          strategy: req.body.strategy,
+          candlePeriod: req.body.candle_period,
+          options: req.body.options ? JSON.parse(req.body.options) : {},
+          initialCapital: req.body.initial_capital,
+          projectDir: this.projectDir
+        });
+
+        forked.on('message', msg => {
+          backtestPendingPairs[key].splice(backtestPendingPairs[key].indexOf(pair), 1);
+          backtestResults[key].push({
             pair: pair,
-            result: await this.backtest.getBacktestResult(
-              parseInt(req.body.ticker_interval, 10),
-              req.body.hours,
-              req.body.strategy,
-              req.body.candle_period,
-              p[0],
-              p[1],
-              req.body.options ? JSON.parse(req.body.options) : {},
-              req.body.initial_capital
-            )
-          };
-        };
+            result: msg.results
+          });
+        });
       });
 
-      const backtests = await Promise.all(asyncs.map(fn => fn()));
+      res.render('../templates/backtest-pending-results.html.twig', {
+        key: key
+      });
+    });
 
-      // single details view
+    app.get('/backtest/:backtestKey', async (req, res) => {
+      res.send({
+        ready:
+          backtestPendingPairs[req.params.backtestKey] === undefined
+            ? false
+            : backtestPendingPairs[req.params.backtestKey].length === 0
+      });
+    });
+
+    app.get('/backtest/result/:backtestKey', (req, res) => {
+      const backtests = backtestResults[req.params.backtestKey];
       if (backtests.length === 1) {
         res.render('../templates/backtest_submit.html.twig', backtests[0].result);
         return;
