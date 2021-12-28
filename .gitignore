@@ -242,3 +242,4 @@ Temporary Items
 /bot.db
 /bot.db-shm
 /bot.db-wal
+/var/log/

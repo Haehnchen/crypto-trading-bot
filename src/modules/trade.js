@@ -50,15 +50,11 @@ module.exports = class Trade {
       process.exit();
     });
 
-    const instanceId = crypto.randomBytes(4).toString('hex');
-
     const notifyActivePairs = this.instances.symbols.map(symbol => {
       return `${symbol.exchange}.${symbol.symbol}`;
     });
 
-    const message = `Start: ${instanceId} - ${os.hostname()} - ${os.platform()} - ${moment().format()} - ${notifyActivePairs.join(
-      ', '
-    )}`;
+    const message = `Signals bot restarted - ${moment().format()} - Pairs active: ${notifyActivePairs.join(', ')}`;
 
     this.notify.send(message);
 

@@ -12,7 +12,7 @@ const percent = require('percent');
  * @param arraySize
  * @returns {Array}
  */
-function zigzag (ticks, deviation = 5, arraySize = -1) {
+function zigzag(ticks, deviation = 5, arraySize = -1) {
   // Determines percent deviation in price changes, presenting frequency and volatility in deviation. Also helps determine trend reversals.
   // Read more: http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:zigzag
   // arraySize = -1, calculate ZigZag for all ticks
@@ -133,9 +133,28 @@ function executeTulindIndicator(source, indicator, tulindOptions) {
 
 module.exports = {
   // indicators which source is Candles
-  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked', 'heikin_ashi', 'psar', 'hma'],
+  sourceCandle: [
+    'cci',
+    'pivot_points_high_low',
+    'obv',
+    'ao',
+    'mfi',
+    'stoch',
+    'vwma',
+    'atr',
+    'adx',
+    'adx_dmi',
+    'volume_profile',
+    'volume_by_price',
+    'ichimoku_cloud',
+    'zigzag',
+    'wicked',
+    'heikin_ashi',
+    'psar',
+    'hma'
+  ],
 
-  bb: (source, indicator) => 
+  bb: (source, indicator) =>
     executeTulindIndicator(source, indicator, {
       options: { length: 20, stddev: 2 },
       results: ['lower', 'middle', 'upper']
@@ -157,12 +176,13 @@ module.exports = {
   atr: (...args) => executeTulindIndicator(...args, { sources: ['high', 'low', 'close'], options: { length: 14 } }),
 
   hma: (source, indicator) => {
-    let candleSource = (indicator.options && indicator.options.source) || 'close'
+    let candleSource = (indicator.options && indicator.options.source) || 'close';
 
     return executeTulindIndicator(source, indicator, {
       sources: [candleSource],
       options: { length: 9 }
-    })},
+    });
+  },
 
   cci: (...args) =>
     executeTulindIndicator(...args, {
@@ -318,18 +338,39 @@ module.exports = {
       };
 
       source.forEach(candle => {
-        input.high.push(candle.high)
-        input.low.push(candle.low)
-      })
+        input.high.push(candle.high);
+        input.low.push(candle.low);
+      });
 
       const { PSAR } = require('technicalindicators');
       resolve({ [indicator.key]: new PSAR(input).getResult() });
     });
   },
 
+  adx_dmi: function(source, indicator) {
+    return new Promise(resolve => {
+      const { options = {} } = indicator;
+
+      const input = {
+        close: [],
+        high: [],
+        low: [],
+        period: options.period
+      };
+
+      source.forEach(candle => {
+        input.close.push(candle.close);
+        input.high.push(candle.high);
+        input.low.push(candle.low);
+      });
+
+      const { ADX } = require('technicalindicators');
+      resolve({ [indicator.key]: new ADX(input).getResult() });
+    });
+  },
+
   heikin_ashi: function(source, indicator) {
     return new Promise(resolve => {
-
       const { HeikinAshi } = require('technicalindicators');
 
       const input = {
@@ -342,13 +383,13 @@ module.exports = {
       };
 
       source.forEach(candle => {
-        input.close.push(candle.close)
-        input.high.push(candle.high)
-        input.low.push(candle.low)
-        input.open.push(candle.open)
-        input.timestamp.push(candle.time)
-        input.volume.push(candle.volume)
-      })
+        input.close.push(candle.close);
+        input.high.push(candle.high);
+        input.low.push(candle.low);
+        input.open.push(candle.open);
+        input.timestamp.push(candle.time);
+        input.volume.push(candle.volume);
+      });
 
       const f = new HeikinAshi(input);
 
@@ -376,10 +417,10 @@ module.exports = {
     return new Promise(resolve => {
       const { options = {} } = indicator;
       const { length = 200, ranges = 14 } = options;
-      
+
       const { candles2MarketData } = require('./technical_analysis');
       const { VolumeProfile } = require('technicalindicators');
-      const f = new VolumeProfile({ ...candles2MarketData(source, length), noOfBars: ranges })
+      const f = new VolumeProfile({ ...candles2MarketData(source, length), noOfBars: ranges });
 
       resolve({ [indicator.key]: f.getResult() });
     });
@@ -406,9 +447,7 @@ module.exports = {
       let current = minMax[0];
       for (let i = 0; i < ranges; i++) {
         // summarize volume per range
-        const map = lookbackRange
-          .filter(c => c.close >= current && c.close < current + rangeSize)
-          .map(c => c.volume);
+        const map = lookbackRange.filter(c => c.close >= current && c.close < current + rangeSize).map(c => c.volume);
 
         // prevent float / rounding issues on first and last item
         rangeBlocks.push({
@@ -422,8 +461,8 @@ module.exports = {
 
       resolve({ [indicator.key]: [rangeBlocks.reverse()] }); // sort by price; low to high
     });
-  },        
-  
+  },
+
   zigzag: function(source, indicator) {
     // https://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:volume_by_price
     return new Promise(resolve => {
@@ -438,7 +477,7 @@ module.exports = {
       });
       resolve({ [indicator.key]: turningPoints });
     });
-  }, 
+  },
 
   ichimoku_cloud: function(source, indicator) {
     return new Promise(resolve => {
@@ -447,7 +486,8 @@ module.exports = {
 
       const { candles2MarketData } = require('./technical_analysis');
       const { IchimokuCloud } = require('technicalindicators');
-      const f = new IchimokuCloud({ ...candles2MarketData(source, undefined, ['high', 'low']),
+      const f = new IchimokuCloud({
+        ...candles2MarketData(source, undefined, ['high', 'low']),
         conversionPeriod: conversionPeriod,
         basePeriod: basePeriod,
         spanPeriod: spanPeriod,
