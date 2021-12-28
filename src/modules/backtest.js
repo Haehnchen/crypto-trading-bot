@@ -213,7 +213,7 @@ module.exports = class Backtest {
 
       console.log(`Took: ${moment().unix() - timeStart} seconds`);
 
-      const backtestSummary = await this.getBacktestSummary(signals, initialCapital);
+      const backtestSummary = await this.getBacktestSummary(signals, initialCapital, fees);
       resolve({
         summary: backtestSummary,
         rows: rows.slice().reverse(),
