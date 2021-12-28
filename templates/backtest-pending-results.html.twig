@@ -26,7 +26,7 @@
         <!-- Main content -->
         <div class="content">
             <div class="container">
-                <h3>Waiting for backtest id {{ key }} to finish</h3>
+                <h3>Waiting results for backtest id {{ key }}</h3>
             </div><!-- /.container-fluid -->
         </div>
         <!-- /.content -->
@@ -43,13 +43,13 @@ const intervalId = setInterval(call, 2000);
 function call() {
       $.ajax({
         type: "GET",
-        url: '/backtest/result/{{ key }}',
+        url: '/backtest/{{ key }}',
         dataType: "json",
         success: function(data, textStatus) {
           ready = data.ready;
           if (data.ready === true) {
             clearInterval(intervalId);
-            window.location.href = '/backtest/redirect/{{ key }}'
+            window.location.href = '/backtest/result/{{ key }}'
           }
         }
     })
