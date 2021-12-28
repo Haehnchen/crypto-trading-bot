@@ -208,6 +208,9 @@ module.exports = class Backtest {
           };
         });
 
+      const instance = this.instances.symbols.filter(i => i.symbol === pair && i.exchange === exchange)[0];
+      const fees = instance.feesPerTrade === undefined ? 0 : instance.feesPerTrade;
+
       console.log(`Took: ${moment().unix() - timeStart} seconds`);
 
       const backtestSummary = await this.getBacktestSummary(signals, initialCapital);
@@ -229,7 +232,7 @@ module.exports = class Backtest {
     });
   }
 
-  getBacktestSummary(signals, initialCapital) {
+  getBacktestSummary(signals, initialCapital, feesPerTrade) {
     return new Promise(resolve => {
       const initialCapitalNumber = Number(initialCapital); // 1000 $ Initial Capital
       let workingCapital = initialCapitalNumber; // Capital that changes after every trade
@@ -246,8 +249,8 @@ module.exports = class Backtest {
       };
 
       let cumulativePNLPercent = 0; // Sum of all the PNL Percentages
+      let cumulativeNetFees = 0;
       const pnlRateArray = []; // Array of all PNL Percentages of all the trades
-
       // Iterate over all the signals
       for (let s = 0; s < signals.length; s++) {
         const signalObject = signals[s];
@@ -259,13 +262,18 @@ module.exports = class Backtest {
           trades.total += 1;
 
           // Entry Position Details
-          const entrySignalType = lastPosition.result.getSignal(); // Long or Short
           const entryPrice = lastPosition.price; // Price during the trade entry
           const tradedQuantity = Number(workingCapital / entryPrice); // Quantity
-
+          const entrySignalType = lastPosition.result.getSignal(); // Long or Short
+          const entryValue = Number((tradedQuantity * entryPrice).toFixed(2)); // Price * Quantity
+          const entryFee = (entryValue * feesPerTrade) / 100;
           // Exit Details
           const exitPrice = signalObject.price; // Price during trade exit
           const exitValue = Number((tradedQuantity * exitPrice).toFixed(2)); // Price * Quantity
+          const exitFee = (exitValue * feesPerTrade) / 100;
+
+          const totalFee = entryFee + exitFee;
+          cumulativeNetFees += totalFee;
 
           // Trade Details
           let pnlValue = 0; // Profit or Loss Value
@@ -273,21 +281,21 @@ module.exports = class Backtest {
           // When the position is Long
           // eslint-disable-next-line eqeqeq
           if (entrySignalType === 'long') {
-            if (exitPrice > entryPrice) {
+            if (exitValue - totalFee > entryValue) {
               // Long Trade is Profitable
               trades.profitableCount += 1;
             }
 
             // Set the PNL
-            pnlValue = exitValue - workingCapital - workingCapital * 0.006;
+            pnlValue = exitValue - totalFee - workingCapital - workingCapital * 0.006;
           } else if (entrySignalType === 'short') {
-            if (exitPrice < entryPrice) {
+            if (exitValue - totalFee < entryValue) {
               // Short Trade is Profitable
               trades.profitableCount += 1;
             }
 
             // Set the PNL
-            pnlValue = -(exitValue - workingCapital) - workingCapital * 0.006;
+            pnlValue = -(exitValue - totalFee - workingCapital) - workingCapital * 0.006;
           }
 
           // Percentage Return
@@ -342,6 +350,7 @@ module.exports = class Backtest {
         sharpeRatio: sharpeRatio,
         averagePNLPercent: averagePNLPercent,
         netProfit: netProfit,
+        netFees: cumulativeNetFees,
         initialCapital: initialCapitalNumber,
         finalCapital: Number(workingCapital.toFixed(2)),
         trades: trades

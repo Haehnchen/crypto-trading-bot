@@ -19,6 +19,14 @@
             </tr>
             <tr>
                 <td>
+                    Net Fees
+                </td>
+                <td>
+                    {{ summary.netFees|round(2) }} $
+                </td>
+            </tr>
+            <tr>
+                <td>
                     Net Return on Investment
                 </td>
                 <td class="{{ summary.netProfit > 0 ? 'text-success' : 'text-danger' }}">
