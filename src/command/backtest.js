@@ -13,7 +13,7 @@ process.on('message', async msg => {
       p[0],
       p[1],
       msg.options,
-      msg.initial_capital,
+      msg.initialCapital,
       msg.projectDir
     );
 

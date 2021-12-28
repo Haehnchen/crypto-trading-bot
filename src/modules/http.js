@@ -163,8 +163,8 @@ module.exports = class Http {
           strategy: req.body.strategy,
           candlePeriod: req.body.candle_period,
           options: req.body.options ? JSON.parse(req.body.options) : {},
-          initial_capital: req.body.initial_capital,
-          projectDir: `${__dirname}/../..`
+          initialCapital: req.body.initial_capital,
+          projectDir: this.projectDir
         });
 
         forked.on('message', msg => {
@@ -181,7 +181,7 @@ module.exports = class Http {
       });
     });
 
-    app.get('/backtest/result/:backtestKey', async (req, res) => {
+    app.get('/backtest/:backtestKey', async (req, res) => {
       res.send({
         ready:
           backtestPendingPairs[req.params.backtestKey] === undefined
@@ -190,7 +190,7 @@ module.exports = class Http {
       });
     });
 
-    app.get('/backtest/redirect/:backtestKey', (req, res) => {
+    app.get('/backtest/result/:backtestKey', (req, res) => {
       const backtests = backtestResults[req.params.backtestKey];
       if (backtests.length === 1) {
         res.render('../templates/backtest_submit.html.twig', backtests[0].result);
