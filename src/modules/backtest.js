@@ -3,6 +3,8 @@ const _ = require('lodash');
 const StrategyManager = require('./strategy/strategy_manager');
 const Resample = require('../utils/resample');
 const CommonUtil = require('../utils/common_util');
+const SignalResult = require('./strategy/dict/signal_result.js');
+const periodCache = {};
 
 module.exports = class Backtest {
   constructor(instances, strategyManager, exchangeCandleCombine, projectDir) {
@@ -70,8 +72,8 @@ module.exports = class Backtest {
       let current = start;
 
       // mock repository for window selection of candles
-      const periodCache = {};
-      const prefillWindow = start - Resample.convertPeriodToMinute(candlePeriod) * 200 * 60;
+
+      const prefillWindow = start - Resample.convertPeriodToMinute(candlePeriod) * 500 * 60;
       const mockedRepository = {
         fetchCombinedCandles: async (mainExchange, symbol, period, exchanges = []) => {
           const key = mainExchange + symbol + period;
@@ -127,6 +129,7 @@ module.exports = class Backtest {
           lastSignal.signal,
           lastSignal.price
         );
+
         item.time = current;
 
         // so change in signal
@@ -146,6 +149,16 @@ module.exports = class Backtest {
 
           lastSignalClosed.signal = undefined;
           lastSignalClosed.price = undefined;
+        } else if (currentSignal === 'reverse') {
+          // Set  closed
+          lastSignalClosed.signal = lastSignal.signal;
+          lastSignalClosed.price = lastSignal.price;
+
+          lastSignal.signal = lastSignalClosed.signal === 'short' ? 'long' : 'short';
+          lastSignal.price = item.price;
+
+          // Mimic a normal close signal, simplifies implementation
+          item.result.setSignal('close');
         } else if (currentSignal === 'close') {
           lastSignalClosed.signal = lastSignal.signal;
           lastSignalClosed.price = lastSignal.price;
@@ -164,6 +177,17 @@ module.exports = class Backtest {
         }
 
         rows.push(item);
+
+        // Check if signal was reversed and add a new item
+        if (currentSignal === 'reverse') {
+          // adds extra item including the reverse
+          rows.push({
+            price: item.price,
+            columns: item.columns,
+            result: SignalResult.createSignal(lastSignal.signal, item.result.debug),
+            time: item.time
+          });
+        }
 
         current += tickIntervalInMinutes * 60;
       }
@@ -248,7 +272,9 @@ module.exports = class Backtest {
         profitabilityPercent: 0 // Percentage Of Trades that were profitable
       };
 
-      let cumulativePNLPercent = 0; // Sum of all the PNL Percentages
+      let cumulativePnlPercent = 0; // Sum of all the PNL Percentages
+      let cumulativePnlShorts = 0;
+      let cumulativePnlLongs = 0;
       let cumulativeNetFees = 0;
       const pnlRateArray = []; // Array of all PNL Percentages of all the trades
       // Iterate over all the signals
@@ -262,9 +288,9 @@ module.exports = class Backtest {
           trades.total += 1;
 
           // Entry Position Details
+          const entrySignalType = lastPosition.result.getSignal(); // Long or Short
           const entryPrice = lastPosition.price; // Price during the trade entry
           const tradedQuantity = Number(workingCapital / entryPrice); // Quantity
-          const entrySignalType = lastPosition.result.getSignal(); // Long or Short
           const entryValue = Number((tradedQuantity * entryPrice).toFixed(2)); // Price * Quantity
           const entryFee = (entryValue * feesPerTrade) / 100;
           // Exit Details
@@ -279,7 +305,6 @@ module.exports = class Backtest {
           let pnlValue = 0; // Profit or Loss Value
 
           // When the position is Long
-          // eslint-disable-next-line eqeqeq
           if (entrySignalType === 'long') {
             if (exitValue - totalFee > entryValue) {
               // Long Trade is Profitable
@@ -287,7 +312,8 @@ module.exports = class Backtest {
             }
 
             // Set the PNL
-            pnlValue = exitValue - totalFee - workingCapital - workingCapital * 0.006;
+            pnlValue = exitValue - totalFee - workingCapital;
+            cumulativePnlLongs += pnlValue;
           } else if (entrySignalType === 'short') {
             if (exitValue - totalFee < entryValue) {
               // Short Trade is Profitable
@@ -295,14 +321,16 @@ module.exports = class Backtest {
             }
 
             // Set the PNL
-            pnlValue = -(exitValue - totalFee - workingCapital) - workingCapital * 0.006;
+            pnlValue = -(exitValue - totalFee - workingCapital);
+            cumulativePnlShorts += pnlValue;
           }
 
           // Percentage Return
-          const pnlPercent = Number(((pnlValue / workingCapital) * 100).toFixed(2));
+          // const pnlPercent = Number(((pnlValue / workingCapital) * 100).toFixed(2));
+          const pnlPercent = (pnlValue / workingCapital) * 100;
 
           // Summation of Percentage Return
-          cumulativePNLPercent += pnlPercent;
+          cumulativePnlPercent += pnlPercent;
 
           // Maintaining the Percentage array
           pnlRateArray.push(pnlPercent);
@@ -321,7 +349,7 @@ module.exports = class Backtest {
       // Calculating the Sharpe Ratio ----------------------------------------------------------
 
       // Average PNL Percent
-      averagePNLPercent = Number((cumulativePNLPercent / trades.total).toFixed(2));
+      averagePNLPercent = Number((cumulativePnlPercent / trades.total).toFixed(2));
 
       // Initialize Sum of Mean Square Differences
       let msdSum = 0;
@@ -350,6 +378,8 @@ module.exports = class Backtest {
         sharpeRatio: sharpeRatio,
         averagePNLPercent: averagePNLPercent,
         netProfit: netProfit,
+        cumulativePnlLongs: Number(cumulativePnlLongs).toFixed(2),
+        cumulativePnlShorts: Number(cumulativePnlShorts).toFixed(2),
         netFees: cumulativeNetFees,
         initialCapital: initialCapitalNumber,
         finalCapital: Number(workingCapital.toFixed(2)),

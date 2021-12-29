@@ -18,35 +18,44 @@ module.exports = class Macd {
 
     indicatorBuilder.add('macd', 'macd_ext', options.period, options);
 
-    indicatorBuilder.add('ema40', 'ema', options.period_filter, {
+    indicatorBuilder.add('emaFast', 'ema', options.period_filter, {
       length: 40
     });
 
-    indicatorBuilder.add('ema200', 'ema', options.period_filter, {
-      length: 100
+    indicatorBuilder.add('emaSlow', 'ema', options.period_filter, {
+      length: 10
+    });
+
+    indicatorBuilder.add('psar', 'psar', options.period, {
+      step: 0.02,
+      max: 0.02
     });
   }
 
   period(indicatorPeriod, options) {
-    const ema200Full = indicatorPeriod.getIndicator('ema200');
+    const emaSlowFull = indicatorPeriod.getIndicator('emaSlow');
     const macdFull = indicatorPeriod.getIndicator('macd');
-    const ema40Full = indicatorPeriod.getIndicator('ema40');
+    const emaFastFull = indicatorPeriod.getIndicator('emaFast');
+    const psarFull = indicatorPeriod.getIndicator('psar');
 
-    if (!macdFull || !ema200Full || !ema40Full || macdFull.length < 2 || ema200Full.length < 2) {
+    if (!macdFull || !emaSlowFull || !emaFastFull || !psarFull || macdFull.length < 2 || emaSlowFull.length < 2) {
       return undefined;
     }
 
-    const ema40 = ema40Full.slice(-1)[0];
-    const ema200 = ema200Full.slice(-1)[0];
+    const emaFast = emaFastFull.slice(-1)[0];
+    const emaSlow = emaSlowFull.slice(-1)[0];
     const macd = macdFull.slice(-2);
+    const psar = psarFull.slice(-1)[0];
 
     // overall trend filter
-    const long = ema40 >= ema200;
+    const long = emaFast >= emaSlow;
 
     const lastSignal = indicatorPeriod.getLastSignal();
 
     const debug = {
-      ema200: ema200[0],
+      emaSlow: emaSlow,
+      emaFast: emaFast,
+      psar: psar,
       histogram: macd[0].histogram,
       last_signal: lastSignal,
       long: long
@@ -55,11 +64,6 @@ module.exports = class Macd {
     const current = macd[0].histogram;
     const before = macd[1].histogram;
 
-    // // trend change
-    // if ((lastSignal === 'long' && before > 0 && current < 0) || (lastSignal === 'short' && before < 0 && current > 0)) {
-    //   macdPeak = 0;
-    //   return SignalResult.createSignal('close', debug);
-    // }
     if (lastSignal === undefined) {
       if (long) {
         if (current > macdPeak) {
@@ -67,7 +71,7 @@ module.exports = class Macd {
         }
 
         if (
-          macdBullPeaks.length > 5 &&
+          macdBullPeaks.length > 2 &&
           macdPeak > this.median(macdBullPeaks) &&
           macdPeak * options.histogram_threshold > current
         ) {
@@ -90,7 +94,7 @@ module.exports = class Macd {
         }
 
         if (
-          macdBearPeaks.length > 5 &&
+          macdBearPeaks.length > 2 &&
           macdPeak < this.median(macdBearPeaks) &&
           macdPeak * options.histogram_threshold < current
         ) {
@@ -108,15 +112,33 @@ module.exports = class Macd {
     }
 
     if (indicatorPeriod.getLastSignal()) {
-      if (indicatorPeriod.getProfit() - highestProfit > 0) {
-        highestProfit = indicatorPeriod.getProfit();
-      } else if (highestProfit - indicatorPeriod.getProfit() > options.take_profit) {
-        highestProfit = 0;
-        const signalResult = SignalResult.createSignal('close', debug);
-        // take profit
-        signalResult.addDebug('message', 'TP');
-        return signalResult;
-      } else if (indicatorPeriod.getProfit() < -options.stop_loss) {
+      if (psarFull.length > 0) {
+        if (indicatorPeriod.getLastSignal() === 'short' && psar > indicatorPeriod.getPrice()) {
+          const signalResult = SignalResult.createSignal('close', debug);
+          // take profit
+          signalResult.addDebug('message', 'PSAR cross');
+          return signalResult;
+        }
+
+        if (indicatorPeriod.getLastSignal() === 'long' && psar < indicatorPeriod.getPrice()) {
+          const signalResult = SignalResult.createSignal('close', debug);
+          // take profit
+          signalResult.addDebug('message', 'PSAR cross');
+          return signalResult;
+        }
+      }
+
+      // if (indicatorPeriod.getProfit() - highestProfit > 0) {
+      //   highestProfit = indicatorPeriod.getProfit();
+      // } else if (highestProfit - indicatorPeriod.getProfit() > options.take_profit) {
+      //   highestProfit = 0;
+      //   const signalResult = SignalResult.createSignal('close', debug);
+      //   // take profit
+      //   signalResult.addDebug('message', 'TP');
+      //   return signalResult;
+      // } else
+
+      if (indicatorPeriod.getProfit() < -options.stop_loss) {
         // stop loss
         const signalResult = SignalResult.createSignal('close', debug);
         signalResult.addDebug('message', 'SL');
@@ -136,9 +158,9 @@ module.exports = class Macd {
             return undefined;
           }
 
-          return row.long === true ? 'success' : 'danger';
+          return row.long === true ? 'up' : 'down';
         },
-        type: 'icon'
+        type: 'arrow'
       },
       {
         label: 'histogram',
@@ -148,22 +170,8 @@ module.exports = class Macd {
     ];
   }
 
-  getOptions() {
-    return {
-      period: '1m',
-      period_filter: '15m',
-      default_ma_type: 'EMA',
-      fast_period: 60,
-      slow_period: 130,
-      signal_period: 45,
-      take_profit: 1,
-      stop_loss: 0.4,
-      histogram_threshold: 0.2
-    };
-  }
-
   median(values) {
-    if (values.length === 0) throw new Error('No inputs');
+    if (values.length === 0) return 0;
 
     values.sort(function(a, b) {
       return a - b;
@@ -192,5 +200,18 @@ module.exports = class Macd {
     }
 
     macdBearPeaks.push(value);
+  }
+
+  getOptions() {
+    return {
+      period: '5m',
+      period_filter: '1h',
+      default_ma_type: 'EMA',
+      fast_period: 30,
+      slow_period: 100,
+      take_profit: 1,
+      stop_loss: 0.4,
+      histogram_threshold: 0.2
+    };
   }
 };

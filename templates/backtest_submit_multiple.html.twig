@@ -43,6 +43,30 @@
                                     'summary': backtest.result.summary
                                 } only %}
                             </div>
+                            <div class="card-header">
+                                <h3 class="card-title">Chart</h3>
+                            </div>
+                            <!-- /.card-header -->
+                            <div class="card-body table-responsive p-0">
+                                <div class="chart" data-candles="{{ backtest.result.candles|e('html') }}" data-title="{{ backtest.result.configuration.exchange }} - {{ backtest.result.configuration.symbol }} - {{ backtest.result.strategy }} - {{ backtest.result.configuration.period }} - espend.de"></div>
+                            </div>
+                            <!-- /.card-body -->
+                            <!-- /.card -->
+                            <div class="card-header">
+                                <h3 class="card-title">Signals</h3>
+                            </div>
+                            <!-- /.card-header -->
+                            <div class="card-body table-responsive p-0">
+                                {% if backtest.result.signals|length > 0 %}
+                                    {% include 'components/backtest_table.html.twig' with {
+                                        'rows': backtest.result.signals,
+                                        'extra_fields': backtest.result.extra_fields,
+                                    } only %}
+                                {% else %}
+                                    <p class="text-muted text-center">No signals given</p>
+                                {% endif %}
+                            </div>
+                            <!-- /.card-body -->
                         </div>
                     </div>
                     {% endfor %}

@@ -14,7 +14,7 @@ module.exports = class SignalResult {
   }
 
   setSignal(signal) {
-    if (!['long', 'short', 'close'].includes(signal)) {
+    if (!['long', 'short', 'close', 'reverse'].includes(signal)) {
       throw `Invalid signal:${signal}`;
     }
 
