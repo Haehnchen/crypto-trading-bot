@@ -53,6 +53,10 @@ module.exports = class SignalResult {
     return this.placeOrders;
   }
 
+  emptyPlaceOrder() {
+    this.placeOrders = [];
+  }
+
   static createSignal(signal, debug = {}) {
     const result = new SignalResult();
 

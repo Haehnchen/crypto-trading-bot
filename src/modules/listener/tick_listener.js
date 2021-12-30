@@ -4,6 +4,8 @@ const StrategyContext = require('../../dict/strategy_context');
 const Order = require('../../dict/order');
 const OrderCapital = require('../../dict/order_capital');
 
+const tradeLastSignal = {};
+
 module.exports = class TickListener {
   constructor(
     tickers,
@@ -110,10 +112,12 @@ module.exports = class TickListener {
 
     const strategyKey = strategy.strategy;
 
-    let context = StrategyContext.create(strategy.options, ticker);
+    const lastSignalKey = strategyKey + symbol.exchange + symbol.symbol;
+
+    let context = StrategyContext.create(strategy.options, ticker, false);
     const position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
     if (position) {
-      context = StrategyContext.createFromPosition(strategy.options, ticker, position);
+      context = StrategyContext.createFromPosition(strategy.options, ticker, position, false);
     }
 
     const result = await this.strategyManager.executeStrategy(
@@ -134,13 +138,29 @@ module.exports = class TickListener {
       await this.placeStrategyOrders(placedOrder, symbol);
     }
 
-    const signal = result.getSignal();
+    let signal = result.getSignal();
     if (!signal || typeof signal === 'undefined') {
       return;
     }
 
-    if (!['close', 'short', 'long'].includes(signal)) {
+    if (!['close', 'short', 'long', 'reverse'].includes(signal)) {
       throw Error(`Invalid signal: ${JSON.stringify(signal, strategy)}`);
+    }
+
+    let isReverse = false;
+    let nextSignal;
+
+    if (signal === 'reverse') {
+      isReverse = true;
+
+      const lastSignal = tradeLastSignal[lastSignalKey];
+
+      if (lastSignal) {
+        nextSignal = lastSignal === 'short' ? 'long' : 'short';
+        // This signal is a close
+        signal = 'close';
+        result.emptyPlaceOrder();
+      }
     }
 
     const signalWindow = moment()
@@ -176,6 +196,10 @@ module.exports = class TickListener {
     this.notified[noteKey] = new Date();
 
     await this.pairStateManager.update(symbol.exchange, symbol.symbol, signal);
+
+    if (isReverse) {
+      await this.pairStateManager.update(symbol.exchange, symbol.symbol, nextSignal);
+    }
   }
 
   async placeStrategyOrders(placedOrder, symbol) {
