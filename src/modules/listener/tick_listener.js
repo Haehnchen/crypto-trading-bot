@@ -147,6 +147,9 @@ module.exports = class TickListener {
       throw Error(`Invalid signal: ${JSON.stringify(signal, strategy)}`);
     }
 
+    // First update the signal for cases where it's not reverse
+    tradeLastSignal[lastSignalKey] = signal;
+
     let isReverse = false;
     let nextSignal;
 
@@ -155,11 +158,13 @@ module.exports = class TickListener {
 
       const lastSignal = tradeLastSignal[lastSignalKey];
 
-      if (lastSignal) {
+      if (lastSignal !== undefined) {
         nextSignal = lastSignal === 'short' ? 'long' : 'short';
         // This signal is a close
         signal = 'close';
         result.emptyPlaceOrder();
+        // Override it for the next reversal if any.
+        tradeLastSignal[lastSignalKey] = nextSignal;
       }
     }
 
@@ -199,6 +204,10 @@ module.exports = class TickListener {
 
     if (isReverse) {
       await this.pairStateManager.update(symbol.exchange, symbol.symbol, nextSignal);
+
+      this.notifier.send(
+        `[${nextSignal} (${strategyKey})] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask} ${debugMessage}`
+      );
     }
   }
 
