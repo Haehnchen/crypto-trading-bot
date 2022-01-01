@@ -32,6 +32,7 @@
     "cookie-parser": "^1.4.5",
     "express": "^4.16.4",
     "http": "0.0.0",
+    "linear-regression": "^1.0.3",
     "lodash": "^4.17.19",
     "mocha": "^7.1.2",
     "moment": "^2.25.3",
