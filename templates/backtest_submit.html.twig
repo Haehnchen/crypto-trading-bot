@@ -84,7 +84,7 @@
                             </div>
                             <!-- /.card-header -->
                             <div class="card-body table-responsive p-0">
-                                {% if rows|length < 500 %}
+                                {% if rows|length < 3000 %}
                                     {% include 'components/backtest_table.html.twig' with {
                                         'rows': rows,
                                         'extra_fields': extra_fields,

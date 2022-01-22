@@ -288,55 +288,58 @@ module.exports = class Backtest {
           trades.total += 1;
 
           // Entry Position Details
-          const entrySignalType = lastPosition.result.getSignal(); // Long or Short
-          const entryPrice = lastPosition.price; // Price during the trade entry
-          const tradedQuantity = Number(workingCapital / entryPrice); // Quantity
-          const entryValue = Number((tradedQuantity * entryPrice).toFixed(2)); // Price * Quantity
-          const entryFee = (entryValue * feesPerTrade) / 100;
-          // Exit Details
-          const exitPrice = signalObject.price; // Price during trade exit
-          const exitValue = Number((tradedQuantity * exitPrice).toFixed(2)); // Price * Quantity
-          const exitFee = (exitValue * feesPerTrade) / 100;
+          const entrySignalType = lastPosition ? lastPosition.result.getSignal() : undefined; // Long or Short
 
-          const totalFee = entryFee + exitFee;
-          cumulativeNetFees += totalFee;
+          if (entrySignalType) {
+            const entryPrice = lastPosition.price; // Price during the trade entry
+            const tradedQuantity = Number(workingCapital / entryPrice); // Quantity
+            const entryValue = Number((tradedQuantity * entryPrice).toFixed(2)); // Price * Quantity
+            const entryFee = (entryValue * feesPerTrade) / 100;
+            // Exit Details
+            const exitPrice = signalObject.price; // Price during trade exit
+            const exitValue = Number((tradedQuantity * exitPrice).toFixed(2)); // Price * Quantity
+            const exitFee = (exitValue * feesPerTrade) / 100;
 
-          // Trade Details
-          let pnlValue = 0; // Profit or Loss Value
+            const totalFee = entryFee + exitFee;
+            cumulativeNetFees += totalFee;
 
-          // When the position is Long
-          if (entrySignalType === 'long') {
-            if (exitValue - totalFee > entryValue) {
-              // Long Trade is Profitable
-              trades.profitableCount += 1;
+            // Trade Details
+            let pnlValue = 0; // Profit or Loss Value
+
+            // When the position is Long
+            if (entrySignalType === 'long') {
+              if (exitValue - totalFee > entryValue) {
+                // Long Trade is Profitable
+                trades.profitableCount += 1;
+              }
+
+              // Set the PNL
+              pnlValue = exitValue - totalFee - workingCapital;
+              cumulativePnlLongs += pnlValue;
+            } else if (entrySignalType === 'short') {
+              if (exitValue - totalFee < entryValue) {
+                // Short Trade is Profitable
+                trades.profitableCount += 1;
+              }
+
+              // Set the PNL
+              pnlValue = -(exitValue - totalFee - workingCapital);
+              cumulativePnlShorts += pnlValue;
             }
 
-            // Set the PNL
-            pnlValue = exitValue - totalFee - workingCapital;
-            cumulativePnlLongs += pnlValue;
-          } else if (entrySignalType === 'short') {
-            if (exitValue - totalFee < entryValue) {
-              // Short Trade is Profitable
-              trades.profitableCount += 1;
-            }
+            // Percentage Return
+            // const pnlPercent = Number(((pnlValue / workingCapital) * 100).toFixed(2));
+            const pnlPercent = (pnlValue / workingCapital) * 100;
 
-            // Set the PNL
-            pnlValue = -(exitValue - totalFee - workingCapital);
-            cumulativePnlShorts += pnlValue;
+            // Summation of Percentage Return
+            cumulativePnlPercent += pnlPercent;
+
+            // Maintaining the Percentage array
+            pnlRateArray.push(pnlPercent);
+
+            // Update Working Cap
+            workingCapital += pnlValue;
           }
-
-          // Percentage Return
-          // const pnlPercent = Number(((pnlValue / workingCapital) * 100).toFixed(2));
-          const pnlPercent = (pnlValue / workingCapital) * 100;
-
-          // Summation of Percentage Return
-          cumulativePnlPercent += pnlPercent;
-
-          // Maintaining the Percentage array
-          pnlRateArray.push(pnlPercent);
-
-          // Update Working Cap
-          workingCapital += pnlValue;
         } else if (signalType === 'long' || signalType === 'short') {
           // Enter into a position
           lastPosition = signalObject;
@@ -382,6 +385,7 @@ module.exports = class Backtest {
         cumulativePnlShorts: Number(cumulativePnlShorts).toFixed(2),
         netFees: cumulativeNetFees,
         initialCapital: initialCapitalNumber,
+        // Fix fee on final capital
         finalCapital: Number(workingCapital.toFixed(2)),
         trades: trades
       };

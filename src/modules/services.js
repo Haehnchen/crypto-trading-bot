@@ -152,7 +152,7 @@ module.exports = {
       return db;
     }
 
-    const myDb = Sqlite('bot.db');
+    const myDb = Sqlite('C:\\temp\\crypto-trading-bot\\bot.db');
     myDb.pragma('journal_mode = WAL');
 
     myDb.pragma('SYNCHRONOUS = 1;');
@@ -721,7 +721,7 @@ module.exports = {
     return mail.createTransport({
       host: config.notify.mail.server,
       port: config.notify.mail.port,
-      secure: config.notify.mail.port == 465 ? true : false,
+      secure: config.notify.mail.port === 465,
       auth: {
         user: config.notify.mail.username,
         pass: config.notify.mail.password

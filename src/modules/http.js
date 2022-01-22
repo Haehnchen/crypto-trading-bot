@@ -173,6 +173,7 @@ module.exports = class Http {
             pair: pair,
             result: msg.results
           });
+          console.log(`Backtest: ${key} ready`);
         });
       });
 

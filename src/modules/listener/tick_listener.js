@@ -169,7 +169,7 @@ module.exports = class TickListener {
     }
 
     const signalWindow = moment()
-      .subtract(_.get(symbol, 'trade.signal_slowdown_minutes', 15), 'minutes')
+      .subtract(_.get(symbol, 'trade.signal_slowdown_minutes', strategy.options.trade_signal_slowdown || 15), 'minutes')
       .toDate();
 
     const noteKey = symbol.exchange + symbol.symbol;

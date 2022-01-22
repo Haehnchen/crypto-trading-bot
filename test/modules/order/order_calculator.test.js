@@ -120,7 +120,7 @@ describe('#order size calculation', () => {
       {
         get: () => {
           return {
-            getTradableBalance: () => 100,
+            getTradeableBalance: () => 100,
             calculateAmount: n => n,
             isInverseSymbol: () => true
           };

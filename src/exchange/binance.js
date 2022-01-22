@@ -623,6 +623,10 @@ module.exports = class Binance {
       });
   }
 
+  getTradeableBalance(currency) {
+    return this.balances.filter(balance => balance.asset === currency).map(balance => balance.available)[0];
+  }
+
   /**
    * Binance does not have position trading, but we need entry price so fetch them from filled order history
    *

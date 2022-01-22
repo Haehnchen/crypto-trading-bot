@@ -23,8 +23,9 @@ module.exports = class OrderCalculator {
     const exchange = this.exchangeManager.get(exchangeName);
 
     let amountAsset = capital.getAsset();
+    // TOOO fix this
     let amountCurrency = balancePercent
-      ? (exchange.getTradableBalance() * balancePercent) / 100
+      ? (exchange.getTradeableBalance('USDT') * balancePercent) / 100
       : capital.getCurrency();
 
     if (!amountAsset && !amountCurrency) {
