@@ -4,6 +4,8 @@ const StrategyContext = require('../../dict/strategy_context');
 const Order = require('../../dict/order');
 const OrderCapital = require('../../dict/order_capital');
 
+const tradeLastSignal = {};
+
 module.exports = class TickListener {
   constructor(
     tickers,
@@ -110,10 +112,12 @@ module.exports = class TickListener {
 
     const strategyKey = strategy.strategy;
 
-    let context = StrategyContext.create(strategy.options, ticker);
+    const lastSignalKey = strategyKey + symbol.exchange + symbol.symbol;
+
+    let context = StrategyContext.create(strategy.options, ticker, false);
     const position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
     if (position) {
-      context = StrategyContext.createFromPosition(strategy.options, ticker, position);
+      context = StrategyContext.createFromPosition(strategy.options, ticker, position, false);
     }
 
     const result = await this.strategyManager.executeStrategy(
@@ -134,17 +138,38 @@ module.exports = class TickListener {
       await this.placeStrategyOrders(placedOrder, symbol);
     }
 
-    const signal = result.getSignal();
+    let signal = result.getSignal();
     if (!signal || typeof signal === 'undefined') {
       return;
     }
 
-    if (!['close', 'short', 'long'].includes(signal)) {
+    if (!['close', 'short', 'long', 'reverse'].includes(signal)) {
       throw Error(`Invalid signal: ${JSON.stringify(signal, strategy)}`);
     }
 
+    // First update the signal for cases where it's not reverse
+    tradeLastSignal[lastSignalKey] = signal;
+
+    let isReverse = false;
+    let nextSignal;
+
+    if (signal === 'reverse') {
+      isReverse = true;
+
+      const lastSignal = tradeLastSignal[lastSignalKey];
+
+      if (lastSignal !== undefined) {
+        nextSignal = lastSignal === 'short' ? 'long' : 'short';
+        // This signal is a close
+        signal = 'close';
+        result.emptyPlaceOrder();
+        // Override it for the next reversal if any.
+        tradeLastSignal[lastSignalKey] = nextSignal;
+      }
+    }
+
     const signalWindow = moment()
-      .subtract(_.get(symbol, 'trade.signal_slowdown_minutes', 15), 'minutes')
+      .subtract(_.get(symbol, 'trade.signal_slowdown_minutes', strategy.options.trade_signal_slowdown || 15), 'minutes')
       .toDate();
 
     const noteKey = symbol.exchange + symbol.symbol;
@@ -176,6 +201,14 @@ module.exports = class TickListener {
     this.notified[noteKey] = new Date();
 
     await this.pairStateManager.update(symbol.exchange, symbol.symbol, signal);
+
+    if (isReverse) {
+      await this.pairStateManager.update(symbol.exchange, symbol.symbol, nextSignal);
+
+      this.notifier.send(
+        `[${nextSignal} (${strategyKey})] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask} ${debugMessage}`
+      );
+    }
   }
 
   async placeStrategyOrders(placedOrder, symbol) {

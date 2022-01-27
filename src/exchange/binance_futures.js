@@ -28,6 +28,7 @@ module.exports = class BinanceFutures {
     this.tickers = {};
     this.symbols = [];
     this.intervals = [];
+    this.balances = [];
     this.ccxtClient = undefined;
   }
 
@@ -123,6 +124,10 @@ module.exports = class BinanceFutures {
       setTimeout(async () => {
         await me.initPublicWebsocket(symbols);
       }, 5000);
+
+      setTimeout(async () => {
+        await me.syncBalances(await ccxtClient.fetchBalance());
+      }, 1000);
     } else {
       me.logger.info('Binance Futures: Starting as anonymous; no trading possible');
     }
@@ -161,6 +166,24 @@ module.exports = class BinanceFutures {
         });
       });
     });
+  }
+
+  async syncBalances(balances) {
+    if (!balances) {
+      return;
+    }
+
+    this.logger.debug('Binance Futures: Sync balances');
+
+    for (const [key, balance] of Object.entries(balances)) {
+      if (balance !== undefined && balance.free !== undefined && balance.used !== undefined) {
+        this.balances.push({
+          available: parseFloat(balance.free),
+          locked: parseFloat(balance.used),
+          asset: key
+        });
+      }
+    }
   }
 
   /**
@@ -207,6 +230,10 @@ module.exports = class BinanceFutures {
 
   async getPositionForSymbol(symbol) {
     return (await this.getPositions()).find(position => position.symbol === symbol);
+  }
+
+  getTradeableBalance(currency) {
+    return this.balances.filter(balance => balance.asset === currency).map(balance => balance.available)[0];
   }
 
   calculatePrice(price, symbol) {

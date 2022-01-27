@@ -410,7 +410,7 @@ module.exports = class Bitfinex {
     return false;
   }
 
-  getTradableBalance() {
+  getTradeableBalance() {
     return this.balanceInfo ? this.balanceInfo.amountNet : undefined;
   }
 

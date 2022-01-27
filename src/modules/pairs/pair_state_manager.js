@@ -13,7 +13,7 @@ module.exports = class PairStateManager {
     this.pairInterval = pairInterval || new PairInterval();
   }
 
-  update(exchange, symbol, state, options = {}) {
+  update(exchange, symbol, state, options = { market: true }) {
     if (!['long', 'close', 'short', 'cancel'].includes(state)) {
       this.logger.error(`Invalidate state: ${state}`);
       throw new Error(`Invalidate state: ${state}`);

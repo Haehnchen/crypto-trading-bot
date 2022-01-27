@@ -12,12 +12,13 @@ const SignalResult = require('./dict/signal_result');
 const Position = require('../../dict/position');
 
 module.exports = class StrategyManager {
-  constructor(technicalAnalysisValidator, exchangeCandleCombine, logger, projectDir) {
+  constructor(technicalAnalysisValidator, exchangeCandleCombine, logger, notifier, projectDir) {
     this.technicalAnalysisValidator = technicalAnalysisValidator;
     this.exchangeCandleCombine = exchangeCandleCombine;
     this.projectDir = projectDir;
 
     this.logger = logger;
+    this.notifier = notifier;
     this.strategies = undefined;
   }
 
@@ -226,9 +227,14 @@ module.exports = class StrategyManager {
           validateLookbacks &&
           !this.technicalAnalysisValidator.isValidCandleStickLookback(lookbacks[exchange].slice(), period)
         ) {
-          this.logger.info(
-            `Strategy skipped: outdated candle sticks: ${JSON.stringify([period, strategyName, exchange, symbol])}`
-          );
+          const message = `Strategy skipped: outdated candle sticks: ${JSON.stringify([
+            period,
+            strategyName,
+            exchange,
+            symbol
+          ])}`;
+          this.logger.info(message);
+          this.notifier.send(message);
 
           // stop current run
           return {};

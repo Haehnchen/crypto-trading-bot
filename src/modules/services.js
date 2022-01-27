@@ -27,6 +27,7 @@ const CandlestickRepository = require('../modules/repository/candlestick_reposit
 const StrategyManager = require('./strategy/strategy_manager');
 const ExchangeManager = require('./exchange/exchange_manager');
 
+const { combine, timestamp, label, printf } = format;
 const Trade = require('../modules/trade');
 const Http = require('../modules/http');
 const Backtest = require('../modules/backtest');
@@ -303,8 +304,12 @@ module.exports = {
       return logger;
     }
 
+    const myFormat = printf(({ level, message, timestamp }) => {
+      return `${timestamp} ${level}: ${message}`;
+    });
+
     logger = createLogger({
-      format: format.combine(format.timestamp(), format.json()),
+      format: format.combine(format.timestamp(), myFormat),
       transports: [
         new transports.File({
           filename: `${parameters.projectDir}/var/log/log.log`,
@@ -378,6 +383,7 @@ module.exports = {
       this.getTechnicalAnalysisValidator(),
       this.getExchangeCandleCombine(),
       this.getLogger(),
+      this.getNotifier(),
       parameters.projectDir
     ));
   },
@@ -716,7 +722,7 @@ module.exports = {
     return mail.createTransport({
       host: config.notify.mail.server,
       port: config.notify.mail.port,
-      secure: config.notify.mail.port == 465 ? true : false,
+      secure: config.notify.mail.port === 465,
       auth: {
         user: config.notify.mail.username,
         pass: config.notify.mail.password

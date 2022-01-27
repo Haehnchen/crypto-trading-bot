@@ -34,7 +34,8 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title">Summary <span class="text-muted"> - {{ start|date('y-m-d H:i:s') }} - {{ end|date('y-m-d H:i:s') }}</span></h3>
+{#                                <h3 class="card-title">Summary <span class="text-muted"> - {{ start|date('y-m-d H:i:s') }} - {{ end|date('y-m-d H:i:s') }}</span></h3>#}
+                                <h3 class="card-title">Summary <span class="text-muted"> - {{ start }} - {{ end }}</span></h3>
                             </div>
                             <!-- /.card-header -->
                             <div class="card-body">
@@ -83,7 +84,7 @@
                             </div>
                             <!-- /.card-header -->
                             <div class="card-body table-responsive p-0">
-                                {% if rows|length > 200 %}
+                                {% if rows|length < 3000 %}
                                     {% include 'components/backtest_table.html.twig' with {
                                         'rows': rows,
                                         'extra_fields': extra_fields,

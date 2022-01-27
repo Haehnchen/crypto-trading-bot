@@ -35,10 +35,18 @@
             </tr>
             <tr>
                 <td>
-                    Sharpe Ratio
+                    Net Return on Long transactions
                 </td>
+                <td class="{{ summary.cumulativePnlLongs > 0 ? 'text-success' : 'text-danger' }}">
+                    {{ summary.cumulativePnlLongs }} $
+                </td>
+            </tr>
+            <tr>
                 <td>
-                    {{ summary.sharpeRatio }}
+                    Net Return on Short transactions
+                </td>
+                <td class="{{ summary.cumulativePnlShorts > 0 ? 'text-success' : 'text-danger' }}">
+                    {{ summary.cumulativePnlShorts }} $
                 </td>
             </tr>
         </table>
@@ -46,6 +54,14 @@
 
     <div class="col-md-6">
         <table class="table table-bordered table-sm table-hover backtest-table">
+            <tr>
+                <td>
+                    Sharpe Ratio
+                </td>
+                <td>
+                    {{ summary.sharpeRatio }}
+                </td>
+            </tr>
             <tr>
                 <td>
                     Average Return Per Trade

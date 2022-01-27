@@ -11,7 +11,7 @@ module.exports = class ExchangePosition {
   }
 
   getKey() {
-    return this._exchange + this._position.symbol;
+    return this._exchange + this._position.getSymbol() + this._position.getSide();
   }
 
   getExchange() {
