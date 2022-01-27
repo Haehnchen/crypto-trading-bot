@@ -2,6 +2,10 @@ const BinanceClient = require('binance-api-node').default;
 
 const moment = require('moment');
 const _ = require('lodash');
+const querystring = require('querystring');
+const request = require('request');
+const Candlestick = require('../dict/candlestick');
+
 const ExchangeCandlestick = require('../dict/exchange_candlestick');
 const Ticker = require('../dict/ticker');
 const TickerEvent = require('../event/ticker_event');
@@ -757,5 +761,56 @@ module.exports = class Binance {
 
   isInverseSymbol(symbol) {
     return false;
+  }
+
+  backfill(symbol, period, start) {
+    const symbolUpdated = symbol.replace('PERP', '');
+
+    return new Promise((resolve, reject) => {
+      const query = querystring.stringify({
+        interval: period,
+        symbol: symbolUpdated,
+        limit: 500,
+        startTime: moment(start).valueOf()
+      });
+
+      request(`${this.getBaseUrl()}/fapi/v1/klines?${query}`, { json: true }, (err, res, body) => {
+        if (err) {
+          console.log(`Binance: Candle backfill error: ${String(err)}`);
+          reject();
+          return;
+        }
+
+        if (res.statusCode === 429) {
+          console.log(`Binance: Limit reached: ${String(res.headers)}`);
+          // TODO delay next execution
+          reject();
+          return;
+        }
+
+        if (!Array.isArray(body)) {
+          console.log(`Binance: Candle backfill error: ${JSON.stringify(body)}`);
+          reject();
+          return;
+        }
+
+        resolve(
+          body.map(candle => {
+            return new Candlestick(
+              moment(candle[0]).format('X'),
+              candle[1],
+              candle[2],
+              candle[3],
+              candle[4],
+              candle[5]
+            );
+          })
+        );
+      });
+    });
+  }
+
+  getBaseUrl() {
+    return 'https://fapi.binance.com/';
   }
 };

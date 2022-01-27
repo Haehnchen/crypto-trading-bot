@@ -383,6 +383,7 @@ module.exports = {
       this.getTechnicalAnalysisValidator(),
       this.getExchangeCandleCombine(),
       this.getLogger(),
+      this.getNotifier(),
       parameters.projectDir
     ));
   },
