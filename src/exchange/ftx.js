@@ -13,6 +13,7 @@ const ExchangeOrder = require('../dict/exchange_order');
 
 const CcxtExchangeOrder = require('./ccxt/ccxt_exchange_order');
 const CcxtUtil = require('./utils/ccxt_util');
+const Order = require('../dict/order');
 
 module.exports = class Ftx {
   constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter) {
