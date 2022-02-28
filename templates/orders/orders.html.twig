@@ -32,7 +32,8 @@
                             <div class="form-group">
                                 <label for="order_type">Type</label>
                                 <select class="form-control" id="order_type" name="type">
-                                    <option value="limit" {% if form.type is not defined or form.type|default == 'limit' %}selected{% endif %}>limit</option>
+                                    <option value="market" {% if form.type is not defined or form.type|default == 'market' %}selected{% endif %}>market</option>
+                                    <option value="limit" {% if form.type|default == 'limit' %}selected{% endif %}>limit</option>
                                     <option value="stop" {% if form.type|default == 'stop' %}selected{% endif %}>stop</option>
                                 </select>
                             </div>

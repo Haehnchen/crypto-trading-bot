@@ -5,7 +5,7 @@ module.exports = class SignalRepository {
 
   getSignals(since) {
     return new Promise(resolve => {
-      const stmt = this.db.prepare('SELECT * from signals where income_at > ? order by income_at DESC LIMIT 100');
+      const stmt = this.db.prepare('SELECT * from signals where income_at > ? order by income_at DESC LIMIT 1000');
       resolve(stmt.all(since));
     });
   }

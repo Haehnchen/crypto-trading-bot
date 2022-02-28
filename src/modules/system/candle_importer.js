@@ -1,29 +1,36 @@
 const _ = require('lodash');
 
 module.exports = class CandleImporter {
-  constructor(candlestickRepository) {
+  constructor(candlestickRepository, notifier, logger) {
     this.candlestickRepository = candlestickRepository;
     this.trottle = {};
     this.promises = [];
+    this.logger = logger;
+    this.notifier = notifier;
 
     setInterval(async () => {
-      const candles = Object.values(this.trottle);
-      this.trottle = {};
+      try {
+        const candles = Object.values(this.trottle);
+        this.trottle = {};
 
-      const promises = this.promises.slice();
-      this.promises = [];
+        const promises = this.promises.slice();
+        this.promises = [];
 
-      // on init we can have a lot or REST api we can have a lot of candles
-      // reduce database locking time by split them
-      if (candles.length > 0) {
-        for (const chunk of _.chunk(candles, 1000)) {
-          await this.insertCandles(chunk);
+        // on init we can have a lot or REST api we can have a lot of candles
+        // reduce database locking time by split them
+        if (candles.length > 0) {
+          for (const chunk of _.chunk(candles, 1000)) {
+            await this.insertCandles(chunk);
+          }
         }
-      }
 
-      promises.forEach(resolve => {
-        resolve();
-      });
+        promises.forEach(resolve => {
+          resolve();
+        });
+      } catch (e) {
+        this.logger.info(`Error on interval: ${e}`);
+        this.notifier.send(`Error on interval: ${e}`);
+      }
     }, 1000 * 5);
   }
 
@@ -59,6 +66,9 @@ module.exports = class CandleImporter {
       resolve = res;
     });
 
-    return { promise, resolve };
+    return {
+      promise,
+      resolve
+    };
   }
 };
