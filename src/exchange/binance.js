@@ -774,7 +774,7 @@ module.exports = class Binance {
         startTime: moment(start).valueOf()
       });
 
-      request(`${this.getBaseUrl()}/fapi/v1/klines?${query}`, { json: true }, (err, res, body) => {
+      request(`${this.getBaseUrl()}/api/v3/klines?${query}`, { json: true }, (err, res, body) => {
         if (err) {
           console.log(`Binance: Candle backfill error: ${String(err)}`);
           reject();
@@ -811,6 +811,6 @@ module.exports = class Binance {
   }
 
   getBaseUrl() {
-    return 'https://fapi.binance.com/';
+    return 'https://api.binance.com';
   }
 };
