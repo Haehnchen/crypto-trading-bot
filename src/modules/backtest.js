@@ -73,7 +73,7 @@ module.exports = class Backtest {
 
       // mock repository for window selection of candles
 
-      const prefillWindow = start - Resample.convertPeriodToMinute(candlePeriod) * 500 * 60;
+      const prefillWindow = start - Resample.convertPeriodToMinute(candlePeriod) * 200 * 60;
       const mockedRepository = {
         fetchCombinedCandles: async (mainExchange, symbol, period, exchanges = []) => {
           const key = mainExchange + symbol + period;
@@ -119,7 +119,7 @@ module.exports = class Backtest {
           logIterations = 0;
         }
 
-        const strategyManager = new StrategyManager({}, mockedRepository, {}, this.projectDir);
+        const strategyManager = new StrategyManager({}, mockedRepository, {}, {}, {}, {}, this.projectDir);
 
         const item = await strategyManager.executeStrategyBacktest(
           strategy,

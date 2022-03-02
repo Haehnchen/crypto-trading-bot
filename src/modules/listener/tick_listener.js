@@ -84,7 +84,8 @@ module.exports = class TickListener {
       this.notified[symbol.exchange + symbol.symbol + strategyKey] = new Date();
       const debugMessage = this.getResultDebugMessage(strategy.options);
       this.notifier.send(
-        `[${signal} (${strategyKey})] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask} ${debugMessage}`
+        `[${signal} (${strategyKey})] ${symbol.exchange}:${symbol.symbol} - ${ticker.ask} - 
+        Details: ${JSON.stringify(result.getDebug())}`
       );
 
       // log signal

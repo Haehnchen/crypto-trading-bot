@@ -64,6 +64,7 @@ const CoinbasePro = require('../exchange/coinbase_pro');
 const Noop = require('../exchange/noop');
 const Bybit = require('../exchange/bybit');
 const FTX = require('../exchange/ftx');
+const ccxt = require('ccxt');
 
 const ExchangeCandleCombine = require('../modules/exchange/exchange_candle_combine');
 const CandleExportHttp = require('../modules/system/candle_export_http');
@@ -124,8 +125,32 @@ let throttler;
 const parameters = {};
 
 module.exports = {
+  getMarkets: async (key, secret) => {
+    const ccxtClient = (this.ccxtClient = new ccxt.binance({
+      apiKey: key,
+      key: secret
+    }));
+
+    const markets = await ccxtClient.fetchMarkets();
+
+    return markets.filter(
+      market =>
+        market.quote === 'USDT' &&
+        market.spot &&
+        market.active &&
+        market.type === 'spot' &&
+        market.info.isSpotTradingAllowed
+    );
+  },
+
   boot: async function(projectDir) {
     parameters.projectDir = projectDir;
+
+    try {
+      config = JSON.parse(fs.readFileSync(`${parameters.projectDir}/conf.json`, 'utf8'));
+    } catch (e) {
+      throw new Error(`Invalid conf.json file. Please check: ${String(e)}`);
+    }
 
     try {
       instances = require(`${parameters.projectDir}/instance`);
@@ -133,15 +158,54 @@ module.exports = {
       throw new Error(`Invalid instance.js file. Please check: ${String(e)}`);
     }
 
+    const strategies = [
+      // {
+      //   strategy: 'Price changed',
+      //   interval: '1m',
+      //   options: {
+      //     period: '1m',
+      //     message: 'Price changed 6% in 5m',
+      //     thresholdPercentage: 0.06,
+      //     compareCandle: 5
+      //   }
+      // },
+      // {
+      //   strategy: 'Price changed',
+      //   interval: '15m',
+      //   options: {
+      //     period: '15m',
+      //     message: 'Price changed 8% in 15m',
+      //     thresholdPercentage: 0.08,
+      //     compareCandle: 1
+      //   }
+      // },
+      // {
+      //   strategy: 'Price changed',
+      //   interval: '15m',
+      //   options: {
+      //     period: '15m',
+      //     message: 'Price changed 15% in 1h',
+      //     thresholdPercentage: 0.15,
+      //     compareCandle: 4
+      //   }
+      // }
+    ];
+
+    // const markets = await this.getMarkets(config.exchanges.binance.key, config.exchanges.binance.secret);
+    // markets.forEach(pair => {
+    //   instances.symbols.push({
+    //     symbol: pair.id,
+    //     periods: ['15m'],
+    //     exchange: 'binance',
+    //     feesPerTrade: 0.04,
+    //     state: 'watch',
+    //     strategies: strategies
+    //   });
+    // });
+
     // boot instance eg to load pairs external
     if (typeof instances.init === 'function') {
       await instances.init();
-    }
-
-    try {
-      config = JSON.parse(fs.readFileSync(`${parameters.projectDir}/conf.json`, 'utf8'));
-    } catch (e) {
-      throw new Error(`Invalid conf.json file. Please check: ${String(e)}`);
     }
 
     this.getDatabase();
@@ -203,7 +267,11 @@ module.exports = {
       return candleStickImporter;
     }
 
-    return (candleStickImporter = new CandleImporter(this.getCandlestickRepository()));
+    return (candleStickImporter = new CandleImporter(
+      this.getCandlestickRepository(),
+      this.getNotifier(),
+      this.getLogger()
+    ));
   },
 
   getCreateOrderListener: function() {
@@ -316,7 +384,7 @@ module.exports = {
           level: 'debug'
         }),
         new transports.Console({
-          level: 'error'
+          level: 'info'
         }),
         new WinstonSqliteTransport({
           level: 'debug',
@@ -384,6 +452,8 @@ module.exports = {
       this.getExchangeCandleCombine(),
       this.getLogger(),
       this.getNotifier(),
+      this.getExchangeManager(),
+      this.getConfig(),
       parameters.projectDir
     ));
   },

@@ -10,14 +10,14 @@
           <thead>
           <tr>
             <th scope="col" title="Exchange">E</th>
+            <th scope="col" title="Side">S</th>
             <th scope="col">Symbol</th>
-            <th scope="col">Amount</th>
-            <th scope="col">Currency</th>
             <th scope="col">Profit</th>
             <th scope="col">Entry</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Currency</th>
             <th scope="col">Updated</th>
             <th scope="col">Created</th>
-            <th scope="col" title="Side">S</th>
             <th scope="col" title="Action">A</th>
           </tr>
 
@@ -25,7 +25,21 @@
           <tbody>
           <tr v-for='position in positions' :key="`${position.exchange}-${position.position.symbol}`">
             <td><img :src="`/img/exchanges/${position.exchange}.png`" :alt="position.exchange" :title="position.exchange" width="16px" height="16px"></td>
+            <td>
+              <i v-if="position.position.side === 'short'" class="fas fa-chevron-circle-down text-danger" title="short"></i>
+              <i v-if="position.position.side === 'long'" class="fas fa-chevron-circle-up text-success" title="long"></i>
+            </td>
             <td><a target="blank" :href="'/tradingview/' + position.exchange + ':' + position.position.symbol">{{ position.position.symbol }}</a></td>
+            <td>
+            <span v-if="typeof position.position.profit !== 'undefined'" v-bind:class="{ 'text-success': position.position.profit >= 0, 'text-danger': position.position.profit < 0 }">
+              {{ position.position.profit|round(2) }} %
+            </span>
+            </td>
+            <td>
+              <template v-if="!!position.position.entry">
+                {{ position.position.entry|filter_price }}
+              </template>
+            </td>
             <td v-bind:class="{ 'text-success': position.position.amount > 0, 'text-danger': position.position.amount < 0 }">
               {{ position.position.amount }}
             </td>
@@ -38,16 +52,6 @@
               </template>
             </td>
             <td>
-            <span v-if="typeof position.position.profit !== 'undefined'" v-bind:class="{ 'text-success': position.position.profit >= 0, 'text-danger': position.position.profit < 0 }">
-              {{ position.position.profit|round(2) }} %
-            </span>
-            </td>
-            <td>
-              <template v-if="!!position.position.entry">
-                {{ position.position.entry|filter_price }}
-              </template>
-            </td>
-            <td>
               <template v-if="!!position.position.updatedAt">
                 {{ position.position.updatedAt|date('d.m.y H:i') }}
               </template>
@@ -56,10 +60,6 @@
               <template v-if="!!position.position.createdAt">
                 {{ position.position.createdAt|date('d.m.y H:i') }}
               </template>
-            </td>
-            <td>
-              <i v-if="position.position.side === 'short'" class="fas fa-chevron-circle-down text-danger" title="short"></i>
-              <i v-if="position.position.side === 'long'" class="fas fa-chevron-circle-up text-success" title="long"></i>
             </td>
             <td style="white-space: nowrap;padding: 0;">
               <form :action="'/pairs/' + position.exchange + '-' + position.position.symbol" method="post">

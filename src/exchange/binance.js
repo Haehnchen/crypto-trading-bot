@@ -34,7 +34,9 @@ module.exports = class Binance {
   }
 
   start(config, symbols) {
-    this.symbols = symbols;
+    if (this.symbols.length === 0) {
+      this.symbols = symbols;
+    }
 
     const opts = {};
 
@@ -43,13 +45,19 @@ module.exports = class Binance {
       opts.apiSecret = config.secret;
     }
 
-    const client = (this.client = BinanceClient(opts));
+    if (this.client === undefined) {
+      this.client = BinanceClient(opts);
+    }
 
     const me = this;
 
     if (config.key && config.secret) {
       this.client.ws.user(async event => {
-        await this.onWebSocketEvent(event);
+        console.log(`Websocket user event: ${JSON.stringify(event)}`);
+      });
+
+      this.client.ws.user(async event => {
+        console.log(`Websocket user event: ${JSON.stringify(event)}`);
       });
 
       // we need balance init; websocket sending only on change
@@ -86,64 +94,66 @@ module.exports = class Binance {
       this.logger.info('Binance: Starting as anonymous; no trading possible');
     }
 
-    const { eventEmitter } = this;
-    symbols.forEach(symbol => {
-      // live prices
-      client.ws.ticker(symbol.symbol, ticker => {
-        eventEmitter.emit(
-          'ticker',
-          new TickerEvent(
+    symbols.forEach(symbol => this.setupSymbol(symbol));
+  }
+
+  setupSymbol(symbol) {
+    // live prices
+    this.client.ws.ticker(symbol.symbol, ticker => {
+      this.eventEmitter.emit(
+        'ticker',
+        new TickerEvent(
+          'binance',
+          symbol.symbol,
+          (this.tickers[symbol.symbol] = new Ticker(
             'binance',
             symbol.symbol,
-            (this.tickers[symbol.symbol] = new Ticker(
+            moment().format('X'),
+            ticker.bestBid,
+            ticker.bestAsk
+          ))
+        )
+      );
+    });
+
+    symbol.periods.forEach(interval => {
+      // backfill
+      this.queue.add(() => {
+        this.client.candles({ symbol: symbol.symbol, limit: 500, interval: interval }).then(async candles => {
+          const ourCandles = candles.map(candle => {
+            return new ExchangeCandlestick(
               'binance',
               symbol.symbol,
-              moment().format('X'),
-              ticker.bestBid,
-              ticker.bestAsk
-            ))
-          )
-        );
+              interval,
+              Math.round(candle.openTime / 1000),
+              candle.open,
+              candle.high,
+              candle.low,
+              candle.close,
+              candle.volume
+            );
+          });
+
+          await this.candleImport.insertThrottledCandles(ourCandles);
+        });
       });
 
-      symbol.periods.forEach(interval => {
-        // backfill
-        this.queue.add(() => {
-          client.candles({ symbol: symbol.symbol, limit: 500, interval: interval }).then(async candles => {
-            const ourCandles = candles.map(candle => {
-              return new ExchangeCandlestick(
-                'binance',
-                symbol.symbol,
-                interval,
-                Math.round(candle.openTime / 1000),
-                candle.open,
-                candle.high,
-                candle.low,
-                candle.close,
-                candle.volume
-              );
-            });
+      // live candles
+      this.client.ws.candles(symbol.symbol, interval, async candle => {
+        this.logger.debug(`Candle for symbol ${symbol.symbol}, ${interval} received`);
+        const ourCandle = new ExchangeCandlestick(
+          'binance',
+          symbol.symbol,
+          interval,
+          Math.round(candle.startTime / 1000),
+          candle.open,
+          candle.high,
+          candle.low,
+          candle.close,
+          candle.volume
+        );
 
-            await this.candleImport.insertThrottledCandles(ourCandles);
-          });
-        });
-
-        // live candles
-        client.ws.candles(symbol.symbol, interval, async candle => {
-          const ourCandle = new ExchangeCandlestick(
-            'binance',
-            symbol.symbol,
-            interval,
-            Math.round(candle.startTime / 1000),
-            candle.open,
-            candle.high,
-            candle.low,
-            candle.close,
-            candle.volume
-          );
-
-          await this.candleImport.insertThrottledCandles([ourCandle]);
-        });
+        await this.candleImport.insertThrottledCandles([ourCandle]);
       });
     });
   }
@@ -155,7 +165,14 @@ module.exports = class Binance {
     try {
       result = await this.client.order(payload);
     } catch (e) {
-      this.logger.error(`Binance: order create error: ${JSON.stringify(e.code, e.message, order, payload)}`);
+      this.logger.error(
+        `Binance: order create error: ${JSON.stringify(
+          e.code,
+          e.message,
+          order,
+          payload
+        )} on symbol: ${order.getSymbol()} for amount: ${order.getAmount()}`
+      );
 
       if ((e.message && e.message.toLowerCase().includes('insufficient balance')) || (e.code && e.code === -2010)) {
         return ExchangeOrder.createRejectedFromOrder(order, `${e.code} - ${e.message}`);
@@ -428,84 +445,88 @@ module.exports = class Binance {
 
   async getPositions() {
     const positions = [];
-
-    // get pairs with capital to fake open positions
-    const capitals = {};
-    this.symbols
-      .filter(
-        s =>
-          s.trade &&
-          ((s.trade.capital && s.trade.capital > 0) ||
-            (s.trade.currency_capital && s.trade.currency_capital > 0) ||
-            (s.trade.strategies && s.trade.strategies.length > 0))
-      )
-      .forEach(s => {
-        if (s.trade.capital > 0) {
-          capitals[s.symbol] = s.trade.capital;
-        } else if (s.trade.currency_capital > 0 && this.tickers[s.symbol] && this.tickers[s.symbol].bid) {
-          capitals[s.symbol] = s.trade.currency_capital / this.tickers[s.symbol].bid;
-        } else {
-          capitals[s.symbol] = 0;
-        }
-      });
-
-    for (const balance of this.balances) {
-      const { asset } = balance;
-
-      const assetPositions = [];
-
-      for (const pair in capitals) {
-        // just a hack to get matching pairs with capital eg: "BTCUSDT" needs a capital of "BTC"
-        // workaround: eg "BTCUPDOWN" is breaking the match
-        if (!pair.startsWith(asset) || pair.startsWith(`${asset}UP`) || pair.startsWith(`${asset}DOWN`)) {
-          continue;
-        }
-
-        // 1% balance left indicate open position
-        const pairCapital = capitals[pair];
-        if (Math.abs(Math.abs(balance.available) / pairCapital) < 0.1) {
-          continue;
-        }
-
-        let entry;
-        let createdAt;
-
-        // try to find a entry price, based on trade history
-        const side = balance.available < 0 ? 'short' : 'long';
-
-        const trades = this.trades[pair];
-        if (trades && trades.length > 0) {
-          const positionEntry = TradesUtil.findPositionEntryFromTrades(trades, Math.abs(balance.available), side);
-
-          if (positionEntry) {
-            entry = positionEntry.average_price;
-            createdAt = positionEntry.time;
+    if (Object.keys(this.exchangePairs).length > 0) {
+      // get pairs with capital to fake open positions
+      const capitals = {};
+      this.symbols
+        .filter(
+          s =>
+            s.trade &&
+            ((s.trade.capital && s.trade.capital > 0) ||
+              (s.trade.currency_capital && s.trade.currency_capital > 0) ||
+              (s.trade.strategies && s.trade.strategies.length > 0))
+        )
+        .forEach(s => {
+          if (s.trade.capital > 0) {
+            capitals[s.symbol] = s.trade.capital;
+          } else if (s.trade.currency_capital > 0 && this.tickers[s.symbol] && this.tickers[s.symbol].bid) {
+            capitals[s.symbol] = s.trade.currency_capital / this.tickers[s.symbol].bid;
+          } else {
+            capitals[s.symbol] = 0;
           }
-        }
+        });
 
-        // calculate profit based on the ticker price
-        let profit;
-        if (entry && this.tickers[pair]) {
-          profit = (this.tickers[pair].bid / entry - 1) * 100;
+      for (const balance of this.balances) {
+        const { asset } = balance;
 
-          // inverse profit for short
-          if (side === 'short') {
-            profit *= -1;
+        const assetPositions = [];
+
+        for (const pair in capitals) {
+          // just a hack to get matching pairs with capital eg: "BTCUSDT" needs a capital of "BTC"
+          // workaround: eg "BTCUPDOWN" is breaking the match
+          if (!pair.startsWith(asset) || pair.startsWith(`${asset}UP`) || pair.startsWith(`${asset}DOWN`)) {
+            continue;
           }
+
+          // 1% balance left indicate open position
+
+          if (capitals[pair] !== 0 && Math.abs(Math.abs(balance.available) / capitals[pair]) < 0.1) {
+            continue;
+          } else if (capitals[pair] === 0 && balance.available <= this.exchangePairs[pair].lot_size) {
+            continue;
+          }
+
+          let entry;
+          let createdAt;
+
+          // try to find a entry price, based on trade history
+          const side = balance.available < 0 ? 'short' : 'long';
+
+          const trades = this.trades[pair];
+          if (trades && trades.length > 0) {
+            const positionEntry = TradesUtil.findPositionEntryFromTrades(trades, Math.abs(balance.available), side);
+
+            if (positionEntry) {
+              entry = positionEntry.average_price;
+              createdAt = positionEntry.time;
+            }
+          }
+
+          // calculate profit based on the ticker price
+          let profit;
+          if (entry && this.tickers[pair]) {
+            profit = (this.tickers[pair].bid / entry - 1) * 100;
+
+            // inverse profit for short
+            if (side === 'short') {
+              profit *= -1;
+            }
+          }
+
+          assetPositions.push(Position.create(pair, balance.available, new Date(), createdAt, entry, profit));
         }
 
-        assetPositions.push(Position.create(pair, balance.available, new Date(), createdAt, entry, profit));
-      }
+        if (assetPositions.length > 0) {
+          // on multiple pair path orders with latest date wins
+          const assetPositionsOrdered = assetPositions.sort(
+            // order by latest
+            (a, b) =>
+              (b.createdAt ? b.createdAt : new Date('1970-01-01')) -
+              (a.createdAt ? a.createdAt : new Date('1970-01-01'))
+          );
 
-      if (assetPositions.length > 0) {
-        // on multiple pair path orders with latest date wins
-        const assetPositionsOrdered = assetPositions.sort(
-          // order by latest
-          (a, b) =>
-            (b.createdAt ? b.createdAt : new Date('1970-01-01')) - (a.createdAt ? a.createdAt : new Date('1970-01-01'))
-        );
-
-        positions.push(assetPositionsOrdered[0]);
+          positions.push(assetPositionsOrdered[0]);
+        }
       }
     }
 
@@ -536,7 +557,7 @@ module.exports = class Binance {
     return 'binance';
   }
 
-  async onWebSocketEvent(event) {
+  async NonWebSocketEvent(event) {
     if (event.eventType && event.eventType === 'executionReport' && ('orderStatus' in event || 'orderId' in event)) {
       this.logger.debug(`Binance: Got executionReport order event: ${JSON.stringify(event)}`);
 
@@ -707,7 +728,10 @@ module.exports = class Binance {
             };
           });
 
-        return { symbol: symbol, orders: orders };
+        return {
+          symbol: symbol,
+          orders: orders
+        };
       };
     });
 
@@ -774,7 +798,7 @@ module.exports = class Binance {
         startTime: moment(start).valueOf()
       });
 
-      request(`${this.getBaseUrl()}/api/v3/klines?${query}`, { json: true }, (err, res, body) => {
+      request(`${this.getBaseUrl()}api/v1/klines?${query}`, { json: true }, (err, res, body) => {
         if (err) {
           console.log(`Binance: Candle backfill error: ${String(err)}`);
           reject();
@@ -811,6 +835,6 @@ module.exports = class Binance {
   }
 
   getBaseUrl() {
-    return 'https://api.binance.com';
+    return 'https://api.binance.com/';
   }
 };

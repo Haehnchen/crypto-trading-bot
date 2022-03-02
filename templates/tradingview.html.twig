@@ -45,7 +45,7 @@
   {
     'autosize': true,
     'symbol': "{{ symbol }}",
-            'interval': '15',
+            'interval': '5',
             'theme': 'Light',
             'style': '1',
             'locale': 'en',
@@ -56,16 +56,24 @@
             'timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
             'studies': [
                 {
-                 "id": "MAExp@tv-basicstudies",
-                 "inputs": {
-                   "length": 200
+                 'id': 'MAExp@tv-basicstudies',
+                 'inputs': {
+                   'length': 200
                  }
                },{
-                 "id": "MAExp@tv-basicstudies",
-                 "inputs": {
-                   "length": 40
+                 'id': 'MAExp@tv-basicstudies',
+                 'inputs': {
+                   'length': 100
                  }
-               },
+               },{
+                 'id': 'MAExp@tv-basicstudies',
+                 'inputs': {
+                   'length': 24
+                 }
+               },{
+                 'id': 'DM@tv-basicstudies'
+
+               }
             ]
         }
     );
@@ -84,26 +92,25 @@
             'container_id': 'tradingview_2',
             'timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
             'studies': [
-                {
-                 "id": "MAExp@tv-basicstudies",
-                 // "version": 60,
-                 "inputs": {
-                   "length": 200
+               {
+                 'id': 'MAExp@tv-basicstudies',
+                 'inputs': {
+                   'length': 200
                  }
                },{
-                 "id": "MAExp@tv-basicstudies",
+                 'id': 'MAExp@tv-basicstudies',
                  // "version": 60,
-                 "inputs": {
-                   "length": 100
+                 'inputs': {
+                   'length': 100
                  }
                },{
-                 "id": "MAExp@tv-basicstudies",
+                 'id': 'MAExp@tv-basicstudies',
                  // "version": 60,
-                 "inputs": {
-                   "length": 24
+                 'inputs': {
+                   'length': 24
                  }
                },{
-                 "id": "DM@tv-basicstudies",
+                 'id': 'DM@tv-basicstudies'
                }
             ]
         }
