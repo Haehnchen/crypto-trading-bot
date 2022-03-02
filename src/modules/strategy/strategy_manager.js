@@ -12,13 +12,23 @@ const SignalResult = require('./dict/signal_result');
 const Position = require('../../dict/position');
 
 module.exports = class StrategyManager {
-  constructor(technicalAnalysisValidator, exchangeCandleCombine, logger, notifier, projectDir) {
+  constructor(
+    technicalAnalysisValidator,
+    exchangeCandleCombine,
+    logger,
+    notifier,
+    exchangeManager,
+    config,
+    projectDir
+  ) {
     this.technicalAnalysisValidator = technicalAnalysisValidator;
     this.exchangeCandleCombine = exchangeCandleCombine;
     this.projectDir = projectDir;
 
     this.logger = logger;
     this.notifier = notifier;
+    this.exchangeManager = exchangeManager;
+    this.config = config;
     this.strategies = undefined;
   }
 
@@ -234,7 +244,13 @@ module.exports = class StrategyManager {
             symbol
           ])}`;
           this.logger.info(message);
-          this.notifier.send(message);
+          if (this.notifier) {
+            this.notifier.send(message);
+            this.exchangeManager.get(exchange).setupSymbol({
+              symbol: symbol,
+              periods: [period]
+            });
+          }
 
           // stop current run
           return {};

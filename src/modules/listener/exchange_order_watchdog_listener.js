@@ -115,7 +115,7 @@ module.exports = class ExchangeOrderWatchdogListener {
     const orders = await exchange.getOrdersForSymbol(position.getSymbol());
     const orderChanges = orderUtil.syncStopLossOrder(position, orders);
 
-    orderChanges.forEach(async orderChange => {
+    for (const orderChange of orderChanges) {
       logger.info(
         `Stoploss update: ${JSON.stringify({
           order: orderChange,
@@ -142,20 +142,20 @@ module.exports = class ExchangeOrderWatchdogListener {
           );
         }
 
-        return;
+        continue;
       }
 
       // create
-      let price = stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss);
+      let price = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss);
       if (!price) {
         console.log('Stop loss: auto price skipping');
-        return;
+        continue;
       }
 
       price = exchange.calculatePrice(price, position.getSymbol());
       if (!price) {
         console.log('Stop loss: auto price skipping');
-        return;
+        continue;
       }
 
       const order = Order.createStopLossOrder(position.getSymbol(), price, orderChange.amount);
@@ -170,7 +170,7 @@ module.exports = class ExchangeOrderWatchdogListener {
           })}`
         );
       }
-    });
+    }
   }
 
   async riskRewardRatioWatchdog(exchange, position, riskRewardRatioOptions) {

@@ -3,7 +3,7 @@ const services = require('../modules/services');
 process.on('message', async msg => {
   const p = msg.pair.split('.');
 
-  services.boot(msg.projectDir);
+  await services.boot(msg.projectDir);
 
   const results = await services
     .getBacktest()
