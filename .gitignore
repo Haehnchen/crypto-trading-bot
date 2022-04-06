@@ -243,3 +243,5 @@ Temporary Items
 /bot.db-shm
 /bot.db-wal
 /var/log/
+/var/strategies/
+nssm.exe
