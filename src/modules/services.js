@@ -216,7 +216,7 @@ module.exports = {
       return db;
     }
 
-    const myDb = Sqlite('C:\\temp\\crypto-trading-bot\\bot.db');
+    const myDb = Sqlite('bot.db');
     myDb.pragma('journal_mode = WAL');
 
     myDb.pragma('SYNCHRONOUS = 1;');
