@@ -9,6 +9,8 @@ module.exports = class Backfill {
   }
 
   async backfill(exchangeName, symbol, period, date) {
+    console.log(`Starting backfill for: ${symbol} period: ${period}`);
+
     const exchange = this.exchangesIterator.find(e => e.getName() === exchangeName);
     if (!exchange) {
       throw `Exchange not found: ${exchangeName}`;
