@@ -16,7 +16,7 @@
     }
   ],
   "dependencies": {
-    "async": "^3.2.0",
+    "async": "^3.2.2",
     "basic-auth": "^2.0.1",
     "better-queue": "^3.8.10",
     "better-sqlite3": "^7.4.2",
