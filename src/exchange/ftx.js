@@ -330,15 +330,23 @@ module.exports = class Ftx {
   }
 
   /**
-   * Set the configured leverage size "0-100" for pair before creating an order default "5" if not provided in configuration
+   * Set the configured leverage size "1-20" for pair before creating an order default "1" if not provided in configuration
    *
    * symbol configuration via:
    *
-   * "extra.bybit_leverage": 5
+   * "extra.ftx_leverage": 5
    *
    * @param symbol
    */
-  async updateLeverage(symbol) {}
+  async updateLeverage(symbol) {
+    const config = this.symbols.find(cSymbol => cSymbol.symbol === symbol);
+    const leverageSize = _.get(config, 'extra.ftx_leverage', 1);
+    if (leverageSize < 1 || leverageSize > 20) {
+      throw Error(`Invalid leverage size for: ${leverageSize} ${symbol}`);
+    }
+    this.ccxtClient.setLeverage(leverageSize, symbol.symbol, {})
+  }
+
 
   async cancelOrder(id) {
     const result = this.ccxtExchangeOrder.cancelOrder(id);
