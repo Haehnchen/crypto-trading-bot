@@ -95,6 +95,8 @@ module.exports = class Ftx {
         if (order.getType() === Order.TYPE_STOP) {
           request.args.stopPrice = order.getPrice();
         }
+
+        return request;
       }
     });
 
