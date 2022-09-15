@@ -649,4 +649,4 @@ module.exports = class BinanceFuturesCoin {
 
     return newOrder;
   }
-};  
+};
