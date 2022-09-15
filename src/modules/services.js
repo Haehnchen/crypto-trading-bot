@@ -56,13 +56,14 @@ const Queue = require('../utils/queue');
 const Bitmex = require('../exchange/bitmex');
 const BitmexTestnet = require('../exchange/bitmex_testnet');
 const Binance = require('../exchange/binance');
-const BinanceFutures = require('../exchange/binance_futures');
 const BinanceMargin = require('../exchange/binance_margin');
-const Bitfinex = require('../exchange/bitfinex');
+const BinanceFutures = require('../exchange/binance_futures');
+const BinanceFuturesCoin = require('../exchange/binance_futures_coin');
 const CoinbasePro = require('../exchange/coinbase_pro');
-const Noop = require('../exchange/noop');
+const Bitfinex = require('../exchange/bitfinex');
 const Bybit = require('../exchange/bybit');
 const FTX = require('../exchange/ftx');
+const Noop = require('../exchange/noop');
 
 const ExchangeCandleCombine = require('../modules/exchange/exchange_candle_combine');
 const CandleExportHttp = require('../modules/system/candle_export_http');
@@ -638,6 +639,31 @@ module.exports = {
         this.getCandleImporter(),
         this.getThrottler()
       ),
+      new BinanceMargin(
+        this.getEventEmitter(),
+        this.getLogger(),
+        this.getQueue(),
+        this.getCandleImporter(),
+        this.getThrottler()
+      ),
+      new BinanceFutures(
+        this.getEventEmitter(),
+        this.getRequestClient(),
+        this.getCandlestickResample(),
+        this.getLogger(),
+        this.getQueue(),
+        this.getCandleImporter(),
+        this.getThrottler()
+      ),
+      new BinanceFuturesCoin(
+        this.getEventEmitter(),
+        this.getRequestClient(),
+        this.getCandlestickResample(),
+        this.getLogger(),
+        this.getQueue(),
+        this.getCandleImporter(),
+        this.getThrottler()
+      ),
       new CoinbasePro(
         this.getEventEmitter(),
         this.getLogger(),
@@ -645,7 +671,12 @@ module.exports = {
         this.getQueue(),
         this.getCandleImporter()
       ),
-      new Bitfinex(this.getEventEmitter(), this.getLogger(), this.getRequestClient(), this.getCandleImporter()),
+      new Bitfinex(
+	this.getEventEmitter(),
+	this.getLogger(),
+	this.getRequestClient(),
+	this.getCandleImporter()
+      ),
       new Bybit(
         this.getEventEmitter(),
         this.getRequestClient(),
@@ -662,22 +693,6 @@ module.exports = {
         this.getLogger(),
         this.getQueue(),
         this.getCandleImporter()
-      ),
-      new BinanceFutures(
-        this.getEventEmitter(),
-        this.getRequestClient(),
-        this.getCandlestickResample(),
-        this.getLogger(),
-        this.getQueue(),
-        this.getCandleImporter(),
-        this.getThrottler()
-      ),
-      new BinanceMargin(
-        this.getEventEmitter(),
-        this.getLogger(),
-        this.getQueue(),
-        this.getCandleImporter(),
-        this.getThrottler()
       ),
       new Noop()
     ]);
