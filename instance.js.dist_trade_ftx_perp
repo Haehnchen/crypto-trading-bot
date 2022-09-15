@@ -1,0 +1,277 @@
+var c = module.exports = {}
+
+c.symbols = []
+
+const InstanceUtil = require('./src/utils/instance_util');
+
+c.init = async () => {
+
+    c.symbols.push(
+      ...(await InstanceUtil.ftxInitPerp(pair => {
+/*
+        if (['BNB-PERP'].includes(pair.symbol)) {
+        pair.trade = {
+          'currency_capital': 30,
+          'strategies': [
+            {
+              'strategy': 'dip_catcher',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'trend_cloud_multiplier': 4,
+                'hma_high_period': 9,
+                'hma_high_candle_source': 'close',
+                'hma_low_period': 9,
+                'hma_low_candle_source': 'close'
+              }
+            }
+          ]
+        };
+        pair.watchdogs = [
+          {
+            'name': 'stoploss_watch',
+            'stop': 1.2
+          }
+        ];
+        return pair;
+	}
+
+        if (['PAXG-PERP','XAUT-PERP'].includes(pair.symbol)) {
+        pair.trade = {
+          'currency_capital': 20,
+          'strategies': [
+            {
+              'strategy': 'dip_catcher',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'trend_cloud_multiplier': 4,
+                'hma_high_period': 9,
+                'hma_high_candle_source': 'close',
+                'hma_low_period': 9,
+                'hma_low_candle_source': 'close'
+              }
+            }
+          ]
+        };
+        pair.watchdogs = [
+          {
+            'name': 'stoploss_watch',
+            'stop': 1.2
+          }
+        ];
+        return pair;
+	}
+
+        if (['CRO-PERP','EXCH-PERP'].includes(pair.symbol)) {
+        pair.trade = {
+          'currency_capital': 10,
+          'strategies': [
+            {
+              'strategy': 'dip_catcher',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'trend_cloud_multiplier': 4,
+                'hma_high_period': 9,
+                'hma_high_candle_source': 'close',
+                'hma_low_period': 9,
+                'hma_low_candle_source': 'close'
+              }
+            }
+          ]
+        };
+        pair.watchdogs = [
+          {
+            'name': 'stoploss_watch',
+            'stop': 1.2
+          }
+        ];
+        return pair;
+	}
+
+        if (['LEO-PERP'].includes(pair.symbol)) {
+        pair.trade = {
+          'currency_capital': 6,
+          'strategies': [
+            {
+              'strategy': 'dip_catcher',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'trend_cloud_multiplier': 4,
+                'hma_high_period': 9,
+                'hma_high_candle_source': 'close',
+                'hma_low_period': 9,
+                'hma_low_candle_source': 'close'
+              }
+            }
+          ]
+        };
+        pair.watchdogs = [
+          {
+            'name': 'stoploss_watch',
+            'stop': 1.2
+          }
+        ];
+        return pair;
+	}
+*/
+        if (['ETC-PERP','ZEC-PERP'].includes(pair.symbol)) {
+        pair.trade = {
+          'currency_capital': 4,
+          'strategies': [
+            {
+              'strategy': 'dip_catcher',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'trend_cloud_multiplier': 4,
+                'hma_high_period': 9,
+                'hma_high_candle_source': 'close',
+                'hma_low_period': 9,
+                'hma_low_candle_source': 'close'
+              }
+            },
+            {
+              'strategy': 'dca_dipper',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'amount_currency': '6',
+                'percent_below_price': 0.1,
+                'hma_period': 9,
+                'hma_source': 'close'
+              }
+            }
+          ]
+        };
+        pair.watchdogs = [
+          {
+            'name': 'stoploss_watch',
+            'stop': 1.2
+          }
+        ];
+        return pair;
+	}
+
+        if (['AVAX-PERP','BTC-PERP','CHZ-PERP','FTT-PERP','WAVES-PERP'].includes(pair.symbol)) {
+        pair.trade = {
+          'currency_capital': 3,
+          'strategies': [
+            {
+              'strategy': 'dip_catcher',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'trend_cloud_multiplier': 4,
+                'hma_high_period': 9,
+                'hma_high_candle_source': 'close',
+                'hma_low_period': 9,
+                'hma_low_candle_source': 'close'
+              }
+            },
+            {
+              'strategy': 'dca_dipper',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'amount_currency': '6',
+                'percent_below_price': 0.1,
+                'hma_period': 9,
+                'hma_source': 'close'
+              }
+            }
+          ]
+        };
+        pair.watchdogs = [
+          {
+            'name': 'stoploss_watch',
+            'stop': 1.2
+          }
+        ];
+        return pair;
+	}
+
+        if (['AXS-PERP','ETH-PERP','SHIB-PERP','XMR-PERP'].includes(pair.symbol)) {
+        pair.trade = {
+          'currency_capital': 2,
+          'strategies': [
+            {
+              'strategy': 'dip_catcher',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'trend_cloud_multiplier': 4,
+                'hma_high_period': 9,
+                'hma_high_candle_source': 'close',
+                'hma_low_period': 9,
+                'hma_low_candle_source': 'close'
+              }
+            },
+            {
+              'strategy': 'dca_dipper',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'amount_currency': '4',
+                'percent_below_price': 0.1,
+                'hma_period': 9,
+                'hma_source': 'close'
+              }
+            }
+          ]
+        };
+        pair.watchdogs = [
+          {
+            'name': 'stoploss_watch',
+            'stop': 1.2
+          },
+        ];
+        return pair;
+	}
+
+        if (!['AVAX-PERP','AXS-PERRP','BNB-PERP','BTC-PERP','CHZ-PERP','CRO-PERP','ETC-PERP','ETH-PERP','EXCH-PERP','FTT-PERP','LEO-PERRP','PAXG-PERP','SHIB-PERP','USDT-PERP','WAVES-PERP','XAUT-PERP','XMR-PERP','ZEC-PERP'].includes(pair.symbol)) {
+        pair.trade = {
+          'currency_capital': 1,
+          'strategies': [
+            {
+              'strategy': 'dip_catcher',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'trend_cloud_multiplier': 4,
+                'hma_high_period': 9,
+                'hma_high_candle_source': 'close',
+                'hma_low_period': 9,
+                'hma_low_candle_source': 'close'
+              }
+            },
+            {
+              'strategy': 'dca_dipper',
+              'interval': '15m',
+              'options': {
+                'period': '15m',
+                'amount_currency': '2',
+                'percent_below_price': 0.1,
+                'hma_period': 9,
+                'hma_source': 'close'
+              }
+            }
+          ]
+        };
+        pair.watchdogs = [
+          {
+            'name': 'stoploss_watch',
+            'stop': 1.2
+          }
+        ];
+        return pair;
+	}
+
+        return undefined;
+
+      }))
+    );
+
+};

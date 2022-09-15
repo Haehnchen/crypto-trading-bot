@@ -12,11 +12,15 @@
             "key": null,
             "secret": null
         },
+        "binance_margin": {
+            "key": null,
+            "secret": null
+        },
         "binance_futures": {
             "key": null,
             "secret": null
         },
-        "binance_margin": {
+        "binance_futures_coin": {
             "key": null,
             "secret": null
         },
