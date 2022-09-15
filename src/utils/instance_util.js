@@ -462,23 +462,6 @@ module.exports = {
    * @link https://www.binance.com/de/margin-fee
    * @returns {Promise<unknown>}
    */
-  binancecrossMarginPairsBNB: () => {
-    return new Promise(resolve => {
-      request('https://www.binance.com/gateway-api/v1/friendly/margin/vip/spec/list-all', (_error, _res, body) => {
-        const content = JSON.parse(body);
-        const crossMarginPairsBNB = content.data.map(i => i.assetName);
-
-        resolve(crossMarginPairsBNB);
-      });
-    });
-  },
-
-  /**
-   * There is API (or not documented) where to filter isolated and cross margin wallet pairs take them from fee page api
-   *
-   * @link https://www.binance.com/de/margin-fee
-   * @returns {Promise<unknown>}
-   */
   binancecrossMarginPairsBTC: () => {
     return new Promise(resolve => {
       request('https://www.binance.com/gateway-api/v1/friendly/margin/vip/spec/list-all', (_error, _res, body) => {
