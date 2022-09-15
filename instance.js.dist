@@ -35,16 +35,36 @@ c.init = async () => {
     // FTX all "perp" / futures contracts
     c.symbols.push(...(await InstanceUtil.ftxInitPerp()));
 
+    // Binance all BNB pairs
+    // c.symbols.push(...(await InstanceUtil.binanceInitBNB()));
+    // Binance all BTC pairs
+    // c.symbols.push(...(await InstanceUtil.binanceInitBTC()));
+    // Binance all BUSD pairs
+    // c.symbols.push(...(await InstanceUtil.binanceInitBusd()));
+    // Binance all ETH pairs
+    // c.symbols.push(...(await InstanceUtil.binanceInitETH()));
     // Binance all USDT pairs
-    c.symbols.push(...(await InstanceUtil.binanceInitUsd()));
+    // c.symbols.push(...(await InstanceUtil.binanceInitUsdT()));
 
+    // Binance all BNB pairs spot
+    // c.symbols.push(...(await InstanceUtil.binanceInitSpotBNB()));
+    // Binance all BTC pairs spot or margin
+    // c.symbols.push(...(await InstanceUtil.binanceInitSpotBTC()));
+    // c.symbols.push(...(await InstanceUtil.binanceInitMarginBTC()));
+    // Binance all ETH pairs spot or margin
+    // c.symbols.push(...(await InstanceUtil.binanceInitSpotETH()));
+    // c.symbols.push(...(await InstanceUtil.binanceInitMarginETH()));
+    // Binance all BUSD pairs spot or margin
+    // c.symbols.push(...(await InstanceUtil.binanceInitSpotBusd()));
+    // c.symbols.push(...(await InstanceUtil.binanceInitMarginBusd()));
     // Binance all USDT pairs spot or margin
-    // c.symbols.push(...(await InstanceUtil.binanceInitMarginUsd()));
-    // c.symbols.push(...(await InstanceUtil.binanceInitSpotUsd()));
+    // c.symbols.push(...(await InstanceUtil.binanceInitSpotUsdT()));
+    // c.symbols.push(...(await InstanceUtil.binanceInitMarginUsdT()));
 
-
-    // Binance futures
-    c.symbols.push(...(await InstanceUtil.binanceFuturesInit()));
+    // Binance futures USD-M
+    // c.symbols.push(...(await InstanceUtil.binanceFuturesInit()));
+    // Binance futures COIN-M
+    // c.symbols.push(...(await InstanceUtil.binanceFuturesCoin()));
 
     // Binance futures or trade with 2 USD
     c.symbols.push(
