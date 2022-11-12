@@ -131,7 +131,7 @@ module.exports = class BinanceMargin {
 
         // live candles
         tickersToOpen++;
-        if (tickersToOpen < 400) {
+        if (tickersToOpen < 200) {
           setTimeout(() => {
             client.ws.candles(symbol.symbol, interval, async candle => {
               const ourCandle = new ExchangeCandlestick(
