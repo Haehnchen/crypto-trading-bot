@@ -700,6 +700,11 @@ module.exports = {
         content.result
           .filter(p => ['USD'].includes(p.quote_currency))
           .forEach(pair => {
+            if (pair.name !== pair.alias) {
+              console.log(`Bybit: Skip pair init; alias feature not supported: "${pair.name}" - "${pair.alias}"`);
+              return;
+            }
+
             let result = {
               symbol: pair.name,
               periods: ['1m', '15m', '1h'],
