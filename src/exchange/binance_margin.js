@@ -131,27 +131,31 @@ module.exports = class BinanceMargin {
 
         // live candles
         tickersToOpen++;
-        setTimeout(() => {
-          client.ws.candles(symbol.symbol, interval, async candle => {
-            const ourCandle = new ExchangeCandlestick(
-              'binance_margin',
-              symbol.symbol,
-              interval,
-              Math.round(candle.startTime / 1000),
-              candle.open,
-              candle.high,
-              candle.low,
-              candle.close,
-              candle.volume
-            );
+        if (tickersToOpen < 400) {
+          setTimeout(() => {
+            client.ws.candles(symbol.symbol, interval, async candle => {
+              const ourCandle = new ExchangeCandlestick(
+                'binance_margin',
+                symbol.symbol,
+                interval,
+                Math.round(candle.startTime / 1000),
+                candle.open,
+                candle.high,
+                candle.low,
+                candle.close,
+                candle.volume
+              );
 
-            await this.candleImport.insertThrottledCandles([ourCandle]);
-          });
-        }, 200 * tickersToOpen);
+              await this.candleImport.insertThrottledCandles([ourCandle]);
+            });
+          }, 200 * tickersToOpen);
+        } else {
+          this.logger.info(`Binance Margin: Too many tickers for websocket skipping: ${symbol.symbol} - ${interval}`);
+        }
       });
     });
 
-    this.logger.info(`Binance: Websocket tickers to open: ${tickersToOpen}`);
+    this.logger.info(`Binance Margin: Websocket tickers to open: ${tickersToOpen}`);
   }
 
   async order(order) {

@@ -1064,7 +1064,7 @@ module.exports = class Bybit {
     }
 
     const orders = [];
-    results.filter().forEach(order => {
+    results.forEach(order => {
       orders.push(...order);
     });
 
