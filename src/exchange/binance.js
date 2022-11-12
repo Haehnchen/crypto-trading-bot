@@ -82,6 +82,7 @@ module.exports = class Binance {
       this.logger.info('Binance: Starting as anonymous; no trading possible');
     }
 
+    let tickersToOpen = 0;
     const { eventEmitter } = this;
     symbols.forEach(symbol => {
       // live prices
@@ -125,23 +126,28 @@ module.exports = class Binance {
         });
 
         // live candles
-        client.ws.candles(symbol.symbol, interval, async candle => {
-          const ourCandle = new ExchangeCandlestick(
-            'binance',
-            symbol.symbol,
-            interval,
-            Math.round(candle.startTime / 1000),
-            candle.open,
-            candle.high,
-            candle.low,
-            candle.close,
-            candle.volume
-          );
+        tickersToOpen++;
+        setTimeout(() => {
+          client.ws.candles(symbol.symbol, interval, async candle => {
+            const ourCandle = new ExchangeCandlestick(
+              'binance',
+              symbol.symbol,
+              interval,
+              Math.round(candle.startTime / 1000),
+              candle.open,
+              candle.high,
+              candle.low,
+              candle.close,
+              candle.volume
+            );
 
-          await this.candleImport.insertThrottledCandles([ourCandle]);
-        });
+            await this.candleImport.insertThrottledCandles([ourCandle]);
+          });
+        }, 200 * tickersToOpen);
       });
     });
+
+    this.logger.info(`Binance: Websocket tickers to open: ${tickersToOpen}`);
   }
 
   async order(order) {
