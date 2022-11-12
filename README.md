@@ -29,7 +29,6 @@ As most trading bots just provide basic buy and sell signals they provide many s
 - [Coinbase Pro](https://www.coinbase.com/join/5a2ae60e76531100d3af2ee5)
 - [Bitfinex](https://www.bitfinex.com/?refcode=kDLceRHa) (margin wallet)
 - [Bybit](https://www.bybit.com/app/register?ref=46AK7) with leverage configuration
-- [FTX](https://ftx.com/#a=1494781) (Perpetual Futures only)
 
 TODOS:
 

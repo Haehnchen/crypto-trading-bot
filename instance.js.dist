@@ -32,9 +32,6 @@ c.init = async () => {
     }))
   );
 
-    // FTX all "perp" / futures contracts
-    c.symbols.push(...(await InstanceUtil.ftxInitPerp()));
-
     // Binance all USDT pairs
     c.symbols.push(...(await InstanceUtil.binanceInitUsd()));
 
