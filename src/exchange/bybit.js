@@ -1034,9 +1034,9 @@ module.exports = class Bybit {
         const { body } = result;
 
         if (error || !response || response.statusCode !== 200) {
-          this.logger.error(`Bybit: Invalid order update:${JSON.stringify({ error: error, body: body })}`);
+          this.logger.error(`Bybit: Invalid order update: ${symbol} - ${JSON.stringify({ error: error, body: body })}`);
 
-          throw new Error(`Invalid stop-order update`);
+          return [];
         }
 
         let json;
@@ -1047,9 +1047,8 @@ module.exports = class Bybit {
         }
 
         if (!json.result || !json.result.data) {
-          this.logger.error(`Bybit: Invalid stop-order json:${JSON.stringify({ body: body })}`);
-
-          throw new Error(`Invalid stop-order update`);
+          this.logger.error(`Bybit: Invalid stop-order json: ${symbol} - ${JSON.stringify({ body: body })}`);
+          return [];
         }
 
         return json.result.data.filter(order => order.stop_order_status === 'Untriggered');
@@ -1065,7 +1064,7 @@ module.exports = class Bybit {
     }
 
     const orders = [];
-    results.forEach(order => {
+    results.filter().forEach(order => {
       orders.push(...order);
     });
 
