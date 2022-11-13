@@ -112,7 +112,7 @@ module.exports = class BybitLinear {
                   1245
                 );
 
-                me.throttler.addTask(`bybit_sync_positions`, me.syncPositionViaRestApi.bind(me), 1245);
+                me.throttler.addTask(`bybit_linear_sync_positions`, me.syncPositionViaRestApi.bind(me), 1245);
                 return f;
               })(),
               60000
@@ -304,7 +304,7 @@ module.exports = class BybitLinear {
 
         */
 
-        this.throttler.addTask(`bybit_sync_positions`, this.syncPositionViaRestApi.bind(this), 1545);
+        this.throttler.addTask(`bybit_linear_sync_positions`, this.syncPositionViaRestApi.bind(this), 1545);
       }
 
       console.log('update', data);
@@ -750,7 +750,7 @@ module.exports = class BybitLinear {
     }
 
     if (!response?.result) {
-      this.logger.error(`BybitLinear: Invalid position update:${JSON.stringify({ error: error, body: body })}`);
+      this.logger.error(`BybitLinear: Invalid position update:${JSON.stringify(response)}`);
       return;
     }
 
