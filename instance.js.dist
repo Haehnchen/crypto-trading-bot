@@ -54,8 +54,11 @@ c.init = async () => {
     // Bitfinex USD margin pairs
     c.symbols.push(...(await InstanceUtil.bitfinexUsdMarginInit()));
 
-    // Bybit USD pairs
+    // Bybit USD pairs (inverse)
     c.symbols.push(...(await InstanceUtil.bybitInit()));
+
+    // Bybit USDT pairs (Linear)
+    c.symbols.push(...(await InstanceUtil.bybitLinearInit()));
 };
 */
 
