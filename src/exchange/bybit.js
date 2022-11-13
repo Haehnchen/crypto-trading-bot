@@ -896,6 +896,8 @@ module.exports = class Bybit {
         createdAt = new Date(order.timestamp);
       } else if (order.created_at) {
         createdAt = new Date(order.created_at);
+      } else if (order.created_time) {
+        createdAt = new Date(order.created_time);
       }
 
       let orderId;
