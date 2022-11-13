@@ -695,7 +695,14 @@ module.exports = {
       request('https://api.bybit.com/v2/public/symbols', (_error, _res, body) => {
         const pairs = [];
 
-        const content = JSON.parse(body);
+        let content;
+        try {
+          content = JSON.parse(body);
+        } catch (e) {
+          console.log(`Bybit init issues: ${String(e)} ${body}`);
+          resolve([]);
+          return;
+        }
 
         content.result
           .filter(p => ['USD'].includes(p.quote_currency))
@@ -730,7 +737,14 @@ module.exports = {
       request('https://api.bybit.com/v2/public/symbols', (_error, _res, body) => {
         const pairs = [];
 
-        const content = JSON.parse(body);
+        let content;
+        try {
+          content = JSON.parse(body);
+        } catch (e) {
+          console.log(`Bybit init issues: ${String(e)} ${body}`);
+          resolve([]);
+          return;
+        }
 
         content.result
           .filter(p => p.quote_currency && p.quote_currency.endsWith("USDT"))
