@@ -440,7 +440,7 @@ module.exports = class Http {
 
     app.listen(port, ip);
 
-    console.log(`Webserver listening on: ${ip}:${port}`);
+    console.log(`Webserver listening on: http://${ip}:${port}`);
   }
 
   /**
