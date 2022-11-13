@@ -705,7 +705,7 @@ module.exports = {
         }
 
         if (!content?.result) {
-          console.log(`Bybit init issues: ${String(e)} ${content}`);
+          console.log(`Bybit init issues: ${JSON.stringify(content)}`);
           resolve([]);
           return;
         }
@@ -753,7 +753,7 @@ module.exports = {
         }
 
         if (!content?.result) {
-          console.log(`Bybit init issues: ${String(e)} ${content}`);
+          console.log(`Bybit init issues: ${JSON.stringify(content)}`);
           resolve([]);
           return;
         }
