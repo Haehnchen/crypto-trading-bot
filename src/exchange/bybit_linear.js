@@ -628,14 +628,9 @@ module.exports = class BybitLinear {
         const { body } = result;
 
         if (error || !response || response.statusCode !== 200) {
-          this.logger.error(
-            `BybitLinear: Invalid orders response:${JSON.stringify({
-              error: error,
-              body: body
-            })}`
-          );
+          this.logger.error(`BybitLinear: Invalid orders response:${JSON.stringify({error: error, body: body})}`);
 
-          throw new Error();
+          return [];
         }
 
         let json;
@@ -646,9 +641,9 @@ module.exports = class BybitLinear {
         }
 
         if (!json.result) {
-          this.logger.error(`BybitLinear: Invalid orders json:${JSON.stringify({ body: body })}`);
+          this.logger.error(`BybitLinear: Invalid orders json:${JSON.stringify({body: body})}`);
 
-          throw new Error('Invalid orders json');
+          return [];
         }
 
         return json.result;
