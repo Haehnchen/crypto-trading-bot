@@ -704,6 +704,12 @@ module.exports = {
           return;
         }
 
+        if (!content?.result) {
+          console.log(`Bybit init issues: ${String(e)} ${content}`);
+          resolve([]);
+          return;
+        }
+
         content.result
           .filter(p => ['USD'].includes(p.quote_currency))
           .forEach(pair => {
@@ -742,6 +748,12 @@ module.exports = {
           content = JSON.parse(body);
         } catch (e) {
           console.log(`Bybit init issues: ${String(e)} ${body}`);
+          resolve([]);
+          return;
+        }
+
+        if (!content?.result) {
+          console.log(`Bybit init issues: ${String(e)} ${content}`);
           resolve([]);
           return;
         }
