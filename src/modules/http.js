@@ -395,7 +395,7 @@ module.exports = class Http {
 
           if (
             (exchangeName.includes('bitmex') && ['XBTUSD', 'ETHUSD'].includes(position.symbol)) ||
-            exchangeName.includes('bybit')
+            exchangeName === 'bybit'
           ) {
             // inverse exchanges
             currencyValue = Math.abs(position.amount);
@@ -467,6 +467,7 @@ module.exports = class Http {
       .replace('-', '')
       .replace('coinbase_pro', 'coinbase')
       .replace('binance_margin', 'binance')
+      .replace('bybit_linear', 'bybit')
       .toUpperCase();
   }
 };

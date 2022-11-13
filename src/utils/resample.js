@@ -94,5 +94,17 @@ module.exports = {
       default:
         throw `Unsupported period unit: ${period}`;
     }
+  },
+
+  convertMinuteToPeriod: function(period) {
+    if (period < 60) {
+      return `${period}m`;
+    }
+
+    if (period >= 60) {
+      return `${period / 60}h`;
+    }
+
+    throw `Unsupported period: ${period}`;
   }
 };

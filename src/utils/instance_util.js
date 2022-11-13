@@ -723,5 +723,40 @@ module.exports = {
         resolve(pairs);
       });
     });
+  },
+
+  bybitLinearInit: async callback => {
+    return new Promise(resolve => {
+      request('https://api.bybit.com/v2/public/symbols', (_error, _res, body) => {
+        const pairs = [];
+
+        const content = JSON.parse(body);
+
+        content.result
+          .filter(p => p.quote_currency && p.quote_currency.endsWith("USDT"))
+          .forEach(pair => {
+            if (pair.name !== pair.alias) {
+              console.log(`Bybit: Skip pair init; alias feature not supported: "${pair.name}" - "${pair.alias}"`);
+              return;
+            }
+
+            let result = {
+              symbol: pair.name,
+              periods: ['1m', '15m', '1h'],
+              exchange: 'bybit_linear'
+            };
+
+            if (callback) {
+              result = callback(result, pair);
+            }
+
+            if (result) {
+              pairs.push(result);
+            }
+          });
+
+        resolve(pairs);
+      });
+    });
   }
 };
