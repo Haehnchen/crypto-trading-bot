@@ -253,6 +253,13 @@ module.exports = class BybitLinear {
       key: this.apiKey,
       secret: this.apiSecret,
       market: 'linear',
+    }, {
+      silly: () => {},
+      debug: () => {},
+      notice: () => {},
+      info: () => {},
+      warning: () => {},
+      error: () => {},
     });
 
     websocketAuthed.subscribe(['position', 'execution', 'order', 'stop_order']);
