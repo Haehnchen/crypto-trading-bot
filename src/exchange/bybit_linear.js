@@ -709,7 +709,7 @@ module.exports = class BybitLinear {
     });
 
     const queue = new Queue({
-      concurrent: 10,
+      concurrent: 20,
       interval: 500,
       start: false,
     });
