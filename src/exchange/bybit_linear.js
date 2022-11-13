@@ -151,17 +151,17 @@ module.exports = class BybitLinear {
           let instruments = [];
           if (data.data.update) {
             instruments = data.data.update;
-          } else if (data.data.last_price_e4) {
+          } else if (data.data.last_price) {
             instruments = [data.data];
           }
 
           instruments.forEach(instrument => {
             // update and init
-            if (!instrument.last_price_e4) {
+            if (!instrument.last_price) {
               return;
             }
 
-            const price = instrument.last_price_e4 / 10000;
+            const price = instrument.last_price;
 
             let bid = price;
             let ask = price;
@@ -178,8 +178,7 @@ module.exports = class BybitLinear {
             eventEmitter.emit('ticker', new TickerEvent(
               me.getName(),
               symbol,
-              (me.tickers[symbol] = new Ticker(me.getName(), symbol, moment()
-                .format('X'), bid, ask))
+              (me.tickers[symbol] = new Ticker(me.getName(), symbol, moment().format('X'), bid, ask))
             ));
           });
         }
