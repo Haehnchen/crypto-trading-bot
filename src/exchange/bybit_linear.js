@@ -714,7 +714,6 @@ module.exports = class BybitLinear {
 
     let results = [];
     while (queue.shouldRun) {
-      console.log('done')
       try {
         results.push(...(await queue.dequeue()));
       } catch (e) {
