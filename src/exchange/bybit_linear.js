@@ -625,8 +625,7 @@ module.exports = class BybitLinear {
           this.logger.error(
             `BybitLinear: Invalid orders response:${JSON.stringify({
               error: error,
-              body: body,
-              orderStatus: orderStatus
+              body: body
             })}`
           );
 
