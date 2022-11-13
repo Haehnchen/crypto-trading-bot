@@ -11,7 +11,7 @@ const ExchangeCandlestick = require('../dict/exchange_candlestick');
 
 const resample = require('../utils/resample');
 
-const Position = require('../dict/position');
+const Queue = require('queue-promise');
 const Bybit = require('./bybit');
 const ExchangeOrder = require('../dict/exchange_order');
 
@@ -702,12 +702,24 @@ module.exports = class BybitLinear {
       });
     });
 
-    let results;
-    try {
-      results = await Promise.all(promises.map(fn => fn()));
-    } catch (e) {
-      this.logger.error(`BybitLinear: Orders via API updated stopped: ${e.message}`);
-      return;
+    const queue = new Queue({
+      concurrent: 10,
+      interval: 500,
+      start: false,
+    });
+
+    for (const p of promises) {
+      queue.enqueue(p);
+    }
+
+    let results = [];
+    while (queue.shouldRun) {
+      console.log('done')
+      try {
+        results.push(...(await queue.dequeue()));
+      } catch (e) {
+        this.logger.error(`BybitLinear: Orders via API updated stopped: ${e.message}`);
+      }
     }
 
     const orders = [];
