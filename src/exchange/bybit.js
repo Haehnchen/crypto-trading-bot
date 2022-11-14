@@ -897,7 +897,7 @@ module.exports = class Bybit {
       } else if (order.created_at) {
         createdAt = new Date(order.created_at);
       } else if (order.created_time) {
-        createdAt = new Date(order.created_time);
+        createdAt = new Date(isNaN(order.created_time) ? order.created_time : parseInt(order.created_time));
       }
 
       let orderId;
@@ -922,7 +922,7 @@ module.exports = class Bybit {
         price,
         order.qty,
         retry,
-        order.order_link_id,
+        order.order_link_id ? order.order_link_id : undefined,
         order.side.toLowerCase() === 'sell' ? 'sell' : 'buy', // secure the value,
         orderType,
         createdAt,

@@ -1,8 +1,6 @@
 const WebSocket = require('ws');
-const querystring = require('querystring');
 const moment = require('moment');
 const request = require('request');
-const crypto = require('crypto');
 const _ = require('lodash');
 const Ticker = require('../dict/ticker');
 const TickerEvent = require('../event/ticker_event');
@@ -10,14 +8,13 @@ const Order = require('../dict/order');
 const ExchangeCandlestick = require('../dict/exchange_candlestick');
 
 const resample = require('../utils/resample');
-
-const Queue = require('queue-promise');
+const CommonUtil = require('../utils/common_util');
 const Bybit = require('./bybit');
 const ExchangeOrder = require('../dict/exchange_order');
 
 const orderUtil = require('../utils/order_util');
 
-const {LinearClient, WebsocketClient} = require('bybit-api');
+const {LinearClient, WebsocketClient, ContractClient} = require('bybit-api');
 
 module.exports = class BybitLinear {
   constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter, throttler) {
@@ -276,7 +273,7 @@ module.exports = class BybitLinear {
 
         this.throttler.addTask(`bybit_linear_sync_all_orders`, async () => {
           await this.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol));
-        }, 1245);
+        }, 25);
       } else if (data.data && data.topic && data.topic.toLowerCase() === 'position') {
 
         // Not the same as api; where are the profits?
@@ -592,139 +589,34 @@ module.exports = class BybitLinear {
    * As a websocket fallback update positions also on REST
    */
   async syncOrdersViaRestApi(symbols) {
-    const promises = [];
-
-    symbols.forEach(symbol => {
-      // there is not full active order state; we need some more queries
-      promises.push(async () => {
-        const parameter = {
-          api_key: this.apiKey,
-          limit: 100,
-          symbol: symbol,
-          timestamp: new Date().getTime() // 1 min in the future
-        };
-
-        parameter.sign = crypto
-          .createHmac('sha256', this.apiSecret)
-          .update(querystring.stringify(parameter))
-          .digest('hex');
-
-        const url = `${this.getBaseUrl()}/private/linear/order/search?${querystring.stringify(parameter)}`;
-        const result = await this.requestClient.executeRequestRetry(
-          {
-            url: url,
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json'
-            }
-          },
-          r => {
-            return r && r.response && r.response.statusCode >= 500;
-          }
-        );
-
-        const { error } = result;
-        const { response } = result;
-        const { body } = result;
-
-        if (error || !response || response.statusCode !== 200) {
-          this.logger.error(`BybitLinear: Invalid orders response:${JSON.stringify({error: error, body: body})}`);
-
-          return [];
-        }
-
-        let json;
-        try {
-          json = JSON.parse(body);
-        } catch (e) {
-          json = [];
-        }
-
-        if (!json.result) {
-          this.logger.error(`BybitLinear: Invalid orders json:${JSON.stringify({body: body})}`);
-
-          return [];
-        }
-
-        return json.result;
-      });
-
-      // stop order are special endpoint
-      promises.push(async () => {
-        const parameter = {
-          api_key: this.apiKey,
-          limit: 100,
-          symbol: symbol,
-          timestamp: new Date().getTime()
-        };
-
-        parameter.sign = crypto
-          .createHmac('sha256', this.apiSecret)
-          .update(querystring.stringify(parameter))
-          .digest('hex');
-
-        const url = `${this.getBaseUrl()}/private/linear/stop-order/search?${querystring.stringify(parameter)}`;
-        const result = await this.requestClient.executeRequestRetry(
-          {
-            url: url,
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json'
-            }
-          },
-          r => {
-            return r && r.response && r.response.statusCode >= 500;
-          }
-        );
-
-        const { error } = result;
-        const { response } = result;
-        const { body } = result;
-
-        if (error || !response || response.statusCode !== 200) {
-          this.logger.error(`BybitLinear: Invalid order update: ${symbol} - ${JSON.stringify({ error: error, body: body })}`);
-
-          return [];
-        }
-
-        let json;
-        try {
-          json = JSON.parse(body);
-        } catch (e) {
-          json = [];
-        }
-
-        if (!json.result) {
-          this.logger.error(`BybitLinear: Invalid stop-order json: ${symbol} - ${JSON.stringify({ body: body })}`);
-          return [];
-        }
-
-        return json.result.filter(order => order.stop_order_status === 'Untriggered');
-      });
+    const client = new ContractClient({
+      key: this.apiKey,
+      secret: this.apiSecret
     });
 
-    const queue = new Queue({
-      concurrent: 10,
-      interval: 500,
-      start: false,
-    });
-
-    for (const p of promises) {
-      queue.enqueue(p);
+    let response
+    try {
+      response = await client.getActiveOrders({settleCoin: 'USDT'});
+    } catch (e) {
+      this.logger.error(`BybitLinear: Invalid orders response: ${e}`);
+      return;
     }
 
-    let results = [];
-    while (queue.shouldRun) {
-      try {
-        results.push(...(await queue.dequeue()));
-      } catch (e) {
-        this.logger.error(`BybitLinear: Orders via API updated stopped: ${e.message}`);
-      }
+    if (!response?.result?.list) {
+      this.logger.error(`BybitLinear: Invalid orders response:${JSON.stringify(response)}`);
+      return;
     }
 
     const orders = [];
-    results.forEach(order => {
-      orders.push(...order);
+    response.result.list.forEach(order => {
+      const o = {};
+
+      // underscore
+      Object.keys(order).forEach(key => {
+        o[CommonUtil.camelToSnakeCase(key)] = order[key];
+      });
+
+      orders.push(o);
     });
 
     this.logger.debug(`BybitLinear: Orders via API updated: ${orders.length}`);
