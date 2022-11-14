@@ -303,8 +303,6 @@ module.exports = class BybitLinear {
 
         this.throttler.addTask(`bybit_linear_sync_positions`, this.syncPositionViaRestApi.bind(this), 1545);
       }
-
-      console.log('update', data);
     });
 
     websocketAuthed.on('open', ({wsKey, event}) => {
