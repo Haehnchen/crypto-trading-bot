@@ -22,12 +22,7 @@ module.exports = class OrderExecutor {
   adjustOpenOrdersPrice(...pairStates) {
     for (const orderId in this.runningOrders) {
       if (this.runningOrders[orderId] < moment().subtract(2, 'minutes')) {
-        this.logger.debug(
-          `OrderAdjust: adjustOpenOrdersPrice timeout cleanup: ${JSON.stringify([
-            orderId,
-            this.runningOrders[orderId]
-          ])}`
-        );
+        this.logger.debug(`OrderAdjust: adjustOpenOrdersPrice timeout cleanup: ${JSON.stringify([orderId, this.runningOrders[orderId]])}`);
 
         delete this.runningOrders[orderId];
       }
@@ -46,23 +41,13 @@ module.exports = class OrderExecutor {
       }
 
       if (exchangeOrder.id in this.runningOrders) {
-        this.logger.info(
-          `OrderAdjust: already running: ${JSON.stringify([
-            exchangeOrder.id,
-            pairState.getExchange(),
-            pairState.getSymbol()
-          ])}`
-        );
+        this.logger.info(`OrderAdjust: already running: ${JSON.stringify([exchangeOrder.id, pairState.getExchange(), pairState.getSymbol()])}`);
         return;
       }
 
       this.runningOrders[exchangeOrder.id] = new Date();
 
-      const price = await this.getCurrentPrice(
-        pairState.getExchange(),
-        pairState.getSymbol(),
-        exchangeOrder.getLongOrShortSide()
-      );
+      const price = await this.getCurrentPrice(pairState.getExchange(), pairState.getSymbol(), exchangeOrder.getLongOrShortSide());
       if (!price) {
         this.logger.info(
           `OrderAdjust: No up to date ticker price found: ${JSON.stringify([
@@ -128,11 +113,7 @@ module.exports = class OrderExecutor {
             ])}`
           );
           pairState.setExchangeOrder(updatedOrder);
-        } else if (
-          updatedOrder &&
-          updatedOrder.status === ExchangeOrder.STATUS_CANCELED &&
-          updatedOrder.retry === true
-        ) {
+        } else if (updatedOrder && updatedOrder.status === ExchangeOrder.STATUS_CANCELED && updatedOrder.retry === true) {
           // we update the price outside the orderbook price range on PostOnly we will cancel the order directly
           this.logger.error(`OrderAdjust: Updated order canceled recreate: ${JSON.stringify(pairState, updatedOrder)}`);
 
@@ -164,11 +145,7 @@ module.exports = class OrderExecutor {
       delete this.runningOrders[exchangeOrder.id];
     };
 
-    return Promise.all(
-      pairStates.map(pairState => {
-        return visitExchangeOrder(pairState);
-      })
-    );
+    return Promise.all(pairStates.map(pairState => visitExchangeOrder(pairState)));
   }
 
   /**
@@ -208,7 +185,7 @@ module.exports = class OrderExecutor {
     const exchange = this.exchangeManager.get(exchangeName);
     if (!exchange) {
       console.error(`CancelOrder: Invalid exchange: ${exchangeName}`);
-      return;
+      return undefined;
     }
 
     try {
@@ -218,6 +195,8 @@ module.exports = class OrderExecutor {
     } catch (err) {
       this.logger.error(`Order cancel error: ${orderId} ${err}`);
     }
+
+    return undefined;
   }
 
   async cancelAll(exchangeName, symbol) {
@@ -228,6 +207,8 @@ module.exports = class OrderExecutor {
     } catch (err) {
       this.logger.error(`Order cancel all error: ${JSON.stringify([symbol, err])}`);
     }
+
+    return undefined;
   }
 
   async triggerOrder(resolve, exchangeName, order, retry = 0) {
@@ -295,9 +276,7 @@ module.exports = class OrderExecutor {
       return;
     }
 
-    this.logger.info(
-      `Order created: ${JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol, order, exchangeOrder])}`
-    );
+    this.logger.info(`Order created: ${JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol, order, exchangeOrder])}`);
     console.log(`Order created: ${JSON.stringify([exchangeOrder.id, exchangeName, exchangeOrder.symbol])}`);
 
     resolve(exchangeOrder);
@@ -313,13 +292,7 @@ module.exports = class OrderExecutor {
   async createAdjustmentOrder(exchangeName, order) {
     const price = await this.getCurrentPrice(exchangeName, order.symbol, order.side);
     if (!price) {
-      this.logger.error(
-        `Stop creating order; can not find up to date ticker price: ${JSON.stringify([
-          exchangeName,
-          order.symbol,
-          order.side,
-        ])}`
-      );
+      this.logger.error(`Stop creating order; can not find up to date ticker price: ${JSON.stringify([exchangeName, order.symbol, order.side])}`);
       return undefined;
     }
 
@@ -340,13 +313,12 @@ module.exports = class OrderExecutor {
     }
 
     return new Promise(async resolve => {
-      const wait = time => {
-        return new Promise(resolve => {
+      const wait = time =>
+        new Promise(resolve2 => {
           setTimeout(() => {
-            resolve();
+            resolve2();
           }, time);
         });
-      };
 
       let ticker;
 

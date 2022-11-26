@@ -20,6 +20,8 @@
     "class-methods-use-this": "off",
     "no-continue": "off",
     "no-await-in-loop": "warn",
-    "comma-dangle": ["error", "never"]
+    "comma-dangle": ["error", "never"],
+    "arrow-parens": ["error", "as-needed"],
+    "no-plusplus": "off"
   }
 }
