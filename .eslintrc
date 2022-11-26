@@ -8,7 +8,7 @@
   "extends": ["airbnb", "prettier", "plugin:node/recommended"],
   "plugins": ["promise","prettier"],
   "parserOptions": {
-    "ecmaVersion": 2017
+    "ecmaVersion": 2022
   },
   "rules": {
     "prettier/prettier": "error",
@@ -22,6 +22,9 @@
     "no-await-in-loop": "warn",
     "comma-dangle": ["error", "never"],
     "arrow-parens": ["error", "as-needed"],
-    "no-plusplus": "off"
+    "no-plusplus": "off",
+    "no-multi-assign": "off",
+    "no-restricted-syntax": "off",
+    "guard-for-in": "off"
   }
 }

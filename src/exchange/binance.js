@@ -92,13 +92,7 @@ module.exports = class Binance {
           new TickerEvent(
             'binance',
             symbol.symbol,
-            (this.tickers[symbol.symbol] = new Ticker(
-              'binance',
-              symbol.symbol,
-              moment().format('X'),
-              ticker.bestBid,
-              ticker.bestAsk
-            ))
+            (this.tickers[symbol.symbol] = new Ticker('binance', symbol.symbol, moment().format('X'), ticker.bestBid, ticker.bestAsk))
           )
         );
       });
@@ -107,19 +101,20 @@ module.exports = class Binance {
         // backfill
         this.queue.add(() => {
           client.candles({ symbol: symbol.symbol, limit: 500, interval: interval }).then(async candles => {
-            const ourCandles = candles.map(candle => {
-              return new ExchangeCandlestick(
-                'binance',
-                symbol.symbol,
-                interval,
-                Math.round(candle.openTime / 1000),
-                candle.open,
-                candle.high,
-                candle.low,
-                candle.close,
-                candle.volume
-              );
-            });
+            const ourCandles = candles.map(
+              candle =>
+                new ExchangeCandlestick(
+                  'binance',
+                  symbol.symbol,
+                  interval,
+                  Math.round(candle.openTime / 1000),
+                  candle.open,
+                  candle.high,
+                  candle.low,
+                  candle.close,
+                  candle.volume
+                )
+            );
 
             await this.candleImport.insertThrottledCandles(ourCandles);
           });
@@ -507,8 +502,7 @@ module.exports = class Binance {
         // on multiple pair path orders with latest date wins
         const assetPositionsOrdered = assetPositions.sort(
           // order by latest
-          (a, b) =>
-            (b.createdAt ? b.createdAt : new Date('1970-01-01')) - (a.createdAt ? a.createdAt : new Date('1970-01-01'))
+          (a, b) => (b.createdAt ? b.createdAt : new Date('1970-01-01')) - (a.createdAt ? a.createdAt : new Date('1970-01-01'))
         );
 
         positions.push(assetPositionsOrdered[0]);
@@ -548,8 +542,7 @@ module.exports = class Binance {
 
       // clean orders with state is switching from open to close
       const orderStatus = event.orderStatus.toLowerCase();
-      const isRemoveEvent =
-        ['canceled', 'filled', 'rejected'].includes(orderStatus) && event.orderId && this.orderbag.get(event.orderId);
+      const isRemoveEvent = ['canceled', 'filled', 'rejected'].includes(orderStatus) && event.orderId && this.orderbag.get(event.orderId);
 
       if (isRemoveEvent) {
         this.logger.info(`Binance: Removing non open order: ${orderStatus} - ${JSON.stringify(event)}`);
@@ -586,11 +579,7 @@ module.exports = class Binance {
 
   async syncOrders() {
     const symbols = this.symbols
-      .filter(
-        s =>
-          s.trade &&
-          ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0))
-      )
+      .filter(s => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
       .map(s => s.symbol);
 
     this.logger.debug(`Binance: Sync orders for symbols: ${symbols.length}`);
@@ -624,13 +613,11 @@ module.exports = class Binance {
 
     this.balances = accountInfo.balances
       .filter(b => parseFloat(b.free) + parseFloat(b.locked) > 0)
-      .map(balance => {
-        return {
-          available: parseFloat(balance.free) + parseFloat(balance.locked),
-          locked: parseFloat(balance.locked),
-          asset: balance.asset
-        };
-      });
+      .map(balance => ({
+        available: parseFloat(balance.free) + parseFloat(balance.locked),
+        locked: parseFloat(balance.locked),
+        asset: balance.asset
+      }));
   }
 
   /**
@@ -643,11 +630,7 @@ module.exports = class Binance {
     // fetch all based on our allowed symbol capital
     if (symbols.length === 0) {
       const allSymbols = this.symbols
-        .filter(
-          s =>
-            s.trade &&
-            ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0))
-        )
+        .filter(s => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
         .map(s => s.symbol);
 
       // we need position first and randomly add other
@@ -661,56 +644,54 @@ module.exports = class Binance {
 
     this.logger.debug(`Binance: Sync trades for entries: ${symbols.length} - ${JSON.stringify(symbols)}`);
 
-    const promises = symbols.map(symbol => {
-      return async () => {
-        let symbolOrders;
+    const promises = symbols.map(symbol => async () => {
+      let symbolOrders;
 
-        try {
-          symbolOrders = await this.client.allOrders({
-            symbol: symbol,
-            limit: 10
-          });
-        } catch (e) {
-          this.logger.info(`Binance: Sync trades error for entries: ${symbol} - ${String(e)}`);
-          return undefined;
-        }
+      try {
+        symbolOrders = await this.client.allOrders({
+          symbol: symbol,
+          limit: 10
+        });
+      } catch (e) {
+        this.logger.info(`Binance: Sync trades error for entries: ${symbol} - ${String(e)}`);
+        return undefined;
+      }
 
-        const orders = symbolOrders
-          .filter(
-            // filled order and fully closed but be have also partially_filled ones if ordering was no fully done
-            // in case order was canceled but executedQty is set we have a partially cancel
-            order =>
-              ['filled', 'partially_filled'].includes(order.status.toLowerCase()) ||
-              (order.status.toLowerCase() === 'canceled' && parseFloat(order.executedQty) > 0)
-          )
-          .sort(
-            // order by latest
-            (a, b) => b.time - a.time
-          )
-          .map(order => {
-            let price = parseFloat(order.price);
+      const orders = symbolOrders
+        .filter(
+          // filled order and fully closed but be have also partially_filled ones if ordering was no fully done
+          // in case order was canceled but executedQty is set we have a partially cancel
+          order =>
+            ['filled', 'partially_filled'].includes(order.status.toLowerCase()) ||
+            (order.status.toLowerCase() === 'canceled' && parseFloat(order.executedQty) > 0)
+        )
+        .sort(
+          // order by latest
+          (a, b) => b.time - a.time
+        )
+        .map(order => {
+          let price = parseFloat(order.price);
 
-            // market order is not having price info, we need to calulcate it
-            if (price === 0 && order.type && order.type.toLowerCase() === 'market') {
-              const executedQty = parseFloat(order.executedQty);
-              const cummulativeQuoteQty = parseFloat(order.cummulativeQuoteQty);
+          // market order is not having price info, we need to calulcate it
+          if (price === 0 && order.type && order.type.toLowerCase() === 'market') {
+            const executedQty = parseFloat(order.executedQty);
+            const cummulativeQuoteQty = parseFloat(order.cummulativeQuoteQty);
 
-              if (cummulativeQuoteQty !== 0 && executedQty !== 0) {
-                price = cummulativeQuoteQty / executedQty;
-              }
+            if (cummulativeQuoteQty !== 0 && executedQty !== 0) {
+              price = cummulativeQuoteQty / executedQty;
             }
+          }
 
-            return {
-              side: order.side.toLowerCase(),
-              price: price,
-              symbol: order.symbol,
-              time: new Date(order.time),
-              size: parseFloat(order.executedQty)
-            };
-          });
+          return {
+            side: order.side.toLowerCase(),
+            price: price,
+            symbol: order.symbol,
+            time: new Date(order.time),
+            size: parseFloat(order.executedQty)
+          };
+        });
 
-        return { symbol: symbol, orders: orders };
-      };
+      return { symbol: symbol, orders: orders };
     });
 
     // no queue for trigger; its timing relevant

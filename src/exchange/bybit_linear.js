@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const moment = require('moment');
 const request = require('request');
 const _ = require('lodash');
+const { LinearClient, WebsocketClient, ContractClient } = require('bybit-api');
 const Ticker = require('../dict/ticker');
 const TickerEvent = require('../event/ticker_event');
 const Order = require('../dict/order');
@@ -13,8 +14,6 @@ const Bybit = require('./bybit');
 const ExchangeOrder = require('../dict/exchange_order');
 
 const orderUtil = require('../utils/order_util');
-
-const {LinearClient, WebsocketClient, ContractClient} = require('bybit-api');
 
 module.exports = class BybitLinear {
   constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter, throttler) {
@@ -54,9 +53,7 @@ module.exports = class BybitLinear {
         {
           url: `${this.getBaseUrl()}/v2/public/symbols`
         },
-        result => {
-          return result && result.response && result.response.statusCode >= 500;
-        }
+        result => result && result.response && result.response.statusCode >= 500
       )
       .then(response => {
         const body = JSON.parse(response.body);
@@ -74,7 +71,7 @@ module.exports = class BybitLinear {
     const ws = new WebSocket('wss://stream.bybit.com/realtime_public');
 
     const me = this;
-    ws.onopen = function() {
+    ws.onopen = function () {
       me.logger.info('BybitLinear: Connection opened.');
 
       symbols.forEach(symbol => {
@@ -95,7 +92,7 @@ module.exports = class BybitLinear {
         me.openAuthWebsocket(symbols);
 
         // load full order and positions in intervals; in case websocket is out opf sync
-        me.syncPositionViaRestApi.bind(me)
+        me.syncPositionViaRestApi.bind(me);
 
         setTimeout(() => {
           me.intervals.push(
@@ -121,7 +118,7 @@ module.exports = class BybitLinear {
       }
     };
 
-    ws.onmessage = async function(event) {
+    ws.onmessage = async function (event) {
       if (event.type === 'message') {
         const data = JSON.parse(event.data);
 
@@ -131,17 +128,20 @@ module.exports = class BybitLinear {
         } else if (data.topic && data.topic.startsWith('candle.')) {
           const [topicName, period, symbol] = data.topic.split('.');
 
-          const candles = data.data.map(candle => new ExchangeCandlestick(
-            me.getName(),
-            symbol,
-            resample.convertMinuteToPeriod(period),
-            candle.start,
-            candle.open,
-            candle.high,
-            candle.low,
-            candle.close,
-            candle.volume
-          ));
+          const candles = data.data.map(
+            candle =>
+              new ExchangeCandlestick(
+                me.getName(),
+                symbol,
+                resample.convertMinuteToPeriod(period),
+                candle.start,
+                candle.open,
+                candle.high,
+                candle.low,
+                candle.close,
+                candle.volume
+              )
+          );
 
           await me.candleImporter.insertThrottledCandles(candles);
         } else if (data.data && data.topic && data.topic.startsWith('instrument_info.')) {
@@ -172,17 +172,16 @@ module.exports = class BybitLinear {
               ask = parseFloat(orderUtil.calculateNearestSize(ask + me.tickSizes[symbol], me.tickSizes[symbol]));
             }
 
-            eventEmitter.emit('ticker', new TickerEvent(
-              me.getName(),
-              symbol,
-              (me.tickers[symbol] = new Ticker(me.getName(), symbol, moment().format('X'), bid, ask))
-            ));
+            eventEmitter.emit(
+              'ticker',
+              new TickerEvent(me.getName(), symbol, (me.tickers[symbol] = new Ticker(me.getName(), symbol, moment().format('X'), bid, ask)))
+            );
           });
         }
       }
     };
 
-    ws.onclose = function() {
+    ws.onclose = function () {
       logger.info('BybitLinear: Connection closed.');
 
       for (const interval of me.intervals) {
@@ -220,24 +219,23 @@ module.exports = class BybitLinear {
               return;
             }
 
-            const candleSticks = body.result.map(candle => {
-              return new ExchangeCandlestick(
-                me.getName(),
-                candle.symbol,
-                resample.convertMinuteToPeriod(candle.period),
-                candle.open_time,
-                candle.open,
-                candle.high,
-                candle.low,
-                candle.close,
-                candle.volume
-              );
-            });
+            const candleSticks = body.result.map(
+              candle =>
+                new ExchangeCandlestick(
+                  me.getName(),
+                  candle.symbol,
+                  resample.convertMinuteToPeriod(candle.period),
+                  candle.open_time,
+                  candle.open,
+                  candle.high,
+                  candle.low,
+                  candle.close,
+                  candle.volume
+                )
+            );
 
             await this.candleImporter.insertThrottledCandles(
-              candleSticks.map(candle => {
-                return ExchangeCandlestick.createFromCandle(this.getName(), symbol.symbol, period, candle);
-              })
+              candleSticks.map(candle => ExchangeCandlestick.createFromCandle(this.getName(), symbol.symbol, period, candle))
             );
           });
         });
@@ -246,18 +244,21 @@ module.exports = class BybitLinear {
   }
 
   openAuthWebsocket(symbols) {
-    const websocketAuthed = new WebsocketClient({
-      key: this.apiKey,
-      secret: this.apiSecret,
-      market: 'linear',
-    }, {
-      silly: () => {},
-      debug: () => {},
-      notice: () => {},
-      info: () => {},
-      warning: () => {},
-      error: () => {},
-    });
+    const websocketAuthed = new WebsocketClient(
+      {
+        key: this.apiKey,
+        secret: this.apiSecret,
+        market: 'linear'
+      },
+      {
+        silly: () => {},
+        debug: () => {},
+        notice: () => {},
+        info: () => {},
+        warning: () => {},
+        error: () => {}
+      }
+    );
 
     websocketAuthed.subscribe(['position', 'execution', 'order', 'stop_order']);
 
@@ -266,16 +267,18 @@ module.exports = class BybitLinear {
       if (data.data && data.topic && ['order', 'stop_order'].includes(data.topic.toLowerCase())) {
         const orders = data.data;
 
-        Bybit.createOrders(orders)
-          .forEach(order => {
-            this.triggerOrder(order);
-          });
+        Bybit.createOrders(orders).forEach(order => {
+          this.triggerOrder(order);
+        });
 
-        this.throttler.addTask(`bybit_linear_sync_all_orders`, async () => {
-          await this.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol));
-        }, 25);
+        this.throttler.addTask(
+          `bybit_linear_sync_all_orders`,
+          async () => {
+            await this.syncOrdersViaRestApi(symbols.map(symbol => symbol.symbol));
+          },
+          25
+        );
       } else if (data.data && data.topic && data.topic.toLowerCase() === 'position') {
-
         // Not the same as api; where are the profits?
         /*
         const positionsRaw = data.data;
@@ -305,7 +308,7 @@ module.exports = class BybitLinear {
       }
     });
 
-    websocketAuthed.on('open', ({wsKey, event}) => {
+    websocketAuthed.on('open', ({ wsKey, event }) => {
       this.logger.debug(`BybitLinear: Private websocket opened for "${wsKey}"`);
     });
 
@@ -318,7 +321,7 @@ module.exports = class BybitLinear {
     });
 
     websocketAuthed.on('error', err => {
-      let msg = `BybitLinear: Private websocket connection error "${JSON.stringify(err)}"`;
+      const msg = `BybitLinear: Private websocket connection error "${JSON.stringify(err)}"`;
       this.logger.error(msg);
       console.error(msg);
     });
@@ -335,7 +338,7 @@ module.exports = class BybitLinear {
     for (const positionItem of positions) {
       const position = positionItem.data;
 
-      if (position.symbol in this.positions && !['buy', 'sell'].includes(position.side.toLowerCase()) || position.size === 0) {
+      if ((position.symbol in this.positions && !['buy', 'sell'].includes(position.side.toLowerCase())) || position.size === 0) {
         delete this.positions[position.symbol];
         continue;
       }
@@ -360,7 +363,7 @@ module.exports = class BybitLinear {
    */
   fullOrdersUpdate(orders) {
     const ourOrders = {};
-    for (const order of Bybit.createOrders(orders).filter(order => order.status === 'open')) {
+    for (const order of Bybit.createOrders(orders).filter(o => o.status === 'open')) {
       ourOrders[order.id] = order;
     }
 
@@ -380,7 +383,7 @@ module.exports = class BybitLinear {
   }
 
   async findOrderById(id) {
-    return (await this.getOrders()).find(order => order.id === id || order.id == id);
+    return (await this.getOrders()).find(order => order.id === id || order.id.toString === id.toString());
   }
 
   async getOrdersForSymbol(symbol) {
@@ -391,7 +394,7 @@ module.exports = class BybitLinear {
     const results = [];
 
     for (const x in this.positions) {
-      let position = this.positions[x];
+      const position = this.positions[x];
       results.push(position);
     }
 
@@ -430,7 +433,7 @@ module.exports = class BybitLinear {
    */
   triggerOrder(order) {
     if (!(order instanceof ExchangeOrder)) {
-      throw 'Invalid order given';
+      throw new Error('Invalid order given');
     }
 
     // dont overwrite state closed order
@@ -470,7 +473,7 @@ module.exports = class BybitLinear {
     });
 
     // needs more uniqueness
-    delete parameters['order_link_id'];
+    delete parameters.order_link_id;
 
     parameters.reduce_only = order.isReduceOnly();
     parameters.close_on_trigger = order.isReduceOnly();
@@ -488,11 +491,9 @@ module.exports = class BybitLinear {
       parameters.base_price = this.tickers[order.getSymbol()].bid;
     }
 
-    let placedOrder
+    let placedOrder;
     try {
-      placedOrder = isConditionalOrder
-        ? await client.placeConditionalOrder(parameters)
-        : await client.placeActiveOrder(parameters);
+      placedOrder = isConditionalOrder ? await client.placeConditionalOrder(parameters) : await client.placeActiveOrder(parameters);
     } catch (e) {
       this.logger.error(`Bybit: Invalid order create:${JSON.stringify([parameters, e])}`);
       return ExchangeOrder.createCanceledFromOrder(order);
@@ -504,9 +505,9 @@ module.exports = class BybitLinear {
     }
 
     let returnOrder;
-    Bybit.createOrders([placedOrder.result]).forEach(order => {
-      this.triggerOrder(order);
-      returnOrder = order;
+    Bybit.createOrders([placedOrder.result]).forEach(o => {
+      this.triggerOrder(o);
+      returnOrder = o;
     });
 
     return returnOrder;
@@ -532,18 +533,16 @@ module.exports = class BybitLinear {
       secret: this.apiSecret
     });
 
-    let result
+    let result;
     try {
-      result = isConditionalOrder
-        ? await client.cancelConditionalOrder(parameters)
-        : await client.cancelActiveOrder(parameters);
+      result = isConditionalOrder ? await client.cancelConditionalOrder(parameters) : await client.cancelActiveOrder(parameters);
     } catch (e) {
       this.logger.error(`Bybit: Invalid order create:${JSON.stringify([parameters, e])}`);
       return ExchangeOrder.createCanceledFromOrder(order);
     }
 
     if (id !== result?.result?.order_id && id !== result?.result?.stop_order_id) {
-      this.logger.error(`BybitLinear: Invalid order cancel body:${JSON.stringify({ body: body, id: order })}`);
+      this.logger.error(`BybitLinear: Invalid order cancel body:${JSON.stringify({ body: result, id: order })}`);
       return undefined;
     }
 
@@ -592,9 +591,9 @@ module.exports = class BybitLinear {
       secret: this.apiSecret
     });
 
-    let response
+    let response;
     try {
-      response = await client.getActiveOrders({settleCoin: 'USDT'});
+      response = await client.getActiveOrders({ settleCoin: 'USDT' });
     } catch (e) {
       this.logger.error(`BybitLinear: Invalid orders response: ${e}`);
       return;
@@ -630,7 +629,7 @@ module.exports = class BybitLinear {
       secret: this.apiSecret
     });
 
-    let response
+    let response;
     try {
       response = await client.getPosition();
     } catch (e) {

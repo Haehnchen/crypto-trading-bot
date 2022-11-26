@@ -468,7 +468,9 @@ module.exports = class Bybit {
     const parametersSorted = {};
     Object.keys(parameters)
       .sort()
-      .forEach(key => (parametersSorted[key] = parameters[key]));
+      .forEach(key => {
+        parametersSorted[key] = parameters[key];
+      });
 
     parametersSorted.sign = crypto
       .createHmac('sha256', this.apiSecret)
