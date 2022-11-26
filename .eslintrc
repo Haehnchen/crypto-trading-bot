@@ -19,6 +19,7 @@
     "object-shorthand": "off",
     "class-methods-use-this": "off",
     "no-continue": "off",
-    "no-await-in-loop": "warn"
+    "no-await-in-loop": "warn",
+    "comma-dangle": ["error", "never"]
   }
 }
