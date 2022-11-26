@@ -140,7 +140,7 @@ module.exports = class Order {
       amount,
       Order.TYPE_LIMIT,
       _.merge(options, {
-        post_only: true
+        post_only: true,
       })
     );
   }
@@ -155,7 +155,7 @@ module.exports = class Order {
       this.TYPE_LIMIT,
       {
         post_only: true,
-        close: true
+        close: true,
       }
     );
   }
@@ -167,7 +167,7 @@ module.exports = class Order {
       undefined,
       amount,
       _.merge(options, {
-        adjust_price: true
+        adjust_price: true,
       })
     );
   }

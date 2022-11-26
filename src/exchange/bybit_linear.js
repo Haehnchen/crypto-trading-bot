@@ -473,7 +473,7 @@ module.exports = class BybitLinear {
     delete parameters['order_link_id'];
 
     parameters.reduce_only = order.isReduceOnly();
-    parameters.close_on_trigger = false;
+    parameters.close_on_trigger = order.isReduceOnly();
 
     // limit and stops have different api endpoints
     const isConditionalOrder = this.isConditionalExchangeOrder(order);

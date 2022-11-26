@@ -882,12 +882,12 @@ module.exports = class Bybit {
 
         // new format
         if (!price || price === 0.0) {
-          price = parseFloat(order.trigger_price);
+          price = parseFloat(order?.trigger_price);
         }
       }
 
       const options = {};
-      if (order.ext_fields && order.ext_fields.reduce_only === true) {
+      if (order.reduce_only === true || order.ext_fields?.reduce_only === true) {
         options.reduce_only = true;
       }
 
