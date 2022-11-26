@@ -310,23 +310,20 @@ module.exports = class OrderExecutor {
    * @param order
    * @returns {Promise<*>}
    */
-  createAdjustmentOrder(exchangeName, order) {
-    return new Promise(async resolve => {
-      const price = await this.getCurrentPrice(exchangeName, order.symbol, order.side);
-      if (!price) {
-        this.logger.error(
-          `Stop creating order; can not find up to date ticker price: ${JSON.stringify([
-            exchangeName,
-            order.symbol,
-            order.side
-          ])}`
-        );
-        resolve();
-        return;
-      }
+  async createAdjustmentOrder(exchangeName, order) {
+    const price = await this.getCurrentPrice(exchangeName, order.symbol, order.side);
+    if (!price) {
+      this.logger.error(
+        `Stop creating order; can not find up to date ticker price: ${JSON.stringify([
+          exchangeName,
+          order.symbol,
+          order.side,
+        ])}`
+      );
+      return undefined;
+    }
 
-      resolve(Order.createRetryOrderWithPriceAdjustment(order, price));
-    });
+    return Order.createRetryOrderWithPriceAdjustment(order, price);
   }
 
   /**
@@ -339,7 +336,7 @@ module.exports = class OrderExecutor {
    */
   getCurrentPrice(exchangeName, symbol, side) {
     if (!['long', 'short'].includes(side)) {
-      throw `Invalid side: ${side}`;
+      throw new Error(`Invalid side: ${side}`);
     }
 
     return new Promise(async resolve => {
