@@ -8,7 +8,7 @@ describe('#tick listener for order', function() {
     let updates = [];
 
     const listener = new TickListener(
-      { get: () => new Ticker() },
+      { get: () => new Ticker('unknown', 'BTC', 123456, 12, 12) },
       {},
       { send: () => {} },
       { signal: () => {} },
@@ -52,7 +52,7 @@ describe('#tick listener for order', function() {
     const calls = [];
 
     const listener = new TickListener(
-      { get: () => new Ticker() },
+      { get: () => new Ticker('unknown', 'BTC', 123456, 12, 12) },
       {},
       { send: () => {} },
       {
@@ -86,7 +86,7 @@ describe('#tick listener for order', function() {
     assert.deepEqual(calls, [
       'FOOBAR',
       'FOOUSD',
-      { price: undefined, strategy: 'foobar', raw: '{"_debug":{},"_signal":"short","placeOrders":[]}' },
+      { price: 12, strategy: 'foobar', raw: '{"_debug":{},"_signal":"short","placeOrders":[]}' },
       'short',
       'foobar'
     ]);

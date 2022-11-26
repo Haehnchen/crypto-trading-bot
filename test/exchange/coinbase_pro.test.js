@@ -82,7 +82,7 @@ describe('#coinbase pro exchange implementation', function() {
       }
     ];
 
-    coinbase.tickers['LTC-EUR'] = new Ticker(undefined, 'LTC-EUR', undefined, 141, 142);
+    coinbase.tickers['LTC-EUR'] = new Ticker('coinbase', 'LTC-EUR', 1000000, 141, 142);
 
     coinbase.fills['LTC-EUR'] = [
       {
