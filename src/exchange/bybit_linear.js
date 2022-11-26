@@ -160,8 +160,8 @@ module.exports = class BybitLinear {
 
             const price = instrument.last_price;
 
-            let bid = price;
-            let ask = price;
+            let bid = parseFloat(price);
+            let ask = parseFloat(price);
 
             const { symbol } = instrument;
 
