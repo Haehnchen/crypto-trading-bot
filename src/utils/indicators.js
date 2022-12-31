@@ -159,7 +159,7 @@ module.exports = {
 
     return executeTulindIndicator(source, indicator, {
       options: {
-        length: options.fast_period || 20,
+        length: options.length || 20,
         stddev: options.stddev || 2
       },
       results: ['lower', 'middle', 'upper']
@@ -168,34 +168,82 @@ module.exports = {
 
   obv: (...args) => executeTulindIndicator(...args, { sources: ['close', 'volume'] }),
   ao: (...args) => executeTulindIndicator(...args, { sources: ['high', 'low'] }),
-  mfi: (...args) => executeTulindIndicator(...args, { sources: ['high', 'low', 'close', 'volume'], options: { length: 14 } }),
-  sma: (...args) => executeTulindIndicator(...args, { options: { length: 14 } }),
-  ema: (...args) => executeTulindIndicator(...args, { options: { length: 14 } }),
   wma: (...args) => executeTulindIndicator(...args, { options: { length: 9 } }),
   dema: (...args) => executeTulindIndicator(...args, { options: { length: 9 } }),
   tema: (...args) => executeTulindIndicator(...args, { options: { length: 9 } }),
   trima: (...args) => executeTulindIndicator(...args, { options: { length: 9 } }),
   kama: (...args) => executeTulindIndicator(...args, { options: { length: 9 } }),
-  rsi: (...args) => executeTulindIndicator(...args, { options: { length: 14 } }),
-  roc: (...args) => executeTulindIndicator(...args, { options: { length: 6 } }),
-  atr: (...args) => executeTulindIndicator(...args, { sources: ['high', 'low', 'close'], options: { length: 14 } }),
+
+  roc: (source, indicator) =>
+    executeTulindIndicator(source, indicator, {
+      options: {
+        length: indicator?.options?.length || 14
+      }
+    }),
+
+  atr: (source, indicator) =>
+    executeTulindIndicator(source, indicator, {
+      sources: ['high', 'low', 'close'],
+      options: {
+        length: indicator?.options?.length || 14
+      }
+    }),
+
+  mfi: (source, indicator) =>
+    executeTulindIndicator(source, indicator, {
+      sources: ['high', 'low', 'close', 'volume'],
+      options: {
+        length: indicator?.options?.length || 14
+      }
+    }),
+
+  sma: (source, indicator) =>
+    executeTulindIndicator(source, indicator, {
+      options: {
+        length: indicator?.options?.length || 14
+      }
+    }),
+
+  ema: (source, indicator) =>
+    executeTulindIndicator(source, indicator, {
+      options: {
+        length: indicator?.options?.length || 14
+      }
+    }),
+
+  rsi: (source, indicator) =>
+    executeTulindIndicator(source, indicator, {
+      options: {
+        length: indicator?.options?.length || 14
+      }
+    }),
 
   hma: (source, indicator) => {
     const candleSource = (indicator.options && indicator.options.source) || 'close';
 
     return executeTulindIndicator(source, indicator, {
       sources: [candleSource],
-      options: { length: 9 }
+      options: {
+        length: indicator?.options?.length || 9
+      }
     });
   },
 
-  cci: (...args) =>
-    executeTulindIndicator(...args, {
+  cci: (source, indicator) =>
+    executeTulindIndicator(source, indicator, {
       sources: ['high', 'low', 'close'],
-      options: { length: 20 }
+      options: {
+        length: indicator?.options?.length || 20
+      }
     }),
 
-  vwma: (...args) => executeTulindIndicator(...args, { sources: ['close', 'volume'], options: { length: 20 } }),
+  vwma: (source, indicator) =>
+    executeTulindIndicator(source, indicator, {
+      sources: ['close', 'volume'],
+      options: {
+        length: indicator?.options?.length || 20
+      }
+    }),
 
   stoch: (...args) =>
     executeTulindIndicator(...args, {
@@ -204,10 +252,14 @@ module.exports = {
       results: ['stoch_k', 'stoch_d']
     }),
 
-  macd: (...args) =>
-    executeTulindIndicator(...args, {
-      options: { fast_length: 12, slow_length: 26, signal_length: 9 },
-      results: ['macd', 'signal', 'histogram']
+  macd: (source, indicator) =>
+    executeTulindIndicator(source, indicator, {
+      results: ['macd', 'signal', 'histogram'],
+      options: {
+        fast_length: indicator?.options?.fast_length || 12,
+        slow_length: indicator?.options?.slow_length || 26,
+        signal_length: indicator?.options?.signal_length || 9
+      }
     }),
 
   adx: (...args) =>
