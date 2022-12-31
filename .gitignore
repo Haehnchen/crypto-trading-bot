@@ -1,9 +1,11 @@
-.node_modules/
-.idea/
-.vscode/
+./node_modules/
+./idea/
+./vscode/
 
 # Project config
-/conf.json
-/instance.js
-./bot.*
+./conf.json
+./instance.js
+./bot.db
+./bot.db-shm
+./bot.db-wal
 ./var/
