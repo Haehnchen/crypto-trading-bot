@@ -133,7 +133,7 @@ function executeTulindIndicator(source, indicator, tulindOptions) {
 
 module.exports = {
   // indicators which source is Candles
-  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked', 'heikin_ashi', 'psar', 'hma'],
+  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked', 'heikin_ashi', 'psar', 'hma', 'candles'],
 
   bb: (source, indicator) => 
     executeTulindIndicator(source, indicator, {
@@ -497,5 +497,9 @@ module.exports = {
       }
       resolve({ [key]: results.reverse() });
     });
-  }
+  },
+
+  candles: async (source, indicator) => ({
+    [indicator.key]: source.slice()
+  })
 };
