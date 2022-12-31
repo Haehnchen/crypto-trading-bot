@@ -3,9 +3,9 @@
 ./vscode/
 
 # Project config
-./conf.json
-./instance.js
-./bot.db
-./bot.db-shm
-./bot.db-wal
+conf.json
+instance.js
+bot.db
+bot.db-shm
+bot.db-wal
 ./var/
