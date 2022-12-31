@@ -28,10 +28,7 @@ module.exports = class {
       length: 50
     });
 
-    indicatorBuilder.add('foreign_candle', 'candles', options.foreign_pair_period || '15m', {
-      exchange: options.foreign_pair_exchange || 'binance',
-      symbol: options.foreign_pair_symbol || 'BTCUSDT'
-    });
+    indicatorBuilder.add('candles', 'candles');
   }
 
   async period(indicatorPeriod, options) {
@@ -154,10 +151,7 @@ module.exports = class {
     return {
       period: '15m',
       dice: 6,
-      dice_size: 12,
-      foreign_pair_exchange: 'binance',
-      foreign_pair_symbol: 'BTCUSDT',
-      foreign_pair_period: '15m'
+      dice_size: 12
     };
   }
 
