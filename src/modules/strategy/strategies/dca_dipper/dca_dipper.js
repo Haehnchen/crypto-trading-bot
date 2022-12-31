@@ -12,7 +12,10 @@ module.exports = class DcaDipper {
       source: options.hma_source || 'close'
     });
 
-    indicatorBuilder.add('bb', 'bb', '15m');
+    indicatorBuilder.add('bb', 'bb', options.period, {
+      length: options.bb_length || 20,
+      stddev: options.bb_stddev || 2
+    });
   }
 
   period(indicatorPeriod) {
@@ -90,7 +93,9 @@ module.exports = class DcaDipper {
       amount_currency: '12',
       percent_below_price: 0.1,
       hma_period: 9,
-      hma_source: 'close'
+      hma_source: 'close',
+      bb_length: 20,
+      bb_stddev: 2
     };
   }
 };
