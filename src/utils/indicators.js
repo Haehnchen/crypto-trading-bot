@@ -135,11 +135,17 @@ module.exports = {
   // indicators which source is Candles
   sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked', 'heikin_ashi', 'psar', 'hma', 'candles'],
 
-  bb: (source, indicator) => 
-    executeTulindIndicator(source, indicator, {
-      options: { length: 20, stddev: 2 },
+  bb: (source, indicator) => {
+    const { options = {} } = indicator;
+
+    return executeTulindIndicator(source, indicator, {
+      options: {
+        length: options.fast_period || 20,
+        stddev: options.stddev || 2
+      },
       results: ['lower', 'middle', 'upper']
-    }),
+    });
+  },
 
   obv: (...args) => executeTulindIndicator(...args, { sources: ['close', 'volume'] }),
   ao: (...args) => executeTulindIndicator(...args, { sources: ['high', 'low'] }),
