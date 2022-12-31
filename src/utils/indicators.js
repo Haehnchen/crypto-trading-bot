@@ -12,7 +12,7 @@ const percent = require('percent');
  * @param arraySize
  * @returns {Array}
  */
-function zigzag (ticks, deviation = 5, arraySize = -1) {
+function zigzag(ticks, deviation = 5, arraySize = -1) {
   // Determines percent deviation in price changes, presenting frequency and volatility in deviation. Also helps determine trend reversals.
   // Read more: http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:zigzag
   // arraySize = -1, calculate ZigZag for all ticks
@@ -113,7 +113,7 @@ function executeTulindIndicator(source, indicator, tulindOptions) {
     options = Object.keys(options).map(o => indicatorOptions[o] || options[o]);
 
     // execute indicator
-    tulind.indicators[indicatorName].indicator(sources, options, function(err, res) {
+    tulind.indicators[indicatorName].indicator(sources, options, (err, res) => {
       let finalResult = res[0];
       const { results } = tulindOptions;
       if (results !== undefined) {
@@ -133,7 +133,26 @@ function executeTulindIndicator(source, indicator, tulindOptions) {
 
 module.exports = {
   // indicators which source is Candles
-  sourceCandle: ['cci', 'pivot_points_high_low', 'obv', 'ao', 'mfi', 'stoch', 'vwma', 'atr', 'adx', 'volume_profile', 'volume_by_price', 'ichimoku_cloud', 'zigzag', 'wicked', 'heikin_ashi', 'psar', 'hma', 'candles'],
+  sourceCandle: [
+    'cci',
+    'pivot_points_high_low',
+    'obv',
+    'ao',
+    'mfi',
+    'stoch',
+    'vwma',
+    'atr',
+    'adx',
+    'volume_profile',
+    'volume_by_price',
+    'ichimoku_cloud',
+    'zigzag',
+    'wicked',
+    'heikin_ashi',
+    'psar',
+    'hma',
+    'candles'
+  ],
 
   bb: (source, indicator) => {
     const { options = {} } = indicator;
@@ -149,8 +168,7 @@ module.exports = {
 
   obv: (...args) => executeTulindIndicator(...args, { sources: ['close', 'volume'] }),
   ao: (...args) => executeTulindIndicator(...args, { sources: ['high', 'low'] }),
-  mfi: (...args) =>
-    executeTulindIndicator(...args, { sources: ['high', 'low', 'close', 'volume'], options: { length: 14 } }),
+  mfi: (...args) => executeTulindIndicator(...args, { sources: ['high', 'low', 'close', 'volume'], options: { length: 14 } }),
   sma: (...args) => executeTulindIndicator(...args, { options: { length: 14 } }),
   ema: (...args) => executeTulindIndicator(...args, { options: { length: 14 } }),
   wma: (...args) => executeTulindIndicator(...args, { options: { length: 9 } }),
@@ -163,12 +181,13 @@ module.exports = {
   atr: (...args) => executeTulindIndicator(...args, { sources: ['high', 'low', 'close'], options: { length: 14 } }),
 
   hma: (source, indicator) => {
-    let candleSource = (indicator.options && indicator.options.source) || 'close'
+    const candleSource = (indicator.options && indicator.options.source) || 'close';
 
     return executeTulindIndicator(source, indicator, {
       sources: [candleSource],
       options: { length: 9 }
-    })},
+    });
+  },
 
   cci: (...args) =>
     executeTulindIndicator(...args, {
@@ -197,7 +216,7 @@ module.exports = {
       options: { length: 14 }
     }),
 
-  macd_ext: function(source, indicator) {
+  macd_ext: function (source, indicator) {
     return new Promise(resolve => {
       /**
        * Extract int from string input eg (SMA = 0)
@@ -205,7 +224,7 @@ module.exports = {
        * @see https://github.com/oransel/node-talib
        * @see https://github.com/markcheno/go-talib/blob/master/talib.go#L20
        */
-      const getMaTypeFromString = function(maType) {
+      const getMaTypeFromString = function (maType) {
         // no constant in lib?
         const types = ['SMA', 'EMA', 'WMA', 'DEMA', 'TEMA', 'TRIMA', 'KAMA', 'MAMA', 'T3'];
         return types.includes(maType) ? types.indexOf(maType) : 1;
@@ -230,7 +249,7 @@ module.exports = {
           optInSlowMAType: getMaTypeFromString(slow_ma_type),
           optInSignalMAType: getMaTypeFromString(signal_ma_type)
         },
-        function(err, result) {
+        (err, result) => {
           const resultHistory = [];
           for (let i = 0; i < result.nbElement; i += 1) {
             resultHistory.push({
@@ -245,7 +264,7 @@ module.exports = {
     });
   },
 
-  bb_talib: function(source, indicator) {
+  bb_talib: function (source, indicator) {
     return new Promise(resolve => {
       const { options = {} } = indicator;
       const { length = 20, stddev = 2 } = options;
@@ -260,7 +279,7 @@ module.exports = {
           optInNbDevDn: stddev,
           optInMAType: 0 // simple moving average here
         },
-        function(err, result) {
+        (err, result) => {
           if (err) {
             resolve({ [indicator.key]: {} });
             return;
@@ -272,9 +291,7 @@ module.exports = {
               upper: result.result.outRealUpperBand[i],
               middle: result.result.outRealMiddleBand[i],
               lower: result.result.outRealLowerBand[i],
-              width:
-                (result.result.outRealUpperBand[i] - result.result.outRealLowerBand[i]) /
-                result.result.outRealMiddleBand[i] // https://www.tradingview.com/wiki/Bollinger_Bands_Width_(BBW)
+              width: (result.result.outRealUpperBand[i] - result.result.outRealLowerBand[i]) / result.result.outRealMiddleBand[i] // https://www.tradingview.com/wiki/Bollinger_Bands_Width_(BBW)
             });
           }
           resolve({ [indicator.key]: resultHistory });
@@ -283,7 +300,7 @@ module.exports = {
     });
   },
 
-  stoch_rsi: function(source, indicator) {
+  stoch_rsi: function (source, indicator) {
     return new Promise(resolve => {
       const { options = {} } = indicator;
       const { rsi_length = 14, stoch_length = 14, k = 3, d = 3 } = options;
@@ -311,7 +328,7 @@ module.exports = {
     });
   },
 
-  psar: function(source, indicator) {
+  psar: function (source, indicator) {
     return new Promise(resolve => {
       const { options = {} } = indicator;
       const { step = 0.02, max = 0.2 } = options;
@@ -324,18 +341,17 @@ module.exports = {
       };
 
       source.forEach(candle => {
-        input.high.push(candle.high)
-        input.low.push(candle.low)
-      })
+        input.high.push(candle.high);
+        input.low.push(candle.low);
+      });
 
       const { PSAR } = require('technicalindicators');
       resolve({ [indicator.key]: new PSAR(input).getResult() });
     });
   },
 
-  heikin_ashi: function(source, indicator) {
+  heikin_ashi: function (source, indicator) {
     return new Promise(resolve => {
-
       const { HeikinAshi } = require('technicalindicators');
 
       const input = {
@@ -348,13 +364,13 @@ module.exports = {
       };
 
       source.forEach(candle => {
-        input.close.push(candle.close)
-        input.high.push(candle.high)
-        input.low.push(candle.low)
-        input.open.push(candle.open)
-        input.timestamp.push(candle.time)
-        input.volume.push(candle.volume)
-      })
+        input.close.push(candle.close);
+        input.high.push(candle.high);
+        input.low.push(candle.low);
+        input.open.push(candle.open);
+        input.timestamp.push(candle.time);
+        input.volume.push(candle.volume);
+      });
 
       const f = new HeikinAshi(input);
 
@@ -362,7 +378,7 @@ module.exports = {
 
       const candles = [];
 
-      const length = (results.open || []).length;
+      const { length } = results.open || [];
       for (let i = 0; i < length; i++) {
         candles.push({
           close: results.close[i],
@@ -378,20 +394,20 @@ module.exports = {
     });
   },
 
-  volume_profile: function(source, indicator) {
+  volume_profile: function (source, indicator) {
     return new Promise(resolve => {
       const { options = {} } = indicator;
       const { length = 200, ranges = 14 } = options;
-      
+
       const { candles2MarketData } = require('./technical_analysis');
       const { VolumeProfile } = require('technicalindicators');
-      const f = new VolumeProfile({ ...candles2MarketData(source, length), noOfBars: ranges })
+      const f = new VolumeProfile({ ...candles2MarketData(source, length), noOfBars: ranges });
 
       resolve({ [indicator.key]: f.getResult() });
     });
   },
 
-  volume_by_price: function(source, indicator) {
+  volume_by_price: function (source, indicator) {
     // https://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:volume_by_price
     return new Promise(resolve => {
       const { options = {} } = indicator;
@@ -400,9 +416,7 @@ module.exports = {
       const lookbackRange = source.slice(-length);
 
       const minMax = lookbackRange.reduce(
-        (accumulator, currentValue) => {
-          return [Math.min(currentValue.close, accumulator[0]), Math.max(currentValue.close, accumulator[1])];
-        },
+        (accumulator, currentValue) => [Math.min(currentValue.close, accumulator[0]), Math.max(currentValue.close, accumulator[1])],
         [Number.MAX_VALUE, Number.MIN_VALUE]
       );
 
@@ -412,9 +426,7 @@ module.exports = {
       let current = minMax[0];
       for (let i = 0; i < ranges; i++) {
         // summarize volume per range
-        const map = lookbackRange
-          .filter(c => c.close >= current && c.close < current + rangeSize)
-          .map(c => c.volume);
+        const map = lookbackRange.filter(c => c.close >= current && c.close < current + rangeSize).map(c => c.volume);
 
         // prevent float / rounding issues on first and last item
         rangeBlocks.push({
@@ -428,9 +440,9 @@ module.exports = {
 
       resolve({ [indicator.key]: [rangeBlocks.reverse()] }); // sort by price; low to high
     });
-  },        
-  
-  zigzag: function(source, indicator) {
+  },
+
+  zigzag: function (source, indicator) {
     // https://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:volume_by_price
     return new Promise(resolve => {
       const { options = {} } = indicator;
@@ -439,21 +451,20 @@ module.exports = {
       const result = zigzag(source.slice(-length), deviation);
 
       // we only what to have turningPoints; non turningPoints should be empty lookback
-      const turningPoints = result.map(r => {
-        return r && r.turningPoint === true ? r : {};
-      });
+      const turningPoints = result.map(r => (r && r.turningPoint === true ? r : {}));
       resolve({ [indicator.key]: turningPoints });
     });
-  }, 
+  },
 
-  ichimoku_cloud: function(source, indicator) {
+  ichimoku_cloud: function (source, indicator) {
     return new Promise(resolve => {
       const { options = {} } = indicator;
       const { conversionPeriod = 9, basePeriod = 26, spanPeriod = 52, displacement = 26 } = options;
 
       const { candles2MarketData } = require('./technical_analysis');
       const { IchimokuCloud } = require('technicalindicators');
-      const f = new IchimokuCloud({ ...candles2MarketData(source, undefined, ['high', 'low']),
+      const f = new IchimokuCloud({
+        ...candles2MarketData(source, undefined, ['high', 'low']),
         conversionPeriod: conversionPeriod,
         basePeriod: basePeriod,
         spanPeriod: spanPeriod,
@@ -464,7 +475,7 @@ module.exports = {
     });
   },
 
-  pivot_points_high_low: function(source, indicator) {
+  pivot_points_high_low: function (source, indicator) {
     const { key, options = {} } = indicator;
     const { left = 5, right = 5 } = options;
     return new Promise(resolve => {
@@ -483,7 +494,7 @@ module.exports = {
     });
   },
 
-  wicked: function(source, indicator) {
+  wicked: function (source, indicator) {
     const { key } = indicator;
     return new Promise(resolve => {
       const results = [];
@@ -495,9 +506,7 @@ module.exports = {
 
         results.push({
           top: Math.abs(percent.calc(top, marketData.high[i] - marketData.low[i], 2)),
-          body: Math.abs(
-            percent.calc(marketData.close[i] - marketData.open[i], marketData.high[i] - marketData.low[i], 2)
-          ),
+          body: Math.abs(percent.calc(marketData.close[i] - marketData.open[i], marketData.high[i] - marketData.low[i], 2)),
           bottom: Math.abs(percent.calc(bottom, marketData.high[i] - marketData.low[i], 2))
         });
       }
