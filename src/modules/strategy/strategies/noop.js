@@ -128,8 +128,8 @@ module.exports = class {
         value: 'pivot_points_high_low'
       },
       {
-        label: 'Foreign',
-        value: 'foreign_candle.close'
+        label: 'Candles',
+        value: 'candles.close'
       },
       {
         label: 'Top Volume Ranges',
