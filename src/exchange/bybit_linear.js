@@ -643,7 +643,7 @@ module.exports = class BybitLinear {
       return;
     }
 
-    this.fullPositionsUpdate(response.result);
+    this.fullPositionsUpdate(response.result || []);
   }
 
   getBaseUrl() {
