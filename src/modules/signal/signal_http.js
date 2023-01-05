@@ -4,6 +4,6 @@ module.exports = class SignalHttp {
   }
 
   async getSignals(since) {
-    return await this.signalRepository.getSignals(since);
+    return this.signalRepository.getSignals(since);
   }
 };

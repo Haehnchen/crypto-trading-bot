@@ -178,7 +178,7 @@ module.exports = class Http {
 
     app.get('/signals', async (req, res) => {
       res.render('../templates/signals.html.twig', {
-        signals: await this.signalHttp.getSignals(Math.floor(Date.now() / 1000) - 60 * 60 * 48)
+        signals: await this.signalHttp.getSignals(Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 30)
       });
     });
 
