@@ -741,7 +741,7 @@ module.exports = {
   },
 
   createTelegram: function() {
-    const Telegraf = require('telegraf');
+    const { Telegraf } = require('telegraf');
     const config = this.getConfig();
     const { token } = config.notify.telegram;
 
