@@ -45,7 +45,7 @@
                             <!-- /.card-body -->
                         </div>
                         <!-- /.card -->
-                        
+
                         <div class="card">
                             <div class="card-header">
                                 <h3 class="card-title">Chart</h3>
@@ -83,10 +83,14 @@
                             </div>
                             <!-- /.card-header -->
                             <div class="card-body table-responsive p-0">
-                                {% include 'components/backtest_table.html.twig' with {
-                                    'rows': rows,
-                                    'extra_fields': extra_fields,
-                                } only %}
+                                {% if rows|length > 1000 %}
+                                    {% include 'components/backtest_table.html.twig' with {
+                                        'rows': rows,
+                                        'extra_fields': extra_fields,
+                                    } only %}
+                                {% else %}
+                                    <span style="margin: 10px">Too many rows detected, rendering process skipped.</span>
+                                {% endif %}
                             </div>
                             <!-- /.card-body -->
                         </div>

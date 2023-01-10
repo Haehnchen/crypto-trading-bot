@@ -21,7 +21,7 @@
             <td class="no-wrap">{{ row.price|default }}</td>
             <td class="no-wrap">
                 {% if row.profit is defined %}
-                    <span class="{{ row.profit > 0 ? 'text-success' : 'text-danger' }} {{ row.result.signal|default == 'close' ? ' font-weight-bold' : '' }}">{{ row.profit|round(2) }} %</span>
+                    <span class="{{ row.profit > 0 ? 'text-success' : 'text-danger' }} {{ row.result._signal|default == 'close' ? ' font-weight-bold' : '' }}">{{ row.profit|round(2) }} %</span>
                 {% endif %}
 
                 {% if row.lastPriceClosed is defined %}
@@ -30,11 +30,11 @@
             </td>
             <td>
                 {% if row.result is defined %}
-                    {% if row.result.signal == 'long' %}
+                    {% if row.result._signal == 'long' %}
                         <i class="fas fa-chevron-circle-up text-success"></i>
-                    {% elseif row.result.signal == 'short' %}
+                    {% elseif row.result._signal == 'short' %}
                         <i class="fas fa-chevron-circle-down text-danger"></i>
-                    {% elseif row.result.signal == 'close' %}
+                    {% elseif row.result._signal == 'close' %}
                         <i class="fa fa-times"></i>
                     {% endif %}
                 {% endif %}
