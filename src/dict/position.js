@@ -68,6 +68,10 @@ module.exports = class Position {
     return this.entry;
   }
 
+  getSide() {
+    return this.side;
+  }
+
   getCreatedAt() {
     return this.createdAt;
   }
