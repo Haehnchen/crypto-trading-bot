@@ -94,6 +94,7 @@ c.init = () => {
                     'periods': ['1m', '15m', '1h'],
                     'exchange': 'binance',
                     'state': 'watch',
+                    'feesPerTrade':  0.04,
                     'watchdogs': [
                         {
                             'name': 'stoploss_watch',
@@ -144,6 +145,7 @@ y.forEach((pair) => {
         'symbol': pair,
         'periods': ['1m', '15m', '1h'],
         'exchange': 'bitmex',
+        'feesPerTrade':  0.1,
         'state': 'watch',
         'extra': {
             'bitmex_leverage': 5,
@@ -193,6 +195,7 @@ l.forEach((pair) => {
         'symbol': pair,
         'periods': ['1m', '15m', '1h'],
         'exchange': 'bitmex_testnet',
+        'feesPerTrade':  0.1,
         'state': 'watch',
         'watchdogs': [
             {
@@ -235,6 +238,7 @@ z.forEach((pair) => {
         'symbol': pair,
         'periods': ['1m', '15m', '1h'],
         'exchange': 'binance',
+        'feesPerTrade':  0.1,
         'state': 'watch',
         'strategies': [
             {

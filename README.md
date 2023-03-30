@@ -338,6 +338,7 @@ c.symbols = [
     symbol: 'ETHUSDT',
     exchange: 'binance_futures',
     periods: ['1m', '15m', '1h'],
+    feesPerTrade: 0.04,
     trade: {
       currency_capital: 10,
       strategies: [
@@ -369,6 +370,7 @@ Per pair you can set used margin before orders are created; depending on exchang
     c.symbols.push({
         'symbol': 'BTCUSD',
         'exchange': 'bitmex',
+        'feesPerTrade':  0.05,
         'extra': {
             'bitmex_leverage': 5,
         },
@@ -377,11 +379,23 @@ Per pair you can set used margin before orders are created; depending on exchang
     c.symbols.push({
         'symbol': 'EOSUSD',
         'exchange': 'bybit',
+        'feesPerTrade':  0.075,
         'extra': {
             'bybit_leverage': 5,
         },
     })
 ```
+
+### Fees
+
+Fees can be configured on `instance.js` file including the field `feesPerTrade`, it is important to 
+mention that prices of fees are for Taker, not for Maker
+
+For example:
+
+Binance futures: has a Maker/Taker 0.0200%/0.0400%.
+
+'feesPerTrade':  0.04,
 
 ## Tools
 
