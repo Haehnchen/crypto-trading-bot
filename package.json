@@ -16,16 +16,16 @@
     }
   ],
   "dependencies": {
-    "async": "^3.2.4",
+    "async": "^3.2.5",
     "basic-auth": "^2.0.1",
     "better-queue": "^3.8.12",
-    "better-sqlite3": "^7.6.2",
+    "better-sqlite3": "^11.1.2",
     "bfx-api-node-models": "^1.6.3",
     "binance-api-node": "^0.12.0",
     "bitfinex-api-node": "^5.0.4",
     "bitmex-realtime-api": "^0.5.1",
     "bybit-api": "^3.2.0",
-    "ccxt": "^2.1.71",
+    "ccxt": "^4.3.80",
     "coinbase-pro": "^0.9.0",
     "colors": "^1.4.0",
     "commander": "^9.4.1",
@@ -35,7 +35,7 @@
     "http": "^0.0.1-security",
     "lodash": "^4.17.21",
     "mocha": "^10.1.0",
-    "moment": "^2.29.4",
+    "moment": "^2.30.1",
     "nodemailer": "^6.8.0",
     "numbro": "^2.3.6",
     "p-queue": "^7.3.0",
@@ -50,15 +50,15 @@
     "telegraf": "^4.10.0",
     "ts-node": "^10.9.1",
     "tulind": "^0.8.20",
-    "twig": "^1.15.4",
-    "typescript": "^4.8.4",
+    "twig": "^1.17.1",
+    "typescript": "^5.5.4",
     "winston": "^3.8.2",
     "winston-telegram": "^2.6.0",
-    "ws": "^8.11.0",
+    "ws": "^8.18.0",
     "zero-fill": "^2.2.4"
   },
   "engines": {
-    "node": "^16.0 || ^18.0"
+    "node": ">=20.0"
   },
   "homepage": "https://github.com/coinbase/coinbase-pro-node",
   "keywords": [
