@@ -3,9 +3,9 @@
 {% block title %}Trades | Crypto Bot{% endblock %}
 
 {% block javascript %}
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-    <script src="https://unpkg.com/http-vue-loader"></script>
-    <script src="/js/trades.js?v={{ asset_version() }}" type="module"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader/dist/vue3-sfc-loader.js"></script>
+<script src="/js/trades.js?v={{ asset_version() }}" type="module"></script>
 {% endblock %}
 
 {% block content %}
@@ -30,11 +30,11 @@
         <!-- /.Content Header (Page header) -->
 
         <!-- Main content -->
-        <div class="content" id="vue-trades">
+        <div class="content">
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-md-12">
-                        <trades></trades>
+                        <div id="vue-trades"></div>
                     </div>
                 </div>
                 <!-- /.row -->

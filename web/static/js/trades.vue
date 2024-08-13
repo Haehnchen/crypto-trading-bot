@@ -4,7 +4,7 @@
       <div class="card-header">
         <h3 class="card-title">Positions</h3> <span class="text-muted float-right"><transition name="slide-fade" mode="out-in"><div :key="positionsUpdatedAt">{{ positionsUpdatedAt }}</div></transition></span>
       </div>
-      <!-- /.card-header -->
+
       <div class="card-body">
         <table class="table table-bordered table-sm table-hover">
           <thead>
@@ -31,30 +31,30 @@
             </td>
             <td>
               <template v-if="!!position.currency">
-                {{ position.currency|filter_price }}
+                {{ formatPrice(position.currency) }}
               </template>
               <template v-if="!!position.currencyProfit">
-                <span class="text-muted"> / {{ position.currencyProfit|filter_price }}</span>
+                <span class="text-muted"> / {{ formatPrice(position.currencyProfit) }}</span>
               </template>
             </td>
             <td>
             <span v-if="typeof position.position.profit !== 'undefined'" v-bind:class="{ 'text-success': position.position.profit >= 0, 'text-danger': position.position.profit < 0 }">
-              {{ position.position.profit|round(2) }} %
+              {{ round(position.position.profit, 2) }} %
             </span>
             </td>
             <td>
               <template v-if="!!position.position.entry">
-                {{ position.position.entry|filter_price }}
+                {{ formatPrice(position.position.entry) }}
               </template>
             </td>
             <td>
               <template v-if="!!position.position.updatedAt">
-                {{ position.position.updatedAt|date('d.m.y H:i') }}
+                {{ date(position.position.updatedAt, 'd.m.y H:i') }}
               </template>
             </td>
             <td>
               <template v-if="!!position.position.createdAt">
-                {{ position.position.createdAt|date('d.m.y H:i') }}
+                {{ date(position.position.createdAt, 'd.m.y H:i') }}
               </template>
             </td>
             <td>
@@ -77,7 +77,7 @@
 
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">Orders</h3> <span class="text-muted float-right"><transition name="slide-fade" mode="out-in"><div :key="positionsUpdatedAt">{{ ordersUpdatedAt }}</div></transition></span>
+        <h3 class="card-title">Orders</h3> <span class="text-muted float-right"><transition name="slide-fade" mode="out-in"><div :key="ordersUpdatedAt">{{ ordersUpdatedAt }}</div></transition></span>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -106,12 +106,12 @@
               <td><a target="blank" :href="'/tradingview/' + order.exchange + ':' + order.order.symbol">{{ order.order.symbol }}</a></td>
               <td>{{ order.order.type }}</td>
               <td>{{ order.order.id }}</td>
-              <td>{{ order.order.price }}<span class="text-muted" v-if="order.percent_to_price" title="Percent to current price"> {{ order.percent_to_price|round(1) }} %</span></td>
+              <td>{{ order.order.price }}<span class="text-muted" v-if="order.percent_to_price" title="Percent to current price"> {{ round(order.percent_to_price, 1) }} %</span></td>
               <td v-bind:class="{ 'text-success': order.order.amount > 0, 'text-danger': order.order.amount < 0 }">{{ order.order.amount }}</td>
               <td>{{ order.order.retry }}</td>
               <td>{{ order.order.ourId }}</td>
-              <td>{{ order.order.createdAt|date('d.m.y H:i') }}</td>
-              <td>{{ order.order.updatedAt|date('d.m.y H:i') }}</td>
+              <td>{{ date(order.order.createdAt, 'd.m.y H:i') }}</td>
+              <td>{{ date(order.order.updatedAt, 'd.m.y H:i') }}</td>
               <td>{{ order.order.status }}</td>
               <td>
                 <i v-if="order.order.side === 'sell'" class="fas fa-chevron-circle-down text-danger" title="short"></i>
@@ -130,18 +130,21 @@
 </template>
 
 <script>
-module.exports = {
-  data: function() {
+import { ref } from 'vue'
+
+export default {
+  data() {
+    const positionsUpdatedAt = ref(null);
+    const ordersUpdatedAt = ref(null);
+    const orders = ref([]);
+    const positions = ref([]);
+
     return {
-      positions: [],
-      orders: [],
-      positionsUpdatedAt: '',
-      ordersUpdatedAt: ''
+      positionsUpdatedAt,
+      ordersUpdatedAt,
+      orders,
+      positions
     }
-  },
-  created: function() {
-    this.fetchPageAsJson();
-    this.timer = setInterval(this.fetchPageAsJson, 3000);
   },
   methods: {
     async fetchPageAsJson() {
@@ -155,27 +158,86 @@ module.exports = {
       this.positions = data.positions || [];
       this.orders = data.orders || [];
 
+      this.positions = [
+        {
+          'currency': 12.12,
+          'currencyProfit': 12,
+          'exchange': 'binance',
+          'position': {
+            'type': 'long',
+            'amount': 12.12,
+            'profit': 12,
+            'entry': 13.23,
+            'updatedAt' : new Date(),
+            'createdAt': new Date(),
+          }
+        }
+      ]
+
+      this.orders = [
+        {
+          'currency': 12.12,
+          'currencyProfit': 12,
+          'exchange': 'binance',
+          'order': {
+            'type': 'ggg',
+            'id': 'aaa',
+            'price': 12.12,
+            'percent_to_price': 4,
+            'ourId': '12',
+            'entry': 13.23,
+            'side': 'buy',
+            'updatedAt': new Date(),
+            'createdAt': new Date(),
+            'status': 'aaaa',
+          }
+        }
+      ];
+
       this.positionsUpdatedAt = new Date().toLocaleTimeString();
       this.ordersUpdatedAt = new Date().toLocaleTimeString();
     },
-    cancelAutoUpdate() {
-      clearInterval(this.timer);
+    formatPrice(value) {
+      if (parseFloat(value) < 1) {
+        return Intl.NumberFormat('en-US', {
+          useGrouping: false,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 6
+        }).format(value);
+      }
+
+      return Intl.NumberFormat('en-US', {
+        useGrouping: false,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(value);
+    },
+    round(value, decimalPlaces = 0) {
+      return value.toFixed(decimalPlaces);
+    },
+    date(value) {
+      return new Date(value).toLocaleString();
     }
   },
-  beforeDestroy() {
-    clearInterval(this.timer);
-  },
+  mounted() {
+    this.fetchPageAsJson();
+    this.timer = setInterval(this.fetchPageAsJson, 3000);
+  }
 }
+
 </script>
 
-<style>
+<style scoped>
 .slide-fade-enter-active {
   transition: all .3s ease;
 }
+
 .slide-fade-leave-active {
   transition: all .6s cubic-bezier(1.0, 0.5, 0.8, 1.0);
 }
+
 .slide-fade-enter, .slide-fade-leave-to {
   opacity: 0.3;
 }
 </style>
+
