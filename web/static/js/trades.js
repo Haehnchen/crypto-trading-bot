@@ -1,30 +1,31 @@
-Vue.filter('filter_price', function(value) {
-  if (parseFloat(value) < 1) {
-    return Intl.NumberFormat('en-US', {
-      useGrouping: false,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6
-    }).format(value);
+const options = {
+  moduleCache: {
+    vue: Vue
+  },
+
+  getFile(url) {
+    return fetch(url).then(response => (response.ok ? response.text() : Promise.reject(response)));
+  },
+
+  addStyle(styleStr) {
+    const style = document.createElement('style');
+    style.textContent = styleStr;
+    const ref = document.head.getElementsByTagName('style')[0] || null;
+    document.head.insertBefore(style, ref);
+  },
+
+  log(type, ...args) {
+    console.log(type, ...args);
   }
+};
 
-  return Intl.NumberFormat('en-US', {
-    useGrouping: false,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(value);
-});
+const { loadModule, version } = window['vue3-sfc-loader'];
 
-Vue.filter('round', function(value, decimalPlaces = 0) {
-  return value.toFixed(decimalPlaces);
-});
-
-Vue.filter('date', function(value) {
-  return new Date(value).toLocaleString();
-});
-
-new Vue({
-  el: '#vue-trades',
+const app = Vue.createApp({
   components: {
-    'trades': httpVueLoader('js/trades.vue')
-  }
+    'my-component': Vue.defineAsyncComponent(() => loadModule('./js/trades.vue', options))
+  },
+  template: `<my-component></my-component>`
 });
+
+app.mount('#vue-trades');
