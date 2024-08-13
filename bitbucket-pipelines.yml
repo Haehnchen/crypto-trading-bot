@@ -1,4 +1,4 @@
-image: node:18
+image: node:20
 pipelines:
   default:
     - step:
