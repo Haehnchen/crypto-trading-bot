@@ -158,42 +158,6 @@ export default {
       this.positions = data.positions || [];
       this.orders = data.orders || [];
 
-      this.positions = [
-        {
-          'currency': 12.12,
-          'currencyProfit': 12,
-          'exchange': 'binance',
-          'position': {
-            'type': 'long',
-            'amount': 12.12,
-            'profit': 12,
-            'entry': 13.23,
-            'updatedAt' : new Date(),
-            'createdAt': new Date(),
-          }
-        }
-      ]
-
-      this.orders = [
-        {
-          'currency': 12.12,
-          'currencyProfit': 12,
-          'exchange': 'binance',
-          'order': {
-            'type': 'ggg',
-            'id': 'aaa',
-            'price': 12.12,
-            'percent_to_price': 4,
-            'ourId': '12',
-            'entry': 13.23,
-            'side': 'buy',
-            'updatedAt': new Date(),
-            'createdAt': new Date(),
-            'status': 'aaaa',
-          }
-        }
-      ];
-
       this.positionsUpdatedAt = new Date().toLocaleTimeString();
       this.ordersUpdatedAt = new Date().toLocaleTimeString();
     },
