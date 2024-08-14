@@ -51,21 +51,7 @@ module.exports = class ExchangeOrder {
     return 'trailing_stop';
   }
 
-  constructor(
-    id,
-    symbol,
-    status,
-    price,
-    amount,
-    retry,
-    ourId,
-    side,
-    type,
-    createdAt,
-    updatedAt,
-    raw = undefined,
-    options = {}
-  ) {
+  constructor(id, symbol, status, price, amount, retry, ourId, side, type, createdAt, updatedAt, raw = undefined, options = {}) {
     if (side !== 'buy' && side !== 'sell') {
       throw `Invalid order direction given:${side}`;
     }
@@ -120,6 +106,10 @@ module.exports = class ExchangeOrder {
 
   isShort() {
     return this.getLongOrShortSide() === 'short';
+  }
+
+  getStatus() {
+    return this.status;
   }
 
   getLongOrShortSide() {
@@ -178,17 +168,7 @@ module.exports = class ExchangeOrder {
       side = 'sell';
     }
 
-    return new ExchangeOrder(
-      order.id,
-      order.symbol,
-      'canceled',
-      order.price,
-      order.amount,
-      false,
-      order.ourId,
-      side,
-      order.type
-    );
+    return new ExchangeOrder(order.id, order.symbol, 'canceled', order.price, order.amount, false, order.ourId, side, order.type);
   }
 
   static createRejectedFromOrder(order, message = undefined) {
@@ -204,17 +184,6 @@ module.exports = class ExchangeOrder {
       raw.message = message;
     }
 
-    return new ExchangeOrder(
-      order.id,
-      order.symbol,
-      'rejected',
-      order.price,
-      order.amount,
-      false,
-      order.ourId,
-      side,
-      order.type,
-      raw
-    );
+    return new ExchangeOrder(order.id, order.symbol, 'rejected', order.price, order.amount, false, order.ourId, side, order.type, raw);
   }
 };

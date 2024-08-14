@@ -8,20 +8,7 @@ const moment = require('moment');
 const OrderUtil = require('../utils/order_util');
 
 module.exports = class Http {
-  constructor(
-    systemUtil,
-    ta,
-    signalHttp,
-    backtest,
-    exchangeManager,
-    pairsHttp,
-    logsHttp,
-    candleExportHttp,
-    candleImporter,
-    ordersHttp,
-    tickers,
-    projectDir
-  ) {
+  constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp, logsHttp, candleExportHttp, candleImporter, ordersHttp, tickers, projectDir) {
     this.systemUtil = systemUtil;
     this.ta = ta;
     this.signalHttp = signalHttp;
@@ -37,7 +24,7 @@ module.exports = class Http {
   }
 
   start() {
-    twig.extendFilter('price_format', function(value) {
+    twig.extendFilter('price_format', value => {
       if (parseFloat(value) < 1) {
         return Intl.NumberFormat('en-US', {
           useGrouping: false,
@@ -58,31 +45,19 @@ module.exports = class Http {
       .update(String(Math.floor(Date.now() / 1000)))
       .digest('hex')
       .substring(0, 8);
-    twig.extendFunction('asset_version', function() {
-      return assetVersion;
-    });
+    twig.extendFunction('asset_version', () => assetVersion);
 
     const desks = this.systemUtil.getConfig('desks', []).map(desk => desk.name);
-    twig.extendFunction('desks', function() {
-      return desks;
-    });
+    twig.extendFunction('desks', () => desks);
 
-    twig.extendFunction('node_version', function() {
-      return process.version;
-    });
+    twig.extendFunction('node_version', () => process.version);
 
-    twig.extendFunction('memory_usage', function() {
-      return Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100;
-    });
+    twig.extendFunction('memory_usage', () => Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100);
 
     const up = new Date();
-    twig.extendFunction('uptime', function() {
-      return moment(up).toNow(true);
-    });
+    twig.extendFunction('uptime', () => moment(up).toNow(true));
 
-    twig.extendFilter('format_json', function(value) {
-      return JSON.stringify(value, null, '\t');
-    });
+    twig.extendFilter('format_json', value => JSON.stringify(value, null, '\t'));
 
     const app = express();
 
@@ -116,10 +91,7 @@ module.exports = class Http {
     const { ta } = this;
 
     app.get('/', async (req, res) => {
-      res.render(
-        '../templates/base.html.twig',
-        await ta.getTaForPeriods(this.systemUtil.getConfig('dashboard.periods', ['15m', '1h']))
-      );
+      res.render('../templates/base.html.twig', await ta.getTaForPeriods(this.systemUtil.getConfig('dashboard.periods', ['15m', '1h'])));
     });
 
     app.get('/backtest', async (req, res) => {
@@ -136,23 +108,21 @@ module.exports = class Http {
         pairs = [pairs];
       }
 
-      const asyncs = pairs.map(pair => {
-        return async () => {
-          const p = pair.split('.');
+      const asyncs = pairs.map(pair => async () => {
+        const p = pair.split('.');
 
-          return {
-            pair: pair,
-            result: await this.backtest.getBacktestResult(
-              parseInt(req.body.ticker_interval, 10),
-              req.body.hours,
-              req.body.strategy,
-              req.body.candle_period,
-              p[0],
-              p[1],
-              req.body.options ? JSON.parse(req.body.options) : {},
-              req.body.initial_capital
-            )
-          };
+        return {
+          pair: pair,
+          result: await this.backtest.getBacktestResult(
+            parseInt(req.body.ticker_interval, 10),
+            req.body.hours,
+            req.body.strategy,
+            req.body.candle_period,
+            p[0],
+            p[1],
+            req.body.options ? JSON.parse(req.body.options) : {},
+            req.body.initial_capital
+          )
         };
       });
 
@@ -219,21 +189,13 @@ module.exports = class Http {
     app.get('/tools/candles', async (req, res) => {
       const options = {
         pairs: await this.candleExportHttp.getPairs(),
-        start: moment()
-          .subtract(7, 'days')
-          .toDate(),
+        start: moment().subtract(7, 'days').toDate(),
         end: new Date()
       };
 
       if (req.query.pair && req.query.period && req.query.period && req.query.start && req.query.end) {
         const [exchange, symbol] = req.query.pair.split('.');
-        const candles = await this.candleExportHttp.getCandles(
-          exchange,
-          symbol,
-          req.query.period,
-          new Date(req.query.start),
-          new Date(req.query.end)
-        );
+        const candles = await this.candleExportHttp.getCandles(exchange, symbol, req.query.period, new Date(req.query.start), new Date(req.query.end));
 
         if (req.query.metadata) {
           candles.map(c => {
@@ -365,12 +327,12 @@ module.exports = class Http {
 
     app.get('/orders/:pair/cancel/:id', async (req, res) => {
       const foo = await this.ordersHttp.cancel(req.params.pair, req.params.id);
-      res.redirect(`/orders/${req.params.pair}`);
+      res.redirect(`/orders/${encodeURIComponent(req.params.pair)}`);
     });
 
     app.get('/orders/:pair/cancel-all', async (req, res) => {
       await this.ordersHttp.cancelAll(req.params.pair);
-      res.redirect(`/orders/${req.params.pair}`);
+      res.redirect(`/orders/${encodeURIComponent(req.params.pair)}`);
     });
 
     app.get('/trades', async (req, res) => {
@@ -393,10 +355,7 @@ module.exports = class Http {
           let currencyValue;
           let currencyProfit;
 
-          if (
-            (exchangeName.includes('bitmex') && ['XBTUSD', 'ETHUSD'].includes(position.symbol)) ||
-            exchangeName === 'bybit'
-          ) {
+          if ((exchangeName.includes('bitmex') && ['XBTUSD', 'ETHUSD'].includes(position.symbol)) || exchangeName === 'bybit') {
             // inverse exchanges
             currencyValue = Math.abs(position.amount);
           } else if (position.amount && position.entry) {
@@ -407,9 +366,7 @@ module.exports = class Http {
             exchange: exchangeName,
             position: position,
             currency: currencyValue,
-            currencyProfit: position.getProfit()
-              ? currencyValue + (currencyValue / 100) * position.getProfit()
-              : undefined
+            currencyProfit: position.getProfit() ? currencyValue + (currencyValue / 100) * position.getProfit() : undefined
           });
         });
 
@@ -463,11 +420,20 @@ module.exports = class Http {
       mySymbol += 'PERP';
     }
 
+    if (mySymbol.includes('bybit_unified') && mySymbol.endsWith(':USDT')) {
+      mySymbol = mySymbol.replace(':USDT', '.P').replace('/', '');
+    }
+
+    if (mySymbol.includes('bybit_unified') && mySymbol.endsWith(':USDC')) {
+      mySymbol = mySymbol.replace(':USDC', '.P').replace('/', '');
+    }
+
     return mySymbol
       .replace('-', '')
       .replace('coinbase_pro', 'coinbase')
       .replace('binance_margin', 'binance')
       .replace('bybit_linear', 'bybit')
+      .replace('bybit_unified', 'bybit')
       .toUpperCase();
   }
 };

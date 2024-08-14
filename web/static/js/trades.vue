@@ -25,7 +25,7 @@
           <tbody>
           <tr v-for='position in positions' :key="`${position.exchange}-${position.position.symbol}`">
             <td><img :src="`/img/exchanges/${position.exchange}.png`" :alt="position.exchange" :title="position.exchange" width="16px" height="16px"></td>
-            <td><a target="blank" :href="'/tradingview/' + position.exchange + ':' + position.position.symbol">{{ position.position.symbol }}</a></td>
+            <td><a target="blank" :href="'/tradingview/' + position.exchange + ':' + urlEncode(position.position.symbol)">{{ position.position.symbol }}</a></td>
             <td v-bind:class="{ 'text-success': position.position.amount > 0, 'text-danger': position.position.amount < 0 }">
               {{ position.position.amount }}
             </td>
@@ -106,7 +106,7 @@
               <td><a target="blank" :href="'/tradingview/' + order.exchange + ':' + order.order.symbol">{{ order.order.symbol }}</a></td>
               <td>{{ order.order.type }}</td>
               <td>{{ order.order.id }}</td>
-              <td>{{ order.order.price }}<span class="text-muted" v-if="order.percent_to_price" title="Percent to current price"> {{ round(order.percent_to_price, 1) }} %</span></td>
+              <td>{{ order.order.price }} <span class="text-muted" v-if="order.percent_to_price" title="Percent to current price"> {{ round(order.percent_to_price, 1) }} %</span></td>
               <td v-bind:class="{ 'text-success': order.order.amount > 0, 'text-danger': order.order.amount < 0 }">{{ order.order.amount }}</td>
               <td>{{ order.order.retry }}</td>
               <td>{{ order.order.ourId }}</td>
@@ -181,6 +181,9 @@ export default {
     },
     date(value) {
       return new Date(value).toLocaleString();
+    },
+    urlEncode(value) {
+      return encodeURIComponent(value);
     }
   },
   mounted() {
