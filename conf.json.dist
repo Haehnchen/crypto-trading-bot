@@ -33,11 +33,7 @@
             "key": null,
             "secret": null
         },
-        "bybit_linear": {
-            "key": null,
-            "secret": null
-        },
-        "ftx": {
+        "bybit_unified": {
             "key": null,
             "secret": null
         }

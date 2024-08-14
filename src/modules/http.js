@@ -432,7 +432,6 @@ module.exports = class Http {
       .replace('-', '')
       .replace('coinbase_pro', 'coinbase')
       .replace('binance_margin', 'binance')
-      .replace('bybit_linear', 'bybit')
       .replace('bybit_unified', 'bybit')
       .toUpperCase();
   }

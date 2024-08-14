@@ -62,7 +62,6 @@ const BinanceFuturesCoin = require('../exchange/binance_futures_coin');
 const CoinbasePro = require('../exchange/coinbase_pro');
 const Bitfinex = require('../exchange/bitfinex');
 const Bybit = require('../exchange/bybit');
-const BybitLinear = require('../exchange/bybit_linear');
 const BybitUnified = require('../exchange/bybit_unified');
 const Noop = require('../exchange/noop');
 

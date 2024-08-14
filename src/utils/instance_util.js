@@ -689,7 +689,7 @@ module.exports = {
     });
   },
 
-  //Bybit
+  // Bybit
   bybitInit: async callback => {
     return new Promise(resolve => {
       request('https://api.bybit.com/v2/public/symbols', (_error, _res, body) => {
@@ -736,48 +736,5 @@ module.exports = {
         resolve(pairs);
       });
     });
-  },
-
-  bybitLinearInit: async callback =>
-    new Promise(resolve => {
-      request('https://api.bybit.com/derivatives/v3/public/tickers?category=linear', (_error, _res, body) => {
-        const pairs = [];
-
-        let content;
-        try {
-          content = JSON.parse(body);
-        } catch (e) {
-          console.log(`Bybit init issues: ${String(e)} ${body}`);
-          resolve([]);
-          return;
-        }
-
-        if (!content?.result?.list) {
-          console.log(`Bybit init issues: ${JSON.stringify(content)}`);
-          resolve([]);
-          return;
-        }
-
-        content?.result?.list
-          .filter(p => p.symbol && p.symbol.endsWith('USDT'))
-          .sort((a, b) => (b.turnover24h || 0) - (a.turnover24h || 0))
-          .forEach(pair => {
-            let result = {
-              symbol: pair.symbol,
-              periods: ['1m', '15m', '1h'],
-              exchange: 'bybit_linear'
-            };
-
-            if (callback) {
-              result = callback(result, pair);
-            }
-
-            if (result) {
-              pairs.push(result);
-            }
-          });
-
-        resolve(pairs);
-      });
-    })
+  }
 };
