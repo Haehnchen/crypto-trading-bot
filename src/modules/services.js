@@ -686,15 +686,6 @@ module.exports = {
         this.getCandleImporter(),
         this.getThrottler()
       ),
-      new BybitLinear(
-        this.getEventEmitter(),
-        this.getRequestClient(),
-        this.getCandlestickResample(),
-        this.getLogger(),
-        this.getQueue(),
-        this.getCandleImporter(),
-        this.getThrottler()
-      ),
       new BybitUnified(
         this.getEventEmitter(),
         this.getRequestClient(),

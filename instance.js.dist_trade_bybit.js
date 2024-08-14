@@ -3,7 +3,7 @@ const c = (module.exports = {});
 c.symbols = [];
 
 c.init = async () => {
-  const j = ['BTC/USDT:USDT', 'BTC/USDC:USDC'];
+  const j = ['BTC/USDT:USDT', 'ETH/USDT:USDT', 'LTC/USDT:USDT', 'SOL/USDT:USDT', 'ETC/USDT:USDT', '1000PEPE/USDT:USDT', 'XRP/USDT:USDT'];
 
   j.forEach(pair => {
     c.symbols.push({

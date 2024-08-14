@@ -56,9 +56,6 @@ c.init = async () => {
 
     // Bybit USD pairs (inverse)
     c.symbols.push(...(await InstanceUtil.bybitInit()));
-
-    // Bybit USDT pairs (Linear)
-    c.symbols.push(...(await InstanceUtil.bybitLinearInit()));
 };
 */
 

@@ -107,7 +107,7 @@ module.exports = class BybitUnified {
     if (config.key && config.secret && config.key.length > 0 && config.secret.length > 0) {
       this.authInit(config.key, config.secret);
     } else {
-      me.logger.info('BybitLinear: Starting as anonymous; no trading possible');
+      me.logger.info(`${this.getName()}: Starting as anonymous; no trading possible`);
     }
 
     symbols.forEach(symbol => {
