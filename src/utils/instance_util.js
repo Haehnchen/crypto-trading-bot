@@ -6,8 +6,8 @@ module.exports = {
    * @param callback
    * @returns {Promise<unknown>}
    */
-  binanceInitUsdT: async callback => {
-    return new Promise(resolve => {
+  binanceInitUsdT: async callback =>
+    new Promise(resolve => {
       request('https://api.binance.com/api/v1/exchangeInfo', (_error, _res, body) => {
         const pairs = [];
 
@@ -28,10 +28,7 @@ module.exports = {
 
         content.symbols
           .filter(
-            p =>
-              ['USDT'].includes(p.quoteAsset) &&
-              !['USDC', 'PAX', 'USDS', 'TUSD', 'BUSD'].includes(p.baseAsset) &&
-              p.status.toLowerCase() === 'trading'
+            p => ['USDT'].includes(p.quoteAsset) && !['USDC', 'PAX', 'USDS', 'TUSD', 'BUSD'].includes(p.baseAsset) && p.status.toLowerCase() === 'trading'
           )
           .forEach(pair => {
             let result = {
@@ -51,16 +48,15 @@ module.exports = {
 
         resolve(pairs);
       });
-    });
-  },
+    }),
 
   /**
    * Init helper for Binance to fetch all BUSD pairs
    * @param callback
    * @returns {Promise<unknown>}
    */
-  binanceInitBusd: async callback => {
-    return new Promise(resolve => {
+  binanceInitBusd: async callback =>
+    new Promise(resolve => {
       request('https://api.binance.com/api/v1/exchangeInfo', (_error, _res, body) => {
         const pairs = [];
 
@@ -81,10 +77,7 @@ module.exports = {
 
         content.symbols
           .filter(
-            p =>
-              ['BUSD'].includes(p.quoteAsset) &&
-              !['USDC', 'PAX', 'USDS', 'TUSD', 'USDT'].includes(p.baseAsset) &&
-              p.status.toLowerCase() === 'trading'
+            p => ['BUSD'].includes(p.quoteAsset) && !['USDC', 'PAX', 'USDS', 'TUSD', 'USDT'].includes(p.baseAsset) && p.status.toLowerCase() === 'trading'
           )
           .forEach(pair => {
             let result = {
@@ -104,16 +97,15 @@ module.exports = {
 
         resolve(pairs);
       });
-    });
-  },
+    }),
 
   /**
    * Init helper for Binance to fetch all BNB pairs
    * @param callback
    * @returns {Promise<unknown>}
    */
-  binanceInitBNB: async callback => {
-    return new Promise(resolve => {
+  binanceInitBNB: async callback =>
+    new Promise(resolve => {
       request('https://api.binance.com/api/v1/exchangeInfo', (_error, _res, body) => {
         const pairs = [];
 
@@ -135,9 +127,7 @@ module.exports = {
         content.symbols
           .filter(
             p =>
-              ['BNB'].includes(p.quoteAsset) &&
-              !['BUSD', 'USDC', 'PAX', 'USDS', 'TUSD', 'USDT'].includes(p.baseAsset) &&
-              p.status.toLowerCase() === 'trading'
+              ['BNB'].includes(p.quoteAsset) && !['BUSD', 'USDC', 'PAX', 'USDS', 'TUSD', 'USDT'].includes(p.baseAsset) && p.status.toLowerCase() === 'trading'
           )
           .forEach(pair => {
             let result = {
@@ -157,16 +147,15 @@ module.exports = {
 
         resolve(pairs);
       });
-    });
-  },
+    }),
 
   /**
    * Init helper for Binance to fetch all BTC pairs
    * @param callback
    * @returns {Promise<unknown>}
    */
-  binanceInitBTC: async callback => {
-    return new Promise(resolve => {
+  binanceInitBTC: async callback =>
+    new Promise(resolve => {
       request('https://api.binance.com/api/v1/exchangeInfo', (_error, _res, body) => {
         const pairs = [];
 
@@ -188,9 +177,7 @@ module.exports = {
         content.symbols
           .filter(
             p =>
-              ['BTC'].includes(p.quoteAsset) &&
-              !['BUSD', 'USDC', 'PAX', 'USDS', 'TUSD', 'USDT'].includes(p.baseAsset) &&
-              p.status.toLowerCase() === 'trading'
+              ['BTC'].includes(p.quoteAsset) && !['BUSD', 'USDC', 'PAX', 'USDS', 'TUSD', 'USDT'].includes(p.baseAsset) && p.status.toLowerCase() === 'trading'
           )
           .forEach(pair => {
             let result = {
@@ -210,16 +197,15 @@ module.exports = {
 
         resolve(pairs);
       });
-    });
-  },
+    }),
 
   /**
    * Init helper for Binance to fetch all ETH pairs
    * @param callback
    * @returns {Promise<unknown>}
    */
-  binanceInitETH: async callback => {
-    return new Promise(resolve => {
+  binanceInitETH: async callback =>
+    new Promise(resolve => {
       request('https://api.binance.com/api/v1/exchangeInfo', (_error, _res, body) => {
         const pairs = [];
 
@@ -241,9 +227,7 @@ module.exports = {
         content.symbols
           .filter(
             p =>
-              ['ETH'].includes(p.quoteAsset) &&
-              !['BUSD', 'USDC', 'PAX', 'USDS', 'TUSD', 'USDT'].includes(p.baseAsset) &&
-              p.status.toLowerCase() === 'trading'
+              ['ETH'].includes(p.quoteAsset) && !['BUSD', 'USDC', 'PAX', 'USDS', 'TUSD', 'USDT'].includes(p.baseAsset) && p.status.toLowerCase() === 'trading'
           )
           .forEach(pair => {
             let result = {
@@ -263,8 +247,7 @@ module.exports = {
 
         resolve(pairs);
       });
-    });
-  },
+    }),
 
   /**
    * Init helper for Binance to fetch all USDT pairs with spot only
@@ -382,16 +365,15 @@ module.exports = {
    * @link https://www.binance.com/de/margin-fee
    * @returns {Promise<unknown>}
    */
-  binancecrossMarginPairsUsdT: () => {
-    return new Promise(resolve => {
+  binancecrossMarginPairsUsdT: () =>
+    new Promise(resolve => {
       request('https://www.binance.com/gateway-api/v1/friendly/margin/vip/spec/list-all', (_error, _res, body) => {
         const content = JSON.parse(body);
         const crossMarginPairsUsdT = content.data.map(i => i.assetName);
 
         resolve(crossMarginPairsUsdT);
       });
-    });
-  },
+    }),
 
   /**
    * There is API (or not documented) where to filter isolated and cross margin wallet pairs take them from fee page api
@@ -399,16 +381,15 @@ module.exports = {
    * @link https://www.binance.com/de/margin-fee
    * @returns {Promise<unknown>}
    */
-  binancecrossMarginPairsBusd: () => {
-    return new Promise(resolve => {
+  binancecrossMarginPairsBusd: () =>
+    new Promise(resolve => {
       request('https://www.binance.com/gateway-api/v1/friendly/margin/vip/spec/list-all', (_error, _res, body) => {
         const content = JSON.parse(body);
         const crossMarginPairsBusd = content.data.map(i => i.assetName);
 
         resolve(crossMarginPairsBusd);
       });
-    });
-  },
+    }),
 
   /**
    * There is API (or not documented) where to filter isolated and cross margin wallet pairs take them from fee page api
@@ -416,16 +397,15 @@ module.exports = {
    * @link https://www.binance.com/de/margin-fee
    * @returns {Promise<unknown>}
    */
-  binancecrossMarginPairsBNB: () => {
-    return new Promise(resolve => {
+  binancecrossMarginPairsBNB: () =>
+    new Promise(resolve => {
       request('https://www.binance.com/gateway-api/v1/friendly/margin/vip/spec/list-all', (_error, _res, body) => {
         const content = JSON.parse(body);
         const crossMarginPairsBNB = content.data.map(i => i.assetName);
 
         resolve(crossMarginPairsBNB);
       });
-    });
-  },
+    }),
 
   /**
    * There is API (or not documented) where to filter isolated and cross margin wallet pairs take them from fee page api
@@ -433,16 +413,15 @@ module.exports = {
    * @link https://www.binance.com/de/margin-fee
    * @returns {Promise<unknown>}
    */
-  binancecrossMarginPairsBTC: () => {
-    return new Promise(resolve => {
+  binancecrossMarginPairsBTC: () =>
+    new Promise(resolve => {
       request('https://www.binance.com/gateway-api/v1/friendly/margin/vip/spec/list-all', (_error, _res, body) => {
         const content = JSON.parse(body);
         const crossMarginPairsBTC = content.data.map(i => i.assetName);
 
         resolve(crossMarginPairsBTC);
       });
-    });
-  },
+    }),
 
   /**
    * There is API (or not documented) where to filter isolated and cross margin wallet pairs take them from fee page api
@@ -450,16 +429,15 @@ module.exports = {
    * @link https://www.binance.com/de/margin-fee
    * @returns {Promise<unknown>}
    */
-  binancecrossMarginPairsETH: () => {
-    return new Promise(resolve => {
+  binancecrossMarginPairsETH: () =>
+    new Promise(resolve => {
       request('https://www.binance.com/gateway-api/v1/friendly/margin/vip/spec/list-all', (_error, _res, body) => {
         const content = JSON.parse(body);
         const crossMarginPairsETH = content.data.map(i => i.assetName);
 
         resolve(crossMarginPairsETH);
       });
-    });
-  },
+    }),
 
   /**
    * Init helper for Binance to fetch all USDT pairs with margin only
@@ -558,8 +536,8 @@ module.exports = {
    * @param callback
    * @returns {Promise<unknown>}
    */
-  bitmexInit: async callback => {
-    return new Promise(resolve => {
+  bitmexInit: async callback =>
+    new Promise(resolve => {
       request('https://www.bitmex.com/api/v1/instrument/active', (_error, _res, body) => {
         const pairs = [];
 
@@ -585,16 +563,15 @@ module.exports = {
 
         resolve(pairs);
       });
-    });
-  },
+    }),
 
   /**
    * Init helper for Binance futures USDT & BUSD exchange to fetch active contracts
    * @param callback
    * @returns {Promise<unknown>}
    */
-  binanceFuturesInit: async callback => {
-    return new Promise(resolve => {
+  binanceFuturesInit: async callback =>
+    new Promise(resolve => {
       request('https://fapi.binance.com/fapi/v1/exchangeInfo', (_error, _res, body) => {
         const pairs = [];
 
@@ -620,16 +597,15 @@ module.exports = {
 
         resolve(pairs);
       });
-    });
-  },
+    }),
 
   /**
    * Init helper for Binance futures COIN exchange to fetch active contracts
    * @param callback
    * @returns {Promise<unknown>}
    */
-  binanceFuturesCoin: async callback => {
-    return new Promise(resolve => {
+  binanceFuturesCoin: async callback =>
+    new Promise(resolve => {
       request('https://dapi.binance.com/dapi/v1/exchangeInfo', (_error, _res, body) => {
         const pairs = [];
 
@@ -655,12 +631,47 @@ module.exports = {
 
         resolve(pairs);
       });
-    });
-  },
+    }),
 
- // BitFinex
-  bitfinexUsdMarginInit: async callback => {
-    return new Promise(resolve => {
+  /**
+   * @param callback
+   * @param limit
+   * @returns {Promise<unknown>}
+   */
+  bybitLinearCoin: async (callback, limit = 100) =>
+    new Promise(resolve => {
+      request('https://api.bybit.com/v5/market/tickers?category=linear', (_error, _res, body) => {
+        const pairs = [];
+
+        const content = JSON.parse(body);
+
+        const arr = (content?.result?.list || [])
+          .filter(p => p.symbol.toUpperCase().endsWith('USDT'))
+          .sort((a, b) => b.turnover24h - a.turnover24h);
+
+        arr.slice(0, limit).forEach(pair => {
+          let result = {
+            symbol: `${pair.symbol.substring(0, pair.symbol.length - 4)}/USDT:USDT`,
+            periods: ['15m', '1h'],
+            exchange: 'bybit_unified'
+          };
+
+          if (callback) {
+            result = callback(result, pair);
+          }
+
+          if (result) {
+            pairs.push(result);
+          }
+        });
+
+        resolve(pairs);
+      });
+    }),
+
+  // BitFinex
+  bitfinexUsdMarginInit: async callback =>
+    new Promise(resolve => {
       request('https://api.bitfinex.com/v1/symbols_details', (_error, _res, body) => {
         const pairs = [];
 
@@ -686,12 +697,11 @@ module.exports = {
 
         resolve(pairs);
       });
-    });
-  },
+    }),
 
   // Bybit
-  bybitInit: async callback => {
-    return new Promise(resolve => {
+  bybitInit: async callback =>
+    new Promise(resolve => {
       request('https://api.bybit.com/v2/public/symbols', (_error, _res, body) => {
         const pairs = [];
 
@@ -735,6 +745,5 @@ module.exports = {
 
         resolve(pairs);
       });
-    });
-  }
+    })
 };

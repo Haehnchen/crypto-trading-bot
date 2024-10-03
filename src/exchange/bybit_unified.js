@@ -248,7 +248,7 @@ module.exports = class BybitUnified {
           order.symbol,
           order.status,
           order.price,
-          order.qty,
+          order.amount,
           status === ExchangeOrder.STATUS_REJECTED,
           order.clientOrderId ? order.clientOrderId : undefined,
           order.side.toLowerCase() === 'buy' ? 'buy' : 'sell', // secure the value,
