@@ -2,9 +2,7 @@ import { Command } from 'commander';
 import { TradeCommand } from './src/command/trade';
 import { ServerCommand } from './src/command/server';
 import { BackfillCommand } from './src/command/backfill';
-
-// init
-const services = require('./src/modules/services');
+import services from './src/modules/services';
 
 const program = new Command();
 

@@ -1,4 +1,4 @@
-const services = require('../modules/services');
+import services from '../modules/services';
 
 export class BackfillCommand {
   constructor() {}
