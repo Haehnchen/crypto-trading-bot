@@ -1,5 +1,5 @@
-const resample = require('../../utils/resample');
-const ExchangeCandlestick = require('../../dict/exchange_candlestick');
+const { resample } = require('../../utils/resample');
+const { ExchangeCandlestick } = require('../../dict/exchange_candlestick');
 
 module.exports = class CandlestickResample {
   constructor(candlestickRepository, candleImporter) {

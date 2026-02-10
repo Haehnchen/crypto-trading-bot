@@ -42,7 +42,7 @@ const PairStateExecution = require('../modules/pairs/pair_state_execution');
 const PairConfig = require('../modules/pairs/pair_config');
 const { SystemUtil } = require('../modules/system/system_util');
 const { TechnicalAnalysisValidator } = require('../utils/technical_analysis_validator');
-const WinstonSqliteTransport = require('../utils/winston_sqlite_transport');
+const { WinstonSqliteTransport } = require('../utils/winston_sqlite_transport');
 const WinstonTelegramLogger = require('winston-telegram');
 const LogsHttp = require('./system/logs_http');
 const LogsRepository = require('../modules/repository/logs_repository');
@@ -50,8 +50,8 @@ const TickerLogRepository = require('../modules/repository/ticker_log_repository
 const TickerRepository = require('../modules/repository/ticker_repository');
 const CandlestickResample = require('../modules/system/candlestick_resample');
 const { RequestClient } = require('../utils/request_client');
-const Throttler = require('../utils/throttler');
-const Queue = require('../utils/queue');
+const { Throttler } = require('../utils/throttler');
+const { QueueManager } = require('../utils/queue');
 
 const Bitmex = require('../exchange/bitmex');
 const BitmexTestnet = require('../exchange/bitmex_testnet');
@@ -557,7 +557,7 @@ module.exports = {
       return queue;
     }
 
-    return (queue = new Queue());
+    return (queue = new QueueManager());
   },
 
   getCandleExportHttp: function() {

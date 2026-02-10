@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const ExchangePosition = require('../../dict/exchange_position');
+const { ExchangePosition } = require('../../dict/exchange_position');
 
 module.exports = class ExchangeManager {
   constructor(exchangesIterator, logger, instances, config) {

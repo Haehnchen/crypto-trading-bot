@@ -1,6 +1,6 @@
-const Order = require('../../dict/order');
-const ExchangeOrder = require('../../dict/exchange_order');
-const OrderUtil = require('../../utils/order_util');
+const { Order } = require('../../dict/order');
+const { ExchangeOrder } = require('../../dict/exchange_order');
+const { OrderUtil } = require('../../utils/order_util');
 
 module.exports = class RiskRewardRatioCalculator {
   constructor(logger) {

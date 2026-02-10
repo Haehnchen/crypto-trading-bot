@@ -1,4 +1,4 @@
-const Order = require('../../dict/order');
+const { Order } = require('../../dict/order');
 
 module.exports = class OrdersHttp {
   constructor(backtest, tickers, orderExecutor, exchangeManager, pairConfig) {

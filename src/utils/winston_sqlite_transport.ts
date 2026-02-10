@@ -1,7 +1,21 @@
 const Transport = require('winston-transport');
 
-module.exports = class WinstonSqliteTransport extends Transport {
-  constructor(opts) {
+interface WinstonSqliteTransportOptions {
+  database_connection: any;
+  table: string;
+}
+
+interface LogInfo {
+  level: string;
+  message: string;
+  [key: string]: any;
+}
+
+export class WinstonSqliteTransport extends Transport {
+  private db: any;
+  private table: string;
+
+  constructor(opts: WinstonSqliteTransportOptions) {
     super(opts);
 
     if (!opts.database_connection) {
@@ -16,7 +30,7 @@ module.exports = class WinstonSqliteTransport extends Transport {
     this.table = opts.table;
   }
 
-  log(info, callback) {
+  log(info: LogInfo, callback: () => void): void {
     setImmediate(() => {
       this.emit('logged', info);
     });
@@ -37,7 +51,7 @@ module.exports = class WinstonSqliteTransport extends Transport {
     callback();
   }
 
-  static createUUID() {
+  static createUUID(): string {
     let dt = new Date().getTime();
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = (dt + Math.random() * 16) % 16 | 0;
@@ -45,4 +59,6 @@ module.exports = class WinstonSqliteTransport extends Transport {
       return (c == 'x' ? r : (r & 0x3) | 0x8).toString(16);
     });
   }
-};
+}
+
+export default WinstonSqliteTransport;

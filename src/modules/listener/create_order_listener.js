@@ -1,4 +1,4 @@
-const Candlestick = require('../../dict/candlestick');
+const { Candlestick } = require('../../dict/candlestick');
 const ta = require('../../utils/technical_analysis');
 
 module.exports = class CreateOrderListener {

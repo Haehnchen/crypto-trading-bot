@@ -1,8 +1,8 @@
 const _ = require('lodash');
 const moment = require('moment');
-const Order = require('../../dict/order');
-const PairState = require('../../dict/pair_state');
-const ExchangeOrder = require('../../dict/exchange_order');
+const { Order } = require('../../dict/order');
+const { PairState } = require('../../dict/pair_state');
+const { ExchangeOrder } = require('../../dict/exchange_order');
 
 module.exports = class OrderExecutor {
   constructor(exchangeManager, tickers, systemUtil, logger) {

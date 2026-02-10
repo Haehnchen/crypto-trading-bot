@@ -4,12 +4,12 @@ const _ = require('lodash');
 const IndicatorBuilder = require('./dict/indicator_builder');
 const IndicatorPeriod = require('./dict/indicator_period');
 const ta = require('../../utils/technical_analysis');
-const Resample = require('../../utils/resample');
+const { Resample } = require('../../utils/resample');
 const CommonUtil = require('../../utils/common_util');
-const StrategyContext = require('../../dict/strategy_context');
-const Ticker = require('../../dict/ticker');
+const { StrategyContext } = require('../../dict/strategy_context');
+const { Ticker } = require('../../dict/ticker');
 const SignalResult = require('./dict/signal_result');
-const Position = require('../../dict/position');
+const { Position } = require('../../dict/position');
 
 module.exports = class StrategyManager {
   constructor(technicalAnalysisValidator, exchangeCandleCombine, logger, projectDir) {

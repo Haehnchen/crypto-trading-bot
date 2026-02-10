@@ -1,8 +1,8 @@
 const moment = require('moment');
 const _ = require('lodash');
-const StrategyContext = require('../../dict/strategy_context');
-const Order = require('../../dict/order');
-const OrderCapital = require('../../dict/order_capital');
+const { StrategyContext } = require('../../dict/strategy_context');
+const { Order } = require('../../dict/order');
+const { OrderCapital } = require('../../dict/order_capital');
 
 module.exports = class TickListener {
   constructor(

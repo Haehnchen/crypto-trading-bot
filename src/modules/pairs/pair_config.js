@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const OrderCapital = require('../../dict/order_capital');
+const { OrderCapital } = require('../../dict/order_capital');
 
 module.exports = class PairConfig {
   constructor(instances) {

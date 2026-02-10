@@ -1,5 +1,5 @@
-const orderUtil = require('../../utils/order_util');
-const Order = require('../../dict/order');
+const { orderUtil } = require('../../utils/order_util');
+const { Order } = require('../../dict/order');
 
 module.exports = class ExchangeOrderWatchdogListener {
   constructor(

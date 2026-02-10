@@ -1,10 +1,18 @@
-module.exports = class Throttler {
-  constructor(logger) {
+export interface Logger {
+  debug(message: string): void;
+  error(message: string): void;
+}
+
+export class Throttler {
+  private logger: Logger;
+  private tasks: Record<string, NodeJS.Timeout>;
+
+  constructor(logger: Logger) {
     this.logger = logger;
     this.tasks = {};
   }
 
-  addTask(key, func, timeout = 1000) {
+  addTask(key: string, func: () => Promise<void>, timeout: number = 1000): void {
     if (func.constructor.name !== 'AsyncFunction') {
       throw new Error(`Throttler no async function given: ${key}`);
     }
@@ -24,4 +32,6 @@ module.exports = class Throttler {
       }
     }, timeout);
   }
-};
+}
+
+export default Throttler;

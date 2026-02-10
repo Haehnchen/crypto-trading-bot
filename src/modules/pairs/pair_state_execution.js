@@ -1,6 +1,6 @@
 const moment = require('moment');
-const Order = require('../../dict/order');
-const ExchangeOrder = require('../../dict/exchange_order');
+const { Order } = require('../../dict/order');
+const { ExchangeOrder } = require('../../dict/exchange_order');
 
 /**
  * Provide a layer to trigger order states into "buy", "sell", "close", "cancel"

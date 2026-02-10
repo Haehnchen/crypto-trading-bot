@@ -1,5 +1,5 @@
-const PairState = require('../../dict/pair_state');
-const OrderCapital = require('../../dict/order_capital');
+const { PairState } = require('../../dict/pair_state');
+const { OrderCapital } = require('../../dict/order_capital');
 const PairInterval = require('./pair_interval');
 
 module.exports = class PairStateManager {
