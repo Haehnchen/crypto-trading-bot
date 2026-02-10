@@ -290,7 +290,7 @@ npm run build
 
 ## 📊 Progress Stats
 
-- **~70 files migrated**
+- **~80 files migrated**
 - **140 tests passing**
-- **~80 files remaining**
-- **~47% complete** (estimated)
+- **~75 files remaining**
+- **~52% complete** (estimated)

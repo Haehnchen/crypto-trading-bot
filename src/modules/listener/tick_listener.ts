@@ -1,22 +1,57 @@
-const moment = require('moment');
-const _ = require('lodash');
-const { StrategyContext } = require('../../dict/strategy_context');
-const { Order } = require('../../dict/order');
-const { OrderCapital } = require('../../dict/order_capital');
+import moment from 'moment';
+import _ from 'lodash';
+import { StrategyContext } from '../../dict/strategy_context';
+import { Order } from '../../dict/order';
+import { OrderCapital } from '../../dict/order_capital';
+import { Tickers } from '../../storage/tickers';
+import { ExchangeManager } from '../exchange/exchange_manager';
+import { OrderCalculator } from '../order/order_calculator';
 
-module.exports = class TickListener {
+export interface StrategyConfig {
+  strategy: string;
+  interval?: string;
+  options?: Record<string, any>;
+}
+
+export interface SymbolInstance {
+  exchange: string;
+  symbol: string;
+  strategies?: StrategyConfig[];
+  trade?: {
+    capital?: number;
+    currency_capital?: number;
+    balance_percent?: number;
+    signal_slowdown_minutes?: number;
+    strategies?: StrategyConfig[];
+  };
+}
+
+export class TickListener {
+  private tickers: Tickers;
+  private instances: { symbols: SymbolInstance[] };
+  private notifier: any;
+  private signalLogger: any;
+  private strategyManager: any;
+  private exchangeManager: ExchangeManager;
+  private pairStateManager: any;
+  private logger: any;
+  private systemUtil: any;
+  private orderExecutor: any;
+  private orderCalculator: OrderCalculator;
+  private notified: Record<string, Date>;
+
   constructor(
-    tickers,
-    instances,
-    notifier,
-    signalLogger,
-    strategyManager,
-    exchangeManager,
-    pairStateManager,
-    logger,
-    systemUtil,
-    orderExecutor,
-    orderCalculator
+    tickers: Tickers,
+    instances: { symbols: SymbolInstance[] },
+    notifier: any,
+    signalLogger: any,
+    strategyManager: any,
+    exchangeManager: ExchangeManager,
+    pairStateManager: any,
+    logger: any,
+    systemUtil: any,
+    orderExecutor: any,
+    orderCalculator: OrderCalculator
   ) {
     this.tickers = tickers;
     this.instances = instances;
@@ -33,7 +68,7 @@ module.exports = class TickListener {
     this.notified = {};
   }
 
-  async visitStrategy(strategy, symbol) {
+  async visitStrategy(strategy: StrategyConfig, symbol: SymbolInstance): Promise<void> {
     const ticker = this.tickers.get(symbol.exchange, symbol.symbol);
 
     if (!ticker) {
@@ -66,7 +101,7 @@ module.exports = class TickListener {
     }
 
     if (!['close', 'short', 'long'].includes(signal)) {
-      throw Error(`Invalid signal: ${JSON.stringify(signal, strategy)}`);
+      throw Error(`Invalid signal: ${JSON.stringify({ signal, strategy })}`);
     }
 
     const signalWindow = moment()
@@ -97,7 +132,7 @@ module.exports = class TickListener {
     }
   }
 
-  async visitTradeStrategy(strategy, symbol) {
+  async visitTradeStrategy(strategy: StrategyConfig, symbol: SymbolInstance): Promise<void> {
     const ticker = this.tickers.get(symbol.exchange, symbol.symbol);
 
     if (!ticker) {
@@ -107,7 +142,7 @@ module.exports = class TickListener {
 
     const strategyKey = strategy.strategy;
 
-    let context = StrategyContext.create(strategy.options, ticker);
+    let context = StrategyContext.create(strategy.options, ticker, false);
     const position = await this.exchangeManager.getPosition(symbol.exchange, symbol.symbol);
     if (position) {
       context = StrategyContext.createFromPosition(strategy.options, ticker, position);
@@ -137,7 +172,7 @@ module.exports = class TickListener {
     }
 
     if (!['close', 'short', 'long'].includes(signal)) {
-      throw Error(`Invalid signal: ${JSON.stringify(signal, strategy)}`);
+      throw Error(`Invalid signal: ${JSON.stringify({ signal, strategy })}`);
     }
 
     const signalWindow = moment()
@@ -170,7 +205,7 @@ module.exports = class TickListener {
     await this.pairStateManager.update(symbol.exchange, symbol.symbol, signal);
   }
 
-  async placeStrategyOrders(placedOrder, symbol) {
+  async placeStrategyOrders(placedOrder: any[], symbol: SymbolInstance): Promise<void> {
     for (const order of placedOrder) {
       const amount = await this.orderCalculator.calculateOrderSizeCapital(
         symbol.exchange,
@@ -184,7 +219,7 @@ module.exports = class TickListener {
     }
   }
 
-  async startStrategyIntervals() {
+  async startStrategyIntervals(): Promise<void> {
     this.logger.info(`Starting strategy intervals`);
 
     const me = this;
@@ -192,12 +227,12 @@ module.exports = class TickListener {
     const types = [
       {
         name: 'watch',
-        items: this.instances.symbols.filter(sym => sym.strategies && sym.strategies.length > 0)
+        items: this.instances.symbols.filter((sym: SymbolInstance) => sym.strategies && sym.strategies.length > 0)
       },
       {
         name: 'trade',
         items: this.instances.symbols.filter(
-          sym => sym.trade && sym.trade.strategies && sym.trade.strategies.length > 0
+          (sym: SymbolInstance) => sym.trade && sym.trade.strategies && sym.trade.strategies.length > 0
         )
       }
     ];
@@ -205,13 +240,13 @@ module.exports = class TickListener {
     types.forEach(type => {
       me.logger.info(`Strategy: "${type.name}" found "${type.items.length}" valid symbols`);
 
-      type.items.forEach(symbol => {
+      type.items.forEach((symbol: SymbolInstance) => {
         // map strategies
-        let strategies = [];
+        let strategies: StrategyConfig[] = [];
         if (type.name === 'watch') {
-          strategies = symbol.strategies;
+          strategies = symbol.strategies || [];
         } else if (type.name === 'trade') {
-          strategies = symbol.trade.strategies;
+          strategies = symbol.trade?.strategies || [];
         }
 
         strategies.forEach(strategy => {
@@ -238,13 +273,6 @@ module.exports = class TickListener {
           );
 
           const strategyIntervalCallback = async () => {
-            /*
-            // logging can be high traffic on alot of pairs
-            me.logger.debug(
-              `"${symbol.exchange}" - "${symbol.symbol}" - "${type.name}" strategy running "${strategy.strategy}"`
-            );
-            */
-
             if (type.name === 'watch') {
               await me.visitStrategy(strategy, symbol);
             } else if (type.name === 'trade') {
@@ -276,7 +304,7 @@ module.exports = class TickListener {
     });
   }
 
-  getFirstTimeoutAndInterval(period) {
+  getFirstTimeoutAndInterval(period: string): [number, number] {
     const unit = period.slice(-1).toLowerCase();
     let myUnit = 0;
     switch (unit) {
@@ -294,9 +322,9 @@ module.exports = class TickListener {
     return [this.getFirstRun(number, myUnit), number * myUnit * 1000];
   }
 
-  getFirstRun(minutes, unit) {
+  getFirstRun(minutes: number, unit: number): number {
     const interval = minutes * unit * 1000;
     const number = Math.ceil(new Date().getTime() / interval) * interval;
     return new Date(number).getTime() - new Date().getTime();
   }
-};
+}

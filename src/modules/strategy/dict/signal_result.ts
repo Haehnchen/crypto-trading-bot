@@ -1,19 +1,28 @@
-const _ = require('lodash');
+import _ from 'lodash';
+import { Order } from '../../../dict/order';
 
-const Order = require('../../../dict/order');
+export interface PlaceOrder {
+  side: 'long' | 'short';
+  amount_currency: number;
+  price: number;
+}
 
-module.exports = class SignalResult {
+export class SignalResult {
+  private _debug: Record<string, any>;
+  private _signal?: 'long' | 'short' | 'close';
+  public placeOrders: PlaceOrder[];
+
   constructor() {
     this._debug = {};
     this._signal = undefined;
     this.placeOrders = [];
   }
 
-  mergeDebug(debug) {
+  mergeDebug(debug: Record<string, any>): void {
     this._debug = _.merge(this._debug, debug);
   }
 
-  setSignal(signal) {
+  setSignal(signal: 'long' | 'short' | 'close'): void {
     if (!['long', 'short', 'close'].includes(signal)) {
       throw `Invalid signal:${signal}`;
     }
@@ -21,7 +30,7 @@ module.exports = class SignalResult {
     this._signal = signal;
   }
 
-  addDebug(key, value) {
+  addDebug(key: string, value: any): void {
     if (typeof key !== 'string') {
       throw 'Invalid key';
     }
@@ -29,15 +38,15 @@ module.exports = class SignalResult {
     this._debug[key] = value;
   }
 
-  getDebug() {
+  getDebug(): Record<string, any> {
     return this._debug;
   }
 
-  getSignal() {
+  getSignal(): 'long' | 'short' | 'close' | undefined {
     return this._signal;
   }
 
-  placeBuyOrder(amountCurrency, price) {
+  placeBuyOrder(amountCurrency: number, price: number): void {
     this.placeOrders.push({
       side: Order.SIDE_LONG,
       amount_currency: amountCurrency,
@@ -49,11 +58,11 @@ module.exports = class SignalResult {
    *
    * @returns {[Order]}
    */
-  getPlaceOrder() {
+  getPlaceOrder(): PlaceOrder[] {
     return this.placeOrders;
   }
 
-  static createSignal(signal, debug = {}) {
+  static createSignal(signal: 'long' | 'short' | 'close', debug: Record<string, any> = {}): SignalResult {
     const result = new SignalResult();
 
     result.setSignal(signal);
@@ -62,11 +71,11 @@ module.exports = class SignalResult {
     return result;
   }
 
-  static createEmptySignal(debug = {}) {
+  static createEmptySignal(debug: Record<string, any> = {}): SignalResult {
     const result = new SignalResult();
 
     result.mergeDebug(debug);
 
     return result;
   }
-};
+}

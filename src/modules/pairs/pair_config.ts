@@ -1,8 +1,24 @@
-const _ = require('lodash');
-const { OrderCapital } = require('../../dict/order_capital');
+import _ from 'lodash';
+import { OrderCapital } from '../../dict/order_capital';
 
-module.exports = class PairConfig {
-  constructor(instances) {
+export interface SymbolInstance {
+  exchange: string;
+  symbol: string;
+  trade?: {
+    capital?: number;
+    currency_capital?: number;
+    balance_percent?: number;
+  };
+}
+
+export interface InstancesConfig {
+  symbols: SymbolInstance[];
+}
+
+export class PairConfig {
+  private instances: InstancesConfig;
+
+  constructor(instances: InstancesConfig) {
     this.instances = instances;
   }
 
@@ -11,14 +27,14 @@ module.exports = class PairConfig {
    * @param symbol string
    * @returns OrderCapital
    */
-  getSymbolCapital(exchangeName, symbol) {
+  getSymbolCapital(exchangeName: string, symbol: string): OrderCapital | undefined {
     const capital = this.instances.symbols.find(
       instance =>
         instance.exchange === exchangeName && instance.symbol === symbol && _.get(instance, 'trade.capital', 0) > 0
     );
 
     if (capital) {
-      return OrderCapital.createAsset(capital.trade.capital);
+      return OrderCapital.createAsset(capital.trade.capital!);
     }
 
     const capitalCurrency = this.instances.symbols.find(
@@ -29,7 +45,7 @@ module.exports = class PairConfig {
     );
 
     if (capitalCurrency) {
-      return OrderCapital.createCurrency(capitalCurrency.trade.currency_capital);
+      return OrderCapital.createCurrency(capitalCurrency.trade.currency_capital!);
     }
 
     const balancePercent = this.instances.symbols.find(
@@ -40,7 +56,7 @@ module.exports = class PairConfig {
     );
 
     if (balancePercent) {
-      return OrderCapital.createBalance(balancePercent.trade.balance_percent);
+      return OrderCapital.createBalance(balancePercent.trade.balance_percent!);
     }
 
     return undefined;
@@ -51,8 +67,8 @@ module.exports = class PairConfig {
    *
    * @returns string[]
    */
-  getAllPairNames() {
-    const pairs = [];
+  getAllPairNames(): string[] {
+    const pairs: string[] = [];
 
     this.instances.symbols.forEach(symbol => {
       pairs.push(`${symbol.exchange}.${symbol.symbol}`);
@@ -60,4 +76,4 @@ module.exports = class PairConfig {
 
     return pairs.sort();
   }
-};
+}

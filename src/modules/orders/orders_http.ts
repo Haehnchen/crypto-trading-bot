@@ -1,7 +1,23 @@
-const { Order } = require('../../dict/order');
+import { Order } from '../../dict/order';
+import { ExchangeOrder } from '../../dict/exchange_order';
+import { Tickers } from '../../storage/tickers';
+import { ExchangeManager } from '../exchange/exchange_manager';
+import { PairConfig } from '../pairs/pair_config';
 
-module.exports = class OrdersHttp {
-  constructor(backtest, tickers, orderExecutor, exchangeManager, pairConfig) {
+export class OrdersHttp {
+  private backtest: any;
+  private tickers: Tickers;
+  private orderExecutor: any;
+  private exchangeManager: ExchangeManager;
+  private pairConfig: PairConfig;
+
+  constructor(
+    backtest: any,
+    tickers: Tickers,
+    orderExecutor: any,
+    exchangeManager: ExchangeManager,
+    pairConfig: PairConfig
+  ) {
     this.backtest = backtest;
     this.tickers = tickers;
     this.orderExecutor = orderExecutor;
@@ -9,22 +25,22 @@ module.exports = class OrdersHttp {
     this.pairConfig = pairConfig;
   }
 
-  getPairs() {
+  getPairs(): string[] {
     return this.pairConfig.getAllPairNames();
   }
 
-  getOrders(pair) {
+  getOrders(pair: string): Promise<ExchangeOrder[]> {
     const res = pair.split('.');
     return this.exchangeManager.getOrders(res[0], res[1]);
   }
 
-  async cancel(pair, id) {
+  async cancel(pair: string, id: string): Promise<any> {
     const res = pair.split('.');
 
     return this.orderExecutor.cancelOrder(res[0], id);
   }
 
-  async cancelAll(pair) {
+  async cancelAll(pair: string): Promise<void> {
     const res = pair.split('.');
 
     const orders = await this.exchangeManager.getOrders(res[0], res[1]);
@@ -34,12 +50,12 @@ module.exports = class OrdersHttp {
     }
   }
 
-  getTicker(pair) {
+  getTicker(pair: string): any {
     const res = pair.split('.');
     return this.tickers.get(res[0], res[1]);
   }
 
-  async createOrder(pair, order) {
+  async createOrder(pair: string, order: any): Promise<any> {
     const res = pair.split('.');
 
     const exchangeInstance = this.exchangeManager.get(res[0]);
@@ -53,16 +69,16 @@ module.exports = class OrdersHttp {
 
     const amount = exchangeInstance.calculateAmount(orderAmount, res[1]);
     if (amount) {
-      orderAmount = parseFloat(amount);
+      orderAmount = amount;
     }
 
     let orderPrice = parseFloat(order.price);
     const price = exchangeInstance.calculatePrice(orderPrice, res[1]);
     if (price) {
-      orderPrice = parseFloat(price);
+      orderPrice = price;
     }
 
-    let ourOrder;
+    let ourOrder: Order;
     if (order.type && order.type === 'stop') {
       ourOrder = Order.createStopOrder(res[1], order.side, orderPrice, orderAmount);
     } else {
@@ -71,4 +87,4 @@ module.exports = class OrdersHttp {
 
     return this.orderExecutor.executeOrder(res[0], ourOrder);
   }
-};
+}

@@ -1,11 +1,25 @@
-const { Candlestick } = require('../../dict/candlestick');
+import { Candlestick } from '../../dict/candlestick';
+import { CandlestickRepository } from '../repository/candlestick_repository';
 
-module.exports = class ExchangeCandleCombine {
-  constructor(candlestickRepository) {
+export interface ExchangeSymbolPair {
+  name: string;
+  symbol: string;
+}
+
+export class ExchangeCandleCombine {
+  private candlestickRepository: CandlestickRepository;
+
+  constructor(candlestickRepository: CandlestickRepository) {
     this.candlestickRepository = candlestickRepository;
   }
 
-  async fetchCombinedCandles(mainExchange, symbol, period, exchanges = [], olderThen = undefined) {
+  async fetchCombinedCandles(
+    mainExchange: string,
+    symbol: string,
+    period: string,
+    exchanges: ExchangeSymbolPair[] = [],
+    olderThen?: number
+  ): Promise<Record<string, Candlestick[]>> {
     return this.combinedCandles(
       this.candlestickRepository.getLookbacksForPair(mainExchange, symbol, period, 750, olderThen),
       mainExchange,
@@ -15,7 +29,13 @@ module.exports = class ExchangeCandleCombine {
     );
   }
 
-  async fetchCombinedCandlesSince(mainExchange, symbol, period, exchanges = [], start) {
+  async fetchCombinedCandlesSince(
+    mainExchange: string,
+    symbol: string,
+    period: string,
+    exchanges: ExchangeSymbolPair[] = [],
+    start: number
+  ): Promise<Record<string, Candlestick[]>> {
     return this.combinedCandles(
       this.candlestickRepository.getLookbacksSince(mainExchange, symbol, period, start),
       mainExchange,
@@ -25,17 +45,23 @@ module.exports = class ExchangeCandleCombine {
     );
   }
 
-  async fetchCandlePeriods(mainExchange, symbol) {
+  async fetchCandlePeriods(mainExchange: string, symbol: string): Promise<string[]> {
     return this.candlestickRepository.getCandlePeriods(mainExchange, symbol);
   }
 
-  async combinedCandles(candlesAwait, mainExchange, symbol, period, exchanges = []) {
+  async combinedCandles(
+    candlesAwait: Promise<Candlestick[]>,
+    mainExchange: string,
+    symbol: string,
+    period: string,
+    exchanges: ExchangeSymbolPair[] = []
+  ): Promise<Record<string, Candlestick[]>> {
     const currentTime = Math.round(new Date().getTime() / 1000);
 
     // we filter the current candle, be to able to use it later
-    const candles = (await candlesAwait).filter(c => c.time <= currentTime);
+    const candles = (await candlesAwait).filter((c: Candlestick) => c.time <= currentTime);
 
-    const result = {
+    const result: Record<string, Candlestick[]> = {
       [mainExchange]: candles
     };
 
@@ -44,11 +70,11 @@ module.exports = class ExchangeCandleCombine {
       return result;
     }
 
-    const c = {
+    const c: Record<string, Record<number, Candlestick>> = {
       [mainExchange]: {}
     };
 
-    candles.forEach(candle => {
+    candles.forEach((candle: Candlestick) => {
       c[mainExchange][candle.time] = candle;
     });
 
@@ -57,7 +83,7 @@ module.exports = class ExchangeCandleCombine {
     await Promise.all(
       exchanges.map(exchange => {
         return new Promise(async resolve => {
-          const candles = {};
+          const candles: Record<number, Candlestick> = {};
 
           const databaseCandles = await this.candlestickRepository.getLookbacksSince(
             exchange.name,
@@ -65,17 +91,18 @@ module.exports = class ExchangeCandleCombine {
             period,
             start
           );
-          databaseCandles.forEach(c => {
-            candles[c.time] = c;
+          databaseCandles.forEach((candle: Candlestick) => {
+            candles[candle.time] = candle;
           });
 
-          const myCandles = [];
+          const myCandles: Candlestick[] = [];
 
           let timeMatchedOnce = false;
           for (const time of Object.keys(c[mainExchange])) {
+            const timeNum = parseInt(time);
             // time was matched
-            if (candles[time]) {
-              myCandles.push(candles[time]);
+            if (candles[timeNum]) {
+              myCandles.push(candles[timeNum]);
               timeMatchedOnce = true;
               continue;
             }
@@ -85,14 +112,14 @@ module.exports = class ExchangeCandleCombine {
 
             const candle = previousCandle
               ? new Candlestick(
-                  parseInt(time),
+                  timeNum,
                   previousCandle.close,
                   previousCandle.close,
                   previousCandle.close,
                   previousCandle.close,
                   0
                 )
-              : new Candlestick(parseInt(time));
+              : new Candlestick(timeNum, 0, 0, 0, 0, 0);
 
             myCandles.push(candle);
           }
@@ -101,11 +128,11 @@ module.exports = class ExchangeCandleCombine {
             result[exchange.name + exchange.symbol] = myCandles.reverse();
           }
 
-          resolve();
+          resolve(undefined);
         });
       })
     );
 
     return result;
   }
-};
+}

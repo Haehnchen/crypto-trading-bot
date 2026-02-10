@@ -2,7 +2,7 @@ const tulind = require('tulind');
 const indicatorsModule = require('./indicators');
 const indicators = indicatorsModule.default || indicatorsModule.indicators;
 const { sourceCandle } = indicatorsModule;
-const IndicatorBuilder = require('../modules/strategy/dict/indicator_builder');
+const { IndicatorBuilder } = require('../modules/strategy/dict/indicator_builder');
 
 export interface Candlestick {
   time: number;

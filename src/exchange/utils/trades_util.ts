@@ -36,7 +36,7 @@ export const TradesUtil = {
       // stop if last trade is a sell
       if (trade.side !== sideBlocker) {
         // stop if order is really old
-        if (trade.time < new Date(moment().subtract(2, 'days'))) {
+        if (trade.time < moment().subtract(2, 'days').toDate()) {
           break;
         }
 

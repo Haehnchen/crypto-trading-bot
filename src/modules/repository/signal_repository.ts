@@ -1,16 +1,27 @@
-module.exports = class SignalRepository {
-  constructor(db) {
+export interface Database {
+  prepare(sql: string): Statement;
+}
+
+export interface Statement {
+  all(parameters?: any): any[];
+  run(parameters?: any): void;
+}
+
+export class SignalRepository {
+  private db: Database;
+
+  constructor(db: Database) {
     this.db = db;
   }
 
-  getSignals(since) {
+  getSignals(since: number): Promise<any[]> {
     return new Promise(resolve => {
       const stmt = this.db.prepare('SELECT * from signals where income_at > ? order by income_at DESC LIMIT 100');
       resolve(stmt.all(since));
     });
   }
 
-  insertSignal(exchange, symbol, options, side, strategy) {
+  insertSignal(exchange: string, symbol: string, options: Record<string, any>, side: string, strategy: string): void {
     const stmt = this.db.prepare(
       'INSERT INTO signals(exchange, symbol, options, side, strategy, income_at) VALUES ($exchange, $symbol, $options, $side, $strategy, $income_at)'
     );
@@ -24,4 +35,4 @@ module.exports = class SignalRepository {
       income_at: Math.floor(Date.now() / 1000)
     });
   }
-};
+}

@@ -1,8 +1,13 @@
-const { resample } = require('../../utils/resample');
-const { ExchangeCandlestick } = require('../../dict/exchange_candlestick');
+import { Resample } from '../../utils/resample';
+import { ExchangeCandlestick } from '../../dict/exchange_candlestick';
+import { CandlestickRepository } from '../repository/candlestick_repository';
+import { CandleImporter } from './candle_importer';
 
-module.exports = class CandlestickResample {
-  constructor(candlestickRepository, candleImporter) {
+export class CandlestickResample {
+  private candlestickRepository: CandlestickRepository;
+  private candleImporter: CandleImporter;
+
+  constructor(candlestickRepository: CandlestickRepository, candleImporter: CandleImporter) {
     this.candlestickRepository = candlestickRepository;
     this.candleImporter = candleImporter;
   }
@@ -17,12 +22,18 @@ module.exports = class CandlestickResample {
    * @param limitCandles For mass resample history provide a switch else calculate the candle window on resample periods
    * @returns {Promise<void>}
    */
-  async resample(exchange, symbol, periodFrom, periodTo, limitCandles = false) {
-    const toMinute = resample.convertPeriodToMinute(periodTo);
-    const fromMinute = resample.convertPeriodToMinute(periodFrom);
+  async resample(
+    exchange: string,
+    symbol: string,
+    periodFrom: string,
+    periodTo: string,
+    limitCandles: boolean = false
+  ): Promise<void> {
+    const toMinute = Resample.convertPeriodToMinute(periodTo);
+    const fromMinute = Resample.convertPeriodToMinute(periodFrom);
 
     if (fromMinute > toMinute) {
-      throw 'Invalid resample "from" must be geater then "to"';
+      throw new Error('Invalid resample "from" must be geater then "to"');
     }
 
     // we need some
@@ -34,17 +45,17 @@ module.exports = class CandlestickResample {
       wantCandlesticks = Math.round((toMinute / fromMinute) * 5.6);
     }
 
-    const candlestick = await this.candlestickRepository.getLookbacksForPair(
+    const candlesticks = await this.candlestickRepository.getLookbacksForPair(
       exchange,
       symbol,
       periodFrom,
       wantCandlesticks
     );
-    if (candlestick.length === 0) {
+    if (candlesticks.length === 0) {
       return;
     }
 
-    const resampleCandlesticks = resample.resampleMinutes(candlestick, toMinute);
+    const resampleCandlesticks = Resample.resampleMinutes(candlesticks, toMinute);
 
     const candles = resampleCandlesticks.map(candle => {
       return new ExchangeCandlestick(
@@ -62,4 +73,4 @@ module.exports = class CandlestickResample {
 
     await this.candleImporter.insertThrottledCandles(candles);
   }
-};
+}

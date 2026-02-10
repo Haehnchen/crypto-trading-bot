@@ -1,7 +1,7 @@
 const assert = require('assert');
 const OBVPumpDump = require('../../../../src/modules/strategy/strategies/obv_pump_dump');
-const IndicatorBuilder = require('../../../../src/modules/strategy/dict/indicator_builder');
-const IndicatorPeriod = require('../../../../src/modules/strategy/dict/indicator_period');
+const { IndicatorBuilder } = require('../../../../src/modules/strategy/dict/indicator_builder');
+const { IndicatorPeriod } = require('../../../../src/modules/strategy/dict/indicator_period');
 const { StrategyContext } = require('../../../../src/dict/strategy_context');
 const { Ticker } = require('../../../../src/dict/ticker');
 

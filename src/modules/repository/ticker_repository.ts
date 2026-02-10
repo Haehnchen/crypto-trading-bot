@@ -1,10 +1,30 @@
-module.exports = class TickerRepository {
-  constructor(db, logger) {
+export interface Database {
+  prepare(sql: string): Statement;
+  transaction(fn: () => void): any;
+}
+
+export interface Statement {
+  run(parameters?: any): void;
+}
+
+export interface Ticker {
+  exchange: string;
+  symbol: string;
+  ask: number;
+  bid: number;
+  contractType?: string | null;
+}
+
+export class TickerRepository {
+  private db: Database;
+  private logger: any;
+
+  constructor(db: Database, logger: any) {
     this.db = db;
     this.logger = logger;
   }
 
-  insertTickers(tickers) {
+  insertTickers(tickers: Ticker[]): Promise<void> {
     return new Promise(resolve => {
       const upsert = this.db.prepare(
         'INSERT INTO ticker(exchange, symbol, ask, bid, updated_at) VALUES ($exchange, $symbol, $ask, $bid, $updated_at) ' +
@@ -28,4 +48,4 @@ module.exports = class TickerRepository {
       resolve();
     });
   }
-};
+}

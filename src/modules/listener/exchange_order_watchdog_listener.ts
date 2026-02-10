@@ -1,16 +1,42 @@
-const { orderUtil } = require('../../utils/order_util');
-const { Order } = require('../../dict/order');
+import { OrderUtil } from '../../utils/order_util';
+import { Order } from '../../dict/order';
+import { StopLossCalculator } from '../order/stop_loss_calculator';
+import { RiskRewardRatioCalculator } from '../order/risk_reward_ratio_calculator';
+import { Tickers } from '../../storage/tickers';
 
-module.exports = class ExchangeOrderWatchdogListener {
+export interface WatchdogConfig {
+  name: string;
+  stop?: number;
+  target_percent?: number;
+  stop_percent?: number;
+  percent?: number;
+}
+
+export interface SymbolInstance {
+  exchange: string;
+  symbol: string;
+  watchdogs?: WatchdogConfig[];
+}
+
+export class ExchangeOrderWatchdogListener {
+  private exchangeManager: any;
+  private instances: { symbols: SymbolInstance[] };
+  private stopLossCalculator: StopLossCalculator;
+  private riskRewardRatioCalculator: RiskRewardRatioCalculator;
+  private orderExecutor: any;
+  private pairStateManager: any;
+  private logger: any;
+  private tickers: Tickers;
+
   constructor(
-    exchangeManager,
-    instances,
-    stopLossCalculator,
-    riskRewardRatioCalculator,
-    orderExecutor,
-    pairStateManager,
-    logger,
-    tickers
+    exchangeManager: any,
+    instances: { symbols: SymbolInstance[] },
+    stopLossCalculator: StopLossCalculator,
+    riskRewardRatioCalculator: RiskRewardRatioCalculator,
+    orderExecutor: any,
+    pairStateManager: any,
+    logger: any,
+    tickers: Tickers
   ) {
     this.exchangeManager = exchangeManager;
     this.instances = instances;
@@ -22,19 +48,20 @@ module.exports = class ExchangeOrderWatchdogListener {
     this.tickers = tickers;
   }
 
-  onTick() {
+  onTick(): void {
     const { instances } = this;
 
-    this.exchangeManager.all().forEach(async exchange => {
+    this.exchangeManager.all().forEach(async (exchange: any) => {
       const positions = await exchange.getPositions();
 
       if (positions.length === 0) {
         return;
       }
 
-      positions.forEach(async position => {
+      positions.forEach(async (position: any) => {
         const pair = instances.symbols.find(
-          instance => instance.exchange === exchange.getName() && instance.symbol === position.symbol
+          (instance: SymbolInstance) =>
+            instance.exchange === exchange.getName() && instance.symbol === position.symbol
         );
 
         if (!pair || !pair.watchdogs) {
@@ -52,22 +79,22 @@ module.exports = class ExchangeOrderWatchdogListener {
           return;
         }
 
-        const stopLoss = pair.watchdogs.find(watchdog => watchdog.name === 'stoploss');
+        const stopLoss = pair.watchdogs.find((watchdog: WatchdogConfig) => watchdog.name === 'stoploss');
         if (stopLoss) {
           await this.stopLossWatchdog(exchange, position, stopLoss);
         }
 
-        const riskRewardRatio = pair.watchdogs.find(watchdog => watchdog.name === 'risk_reward_ratio');
+        const riskRewardRatio = pair.watchdogs.find((watchdog: WatchdogConfig) => watchdog.name === 'risk_reward_ratio');
         if (riskRewardRatio) {
           await this.riskRewardRatioWatchdog(exchange, position, riskRewardRatio);
         }
 
-        const stoplossWatch = pair.watchdogs.find(watchdog => watchdog.name === 'stoploss_watch');
+        const stoplossWatch = pair.watchdogs.find((watchdog: WatchdogConfig) => watchdog.name === 'stoploss_watch');
         if (stoplossWatch) {
           await this.stoplossWatch(exchange, position, stoplossWatch);
         }
 
-        const trailingStoplossWatch = pair.watchdogs.find(watchdog => watchdog.name === 'trailing_stop');
+        const trailingStoplossWatch = pair.watchdogs.find((watchdog: WatchdogConfig) => watchdog.name === 'trailing_stop');
         if (trailingStoplossWatch) {
           await this.trailingStoplossWatch(exchange, position, trailingStoplossWatch);
         }
@@ -75,7 +102,7 @@ module.exports = class ExchangeOrderWatchdogListener {
     });
   }
 
-  async onPositionChanged(positionStateChangeEvent) {
+  async onPositionChanged(positionStateChangeEvent: any): Promise<void> {
     if (!positionStateChangeEvent.isClosed()) {
       return;
     }
@@ -84,14 +111,14 @@ module.exports = class ExchangeOrderWatchdogListener {
     const symbol = positionStateChangeEvent.getSymbol();
 
     const pair = this.instances.symbols.find(
-      instance => instance.exchange === exchangeName && instance.symbol === symbol
+      (instance: SymbolInstance) => instance.exchange === exchangeName && instance.symbol === symbol
     );
 
     if (!pair || !pair.watchdogs) {
       return;
     }
 
-    const found = pair.watchdogs.find(watchdog =>
+    const found = pair.watchdogs.find((watchdog: WatchdogConfig) =>
       ['trailing_stop', 'stoploss', 'risk_reward_ratio'].includes(watchdog.name)
     );
     if (!found) {
@@ -108,14 +135,14 @@ module.exports = class ExchangeOrderWatchdogListener {
    * @param stopLoss
    * @returns {Promise<void>}
    */
-  async stopLossWatchdog(exchange, position, stopLoss) {
+  async stopLossWatchdog(exchange: any, position: any, stopLoss: WatchdogConfig): Promise<void> {
     const { logger } = this;
     const { stopLossCalculator } = this;
 
     const orders = await exchange.getOrdersForSymbol(position.getSymbol());
-    const orderChanges = orderUtil.syncStopLossOrder(position, orders);
+    const orderChanges = OrderUtil.syncStopLossOrder(position, orders);
 
-    orderChanges.forEach(async orderChange => {
+    orderChanges.forEach(async (orderChange: any) => {
       logger.info(
         `Stoploss update: ${JSON.stringify({
           order: orderChange,
@@ -146,19 +173,19 @@ module.exports = class ExchangeOrderWatchdogListener {
       }
 
       // create
-      let price = stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss);
+      let price = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss);
       if (!price) {
         console.log('Stop loss: auto price skipping');
         return;
       }
 
-      price = exchange.calculatePrice(price, position.getSymbol());
-      if (!price) {
+      const calculatedPrice = exchange.calculatePrice(price, position.getSymbol());
+      if (!calculatedPrice) {
         console.log('Stop loss: auto price skipping');
         return;
       }
 
-      const order = Order.createStopLossOrder(position.getSymbol(), price, orderChange.amount);
+      const order = Order.createStopLossOrder(position.getSymbol(), calculatedPrice, orderChange.amount);
 
       try {
         await exchange.order(order);
@@ -173,7 +200,7 @@ module.exports = class ExchangeOrderWatchdogListener {
     });
   }
 
-  async riskRewardRatioWatchdog(exchange, position, riskRewardRatioOptions) {
+  async riskRewardRatioWatchdog(exchange: any, position: any, riskRewardRatioOptions: any): Promise<void> {
     const { logger } = this;
 
     const symbol = position.getSymbol();
@@ -184,7 +211,7 @@ module.exports = class ExchangeOrderWatchdogListener {
       riskRewardRatioOptions
     );
 
-    orderChanges.forEach(async orderChange => {
+    orderChanges.forEach(async (orderChange: any) => {
       logger.info(
         `Risk Reward: needed order change detected: ${JSON.stringify({
           orderChange: orderChange,
@@ -207,9 +234,9 @@ module.exports = class ExchangeOrderWatchdogListener {
           await exchange.updateOrder(
             orderChange.id,
             Order.createUpdateOrder(
-              orderChange.target.id,
-              orderChange.target.price || undefined,
-              orderChange.target.amount || undefined
+              orderChange.id,
+              orderChange.price || undefined,
+              orderChange.amount || undefined
             )
           );
         } catch (e) {
@@ -259,7 +286,7 @@ module.exports = class ExchangeOrderWatchdogListener {
     });
   }
 
-  async stoplossWatch(exchange, position, config) {
+  async stoplossWatch(exchange: any, position: any, config: WatchdogConfig): Promise<void> {
     if (!config.stop || config.stop < 0.1 || config.stop > 50) {
       this.logger.error('Stoploss Watcher: invalid stop configuration need "0.1" - "50"');
       return;
@@ -276,8 +303,8 @@ module.exports = class ExchangeOrderWatchdogListener {
       return;
     }
 
-    let profit;
-    const stopProfit = parseFloat(config.stop);
+    let profit: number | undefined;
+    const stopProfit = parseFloat(config.stop.toString());
     if (position.side === 'long') {
       if (ticker.bid < position.entry) {
         profit = (ticker.bid / position.entry - 1) * 100;
@@ -310,7 +337,7 @@ module.exports = class ExchangeOrderWatchdogListener {
     }
   }
 
-  async trailingStoplossWatch(exchange, position, config) {
+  async trailingStoplossWatch(exchange: any, position: any, config: WatchdogConfig): Promise<void> {
     const { logger, stopLossCalculator } = this;
 
     if (
@@ -331,9 +358,9 @@ module.exports = class ExchangeOrderWatchdogListener {
     }
 
     const orders = await exchange.getOrdersForSymbol(position.symbol);
-    const orderChanges = orderUtil.syncTrailingStopLossOrder(position, orders);
+    const orderChanges = OrderUtil.syncTrailingStopLossOrder(position, orders);
     await Promise.all(
-      orderChanges.map(async orderChange => {
+      orderChanges.map(async (orderChange: any) => {
         if (orderChange.id) {
           // update
 
@@ -348,7 +375,7 @@ module.exports = class ExchangeOrderWatchdogListener {
 
         // calculate activation price, undefined if it is not reached yet.
         const activationPrice = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, {
-          percent: -config.target_percent
+          percent: -(config.target_percent || 0)
         });
 
         if (!activationPrice) {
@@ -356,14 +383,14 @@ module.exports = class ExchangeOrderWatchdogListener {
         }
 
         const exchangeSymbol = position.symbol.substring(0, 3).toUpperCase();
-        let trailingOffset = (activationPrice * parseFloat(config.stop_percent)) / 100;
+        let trailingOffset = (activationPrice * parseFloat((config.stop_percent || 0).toString())) / 100;
         trailingOffset = exchange.calculatePrice(trailingOffset, exchangeSymbol);
         const order = Order.createTrailingStopLossOrder(position.symbol, trailingOffset, orderChange.amount);
 
         return exchange.order(order);
       })
     )
-      .then(results => {
+      .then((results: any) => {
         logger.info(
           `Trailing stop loss: ${JSON.stringify({
             results: results,
@@ -371,8 +398,8 @@ module.exports = class ExchangeOrderWatchdogListener {
           })}`
         );
       })
-      .catch(e => {
+      .catch((e: any) => {
         logger.error(`Trailing stoploss create${JSON.stringify(e)}`);
       });
   }
-};
+}

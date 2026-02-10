@@ -1,4 +1,6 @@
-module.exports = class PairInterval {
+export class PairInterval {
+  private intervals: Record<string, NodeJS.Timeout>;
+
   constructor() {
     this.intervals = {};
   }
@@ -8,7 +10,7 @@ module.exports = class PairInterval {
    * @param func {Function}
    * @param delay {int}
    */
-  addInterval(name, delay, func) {
+  addInterval(name: string, delay: number, func: () => void | Promise<void>): void {
     if (name in this.intervals) {
       clearInterval(this.intervals[name]);
     }
@@ -20,10 +22,10 @@ module.exports = class PairInterval {
   /**
    * @param name {string}
    */
-  clearInterval(name) {
+  clearInterval(name: string): void {
     if (name in this.intervals) {
       clearInterval(this.intervals[name]);
       delete this.intervals[name];
     }
   }
-};
+}

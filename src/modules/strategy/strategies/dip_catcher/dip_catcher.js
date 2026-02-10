@@ -1,4 +1,4 @@
-const SignalResult = require('../../dict/signal_result');
+const { SignalResult } = require('../../dict/signal_result');
 
 module.exports = class DipCatcher {
   getName() {

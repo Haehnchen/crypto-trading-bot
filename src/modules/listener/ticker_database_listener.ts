@@ -1,7 +1,11 @@
-const _ = require('lodash');
+import _ from 'lodash';
+import { TickerRepository } from '../repository/ticker_repository';
+import { TickerEvent } from '../../event/ticker_event';
 
-module.exports = class TickerDatabaseListener {
-  constructor(tickerRepository) {
+export class TickerDatabaseListener {
+  private trottle: Record<string, any>;
+
+  constructor(tickerRepository: TickerRepository) {
     this.trottle = {};
 
     setInterval(async () => {
@@ -16,8 +20,8 @@ module.exports = class TickerDatabaseListener {
     }, 1000 * 15);
   }
 
-  onTicker(tickerEvent) {
+  onTicker(tickerEvent: TickerEvent): void {
     const { ticker } = tickerEvent;
     this.trottle[ticker.symbol + ticker.exchange] = ticker;
   }
-};
+}

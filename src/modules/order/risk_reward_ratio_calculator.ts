@@ -1,20 +1,40 @@
-const { Order } = require('../../dict/order');
-const { ExchangeOrder } = require('../../dict/exchange_order');
-const { OrderUtil } = require('../../utils/order_util');
+import { Order } from '../../dict/order';
+import { ExchangeOrder } from '../../dict/exchange_order';
+import { OrderUtil } from '../../utils/order_util';
+import { Position } from '../../dict/position';
 
-module.exports = class RiskRewardRatioCalculator {
-  constructor(logger) {
+export interface RiskRewardOptions {
+  stop_percent?: number;
+  target_percent?: number;
+}
+
+export interface RiskRewardResult {
+  stop?: number;
+  target?: number;
+}
+
+export interface RiskRewardOrder {
+  id?: string | number;
+  price?: number;
+  amount?: number;
+  type?: 'stop' | 'target';
+}
+
+export class RiskRewardRatioCalculator {
+  private logger: any;
+
+  constructor(logger: any) {
     this.logger = logger;
   }
 
-  calculateForOpenPosition(position, options = { stop_percent: 3, target_percent: 6 }) {
+  calculateForOpenPosition(position: Position, options: RiskRewardOptions = { stop_percent: 3, target_percent: 6 }): RiskRewardResult | undefined {
     let entryPrice = position.entry;
     if (!entryPrice) {
       this.logger.info(`Invalid position entryPrice for stop loss:${JSON.stringify(position)}`);
       return undefined;
     }
 
-    const result = {
+    const result: RiskRewardResult = {
       stop: undefined,
       target: undefined
     };
@@ -22,20 +42,28 @@ module.exports = class RiskRewardRatioCalculator {
     entryPrice = Math.abs(entryPrice);
 
     if (position.side === 'long') {
-      result.target = entryPrice * (1 + options.target_percent / 100);
-      result.stop = entryPrice * (1 - options.stop_percent / 100);
+      result.target = entryPrice * (1 + (options.target_percent || 0) / 100);
+      result.stop = entryPrice * (1 - (options.stop_percent || 0) / 100);
     } else {
-      result.target = entryPrice * (1 - options.target_percent / 100);
-      result.stop = entryPrice * (1 + options.stop_percent / 100);
+      result.target = entryPrice * (1 - (options.target_percent || 0) / 100);
+      result.stop = entryPrice * (1 + (options.stop_percent || 0) / 100);
     }
 
     return result;
   }
 
-  async syncRatioRewardOrders(position, orders, options) {
-    const newOrders = {};
+  async syncRatioRewardOrders(
+    position: Position,
+    orders: Order[],
+    options: RiskRewardOptions
+  ): Promise<Record<string, RiskRewardOrder>> {
+    const newOrders: Record<string, RiskRewardOrder> = {};
 
     const riskRewardRatio = this.calculateForOpenPosition(position, options);
+
+    if (!riskRewardRatio) {
+      return newOrders;
+    }
 
     const stopOrders = orders.filter(order => order.type === ExchangeOrder.TYPE_STOP);
     if (stopOrders.length === 0) {
@@ -45,7 +73,7 @@ module.exports = class RiskRewardRatioCalculator {
       };
 
       // inverse price for lose long position via sell
-      if (position.side === 'long') {
+      if (position.side === 'long' && newOrders.stop.price) {
         newOrders.stop.price = newOrders.stop.price * -1;
       }
     } else {
@@ -74,7 +102,7 @@ module.exports = class RiskRewardRatioCalculator {
       };
 
       // inverse price for lose long position via sell
-      if (position.side === 'long') {
+      if (position.side === 'long' && newOrders.target.price) {
         newOrders.target.price = newOrders.target.price * -1;
       }
     } else {
@@ -98,10 +126,14 @@ module.exports = class RiskRewardRatioCalculator {
     return newOrders;
   }
 
-  async createRiskRewardOrdersOrders(position, orders, options) {
+  async createRiskRewardOrdersOrders(
+    position: Position,
+    orders: Order[],
+    options: RiskRewardOptions
+  ): Promise<RiskRewardOrder[]> {
     const ratioOrders = await this.syncRatioRewardOrders(position, orders, options);
 
-    const newOrders = [];
+    const newOrders: RiskRewardOrder[] = [];
     if (ratioOrders.target) {
       if (ratioOrders.target.id) {
         newOrders.push({
@@ -136,4 +168,4 @@ module.exports = class RiskRewardRatioCalculator {
 
     return newOrders;
   }
-};
+}

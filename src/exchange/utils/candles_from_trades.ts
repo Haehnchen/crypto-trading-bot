@@ -69,7 +69,7 @@ export class CandlesFromTrades {
     const { symbol } = trade;
 
     // Round the time to the nearest minute, Change as per your resolution
-    const roundedTime = Math.floor(new Date(trade.timestamp) / 60000.0) * 60;
+    const roundedTime = Math.floor(trade.timestamp / 60000.0) * 60;
 
     // If the candles hashmap doesnt have this product id create an empty object for that id
     if (!this.candles[symbol]) {

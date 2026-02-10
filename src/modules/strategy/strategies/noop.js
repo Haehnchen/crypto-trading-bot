@@ -1,7 +1,7 @@
 const { SD } = require('technicalindicators');
 const TA = require('../../../utils/technical_analysis');
 
-const SignalResult = require('../dict/signal_result');
+const { SignalResult } = require('../dict/signal_result');
 
 module.exports = class {
   getName() {

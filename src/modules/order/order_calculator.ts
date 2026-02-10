@@ -1,11 +1,21 @@
-module.exports = class OrderCalculator {
+import { Tickers } from '../../storage/tickers';
+import { PairConfig } from '../pairs/pair_config';
+import { OrderCapital } from '../../dict/order_capital';
+import { Ticker } from '../../dict/ticker';
+
+export class OrderCalculator {
+  private tickers: Tickers;
+  private logger: any;
+  private exchangeManager: any;
+  private pairConfig: PairConfig;
+
   /**
    * @param tickers {Tickers}
    * @param logger {Logger}
    * @param exchangeManager {ExchangeManager}
    * @param pairConfig {PairConfig}
    */
-  constructor(tickers, logger, exchangeManager, pairConfig) {
+  constructor(tickers: Tickers, logger: any, exchangeManager: any, pairConfig: PairConfig) {
     this.tickers = tickers;
     this.logger = logger;
     this.exchangeManager = exchangeManager;
@@ -18,7 +28,7 @@ module.exports = class OrderCalculator {
    * @param capital {OrderCapital}
    * @returns {Promise<?Number>}
    */
-  async calculateOrderSizeCapital(exchangeName, symbol, capital) {
+  async calculateOrderSizeCapital(exchangeName: string, symbol: string, capital: OrderCapital): Promise<number | undefined> {
     const balancePercent = capital.getBalance();
     const exchange = this.exchangeManager.get(exchangeName);
 
@@ -31,15 +41,15 @@ module.exports = class OrderCalculator {
       throw new Error(`Invalid capital`);
     }
     if (!amountAsset) {
-      amountAsset = await this.convertCurrencyToAsset(exchangeName, symbol, amountCurrency);
+      amountAsset = await this.convertCurrencyToAsset(exchangeName, symbol, amountCurrency!);
     }
     if (!amountCurrency) {
-      amountCurrency = await this.convertAssetToCurrency(exchangeName, symbol, amountAsset);
+      amountCurrency = await this.convertAssetToCurrency(exchangeName, symbol, amountAsset!);
     }
-    return exchange.calculateAmount(exchange.isInverseSymbol(symbol) ? amountCurrency : amountAsset, symbol);
+    return exchange.calculateAmount(exchange.isInverseSymbol(symbol) ? amountCurrency! : amountAsset!, symbol);
   }
 
-  async calculateOrderSize(exchangeName, symbol) {
+  async calculateOrderSize(exchangeName: string, symbol: string): Promise<number | undefined> {
     const capital = this.pairConfig.getSymbolCapital(exchangeName, symbol);
     if (!capital) {
       this.logger.error(`No capital: ${JSON.stringify([exchangeName, symbol, capital])}`);
@@ -57,7 +67,7 @@ module.exports = class OrderCalculator {
    * @param currencyAmount
    * @returns {Promise<number>}
    */
-  async convertCurrencyToAsset(exchangeName, symbol, currencyAmount) {
+  async convertCurrencyToAsset(exchangeName: string, symbol: string, currencyAmount: number): Promise<number | undefined> {
     const ticker = this.tickers.get(exchangeName, symbol);
     if (!ticker || !ticker.bid) {
       this.logger.error(
@@ -77,7 +87,7 @@ module.exports = class OrderCalculator {
    * @param currencyAmount
    * @returns {Promise<number>}
    */
-  async convertAssetToCurrency(exchangeName, symbol, currencyAmount) {
+  async convertAssetToCurrency(exchangeName: string, symbol: string, currencyAmount: number): Promise<number | undefined> {
     const ticker = this.tickers.get(exchangeName, symbol);
     if (!ticker || !ticker.bid) {
       this.logger.error(
@@ -88,4 +98,4 @@ module.exports = class OrderCalculator {
 
     return ticker.bid * currencyAmount;
   }
-};
+}

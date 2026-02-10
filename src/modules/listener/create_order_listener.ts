@@ -1,13 +1,16 @@
-const { Candlestick } = require('../../dict/candlestick');
-const ta = require('../../utils/technical_analysis');
+import { OrderEvent } from '../../event/order_event';
+import { ExchangeManager } from '../exchange/exchange_manager';
 
-module.exports = class CreateOrderListener {
-  constructor(exchangeManager, logger) {
+export class CreateOrderListener {
+  private exchangeManager: ExchangeManager;
+  private logger: any;
+
+  constructor(exchangeManager: ExchangeManager, logger: any) {
     this.exchangeManager = exchangeManager;
     this.logger = logger;
   }
 
-  async onCreateOrder(orderEvent) {
+  async onCreateOrder(orderEvent: OrderEvent): Promise<void> {
     this.logger.debug(`Create Order:${JSON.stringify(orderEvent)}`);
 
     const exchange = this.exchangeManager.get(orderEvent.exchange);
@@ -17,7 +20,7 @@ module.exports = class CreateOrderListener {
     }
 
     // filter same direction
-    const ordersForSymbol = (await exchange.getOrdersForSymbol(orderEvent.order.symbol)).filter(order => {
+    const ordersForSymbol = (await exchange.getOrdersForSymbol(orderEvent.order.symbol)).filter((order: any) => {
       return order.side === orderEvent.order.side;
     });
 
@@ -30,14 +33,14 @@ module.exports = class CreateOrderListener {
 
     const currentOrder = ordersForSymbol[0];
 
-    if (currentOrder.side !== orderEvent.order.side) {
+    if (String(currentOrder.side) !== String(orderEvent.order.side)) {
       console.log('order side change');
       return;
     }
 
     exchange
-      .updateOrder(currentOrder.id, orderEvent.order)
-      .then(order => {
+      .updateOrder(String(currentOrder.id), orderEvent.order)
+      .then((order: any) => {
         console.log(`OderUpdate:${JSON.stringify(order)}`);
       })
       .catch(() => {
@@ -45,7 +48,7 @@ module.exports = class CreateOrderListener {
       });
   }
 
-  triggerOrder(exchange, order, retry = 0) {
+  triggerOrder(exchange: any, order: any, retry: number = 0): void {
     if (retry > 3) {
       console.log(`Retry limit stop creating order: ${JSON.stringify(order)}`);
       return;
@@ -57,21 +60,21 @@ module.exports = class CreateOrderListener {
 
     exchange
       .order(order)
-      .then(order => {
-        if (order.status === 'rejected') {
+      .then((resultOrder: any) => {
+        if (resultOrder.status === 'rejected') {
           setTimeout(() => {
-            console.log(`Order rejected: ${JSON.stringify(order)}`);
-            this.triggerOrder(exchange, order, retry + 1);
+            console.log(`Order rejected: ${JSON.stringify(resultOrder)}`);
+            this.triggerOrder(exchange, resultOrder, retry + 1);
           }, 1500);
 
           return;
         }
 
-        console.log(`Order created: ${JSON.stringify(order)}`);
+        console.log(`Order created: ${JSON.stringify(resultOrder)}`);
       })
-      .catch(e => {
+      .catch((e: any) => {
         console.log(e);
         console.log(`Order create error: ${JSON.stringify(e)} - ${JSON.stringify(order)}`);
       });
   }
-};
+}

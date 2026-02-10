@@ -1,4 +1,4 @@
-const SignalResult = require('../dict/signal_result');
+const { SignalResult } = require('../dict/signal_result');
 const TA = require('../../../utils/technical_analysis');
 
 module.exports = class {

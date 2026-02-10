@@ -1,4 +1,4 @@
-import { ExchangeOrder } from '../../dict/exchange_order';
+import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderSide, ExchangeOrderType } from '../../dict/exchange_order';
 import { Position } from '../../dict/position';
 
 interface CCXTOrder {
@@ -28,7 +28,7 @@ export class CcxtUtil {
   static createExchangeOrder(order: CCXTOrder): ExchangeOrder {
     let retry = false;
 
-    let status: string;
+    let status: ExchangeOrderStatus;
     const orderStatus = order.status.toLowerCase();
 
     if (['new', 'open', 'partiallyfilled', 'pendingnew', 'doneforday', 'stopped'].includes(orderStatus)) {
@@ -41,13 +41,14 @@ export class CcxtUtil {
       status = 'rejected';
       retry = true;
     } else {
-      status = 'unknown';
+      status = 'rejected';
+      retry = true;
     }
 
     const ordType = order.type.toLowerCase().replace(/[\W_]+/g, '');
 
     // secure the value
-    let orderType: string;
+    let orderType: ExchangeOrderType;
     switch (ordType) {
       case 'limit':
         orderType = ExchangeOrder.TYPE_LIMIT;

@@ -13,42 +13,42 @@ const { Telegram } = require('../notify/telegram');
 const { Tickers } = require('../storage/tickers');
 const Ta = require('../modules/ta.js');
 
-const TickListener = require('../modules/listener/tick_listener');
-const CreateOrderListener = require('../modules/listener/create_order_listener');
-const TickerDatabaseListener = require('../modules/listener/ticker_database_listener');
-const ExchangeOrderWatchdogListener = require('../modules/listener/exchange_order_watchdog_listener');
-const ExchangePositionWatcher = require('../modules/exchange/exchange_position_watcher');
+const { TickListener } = require('../modules/listener/tick_listener');
+const { CreateOrderListener } = require('../modules/listener/create_order_listener');
+const { TickerDatabaseListener } = require('../modules/listener/ticker_database_listener');
+const { ExchangeOrderWatchdogListener } = require('../modules/listener/exchange_order_watchdog_listener');
+const { ExchangePositionWatcher } = require('../modules/exchange/exchange_position_watcher');
 
-const SignalLogger = require('../modules/signal/signal_logger');
-const SignalHttp = require('../modules/signal/signal_http');
+const { SignalLogger } = require('../modules/signal/signal_logger');
+const { SignalHttp } = require('../modules/signal/signal_http');
 
-const SignalRepository = require('../modules/repository/signal_repository');
-const CandlestickRepository = require('../modules/repository/candlestick_repository');
+const { SignalRepository } = require('../modules/repository/signal_repository');
+const { CandlestickRepository } = require('../modules/repository/candlestick_repository');
 const StrategyManager = require('./strategy/strategy_manager');
-const ExchangeManager = require('./exchange/exchange_manager');
+const { ExchangeManager } = require('./exchange/exchange_manager');
 
 const Trade = require('../modules/trade');
 const Http = require('../modules/http');
 const Backtest = require('../modules/backtest');
 const Backfill = require('../modules/backfill');
 
-const StopLossCalculator = require('../modules/order/stop_loss_calculator');
-const RiskRewardRatioCalculator = require('../modules/order/risk_reward_ratio_calculator');
-const PairsHttp = require('../modules/pairs/pairs_http');
+const { StopLossCalculator } = require('../modules/order/stop_loss_calculator');
+const { RiskRewardRatioCalculator } = require('../modules/order/risk_reward_ratio_calculator');
+const { PairsHttp } = require('../modules/pairs/pairs_http');
 const OrderExecutor = require('../modules/order/order_executor');
-const OrderCalculator = require('../modules/order/order_calculator');
+const { OrderCalculator } = require('../modules/order/order_calculator');
 const PairStateManager = require('../modules/pairs/pair_state_manager');
 const PairStateExecution = require('../modules/pairs/pair_state_execution');
-const PairConfig = require('../modules/pairs/pair_config');
+const { PairConfig } = require('../modules/pairs/pair_config');
 const { SystemUtil } = require('../modules/system/system_util');
 const { TechnicalAnalysisValidator } = require('../utils/technical_analysis_validator');
 const { WinstonSqliteTransport } = require('../utils/winston_sqlite_transport');
 const WinstonTelegramLogger = require('winston-telegram');
-const LogsHttp = require('./system/logs_http');
-const LogsRepository = require('../modules/repository/logs_repository');
-const TickerLogRepository = require('../modules/repository/ticker_log_repository');
-const TickerRepository = require('../modules/repository/ticker_repository');
-const CandlestickResample = require('../modules/system/candlestick_resample');
+const { LogsHttp } = require('./system/logs_http');
+const { LogsRepository } = require('../modules/repository/logs_repository');
+const { TickerLogRepository } = require('../modules/repository/ticker_log_repository');
+const { TickerRepository } = require('../modules/repository/ticker_repository');
+const { CandlestickResample } = require('../modules/system/candlestick_resample');
 const { RequestClient } = require('../utils/request_client');
 const { Throttler } = require('../utils/throttler');
 const { QueueManager } = require('../utils/queue');
@@ -65,11 +65,11 @@ const Bybit = require('../exchange/bybit');
 const BybitUnified = require('../exchange/bybit_unified');
 const Noop = require('../exchange/noop');
 
-const ExchangeCandleCombine = require('../modules/exchange/exchange_candle_combine');
-const CandleExportHttp = require('../modules/system/candle_export_http');
-const CandleImporter = require('../modules/system/candle_importer');
+const { ExchangeCandleCombine } = require('../modules/exchange/exchange_candle_combine');
+const { CandleExportHttp } = require('../modules/system/candle_export_http');
+const { CandleImporter } = require('../modules/system/candle_importer');
 
-const OrdersHttp = require('../modules/orders/orders_http');
+const { OrdersHttp } = require('../modules/orders/orders_http');
 
 let db;
 let instances;

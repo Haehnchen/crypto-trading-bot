@@ -1,12 +1,15 @@
-const _ = require('lodash');
+import _ from 'lodash';
+import { LogsRepository } from '../repository/logs_repository';
 
-module.exports = class LogsHttp {
-  constructor(logsRepository) {
+export class LogsHttp {
+  private logsRepository: LogsRepository;
+
+  constructor(logsRepository: LogsRepository) {
     this.logsRepository = logsRepository;
   }
 
-  async getLogsPageVariables(request, response) {
-    let excludeLevels = request.query.exclude_levels || [];
+  async getLogsPageVariables(request: any, response: any): Promise<any> {
+    let excludeLevels: string[] = request.query.exclude_levels || [];
 
     if (excludeLevels.length === 0 && !('filters' in request.cookies)) {
       excludeLevels = ['debug'];
@@ -24,4 +27,4 @@ module.exports = class LogsHttp {
       }
     };
   }
-};
+}

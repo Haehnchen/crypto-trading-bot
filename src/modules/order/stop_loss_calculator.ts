@@ -1,21 +1,35 @@
-module.exports = class StopLossCalculator {
-  constructor(tickers, logger) {
+import { Tickers } from '../../storage/tickers';
+import { Position } from '../../dict/position';
+
+export interface StopLossOptions {
+  percent?: number;
+}
+
+export class StopLossCalculator {
+  private tickers: Tickers;
+  private logger: any;
+
+  constructor(tickers: Tickers, logger: any) {
     this.tickers = tickers;
     this.logger = logger;
   }
 
-  async calculateForOpenPosition(exchange, position, options = { percent: 3 }) {
+  async calculateForOpenPosition(
+    exchange: string,
+    position: Position,
+    options: StopLossOptions = { percent: 3 }
+  ): Promise<number | undefined> {
     const { tickers } = this;
 
     return new Promise(resolve => {
       if (!position.entry) {
         this.logger.info(`Invalid position entry for stop loss:${JSON.stringify(position)}`);
-        resolve();
+        resolve(undefined);
 
         return;
       }
 
-      let price;
+      let price: number | undefined;
       if (position.side === 'long') {
         if (options.percent) {
           price = position.entry * (1 - options.percent / 100);
@@ -28,7 +42,7 @@ module.exports = class StopLossCalculator {
       if (!price) {
         this.logger.info(`Empty price for stop loss:${JSON.stringify(position)}`);
 
-        return resolve();
+        return resolve(undefined);
       }
 
       const ticker = tickers.get(exchange, position.symbol);
@@ -36,7 +50,7 @@ module.exports = class StopLossCalculator {
       if (!ticker) {
         this.logger.info(`Ticker not found for stop loss:${JSON.stringify(position)}`);
 
-        resolve();
+        resolve(undefined);
         return;
       }
 
@@ -46,7 +60,7 @@ module.exports = class StopLossCalculator {
             `Ticker out of range stop loss (long): ${JSON.stringify(position)}${JSON.stringify(ticker)}`
           );
 
-          resolve();
+          resolve(undefined);
           return;
         }
       } else if (position.side === 'short') {
@@ -55,7 +69,7 @@ module.exports = class StopLossCalculator {
             `Ticker out of range stop loss (short): ${JSON.stringify(position)}${JSON.stringify(ticker)}`
           );
 
-          resolve();
+          resolve(undefined);
           return;
         }
       }
@@ -68,4 +82,4 @@ module.exports = class StopLossCalculator {
       resolve(price);
     });
   }
-};
+}
