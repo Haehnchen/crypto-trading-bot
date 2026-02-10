@@ -6,7 +6,7 @@ const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
 const { Position } = require('../dict/position');
 const CommonUtil = require('../utils/common_util');
 const { ExchangeOrder } = require('../dict/exchange_order');
-const OrderBag = require('./utils/order_bag');
+const { OrderBag } = require('./utils/order_bag');
 const { Order } = require('../dict/order');
 const { orderUtil } = require('../utils/order_util');
 

@@ -1,6 +1,6 @@
 const assert = require('assert');
 const TickListener = require('../../../src/modules/listener/tick_listener');
-const Ticker = require('../../../src/dict/ticker');
+const { Ticker } = require('../../../src/dict/ticker');
 const SignalResult = require('../../../src/modules/strategy/dict/signal_result');
 
 describe('#tick listener for order', function() {

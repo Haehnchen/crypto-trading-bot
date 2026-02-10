@@ -1,7 +1,23 @@
-const moment = require('moment');
+import moment from 'moment';
 
-module.exports = {
-  findPositionEntryFromTrades: (trades, balance, side) => {
+export interface Trade {
+  side: string;
+  price: number;
+  symbol: string;
+  time: Date;
+  size: number;
+  fee?: number;
+}
+
+export interface PositionEntry {
+  size: number;
+  costs: number;
+  average_price: number;
+  time?: Date;
+}
+
+export const TradesUtil = {
+  findPositionEntryFromTrades: (trades: Trade[], balance: number, side: 'long' | 'short'): PositionEntry | undefined => {
     if (trades.length === 0) {
       return undefined;
     }
@@ -13,7 +29,7 @@ module.exports = {
     const result = {
       size: 0,
       costs: 0
-    };
+    } as PositionEntry;
 
     const sideBlocker = side === 'short' ? 'sell' : 'buy';
     for (const trade of trades) {
@@ -28,7 +44,7 @@ module.exports = {
       }
 
       // stop if price out of range window
-      const number = result.size + parseFloat(trade.size);
+      const number = result.size + parseFloat(trade.size.toString());
       if (number > balance * 1.15) {
         break;
       }
@@ -43,8 +59,8 @@ module.exports = {
         }
       }
 
-      result.size += parseFloat(trade.size);
-      const costs = parseFloat(trade.size) * parseFloat(trade.price) + parseFloat(trade.fee || 0);
+      result.size += parseFloat(trade.size.toString());
+      const costs = parseFloat(trade.size.toString()) * parseFloat(trade.price.toString()) + parseFloat(trade.fee?.toString() || '0');
 
       result.costs += costs;
 
@@ -54,7 +70,7 @@ module.exports = {
       }
     }
 
-    result.average_price = result.costs / result.size;
+    (result as any).average_price = result.costs / result.size;
 
     if (result.size === 0 || result.costs === 0) {
       return undefined;
@@ -63,3 +79,5 @@ module.exports = {
     return result;
   }
 };
+
+export default TradesUtil;

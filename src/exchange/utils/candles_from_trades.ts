@@ -1,7 +1,42 @@
-const ExchangeCandlestick = require('../../dict/exchange_candlestick');
+import { ExchangeCandlestick } from '../../dict/exchange_candlestick';
 
-module.exports = class CandlesFromTrades {
-  constructor(candlestickResample, candleImporter) {
+export interface Trade {
+  price: number;
+  amount: number;
+  symbol: string;
+  timestamp: number;
+}
+
+export interface SymbolConfig {
+  symbol: string;
+  periods: string[];
+}
+
+export interface CandlestickResample {
+  resample(exchange: string, symbol: string, periodFrom: string, periodTo: string, limitCandles: boolean): Promise<void>;
+}
+
+export interface CandleImporter {
+  insertThrottledCandles(candles: ExchangeCandlestick[]): Promise<void>;
+}
+
+interface InternalCandle {
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  closed: boolean;
+}
+
+export class CandlesFromTrades {
+  private candlestickResample: CandlestickResample;
+  private candleImporter: CandleImporter;
+  private candles: Record<string, Record<number, InternalCandle>>;
+  private lastCandleMap: Record<string, InternalCandle>;
+
+  constructor(candlestickResample: CandlestickResample, candleImporter: CandleImporter) {
     this.candlestickResample = candlestickResample;
     this.candleImporter = candleImporter;
 
@@ -9,7 +44,7 @@ module.exports = class CandlesFromTrades {
     this.lastCandleMap = {};
   }
 
-  async onTrades(exchangeName, trades, symbols = []) {
+  async onTrades(exchangeName: string, trades: Trade[], symbols: SymbolConfig[] = []): Promise<void> {
     for (const trade of trades) {
       await this.onTrade(exchangeName, trade, symbols);
     }
@@ -22,14 +57,14 @@ module.exports = class CandlesFromTrades {
    * @param trade array
    * @param symbols array for calculate the resamples
    */
-  async onTrade(exchangeName, trade, symbols = []) {
+  async onTrade(exchangeName: string, trade: Trade, symbols: SymbolConfig[] = []): Promise<void> {
     if (!trade.price || !trade.amount || !trade.symbol || !trade.timestamp) {
       return;
     }
 
     // Price and volume are sent as strings by the API
-    trade.price = parseFloat(trade.price);
-    trade.amount = parseFloat(trade.amount);
+    trade.price = parseFloat(trade.price.toString());
+    trade.amount = parseFloat(trade.amount.toString());
 
     const { symbol } = trade;
 
@@ -75,7 +110,7 @@ module.exports = class CandlesFromTrades {
       closed: false
     };
 
-    const ourCandles = [];
+    const ourCandles: ExchangeCandlestick[] = [];
     for (const timestamp in this.candles[symbol]) {
       const candle = this.candles[symbol][timestamp];
 
@@ -96,7 +131,7 @@ module.exports = class CandlesFromTrades {
 
     // delete old candles
     Object.keys(this.candles[symbol])
-      .sort((a, b) => b - a)
+      .sort((a, b) => Number(b) - Number(a))
       .slice(200)
       .forEach(i => {
         delete this.candles[symbol][i];
@@ -118,4 +153,4 @@ module.exports = class CandlesFromTrades {
       })
     );
   }
-};
+}

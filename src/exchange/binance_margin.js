@@ -10,10 +10,10 @@ const { Ticker } = require('../dict/ticker');
 const { TickerEvent } = require('../event/ticker_event');
 const { ExchangeOrder } = require('../dict/exchange_order');
 const { OrderUtil } = require('../utils/order_util');
-const TradesUtil = require('./utils/trades_util');
+const { TradesUtil } = require('./utils/trades_util');
 const { Position } = require('../dict/position');
 const { Order } = require('../dict/order');
-const OrderBag = require('./utils/order_bag');
+const { OrderBag } = require('./utils/order_bag');
 
 module.exports = class BinanceMargin {
   constructor(eventEmitter, logger, queue, candleImport, throttler) {

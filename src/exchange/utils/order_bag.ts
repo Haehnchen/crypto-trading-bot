@@ -1,6 +1,8 @@
-const ExchangeOrder = require('../../dict/exchange_order');
+import { ExchangeOrder } from '../../dict/exchange_order';
 
-module.exports = class OrderBag {
+export class OrderBag {
+  private orders: Record<string, ExchangeOrder>;
+
   constructor() {
     this.orders = {};
   }
@@ -10,7 +12,7 @@ module.exports = class OrderBag {
    *
    * @param order
    */
-  triggerOrder(order) {
+  triggerOrder(order: ExchangeOrder): void {
     if (!(order instanceof ExchangeOrder)) {
       throw Error('Invalid order given');
     }
@@ -32,9 +34,9 @@ module.exports = class OrderBag {
     this.orders[String(order.id)] = order;
   }
 
-  getOrders() {
+  getOrders(): Promise<ExchangeOrder[]> {
     return new Promise(resolve => {
-      const orders = [];
+      const orders: ExchangeOrder[] = [];
 
       for (const key in this.orders) {
         if (this.orders[key].status === 'open') {
@@ -46,24 +48,24 @@ module.exports = class OrderBag {
     });
   }
 
-  findOrderById(id) {
+  findOrderById(id: string | number): Promise<ExchangeOrder | undefined> {
     return new Promise(async resolve => {
       resolve((await this.getOrders()).find(order => order.id === id || order.id == id));
     });
   }
 
-  getOrdersForSymbol(symbol) {
+  getOrdersForSymbol(symbol: string): Promise<ExchangeOrder[]> {
     return new Promise(async resolve => {
       resolve((await this.getOrders()).filter(order => order.symbol === symbol));
     });
   }
 
-  delete(id) {
+  delete(id: string | number): void {
     delete this.orders[String(id)];
   }
 
-  set(orders) {
-    const ourOrder = {};
+  set(orders: ExchangeOrder[]): void {
+    const ourOrder: Record<string, ExchangeOrder> = {};
 
     orders.forEach(o => {
       if (!(o instanceof ExchangeOrder)) {
@@ -76,11 +78,11 @@ module.exports = class OrderBag {
     this.orders = ourOrder;
   }
 
-  get(id) {
+  get(id: string | number): ExchangeOrder | undefined {
     return this.orders[String(id)];
   }
 
-  all() {
+  all(): ExchangeOrder[] {
     return Object.values(this.orders);
   }
-};
+}

@@ -75,3 +75,19 @@ export function getPercentDifferent(orderPrice: number, currentPrice: number): n
     ? 100 - (currentPrice / orderPrice) * 100
     : 100 - (orderPrice / currentPrice) * 100;
 }
+
+/**
+ * Export an object with all functions for backwards compatibility with JS imports
+ */
+export const orderUtil = {
+  calculateOrderAmount,
+  syncOrderByType,
+  syncStopLossOrder,
+  syncTrailingStopLossOrder,
+  calculateNearestSize,
+  isPercentDifferentGreaterThen,
+  getPercentDifferent
+};
+
+// Also export as OrderUtil for capitalization consistency
+export const OrderUtil = orderUtil;

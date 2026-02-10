@@ -16,3 +16,11 @@ export function camelToSnakeCase(text: string): string {
     .replace(/([a-z0-9])([A-Z])/, '$1_$2')
     .toLowerCase();
 }
+
+/**
+ * Export an object with all functions for backwards compatibility with JS imports
+ */
+export const CommonUtil = {
+  getProfitAsPercent,
+  camelToSnakeCase
+};

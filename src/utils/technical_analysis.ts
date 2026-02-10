@@ -1,5 +1,7 @@
 const tulind = require('tulind');
-const Indicators = require('./indicators');
+const indicatorsModule = require('./indicators');
+const indicators = indicatorsModule.default || indicatorsModule.indicators;
+const { sourceCandle } = indicatorsModule;
 const IndicatorBuilder = require('../modules/strategy/dict/indicator_builder');
 
 export interface Candlestick {
@@ -107,9 +109,8 @@ export function getPredefinedIndicators(lookbacks: Candlestick[]): Promise<Indic
  * Function called from createIndicatorsLookback, several times.
  * Calculates only "Ready" indicators, with calculated source data
  */
-export function calculateReadyIndicators(indicators: IndicatorDefinition[], results: any): any[] {
-  const { sourceCandle } = Indicators;
-  return indicators
+export function calculateReadyIndicators(indicatorsList: IndicatorDefinition[], results: any): any[] {
+  return indicatorsList
     .map(indicator => (
       { ...indicator, source: indicator.source || (sourceCandle.includes(indicator.indicator) ? 'candles' : 'close') })) // figure out indicator source
     .filter(({ key }) => !(key in results)) // skip already calculated indicators
@@ -124,8 +125,8 @@ export function calculateReadyIndicators(indicators: IndicatorDefinition[], resu
       if (typeof indicatorName === 'function') {
         return indicatorName(sourceData, indicator);
       }
-      if (typeof indicatorName === 'string' && typeof Indicators[indicatorName] === 'function') {
-        return Indicators[indicatorName](sourceData, indicator);
+      if (typeof indicatorName === 'string' && typeof indicators[indicatorName] === 'function') {
+        return indicators[indicatorName](sourceData, indicator);
       }
       throw Error(`Call to undefined indicator: ${JSON.stringify(indicator)}`);
     });
@@ -262,3 +263,20 @@ export function getPivotPointsWithWicks(candles: Candlestick[], left: number, ri
 
   return result;
 }
+
+/**
+ * Export an object with all functions for backwards compatibility with JS imports
+ */
+export const ta = {
+  getBollingerBandPercent,
+  getPercentTrendStrength,
+  candles2MarketData,
+  getPredefinedIndicators,
+  calculateReadyIndicators,
+  createIndicatorsLookback,
+  getTrendingDirection,
+  getTrendingDirectionLastItem,
+  getCrossedSince,
+  getPivotPoints,
+  getPivotPointsWithWicks
+};

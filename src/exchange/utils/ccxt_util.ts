@@ -1,14 +1,34 @@
-const ExchangeOrder = require('../../dict/exchange_order');
+import { ExchangeOrder } from '../../dict/exchange_order';
+import { Position } from '../../dict/position';
 
-module.exports = class CcxtUtil {
-  static createExchangeOrders(orders) {
+interface CCXTOrder {
+  id: string | number;
+  symbol: string;
+  status: string;
+  price: number;
+  amount: number;
+  side: string;
+  type: string;
+}
+
+interface CCXTPosition {
+  symbol: string;
+  currentQty: number;
+  unrealisedRoePcnt: number;
+  leverage: number;
+  avgEntryPrice: number;
+  openingTimestamp: number;
+}
+
+export class CcxtUtil {
+  static createExchangeOrders(orders: CCXTOrder[]): ExchangeOrder[] {
     return orders.map(CcxtUtil.createExchangeOrder);
   }
 
-  static createExchangeOrder(order) {
+  static createExchangeOrder(order: CCXTOrder): ExchangeOrder {
     let retry = false;
 
-    let status;
+    let status: string;
     const orderStatus = order.status.toLowerCase();
 
     if (['new', 'open', 'partiallyfilled', 'pendingnew', 'doneforday', 'stopped'].includes(orderStatus)) {
@@ -20,12 +40,14 @@ module.exports = class CcxtUtil {
     } else if (orderStatus === 'rejected' || orderStatus === 'expired') {
       status = 'rejected';
       retry = true;
+    } else {
+      status = 'unknown';
     }
 
     const ordType = order.type.toLowerCase().replace(/[\W_]+/g, '');
 
     // secure the value
-    let orderType;
+    let orderType: string;
     switch (ordType) {
       case 'limit':
         orderType = ExchangeOrder.TYPE_LIMIT;
@@ -57,7 +79,7 @@ module.exports = class CcxtUtil {
       order.amount,
       retry,
       null,
-      order.side.toLowerCase() === 'sell' ? 'sell' : 'buy', // secure the value,
+      order.side.toLowerCase() === 'sell' ? 'sell' : 'buy', // secure the value
       orderType,
       new Date(), // no date?
       new Date(),
@@ -65,7 +87,7 @@ module.exports = class CcxtUtil {
     );
   }
 
-  static createPositions(positions) {
+  static createPositions(positions: CCXTPosition[]): Position[] {
     return positions.map(position => {
       let { unrealisedRoePcnt } = position;
 
@@ -84,4 +106,4 @@ module.exports = class CcxtUtil {
       );
     });
   }
-};
+}

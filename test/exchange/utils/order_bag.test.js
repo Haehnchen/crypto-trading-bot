@@ -1,6 +1,6 @@
 const assert = require('assert');
-const OrderBag = require('../../../src/exchange/utils/order_bag');
-const ExchangeOrder = require('../../../src/dict/exchange_order');
+const { OrderBag } = require('../../../src/exchange/utils/order_bag');
+const { ExchangeOrder } = require('../../../src/dict/exchange_order');
 
 describe('#order bag utils', function() {
   it('test non strict handling non id type', async () => {

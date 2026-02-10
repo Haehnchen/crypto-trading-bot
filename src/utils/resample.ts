@@ -116,3 +116,12 @@ export function convertMinuteToPeriod(period: number): string {
 
   throw `Unsupported period: ${period}`;
 }
+
+/**
+ * Export an object with all functions for backwards compatibility with JS imports
+ */
+export const Resample = {
+  resampleMinutes,
+  convertPeriodToMinute,
+  convertMinuteToPeriod
+};

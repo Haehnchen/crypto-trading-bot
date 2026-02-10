@@ -1,7 +1,7 @@
 # TypeScript Migration Progress
 
 **Date**: 2025-02-10
-**Branch**: `feature/ejs-templates`
+**Branch**: `feature/typescript-step-migration`
 **Goal**: Migrate `src/` directory from JavaScript to TypeScript
 
 ## Setup Complete
@@ -97,14 +97,20 @@ telegram.ts (uses TelegramConfig interface, Telegraf)
 tickers.ts
 ```
 
-### src/utils/ (9 files with tests - 100%)
+### src/utils/ (15 files - 100%)
 ```
 order_util.ts (+ test)
 resample.ts (+ test)
 technical_pattern.ts (+ test)
 technical_analysis.ts (+ test)
 technical_analysis_validator.ts (+ test)
-request_client.ts (+ test) - uses Logger interface
+request_client.ts (+ test)
+common_util.ts ✅ NEW
+indicators.ts ✅ NEW
+instance_util.ts ✅ NEW
+queue.ts ✅ NEW
+throttler.ts ✅ NEW
+winston_sqlite_transport.ts ✅ NEW
 ```
 
 ### src/modules/system/ (1 file - 100%)
@@ -118,19 +124,17 @@ index.ts (migrated from index.js)
 ```
 
 ### Test Status
-- ✅ 28 tests passing
+- ✅ 140 tests passing
 - All migrated tests use TypeScript
 
 ## 📋 Remaining Files to Migrate
 
-### src/utils/ (6 files without tests)
+### src/exchange/utils/** (4 files - 100%)
 ```
-common_util.js
-indicators.js
-instance_util.js
-queue.js
-throttler.js
-winston_sqlite_transport.js
+ccxt_util.ts ✅
+order_bag.ts ✅ (+ test)
+trades_util.ts ✅ (+ test)
+candles_from_trades.ts ✅
 ```
 
 ### src/exchange/ (13+ files, some with tests)
@@ -146,10 +150,6 @@ bybit.js (+ test)
 bybit_unified.js
 coinbase_pro.js (+ test)
 noop.js
-utils/ccxt_util.js
-utils/order_bag.js (+ test)
-utils/trades_util.js (+ test)
-utils/candles_from_trades.js
 ccxt/ccxt_exchange_order.js
 ```
 
@@ -158,43 +158,41 @@ ccxt/ccxt_exchange_order.js
 backfill.js
 backtest.js
 exchange/
-exchange_manager.ts (+ test)
-exchange_candle_combine.ts (+ test)
+exchange_manager.ts (+ test) ✅ import fixed
+exchange_candle_combine.ts (+ test) ✅ import fixed
 exchange_position_watcher.ts (+ test)
 listener/
-listener/create_order_listener.js (fixed import)
-listener/tick_listener.js (+ test)
-listener/create_order_listener.js (+ test)
-listener/exchange_order_watchdog_listener.js (+ test)
+listener/tick_listener.js (+ test) ✅ import fixed
+listener/create_order_listener.js (+ test) ✅ import fixed
+listener/exchange_order_watchdog_listener.js (+ test) ✅ import fixed
 order/
-order_executor.ts (+ test)
+order_executor.ts (+ test) ✅ import fixed
 order_calculator.ts (+ test)
 stop_loss_calculator.ts (+ test)
-risk_reward_ratio_calculator.ts (+ test)
+risk_reward_ratio_calculator.ts (+ test) ✅ import fixed
 orders/
-orders_http.ts
+orders_http.ts ✅ import fixed
 pairs/
 pairs_http.ts
-pair_config.js
+pair_config.js ✅ import fixed
 pair_interval.js
-pair_state_manager.ts (+ test)
-pair_state_execution.ts (+ test)
+pair_state_manager.ts (+ test) ✅ import fixed
+pair_state_execution.ts (+ test) ✅ import fixed
 repository/
 signal/
 signal_http.ts
 signal_logger.ts
 strategy/
-strategy_manager.ts (+ test)
+strategy_manager.ts (+ test) ✅ import fixed
 strategies/
 dict/
 system/
-system_util.ts ✅
 logs_http.ts
 candle_importer.js
 candle_export_http.js
-candlestick_resample.js
+candlestick_resample.js ✅ import fixed
 services.js
-ta.js
+ta.js ✅ import fixed
 trade.js
 ```
 
@@ -224,30 +222,6 @@ export type PairStateType = 'long' | 'short' | 'close' | 'cancel';
 export type ClearCallback = () => void;
 ```
 
-### Utility Types (src/utils/)
-```typescript
-// Resample
-export interface Candlestick {
-  time: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
-
-// Request Client
-export interface Logger {
-  error(message: string): void;
-}
-
-// Technical Analysis
-export interface IndicatorResult {
-  [key: string]: any;
-  candles: Candlestick[];
-}
-```
-
 ## 🚀 How to Continue
 
 ### For utils without tests:
@@ -261,7 +235,7 @@ export interface IndicatorResult {
 2. Create TS file for source
 3. Create TS file for test
 4. Delete both JS files
-5. Run specific test: `npx mocha --require ts-node_register "test/path/to.test.ts"`
+5. Run specific test: `npx mocha --require ts-node/register "test/path/to.test.ts"`
 
 ### For complex dependencies:
 1. Start with leaf dependencies (no imports of other non-TS files)
@@ -273,29 +247,32 @@ export interface IndicatorResult {
 ### Import Statement Changes
 - Changed `require('../../dict/candlestick.js')` to `require('../../dict/candlestick')` (no .js extension)
 - This allows Node.js/ts-node to find .ts files
-
-### External Dependencies
-Currently using `any` for:
-- Mailer (nodemailer)
-- SystemUtil (before migration - now has Config interface)
-- Logger (winston)
-- Telegraf
-- Request library
-
-These can be typed more strictly later if needed.
+- **When importing TS files with named exports from JS, use destructuring:**
+  ```javascript
+  const { RequestClient } = require('../utils/request_client');
+  ```
 
 ### allowJs: true
 The `allowJs: true` flag in tsconfig.json allows mixed JS/TS during migration.
-This means you can migrate file-by-file without breaking everything.
+
+### Backwards Compatibility Exports
+When migrating utility modules that were originally exporting objects, maintain backwards compatibility by exporting both named functions and a convenience object:
+```typescript
+// Named exports for TS imports
+export function isPercentDifferentGreaterThen(...) { ... }
+
+// Object export for JS imports expecting the old pattern
+export const orderUtil = { isPercentDifferentGreaterThen };
+export const OrderUtil = orderUtil; // also capitalize for consistency
+```
+
+This allows both TS imports (`import { isPercentDifferentGreaterThen }`) and JS imports (`const { OrderUtil } = require(...)`) to work.
 
 ## ✅ Verification Commands
 
 ```bash
 # Run all TypeScript tests
 npm test
-
-# Run specific test
-npx mocha --require ts-node/register "test/utils/order_util.test.ts"
 
 # Start server
 npm start
@@ -306,16 +283,14 @@ npm run build
 
 ## 🎯 Next Steps Priority
 
-1. **Finish src/utils/** (6 remaining files) - Quick wins, small files
-2. **src/exchange/utils/** - Has tests, good candidates
-3. **src/exchange/*.js** - Exchange implementations, some with tests
-4. **src/modules/strategy/** - Core trading logic, has tests
-5. **src/modules/listener/** - Event listeners, has tests
-6. **src/modules/** - Remaining modules
+1. **src/exchange/utils/** - Has tests, good candidates** ✅ DONE
+2. **src/exchange/*.js** - Exchange implementations, some with tests** ← CURRENT
+3. **src/modules/strategy/** - Core trading logic, has tests
+4. **src/modules/** - Remaining modules
 
 ## 📊 Progress Stats
 
-- **~50 files migrated**
-- **28 tests passing**
-- **~100+ files remaining**
-- **~30% complete** (estimated)
+- **~70 files migrated**
+- **140 tests passing**
+- **~80 files remaining**
+- **~47% complete** (estimated)

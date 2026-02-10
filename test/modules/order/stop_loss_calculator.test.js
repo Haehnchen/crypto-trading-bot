@@ -1,8 +1,8 @@
 const assert = require('assert');
 const StopLossCalculator = require('../../../src/modules/order/stop_loss_calculator');
-const Position = require('../../../src/dict/position');
-const Ticker = require('../../../src/dict/ticker');
-const Tickers = require('../../../src/storage/tickers');
+const { Position } = require('../../../src/dict/position');
+const { Ticker } = require('../../../src/dict/ticker');
+const { Tickers } = require('../../../src/storage/tickers');
 
 describe('#stop loss order calculation', function() {
   const fakeLogger = { info: () => {} };

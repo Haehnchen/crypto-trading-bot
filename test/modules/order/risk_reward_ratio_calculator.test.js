@@ -1,7 +1,7 @@
 const assert = require('assert');
 const RiskRewardRatioCalculator = require('../../../src/modules/order/risk_reward_ratio_calculator');
-const Position = require('../../../src/dict/position');
-const ExchangeOrder = require('../../../src/dict/exchange_order');
+const { Position } = require('../../../src/dict/position');
+const { ExchangeOrder } = require('../../../src/dict/exchange_order');
 
 describe('#risk reward order calculation', function() {
   const fakeLogger = { info: () => {} };

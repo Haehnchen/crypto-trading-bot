@@ -1,9 +1,9 @@
 const assert = require('assert');
 const ExchangeOrderWatchdogListener = require('../../../src/modules/listener/exchange_order_watchdog_listener');
-const Ticker = require('../../../src/dict/ticker');
+const { Ticker } = require('../../../src/dict/ticker');
 const StopLossCalculator = require('../../../src/modules/order/stop_loss_calculator');
-const Position = require('../../../src/dict/position');
-const ExchangeOrder = require('../../../src/dict/exchange_order');
+const { Position } = require('../../../src/dict/position');
+const { ExchangeOrder } = require('../../../src/dict/exchange_order');
 
 describe('#watchdogs are working', () => {
   const fakeLogger = { info: () => {}, error: () => {} };

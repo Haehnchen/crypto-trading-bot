@@ -1,9 +1,9 @@
 const ccxt = require('ccxt');
 const _ = require('lodash');
-const OrderBag = require('../utils/order_bag');
+const { OrderBag } = require('../utils/order_bag');
 const Order = require('../../dict/order');
 const ExchangeOrder = require('../../dict/exchange_order');
-const CcxtUtil = require('../utils/ccxt_util');
+const { CcxtUtil } = require('../utils/ccxt_util');
 
 module.exports = class CcxtExchangeOrder {
   constructor(ccxtClient, symbols, logger, callbacks) {
