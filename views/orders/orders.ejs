@@ -1,0 +1,209 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-[1800px] mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-semibold">Order: <%= pair %></h1>
+            <nav class="text-[13px] text-gray-500">
+                <a href="/" class="text-blue-600 hover:underline">Dashboard</a> /
+                <a href="/orders" class="text-blue-600 hover:underline">Orders</a> /
+                <%= pair %>
+            </nav>
+        </div>
+
+        <div class="flex gap-4">
+            <!-- Pairs Card -->
+            <div class="w-64 shrink-0">
+                <div class="bg-white border border-gray-200 rounded">
+                    <div class="px-4 py-3 border-b border-gray-200 font-medium">Pairs</div>
+                    <div class="p-3 border-b border-gray-200">
+                        <input type="text" id="filter-pairs" placeholder="Filter pairs..." class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm">
+                    </div>
+                    <div id="pairs-list" class="max-h-[600px] overflow-y-auto">
+                        <% pairs.forEach(function(p) { %>
+                            <a href="/orders/<%= encodeURIComponent(p) %>" data-pair="<%= p.toLowerCase() %>" class="pair-link block px-4 py-2 text-sm border-b border-gray-100 <%= p === pair ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50' %>">
+                                <i class="fas fa-inbox text-gray-400 mr-1"></i> <%= p %>
+                            </a>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Form -->
+            <div class="flex-1 max-w-md">
+                <div class="bg-white border border-gray-200 rounded">
+                    <div class="px-4 py-3 border-b border-blue-500 bg-blue-50 font-medium">Order - <%= pair %></div>
+
+                    <form action="/orders/<%= encodeURIComponent(pair) %>" method="post">
+                        <div class="p-4">
+                            <% if (typeof alert !== 'undefined' && alert) { %>
+                                <%- include('../components/alert', {alert: alert}) %>
+                            <% } %>
+
+                            <div class="flex gap-4 mb-4">
+                                <div class="w-28">
+                                    <label for="order_type" class="block font-medium mb-1">Type</label>
+                                    <select class="w-full border border-gray-300 rounded px-3 py-2" id="order_type" name="type">
+                                        <option value="limit" <%= (!form || !form.type || form.type === 'limit') ? 'selected' : '' %>>limit</option>
+                                        <option value="stop" <%= form && form.type === 'stop' ? 'selected' : '' %>>stop</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="price" class="block font-medium mb-1">Price</label>
+                                <div class="flex">
+                                    <input type="text" class="flex-1 border border-gray-300 rounded-l px-3 py-2" id="price" placeholder="Price" name="price" value="<%= form && form.price ? form.price : '' %>">
+                                    <div class="flex percent-input-group">
+                                        <button class="px-2 py-2 border border-l-0 border-gray-300 bg-gray-50 text-[13px] hover:bg-gray-100 cursor-pointer" type="button" value="0.5">+0.5%</button>
+                                        <button class="px-2 py-2 border border-l-0 border-gray-300 bg-gray-50 text-[13px] hover:bg-gray-100 cursor-pointer" type="button" value="1">+1%</button>
+                                        <button class="px-2 py-2 border border-l-0 border-gray-300 bg-gray-50 text-[13px] hover:bg-gray-100 cursor-pointer" type="button" value="-0.5">-0.5%</button>
+                                        <button class="px-2 py-2 border border-l-0 border-gray-300 bg-gray-50 text-[13px] rounded-r hover:bg-gray-100 cursor-pointer" type="button" value="-1">-1%</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4 mt-4 form-group-amount">
+                                <div class="flex-1">
+                                    <label for="amount" class="block font-medium mb-1">Amount (Asset)</label>
+                                    <input type="text" class="w-full border border-gray-300 rounded px-3 py-2" id="amount" name="amount" value="<%= form && form.amount ? form.amount : '' %>">
+                                </div>
+                                <div class="flex-1">
+                                    <label for="amount_currency" class="block font-medium mb-1">Amount (Currency)</label>
+                                    <input type="text" class="w-full border border-gray-300 rounded px-3 py-2" id="amount_currency" name="amount_currency" value="<%= form && form.amount_currency ? form.amount_currency : '' %>">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="px-4 py-3 border-t border-gray-200 flex gap-2">
+                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 cursor-pointer" name="side" value="long"><i class="fas fa-shopping-cart"></i> Buy</button>
+                            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 cursor-pointer" name="side" value="short"><i class="far fa-trash-alt"></i> Sell</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="flex-1">
+                <!-- Ticker -->
+                <div class="bg-blue-500 text-white rounded p-4 mb-4">
+                    <h3 class="text-2xl font-bold"><%= ticker ? priceFormat(ticker.ask) + ' / ' + priceFormat(ticker.bid) : '' %></h3>
+                    <p>Price<%= ticker ? ' - ' + formatDate(ticker.createdAt, 'yy-m-d H:i:s') : '' %></p>
+                </div>
+
+                <!-- Orders List -->
+                <% if (orders && orders.length > 0) { %>
+                    <div class="bg-white border border-gray-200 rounded mb-4">
+                        <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                            <span class="font-medium">Orders</span>
+                            <a href="/orders/<%= encodeURIComponent(pair) %>/cancel-all" class="text-gray-400 hover:text-red-600" title="Cancel All">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                        <table class="w-full border-collapse text-[13px]">
+                            <thead>
+                            <tr>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Type</th>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Price</th>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Amount</th>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Side</th>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Cancel</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <% orders.forEach(function(order) { %>
+                                <tr class="hover:bg-gray-100">
+                                    <td class="border border-gray-200 px-3 py-2"><%= order.type %></td>
+                                    <td class="border border-gray-200 px-3 py-2"><%= priceFormat(order.price) %></td>
+                                    <td class="border border-gray-200 px-3 py-2"><%= order.amount %></td>
+                                    <td class="border border-gray-200 px-3 py-2">
+                                        <% if (order.side === 'buy') { %>
+                                            <i class="fas fa-chevron-circle-up text-green-600"></i>
+                                        <% } else if (order.side === 'sell') { %>
+                                            <i class="fas fa-chevron-circle-down text-red-600"></i>
+                                        <% } %>
+                                    </td>
+                                    <td class="border border-gray-200 px-3 py-2">
+                                        <a href="/orders/<%= encodeURIComponent(pair) %>/cancel/<%= encodeURIComponent(order.id) %>" class="text-gray-400 hover:text-red-600" title="Cancel">
+                                            <i class="fas fa-window-close"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
+
+                <!-- Position -->
+                <% if (position) { %>
+                    <div class="bg-white border border-gray-200 rounded mb-4">
+                        <div class="px-4 py-3 border-b border-gray-200 font-medium">Position</div>
+                        <table class="w-full border-collapse text-[13px]">
+                            <tbody>
+                            <tr class="hover:bg-gray-100">
+                                <td class="border border-gray-200 px-3 py-2 <%= position.amount < 0 ? 'text-red-600' : 'text-green-600' %>">
+                                    <%= priceFormat(position.amount) %>
+                                </td>
+                                <td class="border border-gray-200 px-3 py-2">
+                                    <% if (typeof position.profit !== 'undefined') { %>
+                                        <span class="<%= position.profit < 0 ? 'text-red-600' : 'text-green-600' %>"><%= Math.round(position.profit * 100) / 100 %> %</span>
+                                    <% } %>
+                                </td>
+                                <td class="border border-gray-200 px-3 py-2"><%= priceFormat(position.entry) %></td>
+                                <td class="border border-gray-200 px-3 py-2">
+                                    <% if (position.updatedAt) { %>
+                                        <%= formatDate(position.updatedAt, 'd.m.y H:i') %>
+                                    <% } %>
+                                </td>
+                                <td class="border border-gray-200 px-3 py-2">
+                                    <% if (position.createdAt) { %>
+                                        <%= formatDate(position.createdAt, 'd.m.y H:i') %>
+                                    <% } %>
+                                </td>
+                                <td class="border border-gray-200 px-3 py-2">
+                                    <% if (position.side === 'short') { %>
+                                        <i class="fas fa-chevron-circle-down text-red-600"></i>
+                                    <% } else if (position.side === 'long') { %>
+                                        <i class="fas fa-chevron-circle-up text-green-600"></i>
+                                    <% } %>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
+
+                <!-- TradingView Chart -->
+                <div class="bg-white border border-gray-200 rounded">
+                    <div class="p-4">
+                        <div id="tradingview" style="width: 100%; height: 400px"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/orders.js?v=<%= assetVersion %>"></script>
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script type="text/javascript">
+    new TradingView.widget({
+        "autosize": true,
+        "symbol": "<%= tradingview %>",
+        "interval": "15",
+        "theme": "Light",
+        "style": "60",
+        "locale": "en",
+        "toolbar_bg": "#f1f3f6",
+        "enable_publishing": false,
+        "allow_symbol_change": true,
+        "container_id": "tradingview",
+        "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+        "studies": [
+            "BB@tv-basicstudies",
+            "MACD@tv-basicstudies",
+            "MAExp@tv-basicstudies",
+            "RSI@tv-basicstudies",
+        ],
+    });
+</script>

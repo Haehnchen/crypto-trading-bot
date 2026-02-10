@@ -1,0 +1,39 @@
+<div class="grid grid-cols-2 gap-4">
+    <table class="backtest-table w-full border-collapse text-[13px]">
+        <tr>
+            <td class="border border-gray-200 px-3 py-2">Initial Capital</td>
+            <td class="border border-gray-200 px-3 py-2"><%= summary.initialCapital %> $</td>
+        </tr>
+        <tr>
+            <td class="border border-gray-200 px-3 py-2">Final Capital</td>
+            <td class="border border-gray-200 px-3 py-2"><%= summary.finalCapital %> $</td>
+        </tr>
+        <tr>
+            <td class="border border-gray-200 px-3 py-2">Net Return on Investment</td>
+            <td class="border border-gray-200 px-3 py-2 <%= summary.netProfit > 0 ? 'text-green-600' : 'text-red-600' %>"><%= summary.netProfit %> %</td>
+        </tr>
+        <tr>
+            <td class="border border-gray-200 px-3 py-2">Sharpe Ratio</td>
+            <td class="border border-gray-200 px-3 py-2"><%= summary.sharpeRatio %></td>
+        </tr>
+    </table>
+
+    <table class="backtest-table w-full border-collapse text-[13px]">
+        <tr>
+            <td class="border border-gray-200 px-3 py-2">Average Return Per Trade</td>
+            <td class="border border-gray-200 px-3 py-2 <%= summary.averagePNLPercent > 0 ? 'text-green-600' : 'text-red-600' %>"><%= summary.averagePNLPercent %> %</td>
+        </tr>
+        <tr>
+            <td class="border border-gray-200 px-3 py-2">Total Number of Trades</td>
+            <td class="border border-gray-200 px-3 py-2"><%= summary.trades.total %></td>
+        </tr>
+        <tr>
+            <td class="border border-gray-200 px-3 py-2">Number of Winning Trades</td>
+            <td class="border border-gray-200 px-3 py-2"><%= summary.trades.profitableCount %></td>
+        </tr>
+        <tr>
+            <td class="border border-gray-200 px-3 py-2">Percentage of Winning Trades</td>
+            <td class="border border-gray-200 px-3 py-2"><%= summary.trades.profitabilityPercent %></td>
+        </tr>
+    </table>
+</div>

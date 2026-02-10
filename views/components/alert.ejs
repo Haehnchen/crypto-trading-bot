@@ -1,0 +1,4 @@
+<div class="<%= (alert.type || 'success') === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700' %> border px-4 py-3 rounded mb-4 relative">
+    <strong><i class="fas <%= (alert.type || 'success') === 'success' ? 'fa-check' : 'fa-ban' %> mr-1"></i> <%= alert.title %></strong>
+    <% if (alert.message) { %> <span class="ml-1"><%= alert.message %></span><% } %>
+</div>

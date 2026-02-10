@@ -1,0 +1,84 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-semibold">Backtesting</h1>
+            <nav class="text-sm text-gray-500">
+                <a href="/" class="text-blue-600 hover:underline">Dashboard</a> / Backtesting
+            </nav>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded">
+            <div class="p-6">
+                <form action="/backtest/submit" method="post" class="backtest-form">
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="space-y-4">
+                            <div>
+                                <label for="form-pair" class="block font-medium mb-1">Pair</label>
+                                <select class="w-full border border-gray-300 rounded px-3 py-2 chosen-select" id="form-pair" name="pair" data-placeholder="Select one or multiple symbols" required multiple>
+                                    <% pairs.forEach(function(pair) { %>
+                                        <option data-options="<%- pair.options ? JSON.stringify(pair.options).replace(/"/g, '&quot;') : '' %>"><%= pair.name %></option>
+                                    <% }); %>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">Select one for detail view or multiple for a profit overview</p>
+                            </div>
+
+                            <div>
+                                <label for="form-strategies" class="block font-medium mb-1">Strategy</label>
+                                <select class="w-full border border-gray-300 rounded px-3 py-2 chosen-select" id="form-strategies" name="strategy" required>
+                                    <option disabled selected value> -- select an option -- </option>
+                                    <% strategies.forEach(function(strategy) { %>
+                                        <option data-options="<%- strategy.options ? JSON.stringify(strategy.options).replace(/"/g, '&quot;') : '' %>"><%= strategy.name %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="form-candle-period" class="block font-medium mb-1">Candle Period</label>
+                                <select class="w-full border border-gray-300 rounded px-3 py-2" id="form-candle-period" name="candle_period" required>
+                                    <% if (pairs.length > 0 && pairs[0].options) { %>
+                                        <% pairs[0].options.forEach(function(period) { %>
+                                            <option value="<%= period %>" <%= period === '15m' ? 'selected' : '' %>><%= period %></option>
+                                        <% }); %>
+                                    <% } %>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">Candle frequency of the chart on result page</p>
+                            </div>
+
+                            <div>
+                                <label for="form-hours" class="block font-medium mb-1">Last Hours</label>
+                                <input class="w-full border border-gray-300 rounded px-3 py-2" id="form-hours" name="hours" value="168" required>
+                                <p class="text-xs text-gray-500 mt-1">Starting window until now</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label for="form-initial-capital" class="block font-medium mb-1">Initial Capital</label>
+                                <input class="w-full border border-gray-300 rounded px-3 py-2" id="form-initial-capital" name="initial_capital" value="10000" required>
+                                <p class="text-xs text-gray-500 mt-1">Starting capital for calculating trades and their profit and losses</p>
+                            </div>
+
+                            <div>
+                                <label for="form-tick-interval" class="block font-medium mb-1">Signal Tick Interval (in minutes)</label>
+                                <input class="w-full border border-gray-300 rounded px-3 py-2" id="form-tick-interval" name="ticker_interval" value="15" required>
+                                <p class="text-xs text-gray-500 mt-1">Interval in which the strategy is mainly run</p>
+                            </div>
+
+                            <div>
+                                <label for="form-options" class="block font-medium mb-1">Strategy Options</label>
+                                <textarea class="w-full border border-gray-300 rounded px-3 py-2" id="form-options" rows="6" name="options"></textarea>
+                                <p class="text-xs text-gray-500 mt-1">Options provided by the strategy itself</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="mt-6 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 cursor-pointer">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/backtest-form.js?v=<%= assetVersion %>"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.jquery.min.js" integrity="sha512-rMGGF4wg1R73ehtnxXBt5mbUfN9JUJwbk21KMlnLZDJh7BkPmeovBuddZCENJddHYYMkCh9hPFnPmS9sspki8g==" crossorigin="anonymous"></script>

@@ -1,0 +1,116 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-semibold">Candles</h1>
+            <nav class="text-[13px] text-gray-500">
+                <a href="/" class="text-blue-600 hover:underline">Dashboard</a> / Candles
+            </nav>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white border border-gray-200 rounded">
+                <div class="px-4 py-3 border-b border-gray-200 font-medium">Export</div>
+                <div class="p-4">
+                    <form method="get" class="space-y-4">
+                        <div>
+                            <label for="form-pair" class="block font-medium mb-1">Pair</label>
+                            <select class="w-full border border-gray-300 rounded px-3 py-2 chosen-select" id="form-pair" name="pair" required>
+                                <% (pairs || []).forEach(function(pair) { %>
+                                    <option value="<%= pair.exchange %>.<%= pair.symbol %>" <%= (typeof symbol !== 'undefined' && pair.symbol === symbol && typeof exchange !== 'undefined' && pair.exchange === exchange) ? 'selected' : '' %>><%= pair.exchange %>.<%= pair.symbol %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="form-candle-period" class="block font-medium mb-1">Candle Period</label>
+                            <select class="w-full border border-gray-300 rounded px-3 py-2" id="form-candle-period" name="period" required>
+                                <% ['1m', '5m', '15m', '1h', '4h'].forEach(function(period_option) { %>
+                                    <option value="<%= period_option %>" <%= period_option === (typeof period !== 'undefined' ? period : '15m') ? 'selected' : '' %>><%= period_option %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" class="rounded border-gray-300" id="metadata" name="metadata" checked>
+                            <label for="metadata">Include Metadata (Exchange, Symbol)</label>
+                        </div>
+
+                        <div>
+                            <label for="form-start" class="block font-medium mb-1">Time Start</label>
+                            <input id="form-start" name="start" type="text" class="w-full border border-gray-300 rounded px-3 py-2" value="<%= formatDate(start, 'Y-m-d H:i') %>">
+                        </div>
+
+                        <div>
+                            <label for="form-end" class="block font-medium mb-1">Time End</label>
+                            <input id="form-end" name="end" type="text" class="w-full border border-gray-300 rounded px-3 py-2" value="<%= formatDate(end, 'Y-m-d H:i') %>">
+                        </div>
+
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 cursor-pointer">Export</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded">
+                <div class="px-4 py-3 border-b border-gray-200 font-medium">Import</div>
+                <div class="p-4">
+                    <form method="post" class="space-y-4">
+                        <div>
+                            <label for="json_import" class="block font-medium mb-1">JSON from export</label>
+                            <textarea class="w-full border border-gray-300 rounded px-3 py-2" id="json_import" name="json" rows="5"></textarea>
+                        </div>
+
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 cursor-pointer">Import</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <% if (typeof candles !== 'undefined' && candles) { %>
+            <div class="bg-white border border-gray-200 rounded mt-4">
+                <div class="p-4">
+                    <h4 class="text-lg font-medium mb-3"><%= exchange %> <%= symbol %> - <%= period %></h4>
+
+                    <strong>JSON (<%= candles.length %>)</strong>
+                    <textarea class="w-full border border-gray-300 rounded px-3 py-2 text-[13px] mt-1" style="height: 300px"><%= candles_json %></textarea>
+
+                    <br><br>
+
+                    <strong>Overview (<%= candles.length %>)</strong>
+
+                    <table class="w-full border-collapse text-[13px] mt-2">
+                        <thead>
+                        <tr>
+                            <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Time</th>
+                            <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Open</th>
+                            <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">High</th>
+                            <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Low</th>
+                            <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Close</th>
+                            <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Volume</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <% candles.forEach(function(candle) { %>
+                            <tr class="hover:bg-gray-100">
+                                <td class="border border-gray-200 px-3 py-2 whitespace-nowrap"><%= formatDate(candle.time, 'yy-m-d H:i:s') %></td>
+                                <td class="border border-gray-200 px-3 py-2"><%= candle.open %></td>
+                                <td class="border border-gray-200 px-3 py-2"><%= candle.high %></td>
+                                <td class="border border-gray-200 px-3 py-2"><%= candle.low %></td>
+                                <td class="border border-gray-200 px-3 py-2"><%= candle.close %></td>
+                                <td class="border border-gray-200 px-3 py-2"><%= candle.volume %></td>
+                            </tr>
+                        <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.jquery.min.js" integrity="sha512-rMGGF4wg1R73ehtnxXBt5mbUfN9JUJwbk21KMlnLZDJh7BkPmeovBuddZCENJddHYYMkCh9hPFnPmS9sspki8g==" crossorigin="anonymous"></script>
+<script>
+$(function() {
+  $('.chosen-select').chosen();
+});
+</script>

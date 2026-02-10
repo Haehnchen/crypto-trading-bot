@@ -1,0 +1,67 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-[1800px] mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-semibold">Chart</h1>
+            <nav class="text-sm text-gray-500">
+                <a href="/" class="text-blue-600 hover:underline">Dashboard</a> / Chart
+            </nav>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded">
+            <div class="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+                <span class="font-medium mr-2"><%= desk.name %></span>
+
+                <a title="Fullscreen" href="/desks/<%= id %>/fullscreen?interval=<%= interval > 0 ? interval : desk.intervals[0] %>" class="inline-block px-2 py-0.5 text-xs bg-cyan-500 text-white rounded hover:bg-cyan-600"><i class="fas fa-expand"></i></a>
+
+                <% if (desk.intervals && desk.intervals.length > 0) { %>
+                    <% desk.intervals.forEach(function(intervalOpt) { %>
+                        <a title="Interval <%= intervalOpt %>" href="/desks/<%= id %>?interval=<%= intervalOpt %>" class="inline-block px-2 py-0.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"><%= intervalOpt %></a>
+                    <% }); %>
+                <% } %>
+            </div>
+            <div class="p-4">
+                <% let i = 1; %>
+                <%
+                    const batchSize = desk.grid || 4;
+                    for (let rowIndex = 0; rowIndex < desk.pairs.length; rowIndex += batchSize) {
+                        const row = desk.pairs.slice(rowIndex, rowIndex + batchSize);
+                %>
+                    <div class="flex gap-4 mb-4">
+                        <% row.forEach(function(pair) { %>
+                            <div class="flex-1">
+                                <% if (pair.symbol) { %>
+                                    <div id="tradingview_<%= i %>" style="width: 100%; height: <%= desk.height || 300 %>px"></div>
+                                <% } %>
+                            </div>
+                            <% i++; %>
+                        <% }); %>
+                        <% for (let empty = row.length; empty < batchSize; empty++) { %>
+                            <div class="flex-1"></div>
+                        <% } %>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+<script type="text/javascript">
+<% desk.pairs.forEach(function(pair, index) { %>
+new TradingView.widget({
+    "autosize": true,
+    "symbol": "<%= pair.symbol %>",
+    "interval": "<%= interval > 0 ? interval : desk.intervals[0] %>",
+    "theme": "Light",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#f1f3f6",
+    "enable_publishing": false,
+    "allow_symbol_change": true,
+    "container_id": "tradingview_<%= index + 1 %>",
+    "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+    "studies": ["RSI@tv-basicstudies"]
+});
+<% }); %>
+</script>

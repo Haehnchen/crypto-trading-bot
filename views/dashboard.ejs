@@ -1,0 +1,145 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-[1800px] mx-auto">
+        <h1 class="text-2xl font-semibold mb-4">Dashboard</h1>
+
+        <div class="bg-white overflow-x-auto">
+            <table class="w-full border-collapse text-[13px]">
+                <thead>
+                <tr>
+                    <th class="border-0" colspan="3"></th>
+
+                    <% periods.forEach(function(period) { %>
+                        <th class="text-center border-x border-gray-200 border-b-2 border-gray-300 px-2 py-1" colspan="10"><%= period %></th>
+                    <% }); %>
+                </tr>
+
+                <tr>
+                    <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1">Symbol</th>
+                    <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1">Price</th>
+                    <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1">24h</th>
+
+                    <% periods.forEach(function(period) { %>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 uppercase" title="Trend Direction (ema 55 / ema 200)">T</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 uppercase">s200/50</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 uppercase">e200/55</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 uppercase">rsi</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 uppercase">cci</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 uppercase">srsi</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 uppercase">ao</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 uppercase">macd</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 uppercase">mfi</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 uppercase">bb</th>
+                    <% }); %>
+                </tr>
+
+                </thead>
+                <tbody>
+
+                <% rows.forEach(function(row) { %>
+                    <tr class="hover:bg-gray-100">
+                        <td class="border border-gray-200 px-2 py-1 whitespace-nowrap">
+                            <i class="fa-fw
+                                <% if (row.symbol.includes('USD')) { %>fas fa-dollar-sign<% }
+                                else if (row.symbol.includes('PERP')) { %>fas fa-file-contract<% }
+                                else { %>fab fa-bitcoin<% } %>">
+                            </i>
+                            <a target="blank" href="/tradingview/<%= row.exchange %>:<%= encodeURIComponent(row.symbol) %>" class="text-blue-600 hover:underline"><%= row.symbol %></a>
+                        </td>
+                        <td class="border border-gray-200 px-2 py-1 whitespace-nowrap"><%= priceFormat(row.ticker.bid) %></td>
+                        <td class="border border-gray-200 px-2 py-1 whitespace-nowrap">
+                            <% if (row.percentage_change) { %>
+                                <span class="<%= row.percentage_change > 0 ? 'text-green-600' : 'text-red-600' %>"><%= Math.round(row.percentage_change * 10) / 10 %> %</span>
+                            <% } %>
+                        </td>
+
+                        <% periods.forEach(function(period) {
+                            const ta = row.ta[period];
+                        %>
+                            <td class="border border-gray-200 px-2 py-1 <%= (ta && ta.ema_55 && ta.ema_55.value && ta.ema_200 && ta.ema_200.value && ta.ema_55.value > ta.ema_200.value) ? 'text-green-600' : 'text-red-600' %>">
+                                <i class="fas <%= (ta && ta.ema_55 && ta.ema_55.value && ta.ema_200 && ta.ema_200.value && ta.ema_55.value > ta.ema_200.value) ? 'fa-arrow-alt-circle-up' : 'fa-arrow-alt-circle-down' %>"></i>
+                            </td>
+                            <td class="border border-gray-200 px-2 py-1">
+                                <% if (ta && ta.sma_200 && ta.sma_200.value) { %>
+                                    <span title="<%= priceFormat(ta.sma_200.value) %>" class="<%= row.ticker.bid > ta.sma_200.value ? 'text-green-600' : 'text-red-600' %>">
+                                        <i class="fas <%= row.ticker.bid > ta.sma_200.value ? 'fa-arrow-up' : 'fa-arrow-down' %>"></i>
+                                    </span>
+                                <% } %>
+                                <% if (ta && ta.sma_50 && ta.sma_50.value) { %>
+                                    <span title="<%= priceFormat(ta.sma_50.value) %>" class="<%= row.ticker.bid > ta.sma_50.value ? 'text-green-600' : 'text-red-600' %>">
+                                        <i class="fas <%= row.ticker.bid > ta.sma_50.value ? 'fa-arrow-up' : 'fa-arrow-down' %>" style="font-size:0.65em"></i>
+                                    </span>
+                                <% } %>
+                            </td>
+                            <td class="border border-gray-200 px-2 py-1">
+                                <% if (ta && ta.ema_200 && ta.ema_200.value) { %>
+                                    <span title="<%= priceFormat(ta.ema_200.value) %>" class="<%= row.ticker.bid > ta.ema_200.value ? 'text-green-600' : 'text-red-600' %>">
+                                        <i class="fas <%= row.ticker.bid > ta.ema_200.value ? 'fa-arrow-up' : 'fa-arrow-down' %>"></i>
+                                    </span>
+                                <% } %>
+                                <% if (ta && ta.ema_55 && ta.ema_55.value) { %>
+                                    <span title="<%= priceFormat(ta.ema_55.value) %>" class="<%= row.ticker.bid > ta.ema_55.value ? 'text-green-600' : 'text-red-600' %>">
+                                        <i class="fas <%= row.ticker.bid > ta.ema_55.value ? 'fa-arrow-up' : 'fa-arrow-down' %>" style="font-size:0.65em"></i>
+                                    </span>
+                                <% } %>
+                            </td>
+                            <td class="border border-gray-200 px-2 py-1 <%= (ta && ta.rsi && ta.rsi.value) ? [
+                                (ta.rsi.value >= 80 || ta.rsi.value <= 20) ? 'font-bold' : '',
+                                ta.rsi.value <= 30 ? 'text-green-600' : '',
+                                ta.rsi.value >= 70 ? 'text-red-600' : '',
+                                (ta.rsi.value > 30 && ta.rsi.value < 50) ? 'text-yellow-600' : '',
+                                (ta.rsi.value > 50 && ta.rsi.value < 70) ? 'text-orange-600' : ''
+                            ].filter(Boolean).join(' ') : '' %>">
+                                <%= (ta && ta.rsi && ta.rsi.value) ? Math.round(ta.rsi.value) : '-' %>
+                            </td>
+                            <td class="border border-gray-200 px-2 py-1 <%= (ta && ta.cci && ta.cci.value) ? [
+                                (ta.cci.value >= 250 || ta.cci.value <= -250) ? 'font-bold' : '',
+                                ta.cci.value <= -100 ? 'text-green-600' : '',
+                                ta.cci.value >= 100 ? 'text-red-600' : '',
+                                (ta.cci.value > -100 && ta.cci.value < 100) ? 'text-yellow-600' : ''
+                            ].filter(Boolean).join(' ') : '' %>">
+                                <%= (ta && ta.cci && ta.cci.value) ? Math.round(ta.cci.value) : '-' %>
+                            </td>
+                            <td class="border border-gray-200 px-2 py-1">
+                                <% if (ta && ta.stoch_rsi && ta.stoch_rsi.value && ta.stoch_rsi.value.stoch_k >= 80 && ta.stoch_rsi.value.stoch_d >= 80) { %>
+                                    <i title="<%= Math.round(ta.stoch_rsi.value.stoch_k * 100) / 100 %>" class="far fa-circle text-red-600"></i>
+                                <% } else if (ta && ta.stoch_rsi && ta.stoch_rsi.value && ta.stoch_rsi.value.stoch_k <= 20 && ta.stoch_rsi.value.stoch_d <= 20) { %>
+                                    <i title="<%= Math.round(ta.stoch_rsi.value.stoch_k * 100) / 100 %>" class="far fa-circle text-green-600"></i>
+                                <% } else if (ta && ta.stoch_rsi && ta.stoch_rsi.value) { %>
+                                    <i title="<%= Math.round(ta.stoch_rsi.value.stoch_k * 100) / 100 %>" class="far fa-arrow-alt-circle-up <%= ta.stoch_rsi.value.stoch_k >= ta.stoch_rsi.value.stoch_d ? 'trend-up text-green-600' : 'trend-down text-red-600' %>"></i>
+                                <% } else { %>-<% } %>
+                            </td>
+                            <td class="border border-gray-200 px-2 py-1 <%= (ta && ta.ao && ta.ao.value) ? (ta.ao.value > 0 ? 'text-green-600' : 'text-red-600') : '' %>">
+                                <% if (ta && ta.ao && ta.ao.value !== undefined) { %>
+                                    <i title="<%= ta.ao.crossed || '-' %>m ago" class="fas fa-arrow-up <%= ta.ao.trend == 'up' ? 'trend-up' : 'trend-down' %> <%= ((ta.ao.value > 0 && ta.ao.trend == 'down') || (ta.ao.value < 0 && ta.ao.trend == 'up')) ? 'font-bold' : '' %> <%= ta.ao.crossed_index && ta.ao.crossed_index < 5 ? 'blink' : '' %>"></i>
+                                <% } else { %>-<% } %>
+                            </td>
+                            <td class="border border-gray-200 px-2 py-1 <%= (ta && ta.macd && ta.macd.value && ta.macd.value.histogram !== undefined) ? (ta.macd.value.histogram > 0 ? 'text-green-600' : 'text-red-600') : '' %>">
+                                <% if (ta && ta.macd && ta.macd.value && ta.macd.value.histogram !== undefined) { %>
+                                    <i title="<%= ta.macd.crossed || '-' %>m ago" class="far fa-arrow-alt-circle-up <%= ta.macd.trend == 'up' ? 'trend-up' : 'trend-down' %> <%= ((ta.macd.value.histogram > 0 && ta.macd.trend == 'down') || (ta.macd.value.histogram < 0 && ta.macd.trend == 'up')) ? 'font-bold' : '' %> <%= ta.macd.crossed_index && ta.macd.crossed_index < 5 ? 'blink' : '' %>"></i>
+                                <% } else { %>-<% } %>
+                            </td>
+                            <td class="border border-gray-200 px-2 py-1 <%= (ta && ta.mfi && ta.mfi.value) ? [
+                                ta.mfi.value <= 20 ? 'text-green-600' : '',
+                                ta.mfi.value >= 80 ? 'text-red-600' : '',
+                                (ta.mfi.value > 20 && ta.mfi.value < 80) ? 'text-yellow-600' : ''
+                            ].filter(Boolean).join(' ') : '' %>">
+                                <%= (ta && ta.mfi && ta.mfi.value) ? Math.round(ta.mfi.value) : '-' %>
+                            </td>
+                            <td class="border border-gray-200 px-2 py-1 whitespace-nowrap <%= (ta && ta.bollinger_bands && ta.bollinger_bands.percent !== undefined) ? [
+                                (ta.bollinger_bands.percent >= 95 || ta.bollinger_bands.percent <= 5) ? 'font-bold' : '',
+                                ta.bollinger_bands.percent <= 5 ? 'text-green-600' : '',
+                                ta.bollinger_bands.percent >= 95 ? 'text-red-600' : '',
+                                (ta.bollinger_bands.percent > 5 && ta.bollinger_bands.percent < 50) ? 'text-yellow-600' : '',
+                                (ta.bollinger_bands.percent > 50 && ta.bollinger_bands.percent < 95) ? 'text-orange-600' : ''
+                            ].filter(Boolean).join(' ') : '' %>">
+                                <%= (ta && ta.bollinger_bands && ta.bollinger_bands.percent !== undefined) ? Math.round(ta.bollinger_bands.percent) + ' %' : '-' %>
+                            </td>
+                        <% }); %>
+                    </tr>
+                <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

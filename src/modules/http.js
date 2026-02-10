@@ -1,11 +1,12 @@
 const compression = require('compression');
 const express = require('express');
-const twig = require('twig');
+const layouts = require('express-ejs-layouts');
 const auth = require('basic-auth');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const moment = require('moment');
 const OrderUtil = require('../utils/order_util');
+const path = require('path');
 
 module.exports = class Http {
   constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp, logsHttp, candleExportHttp, candleImporter, ordersHttp, tickers, projectDir) {
@@ -21,50 +22,104 @@ module.exports = class Http {
     this.ordersHttp = ordersHttp;
     this.projectDir = projectDir;
     this.tickers = tickers;
-  }
 
-  start() {
-    twig.extendFilter('price_format', value => {
-      if (parseFloat(value) < 1) {
+    // Helper functions for templates (previously Twig filters)
+    this.templateHelpers = {
+      priceFormat: value => {
+        if (parseFloat(value) < 1) {
+          return Intl.NumberFormat('en-US', {
+            useGrouping: false,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 6
+          }).format(value);
+        }
         return Intl.NumberFormat('en-US', {
           useGrouping: false,
           minimumFractionDigits: 2,
-          maximumFractionDigits: 6
+          maximumFractionDigits: 2
         }).format(value);
-      }
+      },
+      formatDate: (date, format) => {
+        if (!date) return '';
 
-      return Intl.NumberFormat('en-US', {
-        useGrouping: false,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(value);
-    });
+        // Handle Unix timestamps (convert seconds to milliseconds if needed)
+        let dateValue = date;
+        if (typeof date === 'number' && date < 10000000000) {
+          // If it's a number less than 10 billion, it's likely in seconds
+          dateValue = date * 1000;
+        }
 
-    const assetVersion = crypto
-      .createHash('md5')
-      .update(String(Math.floor(Date.now() / 1000)))
-      .digest('hex')
-      .substring(0, 8);
-    twig.extendFunction('asset_version', () => assetVersion);
+        const d = new Date(dateValue);
 
-    const desks = this.systemUtil.getConfig('desks', []).map(desk => desk.name);
-    twig.extendFunction('desks', () => desks);
+        // Check if date is valid
+        if (isNaN(d.getTime())) return '';
 
-    twig.extendFunction('node_version', () => process.version);
+        if (format === 'Y-m-d H:i') {
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(
+            2,
+            '0'
+          )}:${String(d.getMinutes()).padStart(2, '0')}`;
+        } else if (format === 'y-m-d H:i:s') {
+          return `${String(d.getFullYear()).slice(-2)}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(
+            d.getHours()
+          ).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+        } else if (format === 'd.m.y H:i') {
+          return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getFullYear()).slice(-2)} ${String(
+            d.getHours()
+          ).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+        return d.toISOString();
+      },
+      escapeHtml: text => {
+        if (typeof text !== 'string') return text;
+        return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+      },
+      decodeHtml: text => {
+        if (typeof text !== 'string') return text;
+        return text
+          .replace(/&quot;/g, '"')
+          .replace(/&#039;/g, "'")
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&');
+      },
+      assetVersion: () => {
+        return crypto
+          .createHash('md5')
+          .update(String(Math.floor(Date.now() / 1000)))
+          .digest('hex')
+          .substring(0, 8);
+      },
+      nodeVersion: () => process.version,
+      memoryUsage: () => Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
+    };
+  }
 
-    twig.extendFunction('memory_usage', () => Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100);
-
-    const up = new Date();
-    twig.extendFunction('uptime', () => moment(up).toNow(true));
-
-    twig.extendFilter('format_json', value => JSON.stringify(value, null, '\t'));
-
+  start() {
     const app = express();
 
-    app.set('views', `${this.projectDir}/templates`);
-    app.set('twig options', {
-      allow_async: true,
-      strict_variables: false
+    // Configure EJS as template engine
+    app.set('view engine', 'ejs');
+    app.set('views', path.join(this.projectDir, 'views'));
+
+    // Configure express-ejs-layouts FIRST
+    app.use(layouts);
+    app.set('layout', 'layout');
+    app.set('layout extractScripts', true);
+    app.set('layout extractStyles', true);
+
+    // Helper middleware to add template helpers to all renders
+    // This must come AFTER express-ejs-layouts
+    app.use((req, res, next) => {
+      res.locals = {
+        ...res.locals,
+        ...this.templateHelpers,
+        desks: this.systemUtil.getConfig('desks', []).map(d => d.name),
+        nodeVersion: this.templateHelpers.nodeVersion(),
+        memoryUsage: this.templateHelpers.memoryUsage(),
+        assetVersion: this.templateHelpers.assetVersion()
+      };
+      next();
     });
 
     app.use(express.urlencoded({ limit: '12mb', extended: true, parameterLimit: 50000 }));
@@ -91,11 +146,21 @@ module.exports = class Http {
     const { ta } = this;
 
     app.get('/', async (req, res) => {
-      res.render('../templates/base.html.twig', await ta.getTaForPeriods(this.systemUtil.getConfig('dashboard.periods', ['15m', '1h'])));
+      const data = await ta.getTaForPeriods(this.systemUtil.getConfig('dashboard.periods', ['15m', '1h']));
+      res.render('dashboard', {
+        activePage: 'dashboard',
+        title: 'Dashboard | Crypto Bot',
+        periods: data.periods,
+        rows: Object.values(data.rows) // Convert object to array
+      });
     });
 
     app.get('/backtest', async (req, res) => {
-      res.render('../templates/backtest.html.twig', {
+      res.render('backtest', {
+        activePage: 'backtest',
+        title: 'Backtesting | Crypto Bot',
+        stylesheet:
+          '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.min.css" integrity="sha512-yVvxUQV0QESBt1SyZbNJMAwyKvFTLMyXSyBHDO4BG5t7k/Lw34tyqlSDlKIrIENIzCl+RVUNjmCPG+V/GMesRw==" crossorigin="anonymous" />',
         strategies: this.backtest.getBacktestStrategies(),
         pairs: await this.backtest.getBacktestPairs()
       });
@@ -130,24 +195,36 @@ module.exports = class Http {
 
       // single details view
       if (backtests.length === 1) {
-        res.render('../templates/backtest_submit.html.twig', backtests[0].result);
+        res.render('backtest_submit', {
+          activePage: 'backtest',
+          title: 'Backtesting Results | Crypto Bot',
+          stylesheet: '<link rel="stylesheet" href="/css/backtest.css?v=' + this.templateHelpers.assetVersion() + '">',
+          ...backtests[0].result
+        });
         return;
       }
 
       // multiple view
-      res.render('../templates/backtest_submit_multiple.html.twig', {
+      res.render('backtest_submit_multiple', {
+        activePage: 'backtest',
+        title: 'Backtesting Results | Crypto Bot',
+        stylesheet: '<link rel="stylesheet" href="/css/backtest.css?v=' + this.templateHelpers.assetVersion() + '">',
         backtests: backtests
       });
     });
 
     app.get('/tradingview/:symbol', (req, res) => {
-      res.render('../templates/tradingview.html.twig', {
+      res.render('tradingview', {
+        activePage: 'tradingview',
+        title: `${req.params.symbol} | Trading View | Crypto Bot`,
         symbol: this.buildTradingViewSymbol(req.params.symbol)
       });
     });
 
     app.get('/signals', async (req, res) => {
-      res.render('../templates/signals.html.twig', {
+      res.render('signals', {
+        activePage: 'signals',
+        title: 'Signals | Crypto Bot',
         signals: await this.signalHttp.getSignals(Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 30)
       });
     });
@@ -155,7 +232,9 @@ module.exports = class Http {
     app.get('/pairs', async (req, res) => {
       const pairs = await this.pairsHttp.getTradePairs();
 
-      res.render('../templates/pairs.html.twig', {
+      res.render('pairs', {
+        activePage: 'pairs',
+        title: 'Pairs | Crypto Bot',
         pairs: pairs,
         stats: {
           positions: pairs.filter(p => p.has_position === true).length,
@@ -165,11 +244,18 @@ module.exports = class Http {
     });
 
     app.get('/logs', async (req, res) => {
-      res.render('../templates/logs.html.twig', await this.logsHttp.getLogsPageVariables(req, res));
+      const logData = await this.logsHttp.getLogsPageVariables(req, res);
+      res.render('logs', {
+        activePage: 'logs',
+        title: 'Logs | Crypto Bot',
+        ...logData
+      });
     });
 
     app.get('/desks/:desk', async (req, res) => {
-      res.render('../templates/desks.html.twig', {
+      res.render('desks', {
+        activePage: 'desks',
+        title: `Desk: ${this.systemUtil.getConfig('desks')[req.params.desk].name} | Crypto Bot`,
         desk: this.systemUtil.getConfig('desks')[req.params.desk],
         interval: req.query.interval || undefined,
         id: req.params.desk
@@ -178,11 +264,13 @@ module.exports = class Http {
 
     app.get('/desks/:desk/fullscreen', (req, res) => {
       const configElement = this.systemUtil.getConfig('desks')[req.params.desk];
-      res.render('../templates/tradingview_desk.html.twig', {
+      res.render('tradingview_desk', {
+        layout: false,
         desk: configElement,
         interval: req.query.interval || undefined,
         id: req.params.desk,
-        watchlist: configElement.pairs.map(i => i.symbol)
+        watchlist: configElement.pairs.map(i => i.symbol),
+        desks: this.systemUtil.getConfig('desks', []).map(d => d.name)
       });
     });
 
@@ -193,7 +281,7 @@ module.exports = class Http {
         end: new Date()
       };
 
-      if (req.query.pair && req.query.period && req.query.period && req.query.start && req.query.end) {
+      if (req.query.pair && req.query.period && req.query.start && req.query.end) {
         const [exchange, symbol] = req.query.pair.split('.');
         const candles = await this.candleExportHttp.getCandles(exchange, symbol, req.query.period, new Date(req.query.start), new Date(req.query.end));
 
@@ -216,7 +304,13 @@ module.exports = class Http {
         options.candles_json = JSON.stringify(candles, null, 2);
       }
 
-      res.render('../templates/candle_stick_export.html.twig', options);
+      res.render('candles', {
+        activePage: 'candles',
+        title: 'Candles | Crypto Bot',
+        stylesheet:
+          '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.min.css" integrity="sha512-yVvxUQV0QESBt1SyZbNJMAwyKvFTLMyXSyBHDO4BG5t7k/Lw34tyqlSDlKIrIENIzCl+RVUNjmCPG+V/GMesRw==" crossorigin="anonymous" />',
+        ...options
+      });
     });
 
     app.post('/tools/candles', async (req, res) => {
@@ -232,13 +326,10 @@ module.exports = class Http {
       const pair = req.params.pair.split('-');
       const { body } = req;
 
-      // exchange-ETC-FOO
-      // exchange-ETCFOO
       const symbol = req.params.pair.substring(pair[0].length + 1);
 
       await this.pairsHttp.triggerOrder(pair[0], symbol, body.action);
 
-      // simple sleep for async ui blocking for exchange communication
       setTimeout(() => {
         res.redirect('/pairs');
       }, 800);
@@ -261,7 +352,9 @@ module.exports = class Http {
     });
 
     app.get('/orders', async (req, res) => {
-      res.render('../templates/orders/index.html.twig', {
+      res.render('orders/index', {
+        activePage: 'orders',
+        title: 'Orders | Crypto Bot',
         pairs: this.ordersHttp.getPairs()
       });
     });
@@ -272,7 +365,9 @@ module.exports = class Http {
 
       const ticker = this.ordersHttp.getTicker(pair);
 
-      res.render('../templates/orders/orders.html.twig', {
+      res.render('orders/orders', {
+        activePage: 'orders',
+        title: `Order: ${pair} | Crypto Bot`,
         pair: pair,
         pairs: this.ordersHttp.getPairs(),
         orders: await this.ordersHttp.getOrders(pair),
@@ -309,7 +404,9 @@ module.exports = class Http {
         message = String(e);
       }
 
-      res.render('../templates/orders/orders.html.twig', {
+      res.render('orders/orders', {
+        activePage: 'orders',
+        title: `Order: ${pair} | Crypto Bot`,
         pair: pair,
         pairs: this.ordersHttp.getPairs(),
         orders: await this.ordersHttp.getOrders(pair),
@@ -336,7 +433,11 @@ module.exports = class Http {
     });
 
     app.get('/trades', async (req, res) => {
-      res.render('../templates/trades.html.twig');
+      res.render('trades', {
+        activePage: 'trades',
+        title: 'Trades | Crypto Bot',
+        javascript: `<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script><script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader/dist/vue3-sfc-loader.js"></script><script src="/js/trades.js?v=${this.templateHelpers.assetVersion()}" type="module"></script>`
+      });
     });
 
     app.get('/trades.json', async (req, res) => {
@@ -351,12 +452,10 @@ module.exports = class Http {
 
         const myPositions = await exchange.getPositions();
         myPositions.forEach(position => {
-          // simply converting of asset to currency value
           let currencyValue;
           let currencyProfit;
 
           if ((exchangeName.includes('bitmex') && ['XBTUSD', 'ETHUSD'].includes(position.symbol)) || exchangeName === 'bybit') {
-            // inverse exchanges
             currencyValue = Math.abs(position.amount);
           } else if (position.amount && position.entry) {
             currencyValue = position.entry * Math.abs(position.amount);
@@ -428,11 +527,6 @@ module.exports = class Http {
       mySymbol = mySymbol.replace(':USDC', '.P').replace('/', '');
     }
 
-    return mySymbol
-      .replace('-', '')
-      .replace('coinbase_pro', 'coinbase')
-      .replace('binance_margin', 'binance')
-      .replace('bybit_unified', 'bybit')
-      .toUpperCase();
+    return mySymbol.replace('-', '').replace('coinbase_pro', 'coinbase').replace('binance_margin', 'binance').replace('bybit_unified', 'bybit').toUpperCase();
   }
 };

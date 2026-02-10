@@ -1,130 +1,128 @@
 <template>
-  <div class="vue-root">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Positions</h3> <span class="text-muted float-right"><transition name="slide-fade" mode="out-in"><div :key="positionsUpdatedAt">{{ positionsUpdatedAt }}</div></transition></span>
+  <div>
+    <div class="bg-white overflow-x-auto mb-4">
+      <!-- Header -->
+      <div class="px-4 py-3 border-b-2 border-gray-300 flex justify-between items-center">
+        <span class="text-lg font-semibold">Positions</span>
+        <span class="text-gray-500 text-[13px]">{{ positionsUpdatedAt }}</span>
       </div>
 
-      <div class="card-body">
-        <table class="table table-bordered table-sm table-hover">
-          <thead>
-          <tr>
-            <th scope="col" title="Exchange">E</th>
-            <th scope="col">Symbol</th>
-            <th scope="col">Amount</th>
-            <th scope="col">Currency</th>
-            <th scope="col">Profit</th>
-            <th scope="col">Entry</th>
-            <th scope="col">Updated</th>
-            <th scope="col">Created</th>
-            <th scope="col" title="Side">S</th>
-            <th scope="col" title="Action">A</th>
-          </tr>
-
-          </thead>
-          <tbody>
-          <tr v-for='position in positions' :key="`${position.exchange}-${position.position.symbol}`">
-            <td><img :src="`/img/exchanges/${position.exchange}.png`" :alt="position.exchange" :title="position.exchange" width="16px" height="16px"></td>
-            <td><a target="blank" :href="'/tradingview/' + position.exchange + ':' + urlEncode(position.position.symbol)">{{ position.position.symbol }}</a></td>
-            <td v-bind:class="{ 'text-success': position.position.amount > 0, 'text-danger': position.position.amount < 0 }">
-              {{ position.position.amount }}
-            </td>
-            <td>
-              <template v-if="!!position.currency">
-                {{ formatPrice(position.currency) }}
-              </template>
-              <template v-if="!!position.currencyProfit">
-                <span class="text-muted"> / {{ formatPrice(position.currencyProfit) }}</span>
-              </template>
-            </td>
-            <td>
-            <span v-if="typeof position.position.profit !== 'undefined'" v-bind:class="{ 'text-success': position.position.profit >= 0, 'text-danger': position.position.profit < 0 }">
-              {{ round(position.position.profit, 2) }} %
-            </span>
-            </td>
-            <td>
-              <template v-if="!!position.position.entry">
-                {{ formatPrice(position.position.entry) }}
-              </template>
-            </td>
-            <td>
-              <template v-if="!!position.position.updatedAt">
-                {{ date(position.position.updatedAt, 'd.m.y H:i') }}
-              </template>
-            </td>
-            <td>
-              <template v-if="!!position.position.createdAt">
-                {{ date(position.position.createdAt, 'd.m.y H:i') }}
-              </template>
-            </td>
-            <td>
-              <i v-if="position.position.side === 'short'" class="fas fa-chevron-circle-down text-danger" title="short"></i>
-              <i v-if="position.position.side === 'long'" class="fas fa-chevron-circle-up text-success" title="long"></i>
-            </td>
-            <td style="white-space: nowrap;padding: 0;">
-              <form :action="'/pairs/' + position.exchange + '-' + position.position.symbol" method="post">
-                <button style="padding: 0 0 0 3px;" name="action" value="close" data-toggle="tooltip"
-                        title="Limit Close" class="btn btn-link">
-                  <i class="fas fa-window-close text-dark" style="font-size: 0.9rem"></i>
-                </button>
-              </form>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
+      <!-- Table -->
+      <table class="w-full border-collapse text-[13px]">
+        <thead>
+        <tr>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2" title="Exchange">E</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Symbol</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Amount</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Currency</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Profit</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Entry</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Updated</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Created</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2" title="Side">S</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2" title="Action">A</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for='position in positions' :key="`${position.exchange}-${position.position.symbol}`" class="hover:bg-gray-100">
+          <td class="border border-gray-200 px-3 py-2"><img :src="`/img/exchanges/${position.exchange}.png`" :alt="position.exchange" :title="position.exchange" width="16" height="16"></td>
+          <td class="border border-gray-200 px-3 py-2"><a target="blank" :href="'/tradingview/' + position.exchange + ':' + urlEncode(position.position.symbol)" class="text-blue-600 hover:underline">{{ position.position.symbol }}</a></td>
+          <td class="border border-gray-200 px-3 py-2" :class="{ 'text-green-600': position.position.amount > 0, 'text-red-600': position.position.amount < 0 }">
+            {{ position.position.amount }}
+          </td>
+          <td class="border border-gray-200 px-3 py-2">
+            <template v-if="!!position.currency">
+              {{ formatPrice(position.currency) }}
+            </template>
+            <template v-if="!!position.currencyProfit">
+              <span class="text-gray-500"> / {{ formatPrice(position.currencyProfit) }}</span>
+            </template>
+          </td>
+          <td class="border border-gray-200 px-3 py-2">
+          <span v-if="typeof position.position.profit !== 'undefined'" :class="{ 'text-green-600': position.position.profit >= 0, 'text-red-600': position.position.profit < 0 }">
+            {{ round(position.position.profit, 2) }} %
+          </span>
+          </td>
+          <td class="border border-gray-200 px-3 py-2">
+            <template v-if="!!position.position.entry">
+              {{ formatPrice(position.position.entry) }}
+            </template>
+          </td>
+          <td class="border border-gray-200 px-3 py-2">
+            <template v-if="!!position.position.updatedAt">
+              {{ date(position.position.updatedAt, 'd.m.y H:i') }}
+            </template>
+          </td>
+          <td class="border border-gray-200 px-3 py-2">
+            <template v-if="!!position.position.createdAt">
+              {{ date(position.position.createdAt, 'd.m.y H:i') }}
+            </template>
+          </td>
+          <td class="border border-gray-200 px-3 py-2">
+            <i v-if="position.position.side === 'short'" class="fas fa-chevron-circle-down text-red-600" title="short"></i>
+            <i v-if="position.position.side === 'long'" class="fas fa-chevron-circle-up text-green-600" title="long"></i>
+          </td>
+          <td class="border border-gray-200 px-3 py-2 p-0">
+            <form :action="'/pairs/' + position.exchange + '-' + position.position.symbol" method="post">
+              <button class="text-gray-600 hover:text-red-600 px-1 py-1" name="action" value="close" title="Limit Close">
+                <i class="fas fa-window-close" style="font-size: 0.9rem"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        </tbody>
+      </table>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Orders</h3> <span class="text-muted float-right"><transition name="slide-fade" mode="out-in"><div :key="ordersUpdatedAt">{{ ordersUpdatedAt }}</div></transition></span>
+    <div class="bg-white overflow-x-auto">
+      <!-- Header -->
+      <div class="px-4 py-3 border-b-2 border-gray-300 flex justify-between items-center">
+        <span class="text-lg font-semibold">Orders</span>
+        <span class="text-gray-500 text-[13px]">{{ ordersUpdatedAt }}</span>
       </div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-bordered table-sm table-hover">
-            <thead>
-            <tr>
-              <th scope="col" title="Exchange">E</th>
-              <th scope="col">Symbol</th>
-              <th scope="col">Type</th>
-              <th scope="col">Id</th>
-              <th scope="col">Price</th>
-              <th scope="col">Amount</th>
-              <th scope="col">Retry</th>
-              <th scope="col">OurId</th>
-              <th scope="col">Created</th>
-              <th scope="col">Updated</th>
-              <th scope="col">Status</th>
-              <th scope="col" title="Side">S</th>
-              <th scope="col" title="Action">A</th>
-            </tr>
 
-            </thead>
-            <tbody>
-            <tr v-for='order in orders' :key="`${order.exchange}-${order.order.symbol}-${order.order.id}`">
-              <td><img :src="`/img/exchanges/${order.exchange}.png`" :alt="order.exchange" :title="order.exchange" width="16px" height="16px"></td>
-              <td><a target="blank" :href="'/tradingview/' + order.exchange + ':' + order.order.symbol">{{ order.order.symbol }}</a></td>
-              <td>{{ order.order.type }}</td>
-              <td>{{ order.order.id }}</td>
-              <td>{{ order.order.price }} <span class="text-muted" v-if="order.percent_to_price" title="Percent to current price"> {{ round(order.percent_to_price, 1) }} %</span></td>
-              <td v-bind:class="{ 'text-success': order.order.amount > 0, 'text-danger': order.order.amount < 0 }">{{ order.order.amount }}</td>
-              <td>{{ order.order.retry }}</td>
-              <td>{{ order.order.ourId }}</td>
-              <td>{{ date(order.order.createdAt, 'd.m.y H:i') }}</td>
-              <td>{{ date(order.order.updatedAt, 'd.m.y H:i') }}</td>
-              <td>{{ order.order.status }}</td>
-              <td>
-                <i v-if="order.order.side === 'sell'" class="fas fa-chevron-circle-down text-danger" title="short"></i>
-                <i v-if="order.order.side === 'buy'" class="fas fa-chevron-circle-up text-success" title="long"></i>
-              </td>
-              <td>
-                <a title="cancel" :href="'/order/' + order.exchange + '/' + order.order.id"><i class="fas fa-window-close text-dark"></i></a>
-              </td>
-            </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Table -->
+      <table class="w-full border-collapse text-[13px]">
+        <thead>
+        <tr>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2" title="Exchange">E</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Symbol</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Type</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Id</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Price</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Amount</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Retry</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">OurId</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Created</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Updated</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Status</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2" title="Side">S</th>
+          <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2" title="Action">A</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for='order in orders' :key="`${order.exchange}-${order.order.symbol}-${order.order.id}`" class="hover:bg-gray-100">
+          <td class="border border-gray-200 px-3 py-2"><img :src="`/img/exchanges/${order.exchange}.png`" :alt="order.exchange" :title="order.exchange" width="16" height="16"></td>
+          <td class="border border-gray-200 px-3 py-2"><a target="blank" :href="'/tradingview/' + order.exchange + ':' + order.order.symbol" class="text-blue-600 hover:underline">{{ order.order.symbol }}</a></td>
+          <td class="border border-gray-200 px-3 py-2">{{ order.order.type }}</td>
+          <td class="border border-gray-200 px-3 py-2">{{ order.order.id }}</td>
+          <td class="border border-gray-200 px-3 py-2">{{ order.order.price }} <span class="text-gray-500" v-if="order.percent_to_price" title="Percent to current price"> {{ round(order.percent_to_price, 1) }} %</span></td>
+          <td class="border border-gray-200 px-3 py-2" :class="{ 'text-green-600': order.order.amount > 0, 'text-red-600': order.order.amount < 0 }">{{ order.order.amount }}</td>
+          <td class="border border-gray-200 px-3 py-2">{{ order.order.retry }}</td>
+          <td class="border border-gray-200 px-3 py-2">{{ order.order.ourId }}</td>
+          <td class="border border-gray-200 px-3 py-2">{{ date(order.order.createdAt, 'd.m.y H:i') }}</td>
+          <td class="border border-gray-200 px-3 py-2">{{ date(order.order.updatedAt, 'd.m.y H:i') }}</td>
+          <td class="border border-gray-200 px-3 py-2">{{ order.order.status }}</td>
+          <td class="border border-gray-200 px-3 py-2">
+            <i v-if="order.order.side === 'sell'" class="fas fa-chevron-circle-down text-red-600" title="short"></i>
+            <i v-if="order.order.side === 'buy'" class="fas fa-chevron-circle-up text-green-600" title="long"></i>
+          </td>
+          <td class="border border-gray-200 px-3 py-2">
+            <a title="cancel" :href="'/order/' + order.exchange + '/' + order.order.id" class="text-gray-600 hover:text-red-600"><i class="fas fa-window-close"></i></a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
@@ -193,18 +191,3 @@ export default {
 }
 
 </script>
-
-<style scoped>
-.slide-fade-enter-active {
-  transition: all .3s ease;
-}
-
-.slide-fade-leave-active {
-  transition: all .6s cubic-bezier(1.0, 0.5, 0.8, 1.0);
-}
-
-.slide-fade-enter, .slide-fade-leave-to {
-  opacity: 0.3;
-}
-</style>
-

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Desk: <%= desk.name %> | Crypto Bot</title>
+    <link rel="icon" href="/favicon.ico"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        .tradingview-widget-container {
+            height: calc(100% - 48px);
+            width: 100%;
+        }
+        #tradingview_d2fc8 {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<nav class="bg-gray-100 border-b border-gray-200 h-12 flex items-center px-4 gap-4">
+    <a class="font-medium text-gray-800" href="/">Crypto-Bot</a>
+    <% desks.forEach(function(deskName, index) { %>
+        <a class="text-sm text-gray-600 hover:text-gray-900" href="/desks/<%= index %>/fullscreen"><%= deskName %></a>
+    <% }); %>
+</nav>
+
+<div class="tradingview-widget-container">
+    <div id="tradingview_d2fc8"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script type="text/javascript">
+      new TradingView.widget({
+        "autosize": true,
+        "symbol": "<%= watchlist[0] %>",
+        "interval": "<%= interval > 0 ? interval : desk.intervals[0] %>",
+        "theme": "light",
+        "style": "1",
+        "locale": "en",
+        "watchlist": <%- JSON.stringify(watchlist) %>,
+        "withdateranges": true,
+        "container_id": "tradingview_d2fc8",
+        "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+        "studies": ["RSI@tv-basicstudies"]
+      });
+    </script>
+</div>
+</body>
+</html>

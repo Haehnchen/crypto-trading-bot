@@ -1,0 +1,51 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-[1800px] mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-semibold">Signals</h1>
+            <nav class="text-[13px] text-gray-500">
+                <a href="/" class="text-blue-600 hover:underline">Dashboard</a> / Signals
+            </nav>
+        </div>
+
+        <div class="bg-white overflow-x-auto">
+            <table class="w-full border-collapse text-[13px]">
+                <thead>
+                <tr>
+                    <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Exchange</th>
+                    <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Symbol</th>
+                    <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Side</th>
+                    <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Strategy</th>
+                    <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Time</th>
+                    <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">State</th>
+                    <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Options</th>
+                </tr>
+                </thead>
+                <tbody>
+                <% signals.forEach(function(signal) { %>
+                    <tr class="hover:bg-gray-100">
+                        <td class="border border-gray-200 px-3 py-2 whitespace-nowrap"><%= signal.exchange %></td>
+                        <td class="border border-gray-200 px-3 py-2"><a target="blank" href="/tradingview/<%= signal.exchange %>:<%= signal.symbol %>" class="text-blue-600 hover:underline"><%= signal.symbol %></a></td>
+                        <td class="border border-gray-200 px-3 py-2">
+                            <% if (signal.side === 'long') { %>
+                                <i class="fas fa-chevron-circle-up text-green-600"></i>
+                            <% } else if (signal.side === 'short') { %>
+                                <i class="fas fa-chevron-circle-down text-red-600"></i>
+                            <% } else if (signal.side === 'close') { %>
+                                <i class="fa fa-times" aria-hidden="true"></i>
+                            <% } %>
+                        </td>
+                        <td class="border border-gray-200 px-3 py-2"><%= signal.strategy %></td>
+                        <td class="border border-gray-200 px-3 py-2 whitespace-nowrap">
+                            <% const date = new Date(signal.income_at); %>
+                            <%= String(date.getDate()).padStart(2, '0') %>.<%= String(date.getMonth() + 1).padStart(2, '0') %>.<%= String(date.getFullYear()).slice(-2) %> <%= String(date.getHours()).padStart(2, '0') %>:<%= String(date.getMinutes()).padStart(2, '0') %>
+                        </td>
+                        <td class="border border-gray-200 px-3 py-2"><%= signal.state %></td>
+                        <td class="border border-gray-200 px-3 py-2 text-gray-500"><span class="break-all"><%= signal.options %></span></td>
+                    </tr>
+                <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

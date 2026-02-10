@@ -1,28 +1,4 @@
-body {
-    font-size: 0.9rem;
-}
-
-nav {
-    font-size: initial;
-}
-
-.content-wrapper > .content {
-    padding: 0;
-}
-
-/* Medium devices (tablets, 768px and up) */
-@media (min-width: 768px) {
-    .span-md {
-        word-break: break-all;
-    }
-}
-
-
-/*base*/
-.text-orange {
-    color: #b35900
-}
-
+/* Trend indicators - custom transforms not available in Tailwind */
 .trend-up {
     transform: rotate(45deg);
 }
@@ -31,10 +7,9 @@ nav {
     transform: rotate(135deg);
 }
 
+/* Blink animation */
 @keyframes blink {
-    50% {
-        opacity: 0.5;
-    }
+    50% { opacity: 0.5; }
 }
 
 .blink {
@@ -42,29 +17,23 @@ nav {
     animation-timing-function: ease-in-out;
 }
 
-.period-start {
-    border-left: 1px solid #dee2e6
-}
-
+/* Hidden header cell */
 .th-hidden {
     border: 0 !important;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
 }
-/*end base*/
 
+/* Rotated column headers for narrow width */
 .col-rotate {
-    vertical-align:bottom;
+    vertical-align: bottom;
+    width: 1.5em;
+    padding: 0.25rem 0.15rem !important;
+    text-align: center;
 }
 
 .col-rotate span {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     display: inline-block;
-}
-
-.no-wrap {
     white-space: nowrap;
 }

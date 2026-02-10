@@ -8,13 +8,13 @@ $(function() {
     e.preventDefault();
 
     const input = $(this)
-      .closest('.input-group')
-      .find('input');
+      .closest('form')
+      .find('#price');
 
     const percentageChange = parseFloat($(this).val());
 
     const price = parseFloat(input.val());
-    input.val((price + price / percentageChange / 100).toFixed(getPrecision(price)));
+    input.val((price + price * percentageChange / 100).toFixed(getPrecision(price)));
   });
 
   $('.form-group-amount').on('keyup', 'input', function(e) {
@@ -38,5 +38,18 @@ $(function() {
     } else {
       scope.find('#amount').val((value / assetPrice).toFixed(8)); // precision (tick / lot size?)
     }
+  });
+
+  // Filter pairs
+  $('#filter-pairs').on('keyup', function() {
+    var filter = $(this).val().toLowerCase();
+    $('.pair-link').each(function() {
+      var pair = $(this).data('pair');
+      if (pair.includes(filter)) {
+        $(this).show();
+      } else {
+        $(this).hide();
+      }
+    });
   });
 });

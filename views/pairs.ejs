@@ -1,0 +1,113 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-[1800px] mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-semibold">Pairs</h1>
+            <nav class="text-[13px] text-gray-500">
+                <a href="/" class="text-blue-600 hover:underline">Dashboard</a> / Pairs
+            </nav>
+        </div>
+
+        <div class="bg-white overflow-x-auto">
+            <div class="px-4 py-3 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <input value="" placeholder="Search exchange, state, strategy" class="filter-pairs border border-gray-300 rounded px-3 py-1.5 text-[13px] w-72">
+                    </div>
+                    <div class="text-[13px]">
+                        <strong>Trading:</strong> <%= stats.trading %> <span class="text-gray-400"> - </span>
+                        <strong>Positions:</strong> <%= stats.positions %> <span class="text-gray-400"> - </span>
+                        <strong>Total Pairs:</strong> <%= pairs.length %>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="table-pairs w-full border-collapse text-[13px]">
+                    <thead>
+                    <tr>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2" title="Exchange">E</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Symbol</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">State</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Capital</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Strategies Watch</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Strategies Trade</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Options</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Process</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <% pairs.forEach(function(pair) {
+                        const searchTerms = [pair.exchange + '.' + pair.symbol];
+                        if (pair.is_trading) searchTerms.push('trade');
+                        else searchTerms.push('watch');
+                        if (pair.strategy_names) searchTerms.push(...pair.strategy_names);
+                    %>
+                        <tr data-search="<%= searchTerms.join(' ') %>" class="hover:bg-gray-100">
+                            <td class="border border-gray-200 px-3 py-2 whitespace-nowrap"><img src="/img/exchanges/<%= pair.exchange %>.png" title="<%= pair.exchange %>" alt="<%= pair.exchange %>" width="16" height="16"></td>
+                            <td class="border border-gray-200 px-3 py-2 whitespace-nowrap"><a target="blank" href="/tradingview/<%= encodeURIComponent(pair.exchange) %>:<%= encodeURIComponent(pair.symbol) %>" class="text-blue-600 hover:underline"><%= pair.symbol %></a></td>
+                            <td class="border border-gray-200 px-3 py-2 whitespace-nowrap">
+                                <% if (pair.is_trading) { %>
+                                    <i class="fas fa-cart-plus font-bold" title="Trade"></i>
+                                <% } else { %>
+                                    <i class="fas fa-eye text-gray-400" title="Watch"></i>
+                                <% } %>
+                            </td>
+                            <td class="border border-gray-200 px-3 py-2 whitespace-nowrap">
+                                <% if (pair.is_trading) { %>
+                                    <%= pair.trade_capital || 0 %> / <%= pair.trade_currency_capital || 0 %> / <%= pair.trade_balance_percent || 0 %>%
+                                <% } %>
+                            </td>
+                            <td class="border border-gray-200 px-3 py-2 text-gray-500">
+                                <span class="break-all">
+                                    <% if (pair.strategies && pair.strategies.length > 0) { %>
+                                        <%= JSON.stringify(pair.strategies) %>
+                                    <% } %>
+                                </span>
+                            </td>
+                            <td class="border border-gray-200 px-3 py-2 text-gray-500">
+                                <span class="break-all">
+                                    <% if (pair.strategies_trade && pair.strategies_trade.length > 0) { %>
+                                        <%= JSON.stringify(pair.strategies_trade) %>
+                                    <% } %>
+                                </span>
+                            </td>
+                            <td class="border border-gray-200 px-3 py-2 text-gray-500">
+                                <span class="break-all">
+                                    <% if (pair.watchdogs) { %>
+                                        <%= JSON.stringify(pair.watchdogs) %>
+                                    <% } %>
+                                </span>
+                            </td>
+                            <td class="border border-gray-200 px-3 py-2 whitespace-nowrap"><%= pair.process %></td>
+                            <td class="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">
+                                <% if ((pair.trade_capital > 0 || pair.trade_currency_capital > 0 || pair.trade_balance_percent > 0)) { %>
+                                    <form action="/pairs/<%= pair.exchange %>-<%= pair.symbol %>" method="post" class="inline">
+                                        <div class="inline-flex">
+                                            <% if (!pair.has_position && !pair.process) { %>
+                                                <button name="action" value="long" title="Limit Long" class="bg-green-600 text-white px-2 py-1 text-[13px] rounded-l hover:bg-green-700 cursor-pointer" style="transition: background-color 0.15s"><i class="fas fa-cart-plus"></i> Long</button>
+                                                <button name="action" value="short" title="Limit Short" class="bg-red-600 text-white px-2 py-1 text-[13px] hover:bg-red-700 cursor-pointer" style="transition: background-color 0.15s"><i class="fas fa-shopping-cart"></i> Short</button>
+                                                <button name="action" value="long_market" title="Market Long" class="bg-green-600 text-white px-2 py-1 text-[13px] hover:bg-green-700 cursor-pointer" style="transition: background-color 0.15s"><i class="fas fa-cart-plus"></i></button>
+                                                <button name="action" value="short_market" title="Market Short" class="bg-red-600 text-white px-2 py-1 text-[13px] rounded-r hover:bg-red-700 cursor-pointer" style="transition: background-color 0.15s"><i class="fas fa-shopping-cart"></i></button>
+                                            <% } %>
+                                            <% if (pair.has_position && !pair.process) { %>
+                                                <button name="action" value="close" title="Limit Close" class="bg-gray-800 text-white px-2 py-1 text-[13px] rounded-l hover:bg-gray-900 cursor-pointer" style="transition: background-color 0.15s"><i class="fas fa-window-close"></i> Close</button>
+                                                <button name="action" value="close_market" title="Market Close" class="bg-gray-800 text-white px-2 py-1 text-[13px] rounded-r hover:bg-gray-900 cursor-pointer" style="transition: background-color 0.15s"><i class="fas fa-window-close"></i></button>
+                                            <% } %>
+                                            <% if (pair.process) { %>
+                                                <button name="action" value="cancel" title="Cancel" class="bg-blue-600 text-white px-2 py-1 text-[13px] rounded hover:bg-blue-700 cursor-pointer" style="transition: background-color 0.15s"><i class="fas fa-trash"></i> Cancel</button>
+                                            <% } %>
+                                        </div>
+                                    </form>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/pairs.js?v=<%= assetVersion %>"></script>

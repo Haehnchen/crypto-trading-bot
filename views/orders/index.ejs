@@ -1,0 +1,36 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-[1800px] mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-semibold">Orders</h1>
+            <nav class="text-sm text-gray-500">
+                <a href="/" class="text-blue-600 hover:underline">Dashboard</a> / Orders
+            </nav>
+        </div>
+
+        <div class="flex gap-4">
+            <div class="w-64 shrink-0">
+                <div class="bg-white border border-gray-200 rounded">
+                    <div class="px-4 py-3 border-b border-gray-200 font-medium">Pairs</div>
+                    <div class="p-3 border-b border-gray-200">
+                        <input type="text" id="filter-pairs" placeholder="Filter pairs..." class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm">
+                    </div>
+                    <div id="pairs-list">
+                        <% pairs.forEach(function(p) { %>
+                            <a href="/orders/<%= encodeURIComponent(p) %>" data-pair="<%= p.toLowerCase() %>" class="pair-link block px-4 py-2 text-sm border-b border-gray-100 <%= (typeof pair !== 'undefined' && p === pair) ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50' %>">
+                                <i class="fas fa-inbox text-gray-400 mr-1"></i> <%= p %>
+                            </a>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1">
+                <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
+                    <i class="fas fa-info-circle"></i> Select a trading pair from the list on the left to view and manage orders.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/orders.js?v=<%= assetVersion %>"></script>

@@ -1,0 +1,49 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-5xl mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-semibold">Backtesting Results <span class="text-gray-500"> - <%= strategy %> - <%= configuration.period %></span></h1>
+            <nav class="text-sm text-gray-500">
+                <a href="/" class="text-blue-600 hover:underline">Dashboard</a> / Backtesting Results
+            </nav>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded mb-4">
+            <div class="px-4 py-3 border-b border-gray-200 font-medium">
+                Summary <span class="text-gray-500"> - <%= formatDate(start, 'yy-m-d H:i:s') %> - <%= formatDate(end, 'yy-m-d H:i:s') %></span>
+            </div>
+            <div class="p-4">
+                <%- include('components/backtest_summary', {summary: summary}) %>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded mb-4">
+            <div class="px-4 py-3 border-b border-gray-200 font-medium">Chart</div>
+            <div class="p-0 overflow-x-auto">
+                <div class="chart" data-candles="<%- candles.replace(/"/g, '&quot;') %>" data-title="<%= configuration.exchange %> - <%= configuration.symbol %> - <%= strategy %> - <%= configuration.period %> - espend.de"></div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded mb-4">
+            <div class="px-4 py-3 border-b border-gray-200 font-medium">Signals</div>
+            <div class="p-0 overflow-x-auto">
+                <% if (signals && signals.length > 0) { %>
+                    <%- include('components/backtest_table', {rows: signals, extra_fields: extra_fields}) %>
+                <% } else { %>
+                    <p class="text-gray-500 text-center py-4">No signals given</p>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded mb-4">
+            <div class="px-4 py-3 border-b border-gray-200 font-medium">Ticks</div>
+            <div class="p-0 overflow-x-auto">
+                <%- include('components/backtest_table', {rows: rows, extra_fields: extra_fields}) %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/techan.js/0.8.0/techan.min.js"></script>
+<script src="/js/backtest.js?v=<%= assetVersion %>"></script>

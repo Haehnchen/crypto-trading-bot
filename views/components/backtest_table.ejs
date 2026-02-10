@@ -1,0 +1,79 @@
+<table class="backtest-table w-full border-collapse text-[13px]">
+    <thead>
+    <tr>
+        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Time</th>
+        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Price</th>
+        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Profit</th>
+        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2 col-rotate text-[13px] text-center"><span>Signal</span></th>
+
+        <% Object.keys(extra_fields).forEach(function(key) {
+            const fields = extra_fields[key];
+        %>
+            <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2 col-rotate text-gray-500 text-[13px] text-center"><span><%= fields.label || key %></span></th>
+        <% }); %>
+
+        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2 col-rotate text-[13px]"><span><a href="#" class="button-debug-toggle-all text-blue-600 hover:underline">Debug</a></span></th>
+    </tr>
+    </thead>
+    <tbody>
+
+    <% rows.forEach(function(row) { %>
+        <tr class="hover:bg-gray-100">
+            <td class="border border-gray-200 px-3 py-2 whitespace-nowrap"><%= formatDate(row.time, 'yy-m-d H:i:s') %></td>
+            <td class="border border-gray-200 px-3 py-2 whitespace-nowrap"><%= row.price || '' %></td>
+            <td class="border border-gray-200 px-3 py-2 whitespace-nowrap">
+                <% if (row.profit !== undefined) { %>
+                    <span class="<%= row.profit > 0 ? 'text-green-600' : 'text-red-600' %> <%= (row.result && row.result.signal === 'close') ? 'font-bold' : '' %>"><%= Math.round(row.profit * 100) / 100 %> %</span>
+                <% } %>
+                <% if (row.lastPriceClosed !== undefined) { %>
+                    <span style="opacity: 0.4;" class="<%= row.lastPriceClosed > 0 ? 'text-green-600' : 'text-red-600' %>"><%= Math.round(row.lastPriceClosed * 100) / 100 %> %</span>
+                <% } %>
+            </td>
+            <td class="border border-gray-200 px-3 py-2">
+                <% if (row.result && row.result._signal) { %>
+                    <% if (row.result._signal === 'long') { %>
+                        <i class="fas fa-chevron-circle-up text-green-600"></i>
+                    <% } else if (row.result._signal === 'short') { %>
+                        <i class="fas fa-chevron-circle-down text-red-600"></i>
+                    <% } else if (row.result._signal === 'close') { %>
+                        <i class="fa fa-times"></i>
+                    <% } %>
+                <% }  %>
+            </td>
+
+            <% (row.columns || []).forEach(function(column) { %>
+                <% if (column.type === 'cross' || column.type === 'histogram') { %>
+                    <%
+                        let color = '';
+                        if (column.state === 'over') { color = 'text-green-600'; }
+                        else if (column.state === 'below') { color = 'text-red-600'; }
+                    %>
+                    <td class="border border-gray-200 px-3 py-2 <%= color %>"><%= column.value %></td>
+                <% } else if (column.type === 'oscillator') { %>
+                    <%
+                        let color = '';
+                        if (column.state === 'over') { color = 'text-red-600'; }
+                        else if (column.state === 'below') { color = 'text-green-600'; }
+                    %>
+                    <td class="border border-gray-200 px-3 py-2 <%= color %>"><%= column.value %></td>
+                <% } else if (column.type === 'icon') { %>
+                    <%
+                        const iconColorMap = { success: 'text-green-600', danger: 'text-red-600', warning: 'text-yellow-600', info: 'text-blue-500', muted: 'text-gray-500' };
+                        const iconColor = iconColorMap[column.value] || '';
+                    %>
+                    <td class="border border-gray-200 px-3 py-2 <%= iconColor %>"><% if (column.value) { %><i class="fas fa-circle"></i><% } %></td>
+                <% } else { %>
+                    <td class="border border-gray-200 px-3 py-2"><%= column.value %></td>
+                <% } %>
+            <% }); %>
+
+            <td class="border border-gray-200 px-3 py-2 break-all">
+                <span class="debug-toggle hide">
+                    <a href="#" class="button-debug-toggle"><i class="fa fa-eye"></i></a>
+                    <span class="debug-text text-gray-500"><%= JSON.stringify(row) %></span>
+                </span>
+            </td>
+        </tr>
+    <% }); %>
+    </tbody>
+</table>

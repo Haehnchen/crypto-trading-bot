@@ -1,0 +1,59 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-[1800px] mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-semibold">Logs</h1>
+            <nav class="text-[13px] text-gray-500">
+                <a href="/" class="text-blue-600 hover:underline">Dashboard</a> / Logs
+            </nav>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded">
+            <div class="px-4 py-3 border-b border-gray-200">
+                <strong>Filters</strong>
+                <form method="get" class="mt-2">
+                    <div class="flex items-center gap-4">
+                        <span>Exclude:</span>
+                        <% levels.forEach(function(level, key) { %>
+                            <label class="flex items-center gap-1">
+                                <input type="checkbox" class="rounded border-gray-300" name="exclude_levels[]" value="<%= level %>" id="level_<%= key %>" onChange="this.form.submit()" <%= form.excludeLevels && form.excludeLevels.includes(level) ? 'checked' : '' %>>
+                                <%= level %>
+                            </label>
+                        <% }); %>
+                    </div>
+                </form>
+            </div>
+
+            <div class="p-4 overflow-x-auto">
+                <table class="w-full border-collapse text-[13px]">
+                    <thead>
+                    <tr>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Level</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Message</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">CreatedAt</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <% logs.forEach(function(log) { %>
+                        <tr class="hover:bg-gray-100">
+                            <td class="border border-gray-200 px-3 py-2">
+                                <% if (log.level === 'debug') { %>
+                                    <span class="text-gray-400"><%= log.level %></span>
+                                <% } else if (log.level === 'info') { %>
+                                    <span class="text-blue-500"><%= log.level %></span>
+                                <% } else if (log.level === 'error') { %>
+                                    <span class="text-red-600 font-bold"><%= log.level %></span>
+                                <% } %>
+                            </td>
+                            <td class="border border-gray-200 px-3 py-2 break-all"><%= log.message %></td>
+                            <td class="border border-gray-200 px-3 py-2 whitespace-nowrap">
+                                <%= formatDate(log.created_at, 'yy-m-d H:i:s') %>
+                            </td>
+                        </tr>
+                    <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
