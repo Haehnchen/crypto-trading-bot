@@ -53,7 +53,7 @@ export class Binance {
       opts.apiSecret = config.secret;
     }
 
-    const client = (this.client = BinanceClient(opts));
+    const client: any = (this.client = BinanceClient(opts));
 
     const me = this;
 
