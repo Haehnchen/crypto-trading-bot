@@ -1,4 +1,4 @@
-const Candlestick = require('../../dict/candlestick');
+const { Candlestick } = require('../../dict/candlestick');
 
 module.exports = class CandlestickRepository {
   constructor(db) {

@@ -5,12 +5,12 @@ const { createLogger, transports, format } = require('winston');
 
 const _ = require('lodash');
 const Sqlite = require('better-sqlite3');
-const Notify = require('../notify/notify');
-const Slack = require('../notify/slack');
-const Mail = require('../notify/mail');
-const Telegram = require('../notify/telegram');
+const { Notify } = require('../notify/notify');
+const { Slack } = require('../notify/slack');
+const { Mail } = require('../notify/mail');
+const { Telegram } = require('../notify/telegram');
 
-const Tickers = require('../storage/tickers');
+const { Tickers } = require('../storage/tickers');
 const Ta = require('../modules/ta.js');
 
 const TickListener = require('../modules/listener/tick_listener');
@@ -40,8 +40,8 @@ const OrderCalculator = require('../modules/order/order_calculator');
 const PairStateManager = require('../modules/pairs/pair_state_manager');
 const PairStateExecution = require('../modules/pairs/pair_state_execution');
 const PairConfig = require('../modules/pairs/pair_config');
-const SystemUtil = require('../modules/system/system_util');
-const TechnicalAnalysisValidator = require('../utils/technical_analysis_validator');
+const { SystemUtil } = require('../modules/system/system_util');
+const { TechnicalAnalysisValidator } = require('../utils/technical_analysis_validator');
 const WinstonSqliteTransport = require('../utils/winston_sqlite_transport');
 const WinstonTelegramLogger = require('winston-telegram');
 const LogsHttp = require('./system/logs_http');
@@ -49,7 +49,7 @@ const LogsRepository = require('../modules/repository/logs_repository');
 const TickerLogRepository = require('../modules/repository/ticker_log_repository');
 const TickerRepository = require('../modules/repository/ticker_repository');
 const CandlestickResample = require('../modules/system/candlestick_resample');
-const RequestClient = require('../utils/request_client');
+const { RequestClient } = require('../utils/request_client');
 const Throttler = require('../utils/throttler');
 const Queue = require('../utils/queue');
 

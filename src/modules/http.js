@@ -5,7 +5,7 @@ const auth = require('basic-auth');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const moment = require('moment');
-const OrderUtil = require('../utils/order_util');
+const { OrderUtil } = require('../utils/order_util');
 const path = require('path');
 
 module.exports = class Http {

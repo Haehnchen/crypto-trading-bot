@@ -2,13 +2,13 @@ const BinanceClient = require('binance-api-node').default;
 
 const moment = require('moment');
 const _ = require('lodash');
-const ExchangeCandlestick = require('../dict/exchange_candlestick');
-const Ticker = require('../dict/ticker');
-const TickerEvent = require('../event/ticker_event');
-const ExchangeOrder = require('../dict/exchange_order');
-const OrderUtil = require('../utils/order_util');
-const Position = require('../dict/position');
-const Order = require('../dict/order');
+const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
+const { Ticker } = require('../dict/ticker');
+const { TickerEvent } = require('../event/ticker_event');
+const { ExchangeOrder } = require('../dict/exchange_order');
+const { OrderUtil } = require('../utils/order_util');
+const { Position } = require('../dict/position');
+const { Order } = require('../dict/order');
 const OrderBag = require('./utils/order_bag');
 const TradesUtil = require('./utils/trades_util');
 

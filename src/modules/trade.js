@@ -1,7 +1,7 @@
 const moment = require('moment');
 const crypto = require('crypto');
 const os = require('os');
-const PositionStateChangeEvent = require('../event/position_state_change_event');
+const { PositionStateChangeEvent } = require('../event/position_state_change_event');
 
 module.exports = class Trade {
   constructor(

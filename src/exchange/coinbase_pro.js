@@ -1,15 +1,15 @@
 const Gdax = require('coinbase-pro');
 
 const moment = require('moment');
-const ExchangeCandlestick = require('../dict/exchange_candlestick');
-const Ticker = require('../dict/ticker');
-const TickerEvent = require('../event/ticker_event');
-const OrderUtil = require('../utils/order_util');
-const Resample = require('../utils/resample');
+const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
+const { Ticker } = require('../dict/ticker');
+const { TickerEvent } = require('../event/ticker_event');
+const { OrderUtil } = require('../utils/order_util');
+const { Resample } = require('../utils/resample');
 const CandlesFromTrades = require('./utils/candles_from_trades');
-const ExchangeOrder = require('../dict/exchange_order');
-const Position = require('../dict/position');
-const Order = require('../dict/order');
+const { ExchangeOrder } = require('../dict/exchange_order');
+const { Position } = require('../dict/position');
+const { Order } = require('../dict/order');
 
 module.exports = class CoinbasePro {
   constructor(eventEmitter, logger, candlestickResample, queue, candleImporter) {

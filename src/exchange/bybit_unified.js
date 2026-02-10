@@ -1,14 +1,14 @@
 const moment = require('moment');
 const ccxtpro = require('ccxt').pro;
-const Ticker = require('../dict/ticker');
-const TickerEvent = require('../event/ticker_event');
-const ExchangeCandlestick = require('../dict/exchange_candlestick');
-const Position = require('../dict/position');
+const { Ticker } = require('../dict/ticker');
+const { TickerEvent } = require('../event/ticker_event');
+const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
+const { Position } = require('../dict/position');
 const CommonUtil = require('../utils/common_util');
-const ExchangeOrder = require('../dict/exchange_order');
+const { ExchangeOrder } = require('../dict/exchange_order');
 const OrderBag = require('./utils/order_bag');
-const Order = require('../dict/order');
-const orderUtil = require('../utils/order_util');
+const { Order } = require('../dict/order');
+const { orderUtil } = require('../utils/order_util');
 
 module.exports = class BybitUnified {
   constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter, throttler) {

@@ -1,6 +1,12 @@
 const moment = require('moment');
-const ta = require('../utils/technical_analysis');
-const Ticker = require('../dict/ticker');
+const {
+  getPredefinedIndicators,
+  getTrendingDirectionLastItem,
+  getCrossedSince,
+  getBollingerBandPercent,
+  getTrendingDirection
+} = require('../utils/technical_analysis');
+const { Ticker } = require('../dict/ticker');
 
 module.exports = class Ta {
   constructor(candlestickRepository, instances, tickers) {
@@ -51,7 +57,7 @@ module.exports = class Ta {
                 change = 100 * (candles[0].close / dayCandle.close) - 100;
               }
 
-              ta.getPredefinedIndicators(candles.slice().reverse()).then(result => {
+              getPredefinedIndicators(candles.slice().reverse()).then(result => {
                 resolve({
                   symbol: symbol.symbol,
                   exchange: symbol.exchange,
@@ -98,9 +104,9 @@ module.exports = class Ta {
             if (key == 'macd') {
               const r = taResult.slice();
 
-              values[key].trend = ta.getTrendingDirectionLastItem(r.slice(-2).map(v => v.histogram));
+              values[key].trend = getTrendingDirectionLastItem(r.slice(-2).map(v => v.histogram));
 
-              const number = ta.getCrossedSince(r.map(v => v.histogram));
+              const number = getCrossedSince(r.map(v => v.histogram));
 
               if (number) {
                 let multiplicator = 1;
@@ -116,9 +122,9 @@ module.exports = class Ta {
             } else if (key == 'ao') {
               const r = taResult.slice();
 
-              values[key].trend = ta.getTrendingDirectionLastItem(r.slice(-2));
+              values[key].trend = getTrendingDirectionLastItem(r.slice(-2));
 
-              const number = ta.getCrossedSince(r);
+              const number = getCrossedSince(r);
 
               if (number) {
                 let multiplicator = 1;
@@ -134,7 +140,7 @@ module.exports = class Ta {
             } else if (key == 'bollinger_bands') {
               values[key].percent =
                 values[key].value && values[key].value.upper && values[key].value.lower
-                  ? ta.getBollingerBandPercent(
+                  ? getBollingerBandPercent(
                       (v.ticker.ask + v.ticker.bid) / 2,
                       values[key].value.upper,
                       values[key].value.lower
@@ -148,7 +154,7 @@ module.exports = class Ta {
               key == 'ao' ||
               key == 'mfi'
             ) {
-              values[key].trend = ta.getTrendingDirection(
+              values[key].trend = getTrendingDirection(
                 taResult
                   .slice()
                   .reverse()

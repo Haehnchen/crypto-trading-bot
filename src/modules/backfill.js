@@ -1,6 +1,6 @@
 const moment = require('moment');
 const _ = require('lodash');
-const ExchangeCandlestick = require('../dict/exchange_candlestick');
+const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
 
 module.exports = class Backfill {
   constructor(exchangesIterator, candleImporter) {

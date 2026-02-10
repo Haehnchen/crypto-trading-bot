@@ -3,12 +3,12 @@ const BFX = require('bitfinex-api-node');
 const { Order } = require('bfx-api-node-models');
 const moment = require('moment');
 const _ = require('lodash');
-const ExchangeCandlestick = require('../dict/exchange_candlestick');
-const Ticker = require('../dict/ticker');
-const Position = require('../dict/position');
+const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
+const { Ticker } = require('../dict/ticker');
+const { Position } = require('../dict/position');
 
-const TickerEvent = require('../event/ticker_event');
-const ExchangeOrder = require('../dict/exchange_order');
+const { TickerEvent } = require('../event/ticker_event');
+const { ExchangeOrder } = require('../dict/exchange_order');
 
 // const BFX_PRICE_PRECISION = 5; // https://docs.bitfinex.com/docs#price-precision
 // const BFX_AMOUNT_PRECISION = 8; // https://docs.bitfinex.com/docs#amount-precision

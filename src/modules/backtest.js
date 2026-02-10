@@ -1,7 +1,7 @@
 const moment = require('moment');
 const _ = require('lodash');
 const StrategyManager = require('./strategy/strategy_manager');
-const Resample = require('../utils/resample');
+const { convertPeriodToMinute, resampleMinutes } = require('../utils/resample');
 const CommonUtil = require('../utils/common_util');
 
 module.exports = class Backtest {
@@ -58,7 +58,7 @@ module.exports = class Backtest {
 
       // mock repository for window selection of candles
       const periodCache = {};
-      const prefillWindow = start - Resample.convertPeriodToMinute(candlePeriod) * 200 * 60;
+      const prefillWindow = start - convertPeriodToMinute(candlePeriod) * 200 * 60;
       const mockedRepository = {
         fetchCombinedCandles: async (mainExchange, symbol, period, exchanges = []) => {
           const key = mainExchange + symbol + period;

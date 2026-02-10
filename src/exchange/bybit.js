@@ -4,17 +4,17 @@ const moment = require('moment');
 const request = require('request');
 const crypto = require('crypto');
 const _ = require('lodash');
-const Ticker = require('../dict/ticker');
-const TickerEvent = require('../event/ticker_event');
-const Order = require('../dict/order');
-const ExchangeCandlestick = require('../dict/exchange_candlestick');
+const { Ticker } = require('../dict/ticker');
+const { TickerEvent } = require('../event/ticker_event');
+const { Order } = require('../dict/order');
+const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
 
-const resample = require('../utils/resample');
+const { resample } = require('../utils/resample');
 
-const Position = require('../dict/position');
-const ExchangeOrder = require('../dict/exchange_order');
+const { Position } = require('../dict/position');
+const { ExchangeOrder } = require('../dict/exchange_order');
 
-const orderUtil = require('../utils/order_util');
+const { orderUtil } = require('../utils/order_util');
 
 module.exports = class Bybit {
   constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter, throttler) {

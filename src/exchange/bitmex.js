@@ -4,19 +4,19 @@ const crypto = require('crypto');
 const BitMEXClient = require('bitmex-realtime-api');
 const _ = require('lodash');
 const querystring = require('querystring');
-const Candlestick = require('./../dict/candlestick');
-const Ticker = require('./../dict/ticker');
-const ExchangeCandlestick = require('../dict/exchange_candlestick');
+const { Candlestick } = require('./../dict/candlestick');
+const { Ticker } = require('./../dict/ticker');
+const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
 
-const TickerEvent = require('./../event/ticker_event');
+const { TickerEvent } = require('./../event/ticker_event');
 
-const resample = require('./../utils/resample');
+const { resample } = require('./../utils/resample');
 
-const Position = require('../dict/position');
-const Order = require('../dict/order');
-const ExchangeOrder = require('../dict/exchange_order');
+const { Position } = require('../dict/position');
+const { Order } = require('../dict/order');
+const { ExchangeOrder } = require('../dict/exchange_order');
 
-const orderUtil = require('../utils/order_util');
+const { orderUtil } = require('../utils/order_util');
 
 module.exports = class Bitmex {
   constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter) {
