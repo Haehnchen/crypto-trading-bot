@@ -1,18 +1,52 @@
-const fs = require('fs');
-const path = require('path');
-const _ = require('lodash');
-const { IndicatorBuilder } = require('./dict/indicator_builder');
-const { IndicatorPeriod } = require('./dict/indicator_period');
-const ta = require('../../utils/technical_analysis');
-const { Resample } = require('../../utils/resample');
-const CommonUtil = require('../../utils/common_util');
-const { StrategyContext } = require('../../dict/strategy_context');
-const { Ticker } = require('../../dict/ticker');
-const { SignalResult } = require('./dict/signal_result');
-const { Position } = require('../../dict/position');
+import fs from 'fs';
+import path from 'path';
+import _ from 'lodash';
+import { IndicatorBuilder } from './dict/indicator_builder';
+import { IndicatorPeriod } from './dict/indicator_period';
+import * as ta from '../../utils/technical_analysis';
+import { Resample } from '../../utils/resample';
+import { CommonUtil } from '../../utils/common_util';
+import { StrategyContext } from '../../dict/strategy_context';
+import { Ticker } from '../../dict/ticker';
+import { PositionSide } from '../../dict/position';
+import { SignalResult } from './dict/signal_result';
+import { Position } from '../../dict/position';
 
-module.exports = class StrategyManager {
-  constructor(technicalAnalysisValidator, exchangeCandleCombine, logger, projectDir) {
+export interface BacktestColumn {
+  value: string | ((row: Record<string, any>) => any);
+  type?: string;
+  cross?: string;
+  range?: number[];
+}
+
+export interface ColumnResult {
+  value: string | number;
+  type?: string;
+  state?: string;
+}
+
+export interface StrategyExecuteResult {
+  price?: number;
+  columns?: ColumnResult[];
+  result?: SignalResult;
+}
+
+export interface StrategyInfo {
+  getName(): string;
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options?: Record<string, any>): void;
+  period(indicatorPeriod: IndicatorPeriod, options?: Record<string, any>): Promise<SignalResult | undefined>;
+  getBacktestColumns?(): BacktestColumn[];
+  getOptions?(): Record<string, any>;
+}
+
+export class StrategyManager {
+  private technicalAnalysisValidator: any;
+  private exchangeCandleCombine: any;
+  private projectDir: string;
+  private logger: any;
+  private strategies?: StrategyInfo[];
+
+  constructor(technicalAnalysisValidator: any, exchangeCandleCombine: any, logger: any, projectDir: string) {
     this.technicalAnalysisValidator = technicalAnalysisValidator;
     this.exchangeCandleCombine = exchangeCandleCombine;
     this.projectDir = projectDir;
@@ -21,16 +55,16 @@ module.exports = class StrategyManager {
     this.strategies = undefined;
   }
 
-  getStrategies() {
+  getStrategies(): StrategyInfo[] {
     if (typeof this.strategies !== 'undefined') {
       return this.strategies;
     }
 
-    const strategies = [];
+    const strategies: StrategyInfo[] = [];
 
     const dirs = [`${__dirname}/strategies`, `${this.projectDir}/var/strategies`];
 
-    const recursiveReadDirSyncWithDirectoryOnly = (p, a = []) => {
+    const recursiveReadDirSyncWithDirectoryOnly = (p: string, a: string[] = []): string[] => {
       if (fs.statSync(p).isDirectory()) {
         fs.readdirSync(p)
           .filter(f => !f.startsWith('.') && fs.statSync(path.join(p, f)).isDirectory())
@@ -47,7 +81,8 @@ module.exports = class StrategyManager {
 
       fs.readdirSync(dir).forEach(file => {
         if (file.endsWith('.js')) {
-          strategies.push(new (require(`${dir}/${file.substr(0, file.length - 3)}`))());
+          const StrategyClass = require(`${dir}/${file.substr(0, file.length - 3)}`);
+          strategies.push(new StrategyClass());
         }
       });
 
@@ -57,7 +92,8 @@ module.exports = class StrategyManager {
         const filename = `${folder}/${path.basename(folder)}.js`;
 
         if (fs.existsSync(filename)) {
-          strategies.push(new (require(filename))());
+          const StrategyClass = require(filename);
+          strategies.push(new StrategyClass());
         }
       });
     });
@@ -65,7 +101,7 @@ module.exports = class StrategyManager {
     return (this.strategies = strategies);
   }
 
-  findStrategy(strategyName) {
+  findStrategy(strategyName: string): StrategyInfo | undefined {
     return this.getStrategies().find(strategy => strategy.getName() === strategyName);
   }
 
@@ -78,7 +114,13 @@ module.exports = class StrategyManager {
    * @param options
    * @returns {Promise<SignalResult|undefined>}
    */
-  async executeStrategy(strategyName, context, exchange, symbol, options) {
+  async executeStrategy(
+    strategyName: string,
+    context: StrategyContext,
+    exchange: string,
+    symbol: string,
+    options: Record<string, any>
+  ): Promise<SignalResult | undefined> {
     const results = await this.getTaResult(strategyName, exchange, symbol, options, true);
     if (!results || Object.keys(results).length === 0) {
       return undefined;
@@ -87,9 +129,12 @@ module.exports = class StrategyManager {
     // remove candle pipe
     delete results._candle;
 
-    const indicatorPeriod = new IndicatorPeriod(context, results);
+    const indicatorPeriod = new IndicatorPeriod(context as any, results);
 
     const strategy = this.findStrategy(strategyName);
+    if (!strategy) {
+      return undefined;
+    }
 
     const strategyResult = await strategy.period(indicatorPeriod, options);
     if (typeof strategyResult !== 'undefined' && !(strategyResult instanceof SignalResult)) {
@@ -106,9 +151,16 @@ module.exports = class StrategyManager {
    * @param options
    * @param lastSignal
    * @param lastSignalEntry
-   * @returns {Promise<array>}
+   * @returns {Promise<StrategyExecuteResult>}
    */
-  async executeStrategyBacktest(strategyName, exchange, symbol, options, lastSignal, lastSignalEntry) {
+  async executeStrategyBacktest(
+    strategyName: string,
+    exchange: string,
+    symbol: string,
+    options: Record<string, any>,
+    lastSignal: string,
+    lastSignalEntry: number
+  ): Promise<StrategyExecuteResult> {
     const results = await this.getTaResult(strategyName, exchange, symbol, options);
     if (!results || Object.keys(results).length === 0) {
       return {};
@@ -116,21 +168,23 @@ module.exports = class StrategyManager {
 
     const price = results._candle ? results._candle.close : undefined;
 
-    let context;
+    let context: StrategyContext;
     if (lastSignal && lastSignalEntry && price) {
       // provide a suitable value; its just backtesting
       const amount = lastSignal === 'short' ? -1 : 1;
+      const positionSide = lastSignal === 'short' ? 'short' : 'long';
 
       context = StrategyContext.createFromPosition(
         options,
         new Ticker(exchange, symbol, undefined, price, price),
         new Position(
           symbol,
-          lastSignal,
+          positionSide,
           amount,
-          CommonUtil.getProfitAsPercent(lastSignal, price, lastSignalEntry),
-          undefined,
-          lastSignalEntry
+          CommonUtil.getProfitAsPercent(positionSide, price, lastSignalEntry),
+          new Date(),
+          lastSignalEntry,
+          new Date()
         ),
         true
       );
@@ -140,16 +194,20 @@ module.exports = class StrategyManager {
 
     context.lastSignal = lastSignal;
 
-    const indicatorPeriod = new IndicatorPeriod(context, results);
+    const indicatorPeriod = new IndicatorPeriod(context as any, results);
 
-    const strategy = this.getStrategies().find(strategy => strategy.getName() === strategyName);
+    const strategy = this.getStrategies().find(s => s.getName() === strategyName);
+    if (!strategy) {
+      return {};
+    }
+
     const strategyResult = await strategy.period(indicatorPeriod, options);
 
     if (typeof strategyResult !== 'undefined' && !(strategyResult instanceof SignalResult)) {
-      throw `Invalid strategy return:${strategyName}`;
+      throw new Error(`Invalid strategy return:${strategyName}`);
     }
 
-    const result = {
+    const result: StrategyExecuteResult = {
       price: price,
       columns: this.getCustomTableColumnsForRow(strategyName, strategyResult ? strategyResult.getDebug() : {})
     };
@@ -161,21 +219,27 @@ module.exports = class StrategyManager {
     return result;
   }
 
-  async getTaResult(strategyName, exchange, symbol, options, validateLookbacks = false) {
+  async getTaResult(
+    strategyName: string,
+    exchange: string,
+    symbol: string,
+    options: Record<string, any>,
+    validateLookbacks: boolean = false
+  ): Promise<Record<string, any>> {
     options = options || {};
 
-    const strategy = this.getStrategies().find(strategy => {
-      return strategy.getName() === strategyName;
+    const strategy = this.getStrategies().find(s => {
+      return s.getName() === strategyName;
     });
 
     if (!strategy) {
-      throw `invalid strategy: ${strategy}`;
+      throw new Error(`invalid strategy: ${strategyName}`);
     }
 
     const indicatorBuilder = new IndicatorBuilder();
     strategy.buildIndicator(indicatorBuilder, options);
 
-    const periodGroups = {};
+    const periodGroups: Record<string, any[]> = {};
 
     indicatorBuilder.all().forEach(indicator => {
       if (!periodGroups[indicator.period]) {
@@ -185,7 +249,7 @@ module.exports = class StrategyManager {
       periodGroups[indicator.period].push(indicator);
     });
 
-    const results = {};
+    const results: Record<string, any> = {};
 
     for (const period in periodGroups) {
       const periodGroup = periodGroups[period];
@@ -220,7 +284,7 @@ module.exports = class StrategyManager {
         olderThenCurrentPeriod
       );
 
-      if (lookbacks[exchange].length > 0) {
+      if (lookbacks[exchange] && lookbacks[exchange].length > 0) {
         // check if candle to close time is outside our allow time window
         if (
           validateLookbacks &&
@@ -274,12 +338,12 @@ module.exports = class StrategyManager {
     return results;
   }
 
-  getCustomTableColumnsForRow(strategyName, row) {
+  getCustomTableColumnsForRow(strategyName: string, row: Record<string, any>): ColumnResult[] {
     return this.getBacktestColumns(strategyName).map(cfg => {
       // direct value of array or callback
       const value = typeof cfg.value === 'function' ? cfg.value(row) : _.get(row, cfg.value);
 
-      let valueOutput = value;
+      let valueOutput: string | number;
 
       if (typeof value !== 'undefined') {
         switch (typeof value) {
@@ -288,26 +352,28 @@ module.exports = class StrategyManager {
 
             break;
           case 'string':
-            valueOutput = value;
+            valueOutput = value as string;
 
             break;
           default:
             valueOutput = new Intl.NumberFormat('en-US', {
               minimumSignificantDigits: 3,
               maximumSignificantDigits: 4
-            }).format(value);
+            }).format(value as number);
             break;
         }
+      } else {
+        valueOutput = '';
       }
 
-      const result = {
+      const result: ColumnResult = {
         value: valueOutput,
         type: cfg.type || 'default'
       };
 
       switch (cfg.type || 'default') {
         case 'cross':
-          result.state = value > _.get(row, cfg.cross) ? 'over' : 'below';
+          result.state = value > _.get(row, cfg.cross || '') ? 'over' : 'below';
           break;
         case 'histogram':
           result.state = value > 0 ? 'over' : 'below';
@@ -325,13 +391,13 @@ module.exports = class StrategyManager {
     });
   }
 
-  getStrategyNames() {
+  getStrategyNames(): string[] {
     return this.getStrategies().map(strategy => strategy.getName());
   }
 
-  getBacktestColumns(strategyName) {
-    const strategy = this.getStrategies().find(strategy => {
-      return strategy.getName() === strategyName;
+  getBacktestColumns(strategyName: string): BacktestColumn[] {
+    const strategy = this.getStrategies().find(s => {
+      return s.getName() === strategyName;
     });
 
     if (!strategy) {
@@ -340,4 +406,4 @@ module.exports = class StrategyManager {
 
     return typeof strategy.getBacktestColumns !== 'undefined' ? strategy.getBacktestColumns() : [];
   }
-};
+}

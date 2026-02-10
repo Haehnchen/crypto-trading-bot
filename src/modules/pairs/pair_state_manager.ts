@@ -1,9 +1,17 @@
-const { PairState } = require('../../dict/pair_state');
-const { OrderCapital } = require('../../dict/order_capital');
-const { PairInterval } = require('./pair_interval');
+import { PairState, PairStateType } from '../../dict/pair_state';
+import { OrderCapital } from '../../dict/order_capital';
+import { PairInterval } from './pair_interval';
 
-module.exports = class PairStateManager {
-  constructor(logger, pairConfig, systemUtil, pairStateExecution, orderExecutor, pairInterval) {
+export class PairStateManager {
+  private logger: any;
+  private pairConfig: any;
+  private systemUtil: any;
+  private pairStateExecution: any;
+  private orderExecutor: any;
+  private stats: Record<string, PairState>;
+  private pairInterval: PairInterval;
+
+  constructor(logger: any, pairConfig: any, systemUtil: any, pairStateExecution: any, orderExecutor: any, pairInterval?: PairInterval) {
     this.logger = logger;
     this.pairConfig = pairConfig;
     this.systemUtil = systemUtil;
@@ -13,7 +21,7 @@ module.exports = class PairStateManager {
     this.pairInterval = pairInterval || new PairInterval();
   }
 
-  update(exchange, symbol, state, options = {}) {
+  update(exchange: string, symbol: string, state: string, options: Record<string, any> = {}): void {
     if (!['long', 'close', 'short', 'cancel'].includes(state)) {
       this.logger.error(`Invalidate state: ${state}`);
       throw new Error(`Invalidate state: ${state}`);
@@ -24,7 +32,7 @@ module.exports = class PairStateManager {
       this.clear(exchange, symbol);
     };
 
-    let pairState;
+    let pairState: PairState;
     if (state === 'long') {
       const capital = this.pairConfig.getSymbolCapital(exchange, symbol);
       if (!(capital instanceof OrderCapital)) {
@@ -42,7 +50,7 @@ module.exports = class PairStateManager {
 
       pairState = PairState.createShort(exchange, symbol, capital, options || {}, true, clearCallback);
     } else {
-      pairState = new PairState(exchange, symbol, state, options || {}, true, clearCallback);
+      pairState = new PairState(exchange, symbol, state as PairStateType, options || {}, true, clearCallback);
     }
 
     const stateKey = exchange + symbol;
@@ -68,13 +76,7 @@ module.exports = class PairStateManager {
     });
   }
 
-  /**
-   *
-   * @param exchange
-   * @param symbol
-   * @returns {undefined|PairState}
-   */
-  get(exchange, symbol) {
+  get(exchange: string, symbol: string): PairState | undefined {
     if (exchange + symbol in this.stats) {
       return this.stats[exchange + symbol];
     }
@@ -82,8 +84,8 @@ module.exports = class PairStateManager {
     return undefined;
   }
 
-  all() {
-    const stats = [];
+  all(): PairState[] {
+    const stats: PairState[] = [];
 
     for (const key in this.stats) {
       stats.push(this.stats[key]);
@@ -92,7 +94,7 @@ module.exports = class PairStateManager {
     return stats;
   }
 
-  clear(exchange, symbol) {
+  clear(exchange: string, symbol: string): void {
     if (exchange + symbol in this.stats) {
       this.logger.debug(`Pair state cleared: ${JSON.stringify(this.stats[exchange + symbol])}`);
       delete this.stats[exchange + symbol];
@@ -101,8 +103,8 @@ module.exports = class PairStateManager {
     this.pairInterval.clearInterval(exchange + symbol);
   }
 
-  getSellingPairs() {
-    const pairs = [];
+  getSellingPairs(): PairState[] {
+    const pairs: PairState[] = [];
 
     for (const key in this.stats) {
       if (this.stats[key].state === 'short') {
@@ -113,8 +115,8 @@ module.exports = class PairStateManager {
     return pairs;
   }
 
-  getBuyingPairs() {
-    const pairs = [];
+  getBuyingPairs(): PairState[] {
+    const pairs: PairState[] = [];
 
     for (const key in this.stats) {
       if (this.stats[key].state === 'long') {
@@ -125,8 +127,8 @@ module.exports = class PairStateManager {
     return pairs;
   }
 
-  getClosingPairs() {
-    const pairs = [];
+  getClosingPairs(): PairState[] {
+    const pairs: PairState[] = [];
 
     for (const key in this.stats) {
       if (this.stats[key].state === 'close') {
@@ -137,8 +139,8 @@ module.exports = class PairStateManager {
     return pairs;
   }
 
-  getCancelPairs() {
-    const pairs = [];
+  getCancelPairs(): PairState[] {
+    const pairs: PairState[] = [];
 
     for (const key in this.stats) {
       if (this.stats[key].state === 'cancel') {
@@ -149,11 +151,11 @@ module.exports = class PairStateManager {
     return pairs;
   }
 
-  isNeutral(exchange, symbol) {
+  isNeutral(exchange: string, symbol: string): boolean {
     return !(exchange + symbol in this.stats);
   }
 
-  async onTerminate() {
+  async onTerminate(): Promise<void> {
     const running = this.all();
 
     for (const key in running) {
@@ -165,4 +167,4 @@ module.exports = class PairStateManager {
       await this.pairStateExecution.onCancelPair(pair);
     }
   }
-};
+}

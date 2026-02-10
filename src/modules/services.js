@@ -24,21 +24,21 @@ const { SignalHttp } = require('../modules/signal/signal_http');
 
 const { SignalRepository } = require('../modules/repository/signal_repository');
 const { CandlestickRepository } = require('../modules/repository/candlestick_repository');
-const StrategyManager = require('./strategy/strategy_manager');
+const { StrategyManager } = require('./strategy/strategy_manager');
 const { ExchangeManager } = require('./exchange/exchange_manager');
 
-const Trade = require('../modules/trade');
+const { Trade } = require('../modules/trade');
 const { Http } = require('../modules/http');
-const Backtest = require('../modules/backtest');
+const { Backtest } = require('../modules/backtest');
 const Backfill = require('../modules/backfill');
 
 const { StopLossCalculator } = require('../modules/order/stop_loss_calculator');
 const { RiskRewardRatioCalculator } = require('../modules/order/risk_reward_ratio_calculator');
 const { PairsHttp } = require('../modules/pairs/pairs_http');
-const OrderExecutor = require('../modules/order/order_executor');
+const { OrderExecutor } = require('../modules/order/order_executor');
 const { OrderCalculator } = require('../modules/order/order_calculator');
-const PairStateManager = require('../modules/pairs/pair_state_manager');
-const PairStateExecution = require('../modules/pairs/pair_state_execution');
+const { PairStateManager } = require('../modules/pairs/pair_state_manager');
+const { PairStateExecution } = require('../modules/pairs/pair_state_execution');
 const { PairConfig } = require('../modules/pairs/pair_config');
 const { SystemUtil } = require('../modules/system/system_util');
 const { TechnicalAnalysisValidator } = require('../utils/technical_analysis_validator');

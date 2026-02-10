@@ -1,24 +1,40 @@
-const moment = require('moment');
-const crypto = require('crypto');
-const os = require('os');
-const { PositionStateChangeEvent } = require('../event/position_state_change_event');
+import moment from 'moment';
+import crypto from 'crypto';
+import os from 'os';
+import { PositionStateChangeEvent } from '../event/position_state_change_event';
+import { EventEmitter } from 'events';
 
-module.exports = class Trade {
+export class Trade {
+  private eventEmitter: EventEmitter;
+  private instances: { symbols: { exchange: string; symbol: string }[] };
+  private notify: any;
+  private logger: any;
+  private createOrderListener: any;
+  private tickListener: any;
+  private tickers: any;
+  private tickerDatabaseListener: any;
+  private exchangeOrderWatchdogListener: any;
+  private systemUtil: any;
+  private logsRepository: any;
+  private tickerLogRepository: any;
+  private exchangePositionWatcher: any;
+  private pairStateManager: any;
+
   constructor(
-    eventEmitter,
-    instances,
-    notify,
-    logger,
-    createOrderListener,
-    tickListener,
-    tickers,
-    tickerDatabaseListener,
-    exchangeOrderWatchdogListener,
-    systemUtil,
-    logsRepository,
-    tickerLogRepository,
-    exchangePositionWatcher,
-    pairStateManager
+    eventEmitter: EventEmitter,
+    instances: { symbols: { exchange: string; symbol: string }[] },
+    notify: any,
+    logger: any,
+    createOrderListener: any,
+    tickListener: any,
+    tickers: any,
+    tickerDatabaseListener: any,
+    exchangeOrderWatchdogListener: any,
+    systemUtil: any,
+    logsRepository: any,
+    tickerLogRepository: any,
+    exchangePositionWatcher: any,
+    pairStateManager: any
   ) {
     this.eventEmitter = eventEmitter;
     this.instances = instances;
@@ -36,7 +52,7 @@ module.exports = class Trade {
     this.pairStateManager = pairStateManager;
   }
 
-  start() {
+  start(): void {
     this.logger.debug('Trade module started');
 
     process.on('SIGINT', async () => {
@@ -98,16 +114,16 @@ module.exports = class Trade {
 
     const { tickers } = this;
 
-    eventEmitter.on('ticker', async function(tickerEvent) {
+    eventEmitter.on('ticker', async (tickerEvent: any) => {
       tickers.set(tickerEvent.ticker);
       me.tickerDatabaseListener.onTicker(tickerEvent);
     });
 
-    eventEmitter.on('orderbook', function(orderbookEvent) {
+    eventEmitter.on('orderbook', (orderbookEvent: any) => {
       // console.log(orderbookEvent.orderbook)
     });
 
-    eventEmitter.on('order', async event => me.createOrderListener.onCreateOrder(event));
+    eventEmitter.on('order', async (event: any) => me.createOrderListener.onCreateOrder(event));
 
     eventEmitter.on('tick', async () => {
       me.tickListener.onTick();
@@ -118,8 +134,8 @@ module.exports = class Trade {
       await me.exchangePositionWatcher.onPositionStateChangeTick();
     });
 
-    eventEmitter.on(PositionStateChangeEvent.EVENT_NAME, async event => {
+    eventEmitter.on(PositionStateChangeEvent.EVENT_NAME, async (event: any) => {
       await me.exchangeOrderWatchdogListener.onPositionChanged(event);
     });
   }
-};
+}
