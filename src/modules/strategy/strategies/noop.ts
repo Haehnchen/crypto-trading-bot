@@ -1,10 +1,8 @@
 import { SD } from 'technicalindicators';
-import { TechnicalAnalysis } from '../../../utils/technical_analysis';
+import { getBollingerBandPercent } from '../../../utils/technical_analysis';
 import { SignalResult } from '../dict/signal_result';
 import { IndicatorBuilder } from '../dict/indicator_builder';
 import { IndicatorPeriod } from '../dict/indicator_period';
-
-const TA = new TechnicalAnalysis();
 
 export class Noop {
   getName(): string {
@@ -50,7 +48,7 @@ export class Noop {
 
     const currentBB = indicatorPeriod.getLatestIndicator('bb');
     if (currentBB && currentValues.bb) {
-      (currentValues.bb as any).percent = TA.getBollingerBandPercent(
+      (currentValues.bb as any).percent = getBollingerBandPercent(
         indicatorPeriod.getPrice(),
         currentBB.upper,
         currentBB.lower
@@ -162,3 +160,5 @@ export class Noop {
     return '1m';
   }
 }
+
+export default Noop;

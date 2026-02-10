@@ -76,3 +76,5 @@ export class ObvPumpDump {
     };
   }
 }
+
+export default ObvPumpDump;

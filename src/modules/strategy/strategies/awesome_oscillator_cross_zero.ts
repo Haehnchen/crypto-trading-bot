@@ -81,3 +81,5 @@ export class AwesomeOscillatorCrossZero {
     };
   }
 }
+
+export default AwesomeOscillatorCrossZero;

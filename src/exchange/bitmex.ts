@@ -1,25 +1,145 @@
-const moment = require('moment');
-const request = require('request');
-const crypto = require('crypto');
+import moment from 'moment';
+import request from 'request';
+import crypto from 'crypto';
 const BitMEXClient = require('bitmex-realtime-api');
-const _ = require('lodash');
-const querystring = require('querystring');
-const { Candlestick } = require('./../dict/candlestick');
-const { Ticker } = require('./../dict/ticker');
-const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
+import _ from 'lodash';
+import querystring from 'querystring';
+import { EventEmitter } from 'events';
+import { Candlestick } from '../dict/candlestick';
+import { Ticker } from '../dict/ticker';
+import { ExchangeCandlestick } from '../dict/exchange_candlestick';
+import { TickerEvent } from '../event/ticker_event';
+import { Resample } from '../utils/resample';
+import { Position } from '../dict/position';
+import { Order } from '../dict/order';
+import { ExchangeOrder, ExchangeOrderSide, ExchangeOrderStatus, ExchangeOrderType } from '../dict/exchange_order';
+import { orderUtil } from '../utils/order_util';
 
-const { TickerEvent } = require('./../event/ticker_event');
+// Types for BitMEX API responses
+interface BitmexInstrument {
+  tickSize: number;
+  lotSize: number;
+  isInverse: boolean;
+  bidPrice: number;
+  askPrice: number;
+}
 
-const { resample } = require('./../utils/resample');
+interface BitmexPosition {
+  symbol: string;
+  isOpen: boolean;
+  currentQty: number;
+  unrealisedRoePcnt: number;
+  leverage: number;
+  avgEntryPrice: number;
+  openingTimestamp: string;
+}
 
-const { Position } = require('../dict/position');
-const { Order } = require('../dict/order');
-const { ExchangeOrder } = require('../dict/exchange_order');
+interface BitmexOrder {
+  orderID: string;
+  symbol: string;
+  ordStatus: string;
+  price: number;
+  stopPx?: number;
+  orderQty: number;
+  clOrdID?: string;
+  side: string;
+  ordType: string;
+  transactTime: string;
+  execInst: string;
+  text: string;
+}
 
-const { orderUtil } = require('../utils/order_util');
+interface BitmexCandle {
+  timestamp: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
 
-module.exports = class Bitmex {
-  constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter) {
+interface BitmexConfig {
+  key?: string;
+  secret?: string;
+  extra?: {
+    bitmex_rest_order_sync?: number;
+    bitmex_leverage?: number;
+  };
+}
+
+interface BitmexSymbol {
+  symbol: string;
+  periods: string[];
+  extra?: {
+    bitmex_leverage?: number;
+  };
+}
+
+interface RequestResult {
+  error?: any;
+  response?: {
+    statusCode: number;
+  };
+  body: string;
+}
+
+interface Logger {
+  info(message: string): void;
+  error(message: string): void;
+  debug(message: string): void;
+}
+
+interface RequestClient {
+  executeRequestRetry(
+    options: any,
+    retryCondition: (result: RequestResult) => boolean,
+    retryMs: number,
+    retryLimit: number
+  ): Promise<RequestResult>;
+}
+
+interface Queue {
+  add(fn: () => void): void;
+}
+
+interface CandleImporter {
+  insertThrottledCandles(candles: ExchangeCandlestick[]): Promise<void>;
+}
+
+interface CandlestickResample {
+  resample(exchange: string, symbol: string, periodFrom: string, periodTo: string, limitCandles: boolean): Promise<void>;
+}
+
+export class Bitmex {
+  private eventEmitter: EventEmitter;
+  private requestClient: RequestClient;
+  private candlestickResample: CandlestickResample;
+  private logger: Logger;
+  private queue: Queue;
+  private candleImporter: CandleImporter;
+
+  private apiKey: string | undefined;
+  private apiSecret: string | undefined;
+  private tickSizes: Record<string, number>;
+  private lotSizes: Record<string, number>;
+  private leverageUpdated: Record<string, Date>;
+  private retryOverloadMs: number;
+  private retryOverloadLimit: number;
+
+  private positions: Record<string, Position>;
+  private orders: Record<string, ExchangeOrder>;
+  private tickers: Record<string, Ticker>;
+  private symbols: BitmexSymbol[];
+  private inversedSymboles: string[];
+
+  constructor(
+    eventEmitter: EventEmitter,
+    requestClient: RequestClient,
+    candlestickResample: CandlestickResample,
+    logger: Logger,
+    queue: Queue,
+    candleImporter: CandleImporter
+  ) {
     this.eventEmitter = eventEmitter;
     this.requestClient = requestClient;
     this.candlestickResample = candlestickResample;
@@ -43,7 +163,7 @@ module.exports = class Bitmex {
     this.inversedSymboles = [];
   }
 
-  backfill(symbol, period, start) {
+  backfill(symbol: string, period: string, start: Date): Promise<Candlestick[]> {
     return new Promise((resolve, reject) => {
       const query = querystring.stringify({
         binSize: period,
@@ -68,9 +188,9 @@ module.exports = class Bitmex {
         }
 
         resolve(
-          body.map(candle => {
+          body.map((candle: BitmexCandle) => {
             return new Candlestick(
-              moment(candle.timestamp).format('X'),
+              parseInt(moment(candle.timestamp).format('X'), 10),
               candle.open,
               candle.high,
               candle.low,
@@ -83,7 +203,7 @@ module.exports = class Bitmex {
     });
   }
 
-  start(config, symbols) {
+  start(config: BitmexConfig, symbols: BitmexSymbol[]): void {
     const { eventEmitter } = this;
     const { logger } = this;
     const { tickSizes } = this;
@@ -94,7 +214,7 @@ module.exports = class Bitmex {
     this.orders = {};
     this.leverageUpdated = {};
 
-    const opts = {
+    const opts: any = {
       testnet: this.getBaseUrl().includes('testnet')
     };
 
@@ -105,7 +225,7 @@ module.exports = class Bitmex {
 
     const client = new BitMEXClient(opts);
 
-    client.on('error', error => {
+    client.on('error', (error: any) => {
       console.error(error);
       logger.error(`Bitmex: error ${String(error)}`);
     });
@@ -132,8 +252,8 @@ module.exports = class Bitmex {
     });
 
     symbols.forEach(symbol => {
-      const resamples = {};
-      let myPeriods = [];
+      const resamples: Record<string, Record<string, string[]>> = {};
+      let myPeriods: string[] = [];
 
       symbol.periods.forEach(period => {
         if (period !== '15m') {
@@ -177,9 +297,9 @@ module.exports = class Bitmex {
                 return;
               }
 
-              const candleSticks = body.map(candle => {
+              const candleSticks = body.map((candle: BitmexCandle) => {
                 return new Candlestick(
-                  moment(candle.timestamp).format('X'),
+                  parseInt(moment(candle.timestamp).format('X'), 10),
                   candle.open,
                   candle.high,
                   candle.low,
@@ -200,9 +320,9 @@ module.exports = class Bitmex {
                 resamples[symbol.symbol][period].length > 0
               ) {
                 resamples[symbol.symbol][period].forEach(async periodTo => {
-                  const resampledCandles = resample.resampleMinutes(
+                  const resampledCandles = Resample.resampleMinutes(
                     candleSticks.slice(),
-                    resample.convertPeriodToMinute(periodTo) // 15m > 15
+                    Resample.convertPeriodToMinute(periodTo) // 15m > 15
                   );
 
                   const candles = resampledCandles.map(candle => {
@@ -217,14 +337,14 @@ module.exports = class Bitmex {
         });
 
         // listen for new incoming candles
-        client.addStream(symbol.symbol, `tradeBin${period}`, async candles => {
+        client.addStream(symbol.symbol, `tradeBin${period}`, async (candles: BitmexCandle[]) => {
           // we need a force reset; candles are like queue
           const myCandles = candles.slice();
           candles.length = 0;
 
           const candleSticks = myCandles.map(candle => {
             return new Candlestick(
-              moment(candle.timestamp).format('X'),
+              parseInt(moment(candle.timestamp).format('X'), 10),
               candle.open,
               candle.high,
               candle.low,
@@ -251,7 +371,7 @@ module.exports = class Bitmex {
         });
       });
 
-      client.addStream(symbol.symbol, 'instrument', instruments => {
+      client.addStream(symbol.symbol, 'instrument', (instruments: BitmexInstrument[]) => {
         instruments.forEach(instrument => {
           tickSizes[symbol.symbol] = instrument.tickSize;
           lotSizes[symbol.symbol] = instrument.lotSize;
@@ -268,7 +388,7 @@ module.exports = class Bitmex {
               (this.tickers[symbol.symbol] = new Ticker(
                 this.getName(),
                 symbol.symbol,
-                moment().format('X'),
+                parseInt(moment().format('X'), 10),
                 instrument.bidPrice,
                 instrument.askPrice
               ))
@@ -327,14 +447,14 @@ module.exports = class Bitmex {
         );
       }
 
-      client.addStream('*', 'order', orders => {
+      client.addStream('*', 'order', (orders: BitmexOrder[]) => {
         for (const order of Bitmex.createOrders(orders)) {
           this.orders[order.id] = order;
         }
       });
 
       // open position listener; provides only per position updates; no overall update
-      client.addStream('*', 'position', positions => {
+      client.addStream('*', 'position', (positions: BitmexPosition[]) => {
         me.deltaPositionsUpdate(positions);
       });
     } else {
@@ -347,8 +467,8 @@ module.exports = class Bitmex {
    *
    * @param positions Position in raw json from Bitmex
    */
-  fullPositionsUpdate(positions) {
-    const openPositions = [];
+  fullPositionsUpdate(positions: BitmexPosition[]): void {
+    const openPositions: BitmexPosition[] = [];
 
     for (const position of positions) {
       if (position.symbol in this.positions && position.isOpen !== true) {
@@ -358,7 +478,7 @@ module.exports = class Bitmex {
       }
     }
 
-    const currentPositions = {};
+    const currentPositions: Record<string, Position> = {};
 
     for (const position of Bitmex.createPositionsWithOpenStateOnly(openPositions)) {
       currentPositions[position.symbol] = position;
@@ -372,8 +492,8 @@ module.exports = class Bitmex {
    *
    * @param orders Orders in raw json from Bitmex
    */
-  fullOrdersUpdate(orders) {
-    const ourOrders = {};
+  fullOrdersUpdate(orders: BitmexOrder[]): void {
+    const ourOrders: Record<string, ExchangeOrder> = {};
     for (const order of Bitmex.createOrders(orders).filter(order => order.status === 'open')) {
       ourOrders[order.id] = order;
     }
@@ -386,8 +506,8 @@ module.exports = class Bitmex {
    *
    * @param positions Position in raw json from Bitmex
    */
-  deltaPositionsUpdate(positions) {
-    const openPositions = [];
+  deltaPositionsUpdate(positions: BitmexPosition[]): void {
+    const openPositions: BitmexPosition[] = [];
 
     for (const position of positions) {
       if (position.symbol in this.positions && position.isOpen !== true) {
@@ -402,9 +522,9 @@ module.exports = class Bitmex {
     }
   }
 
-  getOrders() {
+  getOrders(): Promise<ExchangeOrder[]> {
     return new Promise(resolve => {
-      const orders = [];
+      const orders: ExchangeOrder[] = [];
 
       for (const key in this.orders) {
         if (this.orders[key].status === 'open') {
@@ -416,20 +536,20 @@ module.exports = class Bitmex {
     });
   }
 
-  findOrderById(id) {
+  findOrderById(id: string | number): Promise<ExchangeOrder | undefined> {
     return new Promise(async resolve => {
       resolve((await this.getOrders()).find(order => order.id === id || order.id == id));
     });
   }
 
-  getOrdersForSymbol(symbol) {
+  getOrdersForSymbol(symbol: string): Promise<ExchangeOrder[]> {
     return new Promise(async resolve => {
       resolve((await this.getOrders()).filter(order => order.symbol === symbol));
     });
   }
 
-  async getPositions() {
-    const results = [];
+  async getPositions(): Promise<Position[]> {
+    const results: Position[] = [];
 
     for (const x in this.positions) {
       let position = this.positions[x];
@@ -453,7 +573,7 @@ module.exports = class Bitmex {
     return results;
   }
 
-  async getPositionForSymbol(symbol) {
+  async getPositionForSymbol(symbol: string): Promise<Position | undefined> {
     for (const position of await this.getPositions()) {
       if (position.symbol === symbol) {
         return position;
@@ -470,7 +590,7 @@ module.exports = class Bitmex {
    * @param symbol
    * @returns {*}
    */
-  calculatePrice(price, symbol) {
+  calculatePrice(price: number, symbol: string): number | string | undefined {
     if (!(symbol in this.tickSizes)) {
       return undefined;
     }
@@ -483,7 +603,7 @@ module.exports = class Bitmex {
    *
    * @param order
    */
-  triggerOrder(order) {
+  triggerOrder(order: ExchangeOrder): void {
     if (!(order instanceof ExchangeOrder)) {
       throw 'Invalid order given';
     }
@@ -504,7 +624,7 @@ module.exports = class Bitmex {
    * @param symbol
    * @returns {*}
    */
-  calculateAmount(amount, symbol) {
+  calculateAmount(amount: number, symbol: string): number | string | undefined {
     if (!(symbol in this.lotSizes)) {
       return undefined;
     }
@@ -512,11 +632,11 @@ module.exports = class Bitmex {
     return orderUtil.calculateNearestSize(amount, this.lotSizes[symbol]);
   }
 
-  getName() {
+  getName(): string {
     return 'bitmex';
   }
 
-  order(order) {
+  order(order: Order): Promise<ExchangeOrder> {
     const data = Bitmex.createOrderBody(order);
 
     const verb = 'POST';
@@ -524,16 +644,16 @@ module.exports = class Bitmex {
     const expires = new Date().getTime() + 60 * 1000; // 1 min in the future
     const postBody = JSON.stringify(data);
     const signature = crypto
-      .createHmac('sha256', this.apiSecret)
+      .createHmac('sha256', this.apiSecret!)
       .update(verb + path + expires + postBody)
       .digest('hex');
 
-    const headers = {
+    const headers: Record<string, string> = {
       'content-type': 'application/json',
       Accept: 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
-      'api-expires': expires,
-      'api-key': this.apiKey,
+      'api-expires': String(expires),
+      'api-key': this.apiKey!,
       'api-signature': signature
     };
 
@@ -550,7 +670,7 @@ module.exports = class Bitmex {
           method: verb,
           body: postBody
         },
-        result => {
+        (result: RequestResult) => {
           return result && result.response && result.response.statusCode === 503;
         },
         this.retryOverloadMs,
@@ -603,11 +723,11 @@ module.exports = class Bitmex {
    * @param symbol
    * @returns {Promise<any>}
    */
-  async updateLeverage(symbol) {
+  async updateLeverage(symbol: string): Promise<boolean> {
     const { logger } = this;
 
     return new Promise((resolve, reject) => {
-      const config = this.symbols.find(cSymbol => cSymbol.symbol === symbol);
+      const config = this.symbols.find((cSymbol: BitmexSymbol) => cSymbol.symbol === symbol);
       if (!config) {
         this.logger.error(`Bitmex: Invalid leverage config for:${symbol}`);
         resolve(false);
@@ -624,7 +744,7 @@ module.exports = class Bitmex {
 
       // we dont get the selected leverage value in websocket or api endpoints
       // so we update them only in a given time window; system overload is often blocked
-      if (symbol in this.leverageUpdated && this.leverageUpdated[symbol] > moment().subtract(45, 'minutes')) {
+      if (symbol in this.leverageUpdated && this.leverageUpdated[symbol].getTime() > moment().subtract(45, 'minutes').toDate().getTime()) {
         this.logger.debug(`Bitmex: leverage update not needed: ${symbol}`);
         resolve(true);
         return;
@@ -640,16 +760,16 @@ module.exports = class Bitmex {
 
       const postBody = JSON.stringify(data);
       const signature = crypto
-        .createHmac('sha256', this.apiSecret)
+        .createHmac('sha256', this.apiSecret!)
         .update(verb + path + expires + postBody)
         .digest('hex');
 
-      const headers = {
+      const headers: Record<string, string> = {
         'content-type': 'application/json',
         Accept: 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
-        'api-expires': expires,
-        'api-key': this.apiKey,
+        'api-expires': String(expires),
+        'api-key': this.apiKey!,
         'api-signature': signature
       };
 
@@ -689,7 +809,7 @@ module.exports = class Bitmex {
     });
   }
 
-  cancelOrder(id) {
+  cancelOrder(id: string | number): Promise<ExchangeOrder> {
     const verb = 'DELETE';
     const path = '/api/v1/order';
     const expires = new Date().getTime() + 60 * 1000; // 1 min in the future
@@ -700,16 +820,16 @@ module.exports = class Bitmex {
 
     const postBody = JSON.stringify(data);
     const signature = crypto
-      .createHmac('sha256', this.apiSecret)
+      .createHmac('sha256', this.apiSecret!)
       .update(verb + path + expires + postBody)
       .digest('hex');
 
-    const headers = {
+    const headers: Record<string, string> = {
       'content-type': 'application/json',
       Accept: 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
-      'api-expires': expires,
-      'api-key': this.apiKey,
+      'api-expires': String(expires),
+      'api-key': this.apiKey!,
       'api-signature': signature
     };
 
@@ -723,7 +843,7 @@ module.exports = class Bitmex {
           method: verb,
           body: postBody
         },
-        result => {
+        (result: RequestResult) => {
           return result && result.response && result.response.statusCode === 503;
         },
         this.retryOverloadMs,
@@ -759,7 +879,7 @@ module.exports = class Bitmex {
     });
   }
 
-  cancelAll(symbol) {
+  cancelAll(symbol: string): Promise<ExchangeOrder[]> {
     const verb = 'DELETE';
     const path = '/api/v1/order/all';
     const expires = new Date().getTime() + 60 * 1000; // 1 min in the future
@@ -770,16 +890,16 @@ module.exports = class Bitmex {
 
     const postBody = JSON.stringify(data);
     const signature = crypto
-      .createHmac('sha256', this.apiSecret)
+      .createHmac('sha256', this.apiSecret!)
       .update(verb + path + expires + postBody)
       .digest('hex');
 
-    const headers = {
+    const headers: Record<string, string> = {
       'content-type': 'application/json',
       Accept: 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
-      'api-expires': expires,
-      'api-key': this.apiKey,
+      'api-expires': String(expires),
+      'api-key': this.apiKey!,
       'api-signature': signature
     };
 
@@ -793,7 +913,7 @@ module.exports = class Bitmex {
           method: verb,
           body: postBody
         },
-        result => {
+        (result: RequestResult) => {
           return result && result.response && result.response.statusCode === 503;
         },
         this.retryOverloadMs,
@@ -832,21 +952,21 @@ module.exports = class Bitmex {
   /**
    * As a websocket fallback update positions also on REST
    */
-  async syncPositionViaRestApi() {
+  async syncPositionViaRestApi(): Promise<void> {
     const verb = 'GET';
     const path = '/api/v1/position';
     const expires = new Date().getTime() + 60 * 1000; // 1 min in the future
     const signature = crypto
-      .createHmac('sha256', this.apiSecret)
+      .createHmac('sha256', this.apiSecret!)
       .update(verb + path + expires)
       .digest('hex');
 
-    const headers = {
+    const headers: Record<string, string> = {
       'content-type': 'application/json',
       Accept: 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
-      'api-expires': expires,
-      'api-key': this.apiKey,
+      'api-expires': String(expires),
+      'api-key': this.apiKey!,
       'api-signature': signature
     };
 
@@ -858,7 +978,7 @@ module.exports = class Bitmex {
         url: this.getBaseUrl() + path,
         method: verb
       },
-      result => {
+      (result: RequestResult) => {
         return result && result.response && result.response.statusCode === 503;
       },
       this.retryOverloadMs,
@@ -881,21 +1001,21 @@ module.exports = class Bitmex {
   /**
    * As a websocket fallback update orders also on REST
    */
-  async syncOrdersViaRestApi() {
+  async syncOrdersViaRestApi(): Promise<void> {
     const verb = 'GET';
     const path = `/api/v1/order?${querystring.stringify({ filter: JSON.stringify({ open: true }) })}`;
     const expires = new Date().getTime() + 60 * 1000; // 1 min in the future
     const signature = crypto
-      .createHmac('sha256', this.apiSecret)
+      .createHmac('sha256', this.apiSecret!)
       .update(verb + path + expires)
       .digest('hex');
 
-    const headers = {
+    const headers: Record<string, string> = {
       'content-type': 'application/json',
       Accept: 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
-      'api-expires': expires,
-      'api-key': this.apiKey,
+      'api-expires': String(expires),
+      'api-key': this.apiKey!,
       'api-signature': signature
     };
 
@@ -907,7 +1027,7 @@ module.exports = class Bitmex {
         url: this.getBaseUrl() + path,
         method: verb
       },
-      result => {
+      (result: RequestResult) => {
         return result && result.response && result.response.statusCode === 503;
       },
       this.retryOverloadMs,
@@ -928,7 +1048,7 @@ module.exports = class Bitmex {
     me.fullOrdersUpdate(JSON.parse(body));
   }
 
-  updateOrder(id, order) {
+  updateOrder(id: string | number, order: Order): Promise<ExchangeOrder> {
     if (!order.amount && !order.price) {
       throw 'Invalid amount / price for update';
     }
@@ -936,7 +1056,7 @@ module.exports = class Bitmex {
     const verb = 'PUT';
     const path = '/api/v1/order';
     const expires = new Date().getTime() + 60 * 1000; // 1 min in the future
-    const data = {
+    const data: any = {
       orderID: id,
       text: 'Powered by your awesome crypto-bot watchdog'
     };
@@ -952,16 +1072,16 @@ module.exports = class Bitmex {
 
     const postBody = JSON.stringify(data);
     const signature = crypto
-      .createHmac('sha256', this.apiSecret)
+      .createHmac('sha256', this.apiSecret!)
       .update(verb + path + expires + postBody)
       .digest('hex');
 
-    const headers = {
+    const headers: Record<string, string> = {
       'content-type': 'application/json',
       Accept: 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
-      'api-expires': expires,
-      'api-key': this.apiKey,
+      'api-expires': String(expires),
+      'api-key': this.apiKey!,
       'api-signature': signature
     };
 
@@ -975,7 +1095,7 @@ module.exports = class Bitmex {
           method: verb,
           body: postBody
         },
-        result => {
+        (result: RequestResult) => {
           return result && result.response && result.response.statusCode === 503;
         },
         this.retryOverloadMs,
@@ -1001,9 +1121,9 @@ module.exports = class Bitmex {
         return;
       }
 
-      const order = JSON.parse(body);
+      const orderResponse = JSON.parse(body);
 
-      if (order.error) {
+      if (orderResponse.error) {
         logger.error(`Bitmex: Invalid order created response:${JSON.stringify({ body: body })}`);
         console.error(`Bitmex: Invalid order created response:${JSON.stringify({ body: body })}`);
 
@@ -1013,7 +1133,7 @@ module.exports = class Bitmex {
 
       logger.info(`Bitmex: Order updated:${JSON.stringify({ body: body })}`);
 
-      const myOrder = Bitmex.createOrders([order])[0];
+      const myOrder = Bitmex.createOrders([orderResponse])[0];
 
       me.triggerOrder(myOrder);
 
@@ -1027,7 +1147,7 @@ module.exports = class Bitmex {
    * @param positions
    * @returns {*}
    */
-  static createPositionsWithOpenStateOnly(positions) {
+  static createPositionsWithOpenStateOnly(positions: BitmexPosition[]): Position[] {
     return positions
       .filter(position => {
         return position.isOpen === true;
@@ -1053,7 +1173,7 @@ module.exports = class Bitmex {
       });
   }
 
-  static createOrders(orders) {
+  static createOrders(orders: BitmexOrder[]): ExchangeOrder[] {
     return orders.map(order => {
       let retry = false;
 
@@ -1072,7 +1192,7 @@ module.exports = class Bitmex {
             | _ -> invalid_arg' execType ordStatus
             */
 
-      let status;
+      let status: ExchangeOrderStatus;
       const orderStatus = order.ordStatus.toLowerCase();
 
       if (['new', 'partiallyfilled', 'pendingnew', 'doneforday', 'stopped'].includes(orderStatus)) {
@@ -1089,12 +1209,14 @@ module.exports = class Bitmex {
       } else if (orderStatus === 'rejected' || orderStatus === 'expired') {
         status = 'rejected';
         retry = true;
+      } else {
+        status = 'rejected'; // Default to rejected for unknown statuses
       }
 
       const ordType = order.ordType.toLowerCase().replace(/[\W_]+/g, '');
 
       // secure the value
-      let orderType;
+      let orderType: ExchangeOrderType;
       switch (ordType) {
         case 'limit':
           orderType = ExchangeOrder.TYPE_LIMIT;
@@ -1115,7 +1237,7 @@ module.exports = class Bitmex {
 
       let { price } = order;
       if (orderType === 'stop') {
-        price = order.stopPx;
+        price = order.stopPx || price;
       }
 
       return new ExchangeOrder(
@@ -1141,12 +1263,12 @@ module.exports = class Bitmex {
    * @param order
    * @returns {{symbol: *, orderQty: *, ordType: undefined, text: string}}
    */
-  static createOrderBody(order) {
+  static createOrderBody(order: Order): any {
     if (!order.getAmount() && !order.getPrice() && !order.getSymbol()) {
       throw 'Invalid amount for update';
     }
 
-    let orderType;
+    let orderType: string;
     const ourOrderType = order.getType();
     if (!ourOrderType) {
       orderType = 'Limit';
@@ -1156,20 +1278,22 @@ module.exports = class Bitmex {
       orderType = 'Stop';
     } else if (ourOrderType === Order.TYPE_MARKET) {
       orderType = 'Market';
+    } else {
+      orderType = 'Limit'; // Default to Limit
     }
 
     if (!orderType) {
       throw 'Invalid order type';
     }
 
-    const body = {
+    const body: any = {
       symbol: order.getSymbol(),
       orderQty: order.getAmount(),
       ordType: orderType,
       text: 'Powered by your awesome crypto-bot watchdog'
     };
 
-    const execInst = [];
+    const execInst: string[] = [];
     if (order.options && order.options.close === true && orderType === 'Limit') {
       execInst.push('ReduceOnly');
     }
@@ -1200,17 +1324,19 @@ module.exports = class Bitmex {
     body.side = order.isShort() ? 'Sell' : 'Buy';
 
     if (order.getId()) {
-      body.clOrdID = order.getId();
+      body.clOrdID = String(order.getId());
     }
 
     return body;
   }
 
-  getBaseUrl() {
+  getBaseUrl(): string {
     return 'https://www.bitmex.com';
   }
 
-  isInverseSymbol(symbol) {
+  isInverseSymbol(symbol: string): boolean {
     return ['XBTUSD', 'ETHUSD', 'XRPUSD'].includes(symbol) || this.inversedSymboles.includes(symbol);
   }
-};
+}
+
+export default Bitmex;

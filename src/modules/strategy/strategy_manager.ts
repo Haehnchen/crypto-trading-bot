@@ -74,26 +74,45 @@ export class StrategyManager {
       return a;
     };
 
+    const supportedExtensions = ['.ts', '.js'];
+
     dirs.forEach(dir => {
       if (!fs.existsSync(dir)) {
         return;
       }
 
       fs.readdirSync(dir).forEach(file => {
-        if (file.endsWith('.js')) {
-          const StrategyClass = require(`${dir}/${file.substr(0, file.length - 3)}`);
+        const ext = path.extname(file);
+        if (supportedExtensions.includes(ext)) {
+          const baseName = file.substring(0, file.length - ext.length);
+          // Require without extension - ts-node will find .ts files automatically
+          const modulePath = path.join(dir, baseName);
+          const module = require(modulePath);
+          // Handle both default exports (TypeScript) and direct exports (CommonJS)
+          const StrategyClass = module.default || module;
           strategies.push(new StrategyClass());
         }
       });
 
       // Allow strategies to be wrapped by any folder depth:
-      // "foo/bar" => "foo/bar/bar.js"
+      // "foo/bar" => "foo/bar/bar.ts" or "foo/bar/bar.js"
       recursiveReadDirSyncWithDirectoryOnly(dir).forEach(folder => {
-        const filename = `${folder}/${path.basename(folder)}.js`;
+        const baseName = path.basename(folder);
+        const folderName = path.basename(folder);
 
-        if (fs.existsSync(filename)) {
-          const StrategyClass = require(filename);
-          strategies.push(new StrategyClass());
+        // Check if either .ts or .js file exists for this folder
+        for (const ext of supportedExtensions) {
+          const filename = path.join(folder, `${folderName}${ext}`);
+
+          if (fs.existsSync(filename)) {
+            // Require without extension - ts-node will handle it
+            const modulePath = path.join(folder, folderName);
+            const module = require(modulePath);
+            // Handle both default exports (TypeScript) and direct exports (CommonJS)
+            const StrategyClass = module.default || module;
+            strategies.push(new StrategyClass());
+            break; // Only load once, preferring .ts over .js
+          }
         }
       });
     });

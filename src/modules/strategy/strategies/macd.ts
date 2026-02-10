@@ -115,3 +115,5 @@ export class Macd {
     };
   }
 }
+
+export default Macd;

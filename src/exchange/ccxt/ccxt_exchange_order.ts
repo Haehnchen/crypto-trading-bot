@@ -1,12 +1,34 @@
-const ccxt = require('ccxt');
-const _ = require('lodash');
-const { OrderBag } = require('../utils/order_bag');
-const Order = require('../../dict/order');
-const ExchangeOrder = require('../../dict/exchange_order');
-const { CcxtUtil } = require('../utils/ccxt_util');
+import ccxt from 'ccxt';
+import _ from 'lodash';
+import { OrderBag } from '../utils/order_bag';
+import { Order } from '../../dict/order';
+import { ExchangeOrder } from '../../dict/exchange_order';
+import { CcxtUtil } from '../utils/ccxt_util';
 
-module.exports = class CcxtExchangeOrder {
-  constructor(ccxtClient, symbols, logger, callbacks) {
+// CCXT Exchange type (using any for now due to typing issues)
+type CcxtExchange = any;
+
+export interface OrderCallbacks {
+  createOrder?: (order: Order) => Record<string, any> | undefined;
+  convertOrder?: (client: any, ccxtOrder: any) => void;
+  syncOrders?: (client: any) => Promise<any[] | undefined>;
+  cancelOrder?: (client: any, args: CancelOrderArgs) => Record<string, any> | undefined;
+}
+
+export interface CancelOrderArgs {
+  id: string | number;
+  symbol: string;
+  order: ExchangeOrder;
+}
+
+export class CcxtExchangeOrder {
+  private orderbag: OrderBag;
+  private symbols: any[];
+  private logger: any;
+  private ccxtClient: CcxtExchange;
+  private callbacks?: OrderCallbacks;
+
+  constructor(ccxtClient: CcxtExchange, symbols: any[], logger: any, callbacks?: OrderCallbacks) {
     this.orderbag = new OrderBag();
     this.symbols = symbols;
     this.logger = logger;
@@ -14,12 +36,12 @@ module.exports = class CcxtExchangeOrder {
     this.callbacks = callbacks;
   }
 
-  async createOrder(order) {
+  async createOrder(order: Order): Promise<ExchangeOrder | undefined> {
     const side = order.isShort() ? 'sell' : 'buy';
 
-    let parameters = {};
+    let parameters: Record<string, any> = {};
 
-    if (this.callbacks && 'createOrder' in this.callbacks) {
+    if (this.callbacks && this.callbacks.createOrder) {
       const custom = this.callbacks.createOrder(order);
 
       if (custom) {
@@ -27,7 +49,7 @@ module.exports = class CcxtExchangeOrder {
       }
     }
 
-    let promise;
+    let promise: Promise<any>;
     switch (order.getType()) {
       case Order.TYPE_STOP:
       case Order.TYPE_LIMIT:
@@ -44,14 +66,15 @@ module.exports = class CcxtExchangeOrder {
         promise = this.ccxtClient.createOrder(order.getSymbol(), order.getType(), side, order.getAmount());
         break;
       default:
-        throw `Ccxt order converter unsupported order type:${order.getType()}`;
+        throw new Error(`Ccxt order converter unsupported order type:${order.getType()}`);
     }
 
     let placedOrder;
     try {
       placedOrder = await promise;
-    } catch (e) {
-      if (e instanceof ccxt.NetworkError) {
+    } catch (e: any) {
+      // NetworkError is a base class in ccxt
+      if (e && typeof e === 'object' && 'constructor' in e && e.constructor.name === 'NetworkError') {
         return undefined;
       }
 
@@ -63,7 +86,7 @@ module.exports = class CcxtExchangeOrder {
     return exchangeOrder;
   }
 
-  async syncOrders() {
+  async syncOrders(): Promise<ExchangeOrder[] | undefined> {
     let orders;
     try {
       orders = await this.ccxtClient.fetchOpenOrders();
@@ -72,15 +95,15 @@ module.exports = class CcxtExchangeOrder {
       return undefined;
     }
 
-    if (this.callbacks && 'convertOrder' in this.callbacks) {
-      orders.forEach(o => {
-        this.callbacks.convertOrder(this.ccxtClient, o);
+    if (this.callbacks && this.callbacks.convertOrder) {
+      orders.forEach((o: any) => {
+        this.callbacks.convertOrder!(this.ccxtClient, o);
       });
     }
 
     const result = CcxtUtil.createExchangeOrders(orders);
 
-    if (this.callbacks && 'syncOrders' in this.callbacks) {
+    if (this.callbacks && this.callbacks.syncOrders) {
       let custom;
       try {
         custom = await this.callbacks.syncOrders(this.ccxtClient);
@@ -103,23 +126,23 @@ module.exports = class CcxtExchangeOrder {
    *
    * @param order
    */
-  triggerOrder(order) {
+  triggerOrder(order: ExchangeOrder): void {
     return this.orderbag.triggerOrder(order);
   }
 
-  getOrders() {
+  getOrders(): Promise<ExchangeOrder[]> {
     return this.orderbag.getOrders();
   }
 
-  findOrderById(id) {
+  findOrderById(id: string | number): Promise<ExchangeOrder | undefined> {
     return this.orderbag.findOrderById(id);
   }
 
-  getOrdersForSymbol(symbol) {
+  getOrdersForSymbol(symbol: string): Promise<ExchangeOrder[]> {
     return this.orderbag.getOrdersForSymbol(symbol);
   }
 
-  async updateOrder(id, order) {
+  async updateOrder(id: string | number, order: Partial<Pick<Order, 'amount' | 'price'>>): Promise<ExchangeOrder | undefined> {
     if (!order.amount && !order.price) {
       throw new Error('Invalid amount / price for update');
     }
@@ -139,19 +162,19 @@ module.exports = class CcxtExchangeOrder {
     return this.createOrder(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
   }
 
-  async cancelOrder(id) {
+  async cancelOrder(id: string | number): Promise<ExchangeOrder | undefined> {
     const order = await this.findOrderById(id);
     if (!order) {
       return undefined;
     }
 
-    let args = {
+    let args: CancelOrderArgs = {
       id: id,
       symbol: order.symbol,
       order: order
     };
 
-    if (this.callbacks && 'cancelOrder' in this.callbacks) {
+    if (this.callbacks && this.callbacks.cancelOrder) {
       const custom = this.callbacks.cancelOrder(this.ccxtClient, args);
 
       if (custom) {
@@ -160,7 +183,7 @@ module.exports = class CcxtExchangeOrder {
     }
 
     try {
-      await this.ccxtClient.cancelOrder(args.id, args.symbol);
+      await this.ccxtClient.cancelOrder(args.id as string, args.symbol);
     } catch (e) {
       if (String(e).includes('OrderNotFound')) {
         this.logger.info(`${this.ccxtClient.name}: order to cancel not found: ${args.id} - ${e}`);
@@ -177,58 +200,64 @@ module.exports = class CcxtExchangeOrder {
     return ExchangeOrder.createCanceled(order);
   }
 
-  async cancelAll(symbol) {
-    const orders = [];
+  async cancelAll(symbol: string): Promise<ExchangeOrder[]> {
+    const orders: ExchangeOrder[] = [];
 
-    for (const order of await this.getOrdersForSymbol(symbol)) {
-      orders.push(await this.cancelOrder(order.id));
+    const ordersForSymbol = await this.getOrdersForSymbol(symbol);
+    for (const order of ordersForSymbol) {
+      const result = await this.cancelOrder(order.id);
+      if (result) {
+        orders.push(result);
+      }
     }
 
     return orders;
   }
 
-  triggerPlainOrder(plainOrder) {
+  triggerPlainOrder(plainOrder: any): void {
     const ccxtOrder = this.ccxtClient.parseOrder(plainOrder);
     const exchangeOrder = this.convertOrder(ccxtOrder);
 
     this.triggerOrder(exchangeOrder);
   }
 
-  convertOrder(ccxtOrder) {
-    if (this.callbacks && 'convertOrder' in this.callbacks) {
+  convertOrder(ccxtOrder: any): ExchangeOrder {
+    if (this.callbacks && this.callbacks.convertOrder) {
       this.callbacks.convertOrder(this.ccxtClient, ccxtOrder);
     }
 
     return CcxtUtil.createExchangeOrder(ccxtOrder);
   }
 
-  static createEmpty(logger) {
+  static createEmpty(logger: any): CcxtExchangeOrder {
     const Empty = class extends CcxtExchangeOrder {
-      constructor(myLogger) {
-        super(undefined, undefined, myLogger);
+      constructor(myLogger: any) {
+        super(undefined as any, [], myLogger);
       }
 
-      async createOrder(order) {
+      async createOrder(order: Order): Promise<ExchangeOrder | undefined> {
         logger.info(`Empty CCXT state: createOrder stopped`);
         return undefined;
       }
 
-      async syncOrders() {
+      async syncOrders(): Promise<ExchangeOrder[] | undefined> {
         logger.info(`Empty CCXT state: syncOrders stopped`);
         return [];
       }
 
-      async updateOrder(id, order) {
+      async updateOrder(id: string | number, order: Partial<Pick<Order, 'amount' | 'price'>>): Promise<ExchangeOrder | undefined> {
         logger.info(`Empty CCXT state: updateOrder stopped`);
-        return [];
+        return undefined;
       }
 
-      async cancelOrder(id) {
+      async cancelOrder(id: string | number): Promise<ExchangeOrder | undefined> {
         logger.info(`Empty CCXT state: cancelOrder stopped`);
-        return [];
+        return undefined;
       }
     };
 
     return new Empty(logger);
   }
-};
+}
+
+export default CcxtExchangeOrder;

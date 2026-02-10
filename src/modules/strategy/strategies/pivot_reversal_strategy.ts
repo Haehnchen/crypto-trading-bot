@@ -57,7 +57,7 @@ export class PivotReversalStrategy {
 
     const long = indicatorPeriod.getPrice() > (currentValues.sma200 as number[]).slice(-1)[0];
 
-    const signal = this.getPivotSignal(long, indicatorPeriod);
+    const signal = this.getPivotSignal(long, indicatorPeriod) as 'long' | 'short' | undefined;
     if (signal) {
       return SignalResult.createSignal(signal, debug);
     }
@@ -150,3 +150,5 @@ export class PivotReversalStrategy {
     };
   }
 }
+
+export default PivotReversalStrategy;

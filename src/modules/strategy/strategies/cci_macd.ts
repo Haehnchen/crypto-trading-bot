@@ -1,9 +1,7 @@
 import { SignalResult } from '../dict/signal_result';
 import { IndicatorBuilder } from '../dict/indicator_builder';
 import { IndicatorPeriod } from '../dict/indicator_period';
-import { TechnicalAnalysis } from '../../../utils/technical_analysis';
-
-const TA = new TechnicalAnalysis();
+import { getPivotPoints } from '../../../utils/technical_analysis';
 
 export class CciMacd {
   getName(): string {
@@ -82,13 +80,13 @@ export class CciMacd {
     indicatorPeriod: IndicatorPeriod,
     result: SignalResult,
     options: Record<string, any>
-  ): string | undefined {
+  ): 'long' | 'short' | undefined {
     const macdLooback = indicatorPeriod.getIndicator('macd') as any[];
 
     const macdPivotReversal = options.macd_pivot_reversal || 5;
     const cciTrigger = options.cci_trigger || 150;
 
-    const macdPivot = TA.getPivotPoints(
+    const macdPivot = getPivotPoints(
       macdLooback.slice(macdPivotReversal * -3).map((macd: any) => macd.histogram),
       macdPivotReversal,
       macdPivotReversal
@@ -162,3 +160,5 @@ export class CciMacd {
     };
   }
 }
+
+export default CciMacd;

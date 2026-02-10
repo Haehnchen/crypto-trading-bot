@@ -38,7 +38,7 @@ export class DcaDipper {
       throw new Error('No price given');
     }
 
-    const context = indicatorPeriod.getStrategyContext();
+    const context = indicatorPeriod.getStrategyContext() as any;
     const options = context.getOptions() as DcaDipperOptions;
 
     if (!options.amount_currency) {
@@ -74,7 +74,7 @@ export class DcaDipper {
         emptySignal.setSignal('long');
       }
 
-      emptySignal.placeBuyOrder(options.amount_currency, orderPrice);
+      emptySignal.placeBuyOrder(parseFloat(options.amount_currency), orderPrice);
     }
 
     return emptySignal;
@@ -111,3 +111,5 @@ export class DcaDipper {
     };
   }
 }
+
+export default DcaDipper;

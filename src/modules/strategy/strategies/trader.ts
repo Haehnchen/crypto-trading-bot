@@ -1,10 +1,9 @@
 import { SignalResult } from '../dict/signal_result';
 import { IndicatorBuilder } from '../dict/indicator_builder';
 import { IndicatorPeriod } from '../dict/indicator_period';
-import { TechnicalAnalysis } from '../../../utils/technical_analysis';
+import { getPivotPoints } from '../../../utils/technical_analysis';
 import { Resample } from '../../../utils/resample';
-
-const TA = new TechnicalAnalysis();
+import * as TechnicalPattern from '../../../utils/technical_pattern';
 
 export class Trader {
   getName(): string {
@@ -28,9 +27,9 @@ export class Trader {
       return result;
     }
 
-    const candles3m = Resample.resampleMinutes(candles1m.slice().reverse(), '3');
+    const candles3m = Resample.resampleMinutes(candles1m.slice().reverse(), 3);
 
-    const foo = TechnicalAnalysis.getPivotPoints(
+    const foo = getPivotPoints(
       candles1m.slice(-10).map((c: any) => c.close),
       3,
       3
@@ -60,7 +59,6 @@ export class Trader {
 
     result.addDebug('pivot', foo);
 
-    const TechnicalPattern = require('../../../utils/technical_pattern');
     result.mergeDebug(TechnicalPattern.volumePump(candles3m.slice().reverse() || []));
 
     return result;
@@ -124,3 +122,5 @@ export class Trader {
     };
   }
 }
+
+export default Trader;

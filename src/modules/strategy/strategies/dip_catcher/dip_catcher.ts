@@ -140,3 +140,5 @@ export class DipCatcher {
     };
   }
 }
+
+export default DipCatcher;

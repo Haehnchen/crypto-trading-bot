@@ -1,19 +1,33 @@
-const BinanceClient = require('binance-api-node').default;
+import BinanceClient from 'binance-api-node';
 
-const moment = require('moment');
-const _ = require('lodash');
-const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
-const { Ticker } = require('../dict/ticker');
-const { TickerEvent } = require('../event/ticker_event');
-const { ExchangeOrder } = require('../dict/exchange_order');
-const { OrderUtil } = require('../utils/order_util');
-const { Position } = require('../dict/position');
-const { Order } = require('../dict/order');
-const { OrderBag } = require('./utils/order_bag');
-const { TradesUtil } = require('./utils/trades_util');
+import moment from 'moment';
+import _ from 'lodash';
+import { ExchangeCandlestick } from '../dict/exchange_candlestick';
+import { Ticker } from '../dict/ticker';
+import { TickerEvent } from '../event/ticker_event';
+import { ExchangeOrder } from '../dict/exchange_order';
+import { OrderUtil } from '../utils/order_util';
+import { Position } from '../dict/position';
+import { Order } from '../dict/order';
+import { OrderBag } from './utils/order_bag';
+import { TradesUtil } from './utils/trades_util';
+import { EventEmitter } from 'events';
 
-module.exports = class Binance {
-  constructor(eventEmitter, logger, queue, candleImport, throttler) {
+export class Binance {
+  private eventEmitter: EventEmitter;
+  private logger: any;
+  private queue: any;
+  private candleImport: any;
+  private throttler: any;
+  private client: any;
+  private exchangePairs: Record<string, ExchangePairInfo>;
+  private symbols: any[];
+  private trades: Record<string, any[]>;
+  private tickers: Record<string, Ticker>;
+  private balances: any[];
+  private orderbag: OrderBag;
+
+  constructor(eventEmitter: EventEmitter, logger: any, queue: any, candleImport: any, throttler: any) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;
@@ -29,10 +43,10 @@ module.exports = class Binance {
     this.orderbag = new OrderBag();
   }
 
-  start(config, symbols) {
+  start(config: any, symbols: any[]): void {
     this.symbols = symbols;
 
-    const opts = {};
+    const opts: any = {};
 
     if (config.key && config.secret && config.key.length > 0 && config.secret.length > 0) {
       opts.apiKey = config.key;
@@ -44,7 +58,7 @@ module.exports = class Binance {
     const me = this;
 
     if (config.key && config.secret) {
-      this.client.ws.user(async event => {
+      this.client.ws.user(async (event: any) => {
         await this.onWebSocketEvent(event);
       });
 
@@ -86,21 +100,21 @@ module.exports = class Binance {
     const { eventEmitter } = this;
     symbols.forEach(symbol => {
       // live prices
-      client.ws.ticker(symbol.symbol, ticker => {
+      client.ws.ticker(symbol.symbol, (ticker: any) => {
         eventEmitter.emit(
           'ticker',
           new TickerEvent(
             'binance',
             symbol.symbol,
-            (this.tickers[symbol.symbol] = new Ticker('binance', symbol.symbol, moment().format('X'), ticker.bestBid, ticker.bestAsk))
+            (this.tickers[symbol.symbol] = new Ticker('binance', symbol.symbol, parseInt(moment().format('X'), 10), ticker.bestBid, ticker.bestAsk))
           )
         );
       });
 
-      symbol.periods.forEach(interval => {
+      symbol.periods.forEach((interval: string) => {
         // backfill
         this.queue.add(() => {
-          client.candles({ symbol: symbol.symbol, limit: 500, interval: interval }).then(async candles => {
+          client.candles({ symbol: symbol.symbol, limit: 500, interval: interval as any }).then(async candles => {
             const ourCandles = candles.map(
               candle =>
                 new ExchangeCandlestick(
@@ -108,11 +122,11 @@ module.exports = class Binance {
                   symbol.symbol,
                   interval,
                   Math.round(candle.openTime / 1000),
-                  candle.open,
-                  candle.high,
-                  candle.low,
-                  candle.close,
-                  candle.volume
+                  parseFloat(candle.open),
+                  parseFloat(candle.high),
+                  parseFloat(candle.low),
+                  parseFloat(candle.close),
+                  parseFloat(candle.volume)
                 )
             );
 
@@ -130,11 +144,11 @@ module.exports = class Binance {
                 symbol.symbol,
                 interval,
                 Math.round(candle.startTime / 1000),
-                candle.open,
-                candle.high,
-                candle.low,
-                candle.close,
-                candle.volume
+                parseFloat(candle.open),
+                parseFloat(candle.high),
+                parseFloat(candle.low),
+                parseFloat(candle.close),
+                parseFloat(candle.volume)
               );
 
               await this.candleImport.insertThrottledCandles([ourCandle]);
@@ -149,14 +163,14 @@ module.exports = class Binance {
     this.logger.info(`Binance: Websocket tickers to open: ${tickersToOpen}`);
   }
 
-  async order(order) {
+  async order(order: Order): Promise<ExchangeOrder | undefined> {
     const payload = Binance.createOrderBody(order);
     let result;
 
     try {
       result = await this.client.order(payload);
-    } catch (e) {
-      this.logger.error(`Binance: order create error: ${JSON.stringify(e.code, e.message, order, payload)}`);
+    } catch (e: any) {
+      this.logger.error(`Binance: order create error: ${JSON.stringify([e.code, e.message, order, payload])}`);
 
       if ((e.message && e.message.toLowerCase().includes('insufficient balance')) || (e.code && e.code === -2010)) {
         return ExchangeOrder.createRejectedFromOrder(order, `${e.code} - ${e.message}`);
@@ -170,7 +184,7 @@ module.exports = class Binance {
     return exchangeOrder;
   }
 
-  async cancelOrder(id) {
+  async cancelOrder(id: string | number): Promise<ExchangeOrder | undefined> {
     const order = await this.findOrderById(id);
     if (!order) {
       return undefined;
@@ -181,7 +195,7 @@ module.exports = class Binance {
         symbol: order.symbol,
         orderId: id
       });
-    } catch (e) {
+    } catch (e: any) {
       const message = String(e).toLowerCase();
 
       // "Error: Unknown order sent."
@@ -201,8 +215,8 @@ module.exports = class Binance {
     return ExchangeOrder.createCanceled(order);
   }
 
-  async cancelAll(symbol) {
-    const orders = [];
+  async cancelAll(symbol: string): Promise<(ExchangeOrder | undefined)[]> {
+    const orders: (ExchangeOrder | undefined)[] = [];
 
     for (const order of await this.getOrdersForSymbol(symbol)) {
       orders.push(await this.cancelOrder(order.id));
@@ -211,18 +225,18 @@ module.exports = class Binance {
     return orders;
   }
 
-  static createOrderBody(order) {
+  static createOrderBody(order: Order): any {
     if (!order.getAmount() && !order.getPrice() && !order.getSymbol()) {
       throw Error('Invalid amount for update');
     }
 
-    const myOrder = {
+    const myOrder: any = {
       symbol: order.getSymbol(),
       side: order.isShort() ? 'SELL' : 'BUY',
       quantity: order.getAmount()
     };
 
-    let orderType;
+    let orderType: string;
     const type = order.getType();
     if (!type || type === 'limit') {
       orderType = 'LIMIT';
@@ -247,13 +261,13 @@ module.exports = class Binance {
     return myOrder;
   }
 
-  static createOrders(...orders) {
+  static createOrders(...orders: any[]): ExchangeOrder[] {
     return orders.map(order => {
       let retry = false;
 
-      let status;
+      let status: ExchangeOrder['status'];
 
-      let sourceStatus;
+      let sourceStatus: string;
       if (order.status) {
         sourceStatus = order.status; // REST
       } else if (order.orderStatus) {
@@ -279,7 +293,7 @@ module.exports = class Binance {
         retry = true;
       }
 
-      let sourceOrderStatus;
+      let sourceOrderStatus: string;
       if (order.type) {
         sourceOrderStatus = order.type; // REST
       } else if (order.orderType) {
@@ -291,7 +305,7 @@ module.exports = class Binance {
       const ordType = sourceOrderStatus.toLowerCase().replace(/[\W_]+/g, '');
 
       // secure the value
-      let orderType;
+      let orderType: ExchangeOrder['type'];
       switch (ordType) {
         case 'limit':
           orderType = ExchangeOrder.TYPE_LIMIT;
@@ -310,11 +324,11 @@ module.exports = class Binance {
           break;
       }
 
-      let amount;
+      let amount: number;
       if (order.origQty) {
-        amount = order.origQty; // REST
+        amount = parseFloat(order.origQty); // REST
       } else if (order.quantity) {
-        amount = order.quantity; // websocket
+        amount = parseFloat(order.quantity); // websocket
       } else {
         throw new Error(`Invalid order amount: ${JSON.stringify(order)}`);
       }
@@ -337,14 +351,14 @@ module.exports = class Binance {
         throw new Error(`Invalid order amount: ${JSON.stringify(amount, order)}`);
       }
 
-      let clientOrderId;
+      let clientOrderId: string | undefined;
       if (order.clientOrderId) {
         clientOrderId = order.clientOrderId; // REST
       } else if (order.newClientOrderId) {
         clientOrderId = order.newClientOrderId; // websocket
       }
 
-      let createdAt;
+      let createdAt: number | undefined;
       if (order.transactTime) {
         createdAt = order.transactTime; // REST
       } else if (order.time) {
@@ -364,10 +378,10 @@ module.exports = class Binance {
         order.symbol,
         status,
         parseFloat(order.price),
-        parseFloat(amount),
+        amount,
         retry,
         clientOrderId,
-        side,
+        side as 'buy' | 'sell',
         orderType,
         createdAt ? new Date(createdAt) : undefined,
         new Date(),
@@ -381,19 +395,19 @@ module.exports = class Binance {
    *
    * @param order
    */
-  triggerOrder(order) {
+  triggerOrder(order: ExchangeOrder): void {
     return this.orderbag.triggerOrder(order);
   }
 
-  getOrders() {
+  async getOrders(): Promise<ExchangeOrder[]> {
     return this.orderbag.getOrders();
   }
 
-  findOrderById(id) {
+  async findOrderById(id: string | number): Promise<ExchangeOrder | undefined> {
     return this.orderbag.findOrderById(id);
   }
 
-  getOrdersForSymbol(symbol) {
+  async getOrdersForSymbol(symbol: string): Promise<ExchangeOrder[]> {
     return this.orderbag.getOrdersForSymbol(symbol);
   }
 
@@ -404,12 +418,13 @@ module.exports = class Binance {
    * @param symbol
    * @returns {*}
    */
-  calculatePrice(price, symbol) {
-    if (!(symbol in this.exchangePairs) || !this.exchangePairs[symbol].tick_size) {
+  calculatePrice(price: number, symbol: string): number | undefined {
+    const pairInfo = this.exchangePairs[symbol];
+    if (!pairInfo || pairInfo.tick_size === undefined) {
       return undefined;
     }
 
-    return OrderUtil.calculateNearestSize(price, this.exchangePairs[symbol].tick_size);
+    return parseFloat(String(OrderUtil.calculateNearestSize(price, pairInfo.tick_size)));
   }
 
   /**
@@ -419,19 +434,20 @@ module.exports = class Binance {
    * @param symbol
    * @returns {*}
    */
-  calculateAmount(amount, symbol) {
-    if (!(symbol in this.exchangePairs) || !this.exchangePairs[symbol].lot_size) {
+  calculateAmount(amount: number, symbol: string): number | undefined {
+    const pairInfo = this.exchangePairs[symbol];
+    if (!pairInfo || pairInfo.lot_size === undefined) {
       return undefined;
     }
 
-    return OrderUtil.calculateNearestSize(amount, this.exchangePairs[symbol].lot_size);
+    return parseFloat(String(OrderUtil.calculateNearestSize(amount, pairInfo.lot_size)));
   }
 
-  async getPositions() {
-    const positions = [];
+  async getPositions(): Promise<Position[]> {
+    const positions: Position[] = [];
 
     // get pairs with capital to fake open positions
-    const capitals = {};
+    const capitals: Record<string, number> = {};
     this.symbols
       .filter(
         s =>
@@ -453,7 +469,7 @@ module.exports = class Binance {
     for (const balance of this.balances) {
       const { asset } = balance;
 
-      const assetPositions = [];
+      const assetPositions: Position[] = [];
 
       for (const pair in capitals) {
         // just a hack to get matching pairs with capital eg: "BTCUSDT" needs a capital of "BTC"
@@ -468,8 +484,8 @@ module.exports = class Binance {
           continue;
         }
 
-        let entry;
-        let createdAt;
+        let entry: number | undefined;
+        let createdAt: Date | undefined;
 
         // try to find a entry price, based on trade history
         const side = balance.available < 0 ? 'short' : 'long';
@@ -485,7 +501,7 @@ module.exports = class Binance {
         }
 
         // calculate profit based on the ticker price
-        let profit;
+        let profit: number | undefined;
         if (entry && this.tickers[pair]) {
           profit = (this.tickers[pair].bid / entry - 1) * 100;
 
@@ -502,7 +518,7 @@ module.exports = class Binance {
         // on multiple pair path orders with latest date wins
         const assetPositionsOrdered = assetPositions.sort(
           // order by latest
-          (a, b) => (b.createdAt ? b.createdAt : new Date('1970-01-01')) - (a.createdAt ? a.createdAt : new Date('1970-01-01'))
+          (a, b) => (b.createdAt ? b.createdAt.getTime() : new Date('1970-01-01').getTime()) - (a.createdAt ? a.createdAt.getTime() : new Date('1970-01-01').getTime())
         );
 
         positions.push(assetPositionsOrdered[0]);
@@ -512,11 +528,11 @@ module.exports = class Binance {
     return positions;
   }
 
-  async getPositionForSymbol(symbol) {
+  async getPositionForSymbol(symbol: string): Promise<Position | undefined> {
     return (await this.getPositions()).find(position => position.symbol === symbol);
   }
 
-  async updateOrder(id, order) {
+  async updateOrder(id: string | number, order: Partial<Pick<Order, 'amount' | 'price'>>): Promise<ExchangeOrder | undefined> {
     if (!order.amount && !order.price) {
       throw new Error('Invalid amount / price for update');
     }
@@ -529,14 +545,14 @@ module.exports = class Binance {
     // cancel order; mostly it can already be canceled
     await this.cancelOrder(id);
 
-    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
+    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount)) as Promise<ExchangeOrder>;
   }
 
-  getName() {
+  getName(): string {
     return 'binance';
   }
 
-  async onWebSocketEvent(event) {
+  async onWebSocketEvent(event: any): Promise<void> {
     if (event.eventType && event.eventType === 'executionReport' && ('orderStatus' in event || 'orderId' in event)) {
       this.logger.debug(`Binance: Got executionReport order event: ${JSON.stringify(event)}`);
 
@@ -577,7 +593,7 @@ module.exports = class Binance {
     }
   }
 
-  async syncOrders() {
+  async syncOrders(): Promise<void> {
     const symbols = this.symbols
       .filter(s => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
       .map(s => s.symbol);
@@ -585,7 +601,7 @@ module.exports = class Binance {
     this.logger.debug(`Binance: Sync orders for symbols: ${symbols.length}`);
 
     // false equal to all symbols
-    let openOrders = [];
+    let openOrders: any[] = [];
     try {
       openOrders = await this.client.openOrders(false);
     } catch (e) {
@@ -596,8 +612,8 @@ module.exports = class Binance {
     this.orderbag.set(Binance.createOrders(...openOrders));
   }
 
-  async syncBalances() {
-    let accountInfo;
+  async syncBalances(): Promise<void> {
+    let accountInfo: any;
     try {
       accountInfo = await this.client.accountInfo();
     } catch (e) {
@@ -612,8 +628,8 @@ module.exports = class Binance {
     this.logger.debug('Binance: Sync balances');
 
     this.balances = accountInfo.balances
-      .filter(b => parseFloat(b.free) + parseFloat(b.locked) > 0)
-      .map(balance => ({
+      .filter((b: any) => parseFloat(b.free) + parseFloat(b.locked) > 0)
+      .map((balance: any) => ({
         available: parseFloat(balance.free) + parseFloat(balance.locked),
         locked: parseFloat(balance.locked),
         asset: balance.asset
@@ -626,7 +642,7 @@ module.exports = class Binance {
    * @param symbols
    * @returns {Promise<void>}
    */
-  async syncTradesForEntries(symbols = []) {
+  async syncTradesForEntries(symbols: string[] = []): Promise<void> {
     // fetch all based on our allowed symbol capital
     if (symbols.length === 0) {
       const allSymbols = this.symbols
@@ -644,54 +660,56 @@ module.exports = class Binance {
 
     this.logger.debug(`Binance: Sync trades for entries: ${symbols.length} - ${JSON.stringify(symbols)}`);
 
-    const promises = symbols.map(symbol => async () => {
-      let symbolOrders;
+    const promises = symbols.map(symbol => {
+      return async () => {
+        let symbolOrders: any[];
 
-      try {
-        symbolOrders = await this.client.allOrders({
-          symbol: symbol,
-          limit: 10
-        });
-      } catch (e) {
-        this.logger.info(`Binance: Sync trades error for entries: ${symbol} - ${String(e)}`);
-        return undefined;
-      }
+        try {
+          symbolOrders = await this.client.allOrders({
+            symbol: symbol,
+            limit: 10
+          });
+        } catch (e) {
+          this.logger.info(`Binance: Sync trades error for entries: ${symbol} - ${String(e)}`);
+          return undefined;
+        }
 
-      const orders = symbolOrders
-        .filter(
-          // filled order and fully closed but be have also partially_filled ones if ordering was no fully done
-          // in case order was canceled but executedQty is set we have a partially cancel
-          order =>
-            ['filled', 'partially_filled'].includes(order.status.toLowerCase()) ||
-            (order.status.toLowerCase() === 'canceled' && parseFloat(order.executedQty) > 0)
-        )
-        .sort(
-          // order by latest
-          (a, b) => b.time - a.time
-        )
-        .map(order => {
-          let price = parseFloat(order.price);
+        const orders = symbolOrders
+          .filter(
+            // filled order and fully closed but be have also partially_filled ones if ordering was no fully done
+            // in case order was canceled but executedQty is set we have a partially cancel
+            (order: any) =>
+              ['filled', 'partially_filled'].includes(order.status.toLowerCase()) ||
+              (order.status.toLowerCase() === 'canceled' && parseFloat(order.executedQty) > 0)
+          )
+          .sort(
+            // order by latest
+            (a: any, b: any) => b.time - a.time
+          )
+          .map((order: any) => {
+            let price = parseFloat(order.price);
 
-          // market order is not having price info, we need to calulcate it
-          if (price === 0 && order.type && order.type.toLowerCase() === 'market') {
-            const executedQty = parseFloat(order.executedQty);
-            const cummulativeQuoteQty = parseFloat(order.cummulativeQuoteQty);
+            // market order is not having price info, we need to calulcate it
+            if (price === 0 && order.type && order.type.toLowerCase() === 'market') {
+              const executedQty = parseFloat(order.executedQty);
+              const cummulativeQuoteQty = parseFloat(order.cummulativeQuoteQty);
 
-            if (cummulativeQuoteQty !== 0 && executedQty !== 0) {
-              price = cummulativeQuoteQty / executedQty;
+              if (cummulativeQuoteQty !== 0 && executedQty !== 0) {
+                price = cummulativeQuoteQty / executedQty;
+              }
             }
-          }
 
-          return {
-            side: order.side.toLowerCase(),
-            price: price,
-            symbol: order.symbol,
-            time: new Date(order.time),
-            size: parseFloat(order.executedQty)
-          };
-        });
+            return {
+              side: order.side.toLowerCase(),
+              price: price,
+              symbol: order.symbol,
+              time: new Date(order.time),
+              size: parseFloat(order.executedQty)
+            };
+          });
 
-      return { symbol: symbol, orders: orders };
+        return { symbol: symbol, orders: orders };
+      };
     });
 
     // no queue for trigger; its timing relevant
@@ -715,34 +733,37 @@ module.exports = class Binance {
     });
   }
 
-  async syncPairInfo() {
+  async syncPairInfo(): Promise<void> {
     const pairs = await this.client.exchangeInfo();
     if (!pairs.symbols) {
       return;
     }
 
-    const exchangePairs = {};
-    pairs.symbols.forEach(pair => {
-      const pairInfo = {};
+    const exchangePairs: Record<string, ExchangePairInfo> = {};
+    pairs.symbols.forEach((pair: any) => {
+      const priceFilter = pair.filters.find((f: any) => f.filterType === 'PRICE_FILTER');
+      const lotSize = pair.filters.find((f: any) => f.filterType === 'LOT_SIZE');
 
-      const priceFilter = pair.filters.find(f => f.filterType === 'PRICE_FILTER');
-      if (priceFilter) {
-        pairInfo.tick_size = parseFloat(priceFilter.tickSize);
+      if (priceFilter && lotSize) {
+        exchangePairs[pair.symbol] = {
+          tick_size: parseFloat(priceFilter.tickSize),
+          lot_size: parseFloat(lotSize.stepSize)
+        };
       }
-
-      const lotSize = pair.filters.find(f => f.filterType === 'LOT_SIZE');
-      if (priceFilter) {
-        pairInfo.lot_size = parseFloat(lotSize.stepSize);
-      }
-
-      exchangePairs[pair.symbol] = pairInfo;
     });
 
     this.logger.info(`Binance: pairs synced: ${pairs.symbols.length}`);
     this.exchangePairs = exchangePairs;
   }
 
-  isInverseSymbol(symbol) {
+  isInverseSymbol(symbol: string): boolean {
     return false;
   }
-};
+}
+
+interface ExchangePairInfo {
+  tick_size: number;
+  lot_size: number;
+}
+
+export default Binance;

@@ -1,22 +1,37 @@
 'use strict';
 
-const BinanceClient = require('binance-api-node').default;
+import BinanceClient from 'binance-api-node';
 
-const moment = require('moment');
-const _ = require('lodash');
-const Binance = require('./binance');
-const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
-const { Ticker } = require('../dict/ticker');
-const { TickerEvent } = require('../event/ticker_event');
-const { ExchangeOrder } = require('../dict/exchange_order');
-const { OrderUtil } = require('../utils/order_util');
-const { TradesUtil } = require('./utils/trades_util');
-const { Position } = require('../dict/position');
-const { Order } = require('../dict/order');
-const { OrderBag } = require('./utils/order_bag');
+import moment from 'moment';
+import _ from 'lodash';
+import { Binance as BinanceClass } from './binance';
+import { ExchangeCandlestick } from '../dict/exchange_candlestick';
+import { Ticker } from '../dict/ticker';
+import { TickerEvent } from '../event/ticker_event';
+import { ExchangeOrder } from '../dict/exchange_order';
+import { OrderUtil } from '../utils/order_util';
+import { TradesUtil } from './utils/trades_util';
+import { Position } from '../dict/position';
+import { Order } from '../dict/order';
+import { OrderBag } from './utils/order_bag';
+import { EventEmitter } from 'events';
 
-module.exports = class BinanceMargin {
-  constructor(eventEmitter, logger, queue, candleImport, throttler) {
+export class BinanceMargin {
+  private eventEmitter: EventEmitter;
+  private candleImport: any;
+  private logger: any;
+  private queue: any;
+  private throttler: any;
+  private client: any;
+  private exchangePairs: Record<string, ExchangePairInfo>;
+  private symbols: any[];
+  private positions: Position[];
+  private trades: Record<string, any[]>;
+  private tickers: Record<string, Ticker>;
+  private balances: any[];
+  private orderbag: OrderBag;
+
+  constructor(eventEmitter: EventEmitter, logger: any, queue: any, candleImport: any, throttler: any) {
     this.eventEmitter = eventEmitter;
     this.candleImport = candleImport;
     this.logger = logger;
@@ -33,10 +48,10 @@ module.exports = class BinanceMargin {
     this.orderbag = new OrderBag();
   }
 
-  start(config, symbols) {
+  start(config: any, symbols: any[]): void {
     this.symbols = symbols;
 
-    const opts = {};
+    const opts: any = {};
 
     if (config.key && config.secret && config.key.length > 0 && config.secret.length > 0) {
       opts.apiKey = config.key;
@@ -48,7 +63,7 @@ module.exports = class BinanceMargin {
     const me = this;
 
     if (config.key && config.secret) {
-      this.client.ws.marginUser(async event => {
+      this.client.ws.marginUser(async (event: any) => {
         await this.onWebSocketEvent(event);
       });
 
@@ -90,7 +105,7 @@ module.exports = class BinanceMargin {
     const { eventEmitter } = this;
     symbols.forEach(symbol => {
       // live prices
-      client.ws.ticker(symbol.symbol, ticker => {
+      client.ws.ticker(symbol.symbol, (ticker: any) => {
         eventEmitter.emit(
           'ticker',
           new TickerEvent(
@@ -99,7 +114,7 @@ module.exports = class BinanceMargin {
             (this.tickers[symbol.symbol] = new Ticker(
               'binance_margin',
               symbol.symbol,
-              moment().format('X'),
+              parseInt(moment().format('X'), 10),
               ticker.bestBid,
               ticker.bestAsk
             ))
@@ -107,21 +122,21 @@ module.exports = class BinanceMargin {
         );
       });
 
-      symbol.periods.forEach(interval => {
+      symbol.periods.forEach((interval: string) => {
         // backfill
         this.queue.add(() => {
-          client.candles({ symbol: symbol.symbol, limit: 500, interval: interval }).then(async candles => {
-            const ourCandles = candles.map(candle => {
+          client.candles({ symbol: symbol.symbol, limit: 500, interval: interval as any }).then(async candles => {
+            const ourCandles = candles.map((candle: any) => {
               return new ExchangeCandlestick(
                 'binance_margin',
                 symbol.symbol,
                 interval,
                 Math.round(candle.openTime / 1000),
-                candle.open,
-                candle.high,
-                candle.low,
-                candle.close,
-                candle.volume
+                parseFloat(candle.open),
+                parseFloat(candle.high),
+                parseFloat(candle.low),
+                parseFloat(candle.close),
+                parseFloat(candle.volume)
               );
             });
 
@@ -139,11 +154,11 @@ module.exports = class BinanceMargin {
                 symbol.symbol,
                 interval,
                 Math.round(candle.startTime / 1000),
-                candle.open,
-                candle.high,
-                candle.low,
-                candle.close,
-                candle.volume
+                parseFloat(candle.open),
+                parseFloat(candle.high),
+                parseFloat(candle.low),
+                parseFloat(candle.close),
+                parseFloat(candle.volume)
               );
 
               await this.candleImport.insertThrottledCandles([ourCandle]);
@@ -158,8 +173,8 @@ module.exports = class BinanceMargin {
     this.logger.info(`Binance Margin: Websocket tickers to open: ${tickersToOpen}`);
   }
 
-  async order(order) {
-    const payload = Binance.createOrderBody(order);
+  async order(order: Order): Promise<ExchangeOrder | undefined> {
+    const payload = BinanceClass.createOrderBody(order);
 
     // on open position for need to repay via AUTO_REPAY else be borrowing via MARGIN_BUY
     const position = await this.getPositionForSymbol(order.getSymbol());
@@ -179,11 +194,11 @@ module.exports = class BinanceMargin {
       }
     }
 
-    let result;
+    let result: any;
 
     try {
       result = await this.client.marginOrder(payload);
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Binance Margin: order create error: ${JSON.stringify([e.code, e.message, order, payload])}`);
 
       // @TODO: retry possible: [-3007,"You have pending transcation, please try again later." // typo "transcation" externally ;)
@@ -201,12 +216,12 @@ module.exports = class BinanceMargin {
       return undefined;
     }
 
-    const exchangeOrder = Binance.createOrders(result)[0];
+    const exchangeOrder = BinanceClass.createOrders(result)[0];
     this.triggerOrder(exchangeOrder);
     return exchangeOrder;
   }
 
-  async cancelOrder(id) {
+  async cancelOrder(id: string | number): Promise<ExchangeOrder | undefined> {
     const order = await this.findOrderById(id);
     if (!order) {
       return undefined;
@@ -217,7 +232,7 @@ module.exports = class BinanceMargin {
         symbol: order.symbol,
         orderId: id
       });
-    } catch (e) {
+    } catch (e: any) {
       const message = String(e).toLowerCase();
 
       // "Error: Unknown order sent."
@@ -237,8 +252,8 @@ module.exports = class BinanceMargin {
     return ExchangeOrder.createCanceled(order);
   }
 
-  async cancelAll(symbol) {
-    const orders = [];
+  async cancelAll(symbol: string): Promise<(ExchangeOrder | undefined)[]> {
+    const orders: (ExchangeOrder | undefined)[] = [];
 
     for (const order of await this.getOrdersForSymbol(symbol)) {
       orders.push(await this.cancelOrder(order.id));
@@ -252,19 +267,19 @@ module.exports = class BinanceMargin {
    *
    * @param order
    */
-  triggerOrder(order) {
+  triggerOrder(order: ExchangeOrder): void {
     return this.orderbag.triggerOrder(order);
   }
 
-  getOrders() {
+  async getOrders(): Promise<ExchangeOrder[]> {
     return this.orderbag.getOrders();
   }
 
-  findOrderById(id) {
+  async findOrderById(id: string | number): Promise<ExchangeOrder | undefined> {
     return this.orderbag.findOrderById(id);
   }
 
-  getOrdersForSymbol(symbol) {
+  async getOrdersForSymbol(symbol: string): Promise<ExchangeOrder[]> {
     return this.orderbag.getOrdersForSymbol(symbol);
   }
 
@@ -275,12 +290,13 @@ module.exports = class BinanceMargin {
    * @param symbol
    * @returns {*}
    */
-  calculatePrice(price, symbol) {
-    if (!(symbol in this.exchangePairs) || !this.exchangePairs[symbol].tick_size) {
+  calculatePrice(price: number, symbol: string): number | undefined {
+    const pairInfo = this.exchangePairs[symbol];
+    if (!pairInfo || pairInfo.tick_size === undefined) {
       return undefined;
     }
 
-    return OrderUtil.calculateNearestSize(price, this.exchangePairs[symbol].tick_size);
+    return parseFloat(String(OrderUtil.calculateNearestSize(price, pairInfo.tick_size)));
   }
 
   /**
@@ -290,19 +306,20 @@ module.exports = class BinanceMargin {
    * @param symbol
    * @returns {*}
    */
-  calculateAmount(amount, symbol) {
-    if (!(symbol in this.exchangePairs) || !this.exchangePairs[symbol].lot_size) {
+  calculateAmount(amount: number, symbol: string): number | undefined {
+    const pairInfo = this.exchangePairs[symbol];
+    if (!pairInfo || pairInfo.lot_size === undefined) {
       return undefined;
     }
 
-    return OrderUtil.calculateNearestSize(amount, this.exchangePairs[symbol].lot_size);
+    return parseFloat(String(OrderUtil.calculateNearestSize(amount, pairInfo.lot_size)));
   }
 
-  async getPositions() {
-    const positions = [];
+  async getPositions(): Promise<Position[]> {
+    const positions: Position[] = [];
 
     // get pairs with capital to fake open positions
-    const capitals = {};
+    const capitals: Record<string, number> = {};
     this.symbols
       .filter(
         s =>
@@ -324,7 +341,7 @@ module.exports = class BinanceMargin {
     for (const balance of this.balances) {
       const { asset } = balance;
 
-      const assetPositions = [];
+      const assetPositions: Position[] = [];
 
       for (const pair in capitals) {
         // just a hack to get matching pairs with capital eg: "BTCUSDT" needs a capital of "BTC"
@@ -338,8 +355,8 @@ module.exports = class BinanceMargin {
           continue;
         }
 
-        let entry;
-        let createdAt;
+        let entry: number | undefined;
+        let createdAt: Date | undefined;
 
         // try to find a entry price, based on trade history
         const side = balance.available < 0 ? 'short' : 'long';
@@ -355,7 +372,7 @@ module.exports = class BinanceMargin {
         }
 
         // calculate profit based on the ticker price
-        let profit;
+        let profit: number | undefined;
         if (entry && this.tickers[pair]) {
           profit = (this.tickers[pair].bid / entry - 1) * 100;
 
@@ -373,7 +390,7 @@ module.exports = class BinanceMargin {
         const assetPositionsOrdered = assetPositions.sort(
           // order by latest
           (a, b) =>
-            (b.createdAt ? b.createdAt : new Date('1970-01-01')) - (a.createdAt ? a.createdAt : new Date('1970-01-01'))
+            (b.createdAt ? b.createdAt.getTime() : new Date('1970-01-01').getTime()) - (a.createdAt ? a.createdAt.getTime() : new Date('1970-01-01').getTime())
         );
 
         positions.push(assetPositionsOrdered[0]);
@@ -383,13 +400,13 @@ module.exports = class BinanceMargin {
     return positions;
   }
 
-  async getPositionForSymbol(symbol) {
+  async getPositionForSymbol(symbol: string): Promise<Position | undefined> {
     return (await this.getPositions()).find(position => position.symbol === symbol);
   }
 
-  async updateOrder(id, order) {
+  async updateOrder(id: string | number, order: Partial<Pick<Order, 'amount' | 'price'>>): Promise<ExchangeOrder | undefined> {
     if (!order.amount && !order.price) {
-      throw 'Invalid amount / price for update';
+      throw new Error('Invalid amount / price for update');
     }
 
     const currentOrder = await this.findOrderById(id);
@@ -401,14 +418,14 @@ module.exports = class BinanceMargin {
     // cancel order; mostly it can already be canceled
     await this.cancelOrder(id);
 
-    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
+    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount)) as Promise<ExchangeOrder>;
   }
 
-  getName() {
+  getName(): string {
     return 'binance_margin';
   }
 
-  async onWebSocketEvent(event) {
+  async onWebSocketEvent(event: any): Promise<void> {
     if (event.eventType && event.eventType === 'executionReport' && ('orderStatus' in event || 'orderId' in event)) {
       this.logger.debug(`Binance Margin: Got executionReport order event: ${JSON.stringify(event)}`);
 
@@ -436,7 +453,7 @@ module.exports = class BinanceMargin {
       );
 
       if ('orderId' in event && !isRemoveEvent) {
-        const exchangeOrder = Binance.createOrders(event)[0];
+        const exchangeOrder = BinanceClass.createOrders(event)[0];
         this.orderbag.triggerOrder(exchangeOrder);
       }
     }
@@ -450,11 +467,11 @@ module.exports = class BinanceMargin {
     }
   }
 
-  async syncOrders() {
+  async syncOrders(): Promise<void> {
     this.logger.debug(`Binance Margin: Sync orders`);
 
     // false equal to all symbols
-    let openOrders = [];
+    let openOrders: any[] = [];
     try {
       openOrders = await this.client.marginOpenOrders(false);
     } catch (e) {
@@ -462,11 +479,11 @@ module.exports = class BinanceMargin {
       return;
     }
 
-    this.orderbag.set(Binance.createOrders(...openOrders));
+    this.orderbag.set(BinanceClass.createOrders(...openOrders));
   }
 
-  async syncBalances() {
-    let accountInfo;
+  async syncBalances(): Promise<void> {
+    let accountInfo: any;
     try {
       accountInfo = await this.client.marginAccountInfo();
     } catch (e) {
@@ -490,7 +507,7 @@ module.exports = class BinanceMargin {
    * @param symbols
    * @returns {Promise<void>}
    */
-  async syncTradesForEntries(symbols = []) {
+  async syncTradesForEntries(symbols: string[] = []): Promise<void> {
     // fetch all based on our allowed symbol capital
     if (symbols.length === 0) {
       const allSymbols = this.symbols
@@ -512,9 +529,9 @@ module.exports = class BinanceMargin {
 
     this.logger.debug(`Binance Margin: Sync trades for entries: ${symbols.length} - ${JSON.stringify(symbols)}`);
 
-    const promises = symbols.map(symbol => {
+    const promises = symbols.map((symbol: string) => {
       return async () => {
-        let symbolOrders;
+        let symbolOrders: any[];
 
         try {
           symbolOrders = await this.client.marginAllOrders({
@@ -530,15 +547,15 @@ module.exports = class BinanceMargin {
           .filter(
             // filled order and fully closed but be have also partially_filled ones if ordering was no fully done
             // in case order was canceled but executedQty is set we have a partially cancel
-            order =>
+            (order: any) =>
               ['filled', 'partially_filled'].includes(order.status.toLowerCase()) ||
               (order.status.toLowerCase() === 'canceled' && parseFloat(order.executedQty) > 0)
           )
           .sort(
             // order by latest
-            (a, b) => b.time - a.time
+            (a: any, b: any) => b.time - a.time
           )
-          .map(order => {
+          .map((order: any) => {
             let price = parseFloat(order.price);
 
             // market order is not having price info, we need to calulcate it
@@ -585,38 +602,34 @@ module.exports = class BinanceMargin {
     });
   }
 
-  async syncPairInfo() {
+  async syncPairInfo(): Promise<void> {
     const pairs = await this.client.exchangeInfo();
     if (!pairs.symbols) {
       return;
     }
 
-    const exchangePairs = {};
-    pairs.symbols.forEach(pair => {
-      const pairInfo = {};
+    const exchangePairs: Record<string, ExchangePairInfo> = {};
+    pairs.symbols.forEach((pair: any) => {
+      const priceFilter = pair.filters.find((f: any) => f.filterType === 'PRICE_FILTER');
+      const lotSize = pair.filters.find((f: any) => f.filterType === 'LOT_SIZE');
 
-      const priceFilter = pair.filters.find(f => f.filterType === 'PRICE_FILTER');
-      if (priceFilter) {
-        pairInfo.tick_size = parseFloat(priceFilter.tickSize);
+      if (priceFilter && lotSize) {
+        exchangePairs[pair.symbol] = {
+          tick_size: parseFloat(priceFilter.tickSize),
+          lot_size: parseFloat(lotSize.stepSize)
+        };
       }
-
-      const lotSize = pair.filters.find(f => f.filterType === 'LOT_SIZE');
-      if (priceFilter) {
-        pairInfo.lot_size = parseFloat(lotSize.stepSize);
-      }
-
-      exchangePairs[pair.symbol] = pairInfo;
     });
 
     this.logger.info(`Binance Margin: pairs synced: ${pairs.symbols.length}`);
     this.exchangePairs = exchangePairs;
   }
 
-  static createMarginBalances(balances) {
+  static createMarginBalances(balances: any[]): Balance[] {
     // ignore empty balances and stable coins
     return balances
       .filter(b => parseFloat(b.netAsset) !== 0 && !['USDT', 'BUSD', 'USDC'].includes(b.asset))
-      .map(balance => {
+      .map((balance: any) => {
         return {
           available: parseFloat(balance.netAsset),
           locked: parseFloat(balance.locked),
@@ -625,7 +638,20 @@ module.exports = class BinanceMargin {
       });
   }
 
-  isInverseSymbol(symbol) {
+  isInverseSymbol(symbol: string): boolean {
     return false;
   }
-};
+}
+
+interface ExchangePairInfo {
+  tick_size: number;
+  lot_size: number;
+}
+
+interface Balance {
+  available: number;
+  locked: number;
+  asset: string;
+}
+
+export default BinanceMargin;

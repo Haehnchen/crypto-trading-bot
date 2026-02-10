@@ -88,3 +88,5 @@ export class PARABOLIC {
     };
   }
 }
+
+export default PARABOLIC;

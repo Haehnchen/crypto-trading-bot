@@ -1,19 +1,34 @@
-const WebSocket = require('ws');
-const ccxt = require('ccxt');
-const moment = require('moment');
-const _ = require('lodash');
-const querystring = require('querystring');
-const request = require('request');
-const { Candlestick } = require('../dict/candlestick');
-const { Ticker } = require('../dict/ticker');
-const { Order } = require('../dict/order');
-const { TickerEvent } = require('../event/ticker_event');
-const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
-const { Position } = require('../dict/position');
-const CcxtExchangeOrder = require('./ccxt/ccxt_exchange_order');
+import WebSocket from 'ws';
+import ccxt from 'ccxt';
+import moment from 'moment';
+import _ from 'lodash';
+import querystring from 'querystring';
+import request from 'request';
+import { Candlestick } from '../dict/candlestick';
+import { Ticker } from '../dict/ticker';
+import { Order } from '../dict/order';
+import { TickerEvent } from '../event/ticker_event';
+import { ExchangeCandlestick } from '../dict/exchange_candlestick';
+import { Position } from '../dict/position';
+import { CcxtExchangeOrder } from './ccxt/ccxt_exchange_order';
+import { EventEmitter } from 'events';
 
-module.exports = class BinanceFutures {
-  constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter, throttler) {
+export class BinanceFuturesCoin {
+  private eventEmitter: EventEmitter;
+  private logger: any;
+  private queue: any;
+  private candleImporter: any;
+  private throttler: any;
+  private exchange: any;
+  private ccxtExchangeOrder: CcxtExchangeOrder;
+  private positions: Record<string, Position>;
+  private orders: Record<string, any>;
+  private tickers: Record<string, Ticker>;
+  private symbols: any[];
+  private intervals: NodeJS.Timeout[];
+  private ccxtClient?: any;
+
+  constructor(eventEmitter: EventEmitter, requestClient: any, candlestickResample: any, logger: any, queue: any, candleImporter: any, throttler: any) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;
@@ -28,11 +43,10 @@ module.exports = class BinanceFutures {
     this.tickers = {};
     this.symbols = [];
     this.intervals = [];
-    this.ccxtClient = undefined;
   }
 
-  backfill(symbol, period, start) {
-    const symbolUpdated = symbol.replace('PERP', '');
+  backfill(symbol: string, period: string, start: Date): Promise<Candlestick[]> {
+    const symbolUpdated = symbol.replace('_PERP', '');
 
     return new Promise((resolve, reject) => {
       const query = querystring.stringify({
@@ -42,15 +56,15 @@ module.exports = class BinanceFutures {
         startTime: moment(start).valueOf()
       });
 
-      request(`${this.getBaseUrl()}/fapi/v1/klines?${query}`, { json: true }, (err, res, body) => {
+      request(`${this.getBaseUrl()}/dapi/v1/klines?${query}`, { json: true }, (err, res, body) => {
         if (err) {
           console.log(`Binance: Candle backfill error: ${String(err)}`);
           reject();
           return;
         }
 
-        if (res.statusCode === 429) {
-          console.log(`Binance: Limit reached: ${String(res.headers)}`);
+        if (res!.statusCode === 429) {
+          console.log(`Binance: Limit reached: ${JSON.stringify(res!.headers)}`);
           // TODO delay next execution
           reject();
           return;
@@ -63,14 +77,14 @@ module.exports = class BinanceFutures {
         }
 
         resolve(
-          body.map(candle => {
+          body.map((candle: any) => {
             return new Candlestick(
-              moment(candle[0]).format('X'),
-              candle[1],
-              candle[2],
-              candle[3],
-              candle[4],
-              candle[5]
+              parseInt(moment(candle[0]).format('X'), 10),
+              parseFloat(candle[1]),
+              parseFloat(candle[2]),
+              parseFloat(candle[3]),
+              parseFloat(candle[4]),
+              parseFloat(candle[5])
             );
           })
         );
@@ -78,14 +92,14 @@ module.exports = class BinanceFutures {
     });
   }
 
-  start(config, symbols) {
+  start(config: any, symbols: any[]): void {
     const { logger } = this;
     this.exchange = null;
 
     const ccxtClient = (this.ccxtClient = new ccxt.binance({
       apiKey: config.key,
       secret: config.secret,
-      options: { defaultType: 'future', warnOnFetchOpenOrdersWithoutSymbol: false }
+      options: { defaultType: 'delivery', warnOnFetchOpenOrdersWithoutSymbol: false }
     }));
 
     this.intervals = [];
@@ -93,27 +107,27 @@ module.exports = class BinanceFutures {
     this.symbols = symbols;
     this.positions = {};
     this.orders = {};
-    this.ccxtExchangeOrder = BinanceFutures.createCustomCcxtOrderInstance(ccxtClient, symbols, logger);
+    this.ccxtExchangeOrder = BinanceFuturesCoin.createCustomCcxtOrderInstance(ccxtClient, symbols, logger);
 
     const me = this;
 
     if (config.key && config.secret && config.key.length > 0 && config.secret.length > 0) {
       setInterval(async () => {
-        me.throttler.addTask('binance_futures_sync_orders', async () => {
+        me.throttler.addTask('binance_futures_coin_sync_orders', async () => {
           await me.ccxtExchangeOrder.syncOrders();
         });
       }, 1000 * 30);
 
       setInterval(async () => {
-        me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi.bind(me));
+        me.throttler.addTask('binance_futures_coin_sync_positions', me.syncPositionViaRestApi.bind(me));
       }, 1000 * 36);
 
       setTimeout(async () => {
         await ccxtClient.fetchMarkets();
-        me.throttler.addTask('binance_futures_sync_orders', async () => {
+        me.throttler.addTask('binance_futures_coin_sync_orders', async () => {
           await me.ccxtExchangeOrder.syncOrders();
         });
-        me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi.bind(me));
+        me.throttler.addTask('binance_futures_coin_sync_positions', me.syncPositionViaRestApi.bind(me));
       }, 1000);
 
       setTimeout(async () => {
@@ -128,10 +142,10 @@ module.exports = class BinanceFutures {
     }
 
     symbols.forEach(symbol => {
-      symbol.periods.forEach(period => {
+      symbol.periods.forEach((period: string) => {
         // for bot init prefill data: load latest candles from api
         this.queue.add(async () => {
-          let ohlcvs;
+          let ohlcvs: any;
 
           try {
             ohlcvs = await ccxtClient.fetchOHLCV(symbol.symbol.replace('USDT', '/USDT'), period, undefined, 500);
@@ -143,7 +157,7 @@ module.exports = class BinanceFutures {
             return;
           }
 
-          const ourCandles = ohlcvs.map(candle => {
+          const ourCandles = ohlcvs.map((candle: any) => {
             return new ExchangeCandlestick(
               me.getName(),
               symbol.symbol,
@@ -168,8 +182,8 @@ module.exports = class BinanceFutures {
    *
    * @param positions Position
    */
-  fullPositionsUpdate(positions) {
-    const currentPositions = {};
+  fullPositionsUpdate(positions: Position[]): void {
+    const currentPositions: Record<string, Position> = {};
 
     positions.forEach(position => {
       currentPositions[position.symbol] = position;
@@ -178,19 +192,19 @@ module.exports = class BinanceFutures {
     this.positions = currentPositions;
   }
 
-  async getOrders() {
+  async getOrders(): Promise<any[]> {
     return this.ccxtExchangeOrder.getOrders();
   }
 
-  async findOrderById(id) {
+  async findOrderById(id: string | number): Promise<any | undefined> {
     return this.ccxtExchangeOrder.findOrderById(id);
   }
 
-  async getOrdersForSymbol(symbol) {
+  async getOrdersForSymbol(symbol: string): Promise<any[]> {
     return this.ccxtExchangeOrder.getOrdersForSymbol(symbol);
   }
 
-  async getPositions() {
+  async getPositions(): Promise<Position[]> {
     return Object.values(this.positions).map(position => {
       // overwrite profits by ticker price from position; ticker prices are more fresh
       if (position.getEntry() && this.tickers[position.getSymbol()]) {
@@ -205,39 +219,39 @@ module.exports = class BinanceFutures {
     });
   }
 
-  async getPositionForSymbol(symbol) {
+  async getPositionForSymbol(symbol: string): Promise<Position | undefined> {
     return (await this.getPositions()).find(position => position.symbol === symbol);
   }
 
-  calculatePrice(price, symbol) {
+  calculatePrice(price: number, symbol: string): number {
     return price; // done by ccxt
   }
 
-  calculateAmount(amount, symbol) {
+  calculateAmount(amount: number, symbol: string): number {
     return amount; // done by ccxt
   }
 
-  getName() {
-    return 'binance_futures';
+  getName(): string {
+    return 'binance_futures_coin';
   }
 
-  async order(order) {
+  async order(order: Order): Promise<any> {
     return this.ccxtExchangeOrder.createOrder(order);
   }
 
-  async cancelOrder(id) {
+  async cancelOrder(id: string | number): Promise<any> {
     const result = this.ccxtExchangeOrder.cancelOrder(id);
     await this.ccxtExchangeOrder.syncOrders();
     return result;
   }
 
-  async cancelAll(symbol) {
+  async cancelAll(symbol: string): Promise<any> {
     const result = this.ccxtExchangeOrder.cancelAll(symbol);
     await this.ccxtExchangeOrder.syncOrders();
     return result;
   }
 
-  async updateOrder(id, order) {
+  async updateOrder(id: string | number, order: Partial<Pick<Order, 'amount' | 'price'>>): Promise<any> {
     if (!order.amount && !order.price) {
       throw new Error('Invalid amount / price for update');
     }
@@ -253,7 +267,7 @@ module.exports = class BinanceFutures {
    * @param positions
    * @returns {*}
    */
-  static createPositions(positions) {
+  static createPositions(positions: any[]): Position[] {
     return positions.map(position => {
       const positionAmt = parseFloat(position.positionAmt);
 
@@ -284,7 +298,7 @@ module.exports = class BinanceFutures {
    * @param position
    * @returns {*}
    */
-  static createPositionFromWebsocket(position) {
+  static createPositionFromWebsocket(position: any): Position {
     const positionAmt = parseFloat(position.pa);
     const entryPrice = parseFloat(position.ep);
 
@@ -303,9 +317,9 @@ module.exports = class BinanceFutures {
   /**
    * Websocket position updates
    */
-  accountUpdate(message) {
+  accountUpdate(message: any): void {
     if (message.a && message.a.P) {
-      message.a.P.forEach(position => {
+      message.a.P.forEach((position: any) => {
         if (!position.s || !position.ps || position.ps.toLowerCase() !== 'both') {
           return;
         }
@@ -327,7 +341,7 @@ module.exports = class BinanceFutures {
           position.pa !== '0' &&
           (parseFloat(position.ep) > 0.00001 || parseFloat(position.ep) < -0.00001) // prevent float point issues
         ) {
-          this.positions[position.s] = BinanceFutures.createPositionFromWebsocket(position);
+          this.positions[position.s] = BinanceFuturesCoin.createPositionFromWebsocket(position);
 
           this.logger.info(`Binance Futures: Websocket position new found: ${JSON.stringify([position.s, position])}`);
 
@@ -351,38 +365,38 @@ module.exports = class BinanceFutures {
   /**
    * As a websocket fallback update orders also on REST
    */
-  async syncPositionViaRestApi() {
-    let response;
+  async syncPositionViaRestApi(): Promise<void> {
+    let response: any;
     try {
-      response = await this.ccxtClient.fapiPrivateGetPositionRisk();
+      response = await this.ccxtClient.dapiPrivateGetPositionRisk();
     } catch (e) {
       this.logger.error(`Binance Futures: error getting positions:${e}`);
       return;
     }
 
-    const positions = response.filter(position => position.entryPrice && parseFloat(position.entryPrice) > 0);
-    this.fullPositionsUpdate(BinanceFutures.createPositions(positions));
+    const positions = response.filter((position: any) => position.entryPrice && parseFloat(position.entryPrice) > 0);
+    this.fullPositionsUpdate(BinanceFuturesCoin.createPositions(positions));
 
     this.logger.debug(`Binance Futures: positions updates: ${positions.length}`);
   }
 
-  isInverseSymbol(symbol) {
-    return false;
+  isInverseSymbol(symbol: string): boolean {
+    return true;
   }
 
-  async initPublicWebsocket(symbols) {
+  async initPublicWebsocket(symbols: any[]): Promise<void> {
     const me = this;
 
-    const allSubscriptions = [];
+    const allSubscriptions: string[] = [];
     symbols.forEach(symbol => {
       allSubscriptions.push(`${symbol.symbol.toLowerCase()}@bookTicker`);
-      allSubscriptions.push(...symbol.periods.map(p => `${symbol.symbol.toLowerCase()}@kline_${p}`));
+      allSubscriptions.push(...symbol.periods.map((p: string) => `${symbol.symbol.toLowerCase()}@kline_${p}`));
     });
 
     me.logger.info(`Binance Futures: Public stream subscriptions: ${allSubscriptions.length}`);
 
     // "A single connection can listen to a maximum of 200 streams."; let us have some window frames
-    _.chunk(allSubscriptions, 180).forEach((allSubscriptionsChunk, indexConnection) => {
+    _.chunk(allSubscriptions, 180).forEach((allSubscriptionsChunk: string[], indexConnection: number) => {
       me.initPublicWebsocketChunk(allSubscriptionsChunk, indexConnection);
     });
   }
@@ -393,17 +407,17 @@ module.exports = class BinanceFutures {
    * @param {string[]} subscriptions
    * @param {int} indexConnection
    */
-  initPublicWebsocketChunk(subscriptions, indexConnection) {
+  initPublicWebsocketChunk(subscriptions: string[], indexConnection: number): void {
     const me = this;
-    const ws = new WebSocket('wss://fstream.binance.com/stream');
+    const ws = new WebSocket('wss://dstream.binance.com/stream');
 
-    ws.onerror = function(event) {
+    ws.onerror = function(event: any) {
       me.logger.error(
         `Binance Futures: Public stream (${indexConnection}) error: ${JSON.stringify([event.code, event.message])}`
       );
     };
 
-    let subscriptionTimeouts = {};
+    const subscriptionTimeouts: Record<number, NodeJS.Timeout> = {};
 
     ws.onopen = function() {
       me.logger.info(`Binance Futures: Public stream (${indexConnection}) opened.`);
@@ -413,7 +427,7 @@ module.exports = class BinanceFutures {
       );
 
       // "we are only allowed to send 5 requests per second"; but limit it also for the "SUBSCRIBE" itself who knows upcoming changes on this
-      _.chunk(subscriptions, 15).forEach((subscriptionChunk, index) => {
+      _.chunk(subscriptions, 15).forEach((subscriptionChunk: string[], index: number) => {
         subscriptionTimeouts[index] = setTimeout(() => {
           me.logger.debug(
             `Binance Futures: Public stream (${indexConnection}) subscribing: ${JSON.stringify(subscriptionChunk)}`
@@ -432,7 +446,7 @@ module.exports = class BinanceFutures {
       });
     };
 
-    ws.onmessage = async function(event) {
+    ws.onmessage = async function(event: any) {
       if (event.type && event.type === 'message') {
         const body = JSON.parse(event.data);
 
@@ -445,7 +459,7 @@ module.exports = class BinanceFutures {
               (me.tickers[body.data.s] = new Ticker(
                 me.getName(),
                 body.data.s,
-                moment().format('X'),
+                parseInt(moment().format('X'), 10),
                 parseFloat(body.data.b),
                 parseFloat(body.data.a)
               ))
@@ -469,7 +483,7 @@ module.exports = class BinanceFutures {
       }
     };
 
-    ws.onclose = function(event) {
+    ws.onclose = function(event: any) {
       me.logger.error(
         `Binance Futures: Public Stream (${indexConnection}) connection closed: ${JSON.stringify([
           event.code,
@@ -480,20 +494,13 @@ module.exports = class BinanceFutures {
       Object.values(subscriptionTimeouts).forEach(timeout => {
         clearTimeout(timeout);
       });
-
-      subscriptionTimeouts = {};
-
-      setTimeout(async () => {
-        me.logger.info(`Binance Futures: Public stream (${indexConnection}) connection reconnect`);
-        await me.initPublicWebsocketChunk(subscriptions, indexConnection);
-      }, 1000 * 30);
     };
   }
 
-  async initUserWebsocket() {
-    let response;
+  async initUserWebsocket(): Promise<boolean | undefined> {
+    let response: any;
     try {
-      response = await this.ccxtClient.fapiPrivatePostListenKey();
+      response = await this.ccxtClient.dapiPrivatePostListenKey();
     } catch (e) {
       this.logger.error(`Binance Futures: listenKey error: ${String(e)}`);
       return undefined;
@@ -505,8 +512,8 @@ module.exports = class BinanceFutures {
     }
 
     const me = this;
-    const ws = new WebSocket(`wss://fstream.binance.com/ws/${response.listenKey}`);
-    ws.onerror = function(e) {
+    const ws = new WebSocket(`wss://dstream.binance.com/ws/${response.listenKey}`);
+    ws.onerror = function(e: any) {
       me.logger.info(`Binance Futures: Connection error: ${String(e)}`);
     };
 
@@ -514,16 +521,16 @@ module.exports = class BinanceFutures {
       me.logger.info(`Binance Futures: Opened user stream`);
     };
 
-    ws.onmessage = async function(event) {
+    ws.onmessage = async function(event: any) {
       if (event && event.type === 'message') {
         const message = JSON.parse(event.data);
 
         if (message.e && message.e.toUpperCase() === 'ORDER_TRADE_UPDATE') {
-          const order = BinanceFutures.createRestOrderFromWebsocket(message.o);
+          const order = BinanceFuturesCoin.createRestOrderFromWebsocket(message.o);
 
           me.logger.info(`Binance Futures: ORDER_TRADE_UPDATE event: ${JSON.stringify([message.e, message.o, order])}`);
           me.throttler.addTask(
-            'binance_futures_sync_orders',
+            'binance_futures_coin_sync_orders',
             async () => {
               await me.ccxtExchangeOrder.syncOrders();
             },
@@ -535,21 +542,21 @@ module.exports = class BinanceFutures {
         if (message.e && message.e.toUpperCase() === 'ACCOUNT_UPDATE') {
           me.accountUpdate(message);
 
-          me.throttler.addTask('binance_futures_sync_positions', me.syncPositionViaRestApi.bind(me), 3000);
+          me.throttler.addTask('binance_futures_coin_sync_positions', me.syncPositionViaRestApi.bind(me), 3000);
         }
       }
     };
 
     const heartbeat = setInterval(async () => {
       try {
-        await this.ccxtClient.fapiPrivatePutListenKey();
+        await this.ccxtClient.dapiPrivatePutListenKey();
         this.logger.debug('Binance Futures: user stream ping successfully done');
       } catch (e) {
         this.logger.error(`Binance Futures: user stream ping error: ${String(e)}`);
       }
     }, 1000 * 60 * 10);
 
-    ws.onclose = function(event) {
+    ws.onclose = function(event: any) {
       me.logger.error(`Binance futures: User stream connection closed: ${JSON.stringify([event.code, event.message])}`);
       clearInterval(heartbeat);
 
@@ -562,20 +569,20 @@ module.exports = class BinanceFutures {
     return true;
   }
 
-  static createCustomCcxtOrderInstance(ccxtClient, symbols, logger) {
+  static createCustomCcxtOrderInstance(ccxtClient: any, symbols: any[], logger: any): CcxtExchangeOrder {
     // ccxt id and binance ids are not matching
     const CcxtExchangeOrderExtends = class extends CcxtExchangeOrder {
-      async createOrder(order) {
+      async createOrder(order: Order) {
         order.symbol = order.symbol.replace('USDT', '/USDT');
         return super.createOrder(order);
       }
     };
 
     return new CcxtExchangeOrderExtends(ccxtClient, symbols, logger, {
-      cancelOrder: (client, args) => {
+      cancelOrder: (client: any, args: any) => {
         return { symbol: args.symbol.replace('USDT', '/USDT') };
       },
-      convertOrder: (client, order) => {
+      convertOrder: (client: any, order: any) => {
         order.symbol = order.symbol.replace('/USDT', 'USDT');
 
         // ccxt does not pipe the stopPrice
@@ -583,8 +590,8 @@ module.exports = class BinanceFutures {
           order.price = parseFloat(order.info.stopPrice);
         }
       },
-      createOrder: order => {
-        const request = {
+      createOrder: (order: Order) => {
+        const request: any = {
           args: {}
         };
 
@@ -601,11 +608,11 @@ module.exports = class BinanceFutures {
     });
   }
 
-  getBaseUrl() {
-    return 'https://fapi.binance.com/';
+  getBaseUrl(): string {
+    return 'https://dapi.binance.com/';
   }
 
-  static createRestOrderFromWebsocket(websocketOrder) {
+  static createRestOrderFromWebsocket(websocketOrder: any): any {
     const order = websocketOrder;
 
     //     {
@@ -624,7 +631,7 @@ module.exports = class BinanceFutures {
     //         "updateTime": 1499827319559
     //     }
 
-    const map = {
+    const map: Record<string, string> = {
       s: 'symbol',
       c: 'clientOrderId',
       S: 'side',
@@ -640,7 +647,7 @@ module.exports = class BinanceFutures {
       // n: 'cumQuote' // not fully sure about commision
     };
 
-    const newOrder = {};
+    const newOrder: any = {};
     Object.keys(order).forEach(k => {
       if (map[k]) {
         newOrder[map[k]] = order[k];
@@ -649,4 +656,6 @@ module.exports = class BinanceFutures {
 
     return newOrder;
   }
-};
+}
+
+export default BinanceFuturesCoin;

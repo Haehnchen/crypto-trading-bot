@@ -23,8 +23,8 @@ export class CCI {
     });
   }
 
-  period(indicatorPeriod: IndicatorPeriod): SignalResult | undefined {
-    return this.cci(
+  async period(indicatorPeriod: IndicatorPeriod): Promise<SignalResult | undefined> {
+    return await this.cci(
       indicatorPeriod.getPrice(),
       indicatorPeriod.getIndicator('sma200'),
       indicatorPeriod.getIndicator('ema200'),
@@ -138,3 +138,5 @@ export class CCI {
     };
   }
 }
+
+export default CCI;

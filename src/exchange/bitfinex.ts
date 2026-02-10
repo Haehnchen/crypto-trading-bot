@@ -1,20 +1,28 @@
-const BFX = require('bitfinex-api-node');
+import BFX from 'bitfinex-api-node';
+import { Order } from 'bfx-api-node-models';
+import moment from 'moment';
+import _ from 'lodash';
+import { ExchangeCandlestick } from '../dict/exchange_candlestick';
+import { Ticker } from '../dict/ticker';
+import { Position } from '../dict/position';
+import { TickerEvent } from '../event/ticker_event';
+import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderSide, ExchangeOrderType } from '../dict/exchange_order';
+import { Order as MyOrder } from '../dict/order';
+import { EventEmitter } from 'events';
 
-const { Order } = require('bfx-api-node-models');
-const moment = require('moment');
-const _ = require('lodash');
-const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
-const { Ticker } = require('../dict/ticker');
-const { Position } = require('../dict/position');
+export class Bitfinex {
+  private eventEmitter: EventEmitter;
+  private candleImport: any;
+  private logger: any;
+  private requestClient: any;
+  private tickers: Record<string, Ticker>;
 
-const { TickerEvent } = require('../event/ticker_event');
-const { ExchangeOrder } = require('../dict/exchange_order');
+  private positions: Record<string, Position>;
+  private orders: Record<string, ExchangeOrder>;
+  private client: any;
+  private balanceInfo?: any;
 
-// const BFX_PRICE_PRECISION = 5; // https://docs.bitfinex.com/docs#price-precision
-// const BFX_AMOUNT_PRECISION = 8; // https://docs.bitfinex.com/docs#amount-precision
-
-module.exports = class Bitfinex {
-  constructor(eventEmitter, logger, requestClient, candleImport) {
+  constructor(eventEmitter: EventEmitter, logger: any, requestClient: any, candleImport: any) {
     this.eventEmitter = eventEmitter;
     this.candleImport = candleImport;
     this.logger = logger;
@@ -24,12 +32,12 @@ module.exports = class Bitfinex {
     this.tickers = {};
   }
 
-  start(config, symbols) {
-    const subscriptions = [];
+  start(config: any, symbols: any[]): void {
+    const subscriptions: any[] = [];
 
-    symbols.forEach(instance => {
+    symbols.forEach((instance: any) => {
       // candles
-      instance.periods.forEach(period => {
+      instance.periods.forEach((period: string) => {
         let myPeriod = period;
         if (period === '1d') {
           myPeriod = period.toUpperCase();
@@ -49,7 +57,7 @@ module.exports = class Bitfinex {
     });
 
     // split subscriptions into chunks; currently limit is 30 (reduce it on our side, also) based on Bitfinex api
-    _.chunk(subscriptions, 25).forEach((chunk, index) => {
+    _.chunk(subscriptions, 25).forEach((chunk: any[], index: number) => {
       // chunk connect, but wait for each chunk for possible connection limit
       setTimeout(async () => {
         this.openPublicWebsocketChunk(chunk, index + 1);
@@ -65,14 +73,14 @@ module.exports = class Bitfinex {
     }
   }
 
-  getName() {
+  getName(): string {
     return 'bitfinex';
   }
 
   /**
    * Position events from websocket: New, Update, Delete
    */
-  onPositionUpdate(position) {
+  onPositionUpdate(position: any): void {
     if (position.status && position.status.toLowerCase() === 'closed') {
       delete this.positions[Bitfinex.formatSymbol(position.symbol)];
       return;
@@ -91,8 +99,8 @@ module.exports = class Bitfinex {
     }
   }
 
-  onPositions(positions) {
-    const myPositions = {};
+  onPositions(positions: any[]): void {
+    const myPositions: Record<string, Position> = {};
 
     Bitfinex.createPositions(positions).forEach(position => {
       myPositions[position.symbol] = position;
@@ -104,7 +112,7 @@ module.exports = class Bitfinex {
   /**
    * Order events from websocket: New, Update, Delete
    */
-  onOrderUpdate(orderUpdate) {
+  onOrderUpdate(orderUpdate: any): void {
     if (orderUpdate.type.toLowerCase().includes('exchange')) {
       return;
     }
@@ -115,7 +123,7 @@ module.exports = class Bitfinex {
     this.orders[order.id] = order;
   }
 
-  async order(order) {
+  async order(order: MyOrder): Promise<ExchangeOrder> {
     const result = await new Order(Bitfinex.createOrder(order)).submit(this.client);
 
     const executedOrder = Bitfinex.createExchangeOrder(result);
@@ -124,25 +132,25 @@ module.exports = class Bitfinex {
     return executedOrder;
   }
 
-  async updateOrder(id, order) {
-    const changes = {
+  async updateOrder(id: string | number, order: Partial<Pick<MyOrder, 'amount' | 'price'>>): Promise<ExchangeOrder> {
+    const changes: any = {
       id: id
     };
 
-    if (order.getAmount()) {
+    if (order.amount) {
       // amount need be negative on sell / short orders; as on order create
       const ourOrder = await this.findOrderById(id);
-      changes.amount = String(ourOrder && ourOrder.isShort() ? order.getAmount() * -1 : order.getAmount());
+      changes.amount = String(ourOrder && ourOrder.isShort() ? order.amount * -1 : order.amount);
     }
 
-    if (order.getPrice()) {
-      changes.price = String(order.getPrice());
+    if (order.price) {
+      changes.price = String(order.price);
     }
 
     let result;
     try {
       result = await this.client.updateOrder(changes);
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Bitfinex: error updating order: ${JSON.stringify([id, order, e.message])}`);
       throw e;
     }
@@ -155,11 +163,11 @@ module.exports = class Bitfinex {
     return executedOrder;
   }
 
-  async getOrders() {
+  async getOrders(): Promise<ExchangeOrder[]> {
     return Object.values(this.orders).filter(order => order.status === 'open');
   }
 
-  async getOrdersForSymbol(symbol) {
+  async getOrdersForSymbol(symbol: string): Promise<ExchangeOrder[]> {
     return Object.values(this.orders).filter(order => order.status === 'open' && order.symbol === symbol);
   }
 
@@ -168,11 +176,11 @@ module.exports = class Bitfinex {
    * The precision level of all trading prices is based on significant figures. All pairs on Bitfinex use up to 5 significant digits and up to 8 decimals (e.g. 1.2345, 123.45, 1234.5, 0.00012345). Prices submit with a precision larger than 5 will be cut by the API.
    *
    * @param price
-   * @returns {float}
+   * @returns {number}
    */
-  calculatePrice(price) {
+  calculatePrice(price: number): number {
     // return Number.parseFloat(Number.parseFloat(price).toPrecision(BFX_PRICE_PRECISION));
-    return Number.parseFloat(price);
+    return Number.parseFloat(String(price));
   }
 
   /**
@@ -180,14 +188,14 @@ module.exports = class Bitfinex {
    * The amount field allows up to 8 decimals. Anything exceeding this will be rounded to the 8th decimal.
    *
    * @param amount
-   * @returns {*}
+   * @returns {number}
    */
-  calculateAmount(amount) {
+  calculateAmount(amount: number): number {
     // return Number.parseFloat(Number.parseFloat(amount).toPrecision(BFX_AMOUNT_PRECISION));
-    return Number.parseFloat(amount);
+    return Number.parseFloat(String(amount));
   }
 
-  async getPositions() {
+  async getPositions(): Promise<Position[]> {
     return new Promise(resolve => {
       const positions = Object.values(this.positions).map(position =>
         position.entry && this.tickers[position.symbol]
@@ -203,14 +211,14 @@ module.exports = class Bitfinex {
     });
   }
 
-  getPositionForSymbol(symbol) {
+  getPositionForSymbol(symbol: string): Promise<Position | undefined> {
     return new Promise(resolve => {
       const position = Object.values(this.positions).find(pos => pos.symbol === symbol);
       resolve(position);
     });
   }
 
-  async cancelOrder(id) {
+  async cancelOrder(id: string | number): Promise<ExchangeOrder | undefined> {
     // external lib does not support string as id; must be int
     // is failing in a timeout
     let cancelOrderId = id;
@@ -225,7 +233,7 @@ module.exports = class Bitfinex {
 
     try {
       await this.client.cancelOrder(cancelOrderId);
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Bitfinex: cancel order error: ${e}`);
 
       if (
@@ -245,12 +253,12 @@ module.exports = class Bitfinex {
     return ExchangeOrder.createCanceled(order);
   }
 
-  async findOrderById(id) {
+  async findOrderById(id: string | number): Promise<ExchangeOrder | undefined> {
     const orders = await this.getOrders();
-    return orders.find(order => parseInt(order.id, 10) === id);
+    return orders.find(order => parseInt(String(order.id), 10) === id);
   }
 
-  async cancelAll(symbol) {
+  async cancelAll(symbol: string): Promise<(ExchangeOrder | undefined)[]> {
     const orders = await this.getOrdersForSymbol(symbol);
     return Promise.all(
       orders.map(o => {
@@ -264,7 +272,7 @@ module.exports = class Bitfinex {
    *
    * @param order
    */
-  triggerOrder(order) {
+  triggerOrder(order: ExchangeOrder): void {
     if (!(order instanceof ExchangeOrder)) {
       throw new Error(`Invalid order given`);
     }
@@ -278,8 +286,8 @@ module.exports = class Bitfinex {
     this.orders[order.id] = order;
   }
 
-  static createExchangeOrder(order) {
-    let status;
+  static createExchangeOrder(order: any): ExchangeOrder {
+    let status: ExchangeOrderStatus;
     let retry = false;
 
     if (order.status === 'ACTIVE' || order.status.match(/^PARTIALLY FILLED/)) {
@@ -292,12 +300,14 @@ module.exports = class Bitfinex {
       status = 'rejected';
       retry = true;
       // order.reject_reason = 'post only'
+    } else {
+      status = 'open';
     }
 
     const bitfinexId = order.id;
     const { price } = order;
 
-    let orderType;
+    let orderType: ExchangeOrderType;
     switch (order.type.toLowerCase().replace(/[\W_]+/g, '')) {
       case 'limit':
         orderType = ExchangeOrder.TYPE_LIMIT;
@@ -319,10 +329,10 @@ module.exports = class Bitfinex {
         break;
     }
 
-    const orderValues = {};
+    const orderValues: Record<string, any> = {};
     if ('_fieldKeys' in order) {
       const { _fieldKeys: fieldKeys } = order;
-      fieldKeys.forEach(k => {
+      fieldKeys.forEach((k: string) => {
         orderValues[k] = order[k];
       });
     }
@@ -343,14 +353,14 @@ module.exports = class Bitfinex {
     );
   }
 
-  static createExchangeOrders(orders) {
+  static createExchangeOrders(orders: any[]): ExchangeOrder[] {
     return orders.map(Bitfinex.createExchangeOrder);
   }
 
-  static createOrder(order) {
+  static createOrder(order: MyOrder): any {
     const amount = order.getAmount();
 
-    const orderOptions = {
+    const orderOptions: Record<string, any> = {
       cid: order.getId(),
       symbol: `t${order.getSymbol()}`,
       amount: order.isShort() ? amount * -1 : amount,
@@ -384,7 +394,7 @@ module.exports = class Bitfinex {
     return myOrder;
   }
 
-  static createPositions(positions) {
+  static createPositions(positions: any[]): Position[] {
     return positions
       .filter(position => {
         return position.status.toLowerCase() === 'active';
@@ -402,15 +412,15 @@ module.exports = class Bitfinex {
       });
   }
 
-  static formatSymbol(symbol) {
+  static formatSymbol(symbol: string): string {
     return symbol.substring(0, 1) === 't' ? symbol.substring(1) : symbol;
   }
 
-  isInverseSymbol() {
+  isInverseSymbol(): boolean {
     return false;
   }
 
-  getTradableBalance() {
+  getTradableBalance(): number | undefined {
     return this.balanceInfo ? this.balanceInfo.amountNet : undefined;
   }
 
@@ -420,7 +430,7 @@ module.exports = class Bitfinex {
    * @param subscriptions
    * @param index current chunk
    */
-  openPublicWebsocketChunk(subscriptions, index) {
+  openPublicWebsocketChunk(subscriptions: any[], index: number): void {
     const me = this;
 
     me.logger.debug(`Bitfinex: public websocket ${index} chunks connecting: ${JSON.stringify(subscriptions)}`);
@@ -434,7 +444,7 @@ module.exports = class Bitfinex {
       }
     }).ws();
 
-    ws.on('error', err => {
+    ws.on('error', (err: any) => {
       me.logger.error(`Bitfinex: public websocket ${index} error: ${JSON.stringify([err.message, err])}`);
     });
 
@@ -448,11 +458,11 @@ module.exports = class Bitfinex {
       );
 
       subscriptions.forEach(subscription => {
-        ws[subscription.type](subscription.parameter);
+        (ws as any)[subscription.type](subscription.parameter);
       });
     });
 
-    ws.on('ticker', (pair, ticker) => {
+    ws.on('ticker', (pair: any, ticker: any) => {
       const symbol = Bitfinex.formatSymbol(pair);
 
       me.eventEmitter.emit(
@@ -460,12 +470,12 @@ module.exports = class Bitfinex {
         new TickerEvent(
           'bitfinex',
           symbol,
-          (me.tickers[symbol] = new Ticker('bitfinex', symbol, moment().format('X'), ticker.bid, ticker.ask))
+          (me.tickers[symbol] = new Ticker('bitfinex', symbol, parseInt(moment().format('X'), 10), ticker.bid, ticker.ask))
         )
       );
     });
 
-    ws.on('candle', async (candles, pair) => {
+    ws.on('candle', async (candles: any, pair: string) => {
       const options = pair.split(':');
 
       if (options.length < 3) {
@@ -479,10 +489,10 @@ module.exports = class Bitfinex {
         mySymbol = mySymbol.substring(1);
       }
 
-      const myCandles = [];
+      const myCandles: any[] = [];
 
       if (Array.isArray(candles)) {
-        candles.forEach(function(candle) {
+        candles.forEach(function(candle: any) {
           myCandles.push(candle);
         });
       } else {
@@ -490,10 +500,10 @@ module.exports = class Bitfinex {
       }
 
       const sticks = myCandles
-        .filter(function(candle) {
+        .filter(function(candle: any) {
           return typeof candle.mts !== 'undefined';
         })
-        .map(function(candle) {
+        .map(function(candle: any) {
           return new ExchangeCandlestick(
             'bitfinex',
             mySymbol,
@@ -524,7 +534,7 @@ module.exports = class Bitfinex {
    * @param apiSecret
    * @returns {WSv1|WSv2}
    */
-  openAuthenticatedPublicWebsocket(apiKey, apiSecret) {
+  openAuthenticatedPublicWebsocket(apiKey: string, apiSecret: string): any {
     const ws = new BFX({
       version: 2,
       transform: true,
@@ -541,7 +551,7 @@ module.exports = class Bitfinex {
 
     this.logger.info('Bitfinex: Authenticated Websocket connecting');
 
-    ws.on('error', err => {
+    ws.on('error', (err: any) => {
       me.logger.error(`Bitfinex: Authenticated Websocket error: ${JSON.stringify([err.message, err])}`);
     });
 
@@ -553,22 +563,22 @@ module.exports = class Bitfinex {
       me.logger.debug('Bitfinex: Authenticated Websocket Connection open');
 
       // authenticate
-      ws.auth();
+      (ws as any).auth();
     });
 
-    ws.onOrderUpdate({}, order => {
+    (ws as any).onOrderUpdate({}, (order: any) => {
       me.onOrderUpdate(order);
     });
 
-    ws.onOrderNew({}, order => {
+    (ws as any).onOrderNew({}, (order: any) => {
       me.onOrderUpdate(order);
     });
 
-    ws.onOrderClose({}, order => {
+    (ws as any).onOrderClose({}, (order: any) => {
       me.onOrderUpdate(order);
     });
 
-    ws.onOrderSnapshot({}, orders => {
+    (ws as any).onOrderSnapshot({}, (orders: any[]) => {
       const marginOrder = orders.filter(order => !order.type.toLowerCase().includes('exchange'));
 
       Bitfinex.createExchangeOrders(marginOrder).forEach(order => {
@@ -576,23 +586,23 @@ module.exports = class Bitfinex {
       });
     });
 
-    ws.onPositionSnapshot({}, positions => {
+    (ws as any).onPositionSnapshot({}, (positions: any[]) => {
       me.onPositions(positions);
     });
 
-    ws.onPositionUpdate({}, position => {
+    (ws as any).onPositionUpdate({}, (position: any) => {
       me.onPositionUpdate(position);
     });
 
-    ws.onPositionNew({}, position => {
+    (ws as any).onPositionNew({}, (position: any) => {
       me.onPositionUpdate(position);
     });
 
-    ws.onPositionClose({}, position => {
+    (ws as any).onPositionClose({}, (position: any) => {
       me.onPositionUpdate(position);
     });
 
-    ws.onBalanceInfoUpdate({}, balanceInfo => {
+    (ws as any).onBalanceInfoUpdate({}, (balanceInfo: any) => {
       this.balanceInfo = balanceInfo;
     });
 
@@ -600,4 +610,6 @@ module.exports = class Bitfinex {
 
     return ws;
   }
-};
+}
+
+export default Bitfinex;

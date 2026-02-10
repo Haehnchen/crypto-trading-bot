@@ -1,24 +1,40 @@
-const moment = require('moment');
-const ccxtpro = require('ccxt').pro;
-const { Ticker } = require('../dict/ticker');
-const { TickerEvent } = require('../event/ticker_event');
-const { ExchangeCandlestick } = require('../dict/exchange_candlestick');
-const { Position } = require('../dict/position');
-const CommonUtil = require('../utils/common_util');
-const { ExchangeOrder } = require('../dict/exchange_order');
-const { OrderBag } = require('./utils/order_bag');
-const { Order } = require('../dict/order');
-const { orderUtil } = require('../utils/order_util');
+import moment from 'moment';
+import ccxt from 'ccxt';
+import { Ticker } from '../dict/ticker';
+import { TickerEvent } from '../event/ticker_event';
+import { ExchangeCandlestick } from '../dict/exchange_candlestick';
+import { Position } from '../dict/position';
+import CommonUtil = require('../utils/common_util');
+import { ExchangeOrder } from '../dict/exchange_order';
+import { OrderBag } from './utils/order_bag';
+import { Order } from '../dict/order';
+import { orderUtil } from '../utils/order_util';
+import { EventEmitter } from 'events';
 
-module.exports = class BybitUnified {
-  constructor(eventEmitter, requestClient, candlestickResample, logger, queue, candleImporter, throttler) {
+export class BybitUnified {
+  private eventEmitter: EventEmitter;
+  private logger: any;
+  private queue: any;
+  private candleImporter: any;
+  private orderbag: OrderBag;
+
+  private apiKey?: string;
+  private apiSecret?: string;
+  private tickSizes: Record<string, number>;
+  private lotSizes: Record<string, number>;
+  private positions: Record<string, Position>;
+  private orders: Record<string, ExchangeOrder>;
+  private tickers: Record<string, Ticker>;
+  private symbols: any[];
+  private intervals: NodeJS.Timeout[];
+  private exchangeAuth?: any;
+
+  constructor(eventEmitter: EventEmitter, requestClient: any, candlestickResample: any, logger: any, queue: any, candleImporter: any, throttler: any) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;
     this.candleImporter = candleImporter;
 
-    this.apiKey = undefined;
-    this.apiSecret = undefined;
     this.tickSizes = {};
     this.lotSizes = {};
 
@@ -27,9 +43,10 @@ module.exports = class BybitUnified {
     this.tickers = {};
     this.symbols = [];
     this.intervals = [];
+    this.orderbag = new OrderBag();
   }
 
-  async start(config, symbols) {
+  async start(config: any, symbols: any[]): Promise<void> {
     const { eventEmitter } = this;
     const { logger } = this;
     const { tickSizes } = this;
@@ -42,27 +59,27 @@ module.exports = class BybitUnified {
     this.positions = {};
     this.orders = {};
 
-    const exchange = new ccxtpro.bybit({ newUpdates: false });
+    const exchange = new ccxt.pro.bybit({ newUpdates: false });
 
     setTimeout(async () => {
-      const result = (await exchange.fetch_markets()).filter(i => i.type === 'swap' && i.quote === 'USDT');
-      result.forEach(instrument => {
-        tickSizes[instrument.symbol] = parseFloat(instrument.precision.price);
-        lotSizes[instrument.symbol] = parseFloat(instrument.precision.amount);
+      const result = (await exchange.fetchMarkets()).filter(i => i.type === 'swap' && i.quote === 'USDT');
+      result.forEach((instrument: any) => {
+        tickSizes[instrument.symbol as string] = parseFloat(instrument.precision.price);
+        lotSizes[instrument.symbol as string] = parseFloat(instrument.precision.amount);
       });
     }, 5000);
 
     setTimeout(async () => {
-      const symbolPeriods = [];
+      const symbolPeriods: [string, string][] = [];
       symbols.forEach(symbol => {
-        symbolPeriods.push(...symbol.periods.map(p => [symbol.symbol, p]));
+        symbolPeriods.push(...symbol.periods.map((p: string) => [symbol.symbol, p] as [string, string]));
       });
 
       while (true) {
         try {
           const event = await exchange.watchOHLCVForSymbols(symbolPeriods);
 
-          const cxchangeCandlesticks = [];
+          const cxchangeCandlesticks: ExchangeCandlestick[] = [];
 
           for (const [symbol, tickers] of Object.entries(event)) {
             for (const [period, candles] of Object.entries(tickers)) {
@@ -91,7 +108,7 @@ module.exports = class BybitUnified {
             const tickerEvent = new TickerEvent(
               me.getName(),
               symbol,
-              (me.tickers[symbol] = new Ticker(me.getName(), symbol, moment().format('X'), ticker.bid, ticker.ask))
+              (me.tickers[symbol] = new Ticker(me.getName(), symbol, parseInt(moment().format('X'), 10), ticker.bid, ticker.ask))
             );
             eventEmitter.emit('ticker', tickerEvent);
           }
@@ -101,9 +118,6 @@ module.exports = class BybitUnified {
       }
     }, 1000);
 
-    // const tickers = await exchange.watchTickers(['BTC/USDT:USDT']);
-    // console.log(tickers);
-
     if (config.key && config.secret && config.key.length > 0 && config.secret.length > 0) {
       this.authInit(config.key, config.secret);
     } else {
@@ -111,7 +125,7 @@ module.exports = class BybitUnified {
     }
 
     symbols.forEach(symbol => {
-      symbol.periods.forEach(period => {
+      symbol.periods.forEach((period: string) => {
         // for bot init prefill data: load latest candles from api
         this.queue.add(async () => {
           let candles;
@@ -132,8 +146,8 @@ module.exports = class BybitUnified {
     });
   }
 
-  authInit(apiKey, secret) {
-    const exchange = new ccxtpro.bybit({
+  authInit(apiKey: string, secret: string): void {
+    const exchange = new ccxt.pro.bybit({
       apiKey: apiKey,
       secret: secret,
       newUpdates: true
@@ -177,7 +191,7 @@ module.exports = class BybitUnified {
     }, 1000);
   }
 
-  async updateOrderViaRest(exchange, me) {
+  async updateOrderViaRest(exchange: any, me?: any): Promise<void> {
     try {
       const orders = await exchange.fetchOpenOrders();
       this.orderbag.set(BybitUnified.createOrders(orders));
@@ -188,11 +202,11 @@ module.exports = class BybitUnified {
     }
   }
 
-  async updatePostionsViaRest(exchange) {
+  async updatePostionsViaRest(exchange: any): Promise<void> {
     try {
       const positions = await exchange.fetchPositions();
 
-      const positionsFinal = {};
+      const positionsFinal: Record<string, Position> = {};
       BybitUnified.createPositionsWithOpenStateOnly(positions).forEach(position => {
         positionsFinal[position.symbol] = position;
       });
@@ -205,31 +219,31 @@ module.exports = class BybitUnified {
     }
   }
 
-  static createOrders(orders) {
-    const myOrders = [];
+  static createOrders(orders: any[]): ExchangeOrder[] {
+    const myOrders: ExchangeOrder[] = [];
 
     orders.forEach(order => {
-      let status;
+      let status: ExchangeOrder['status'];
       switch (order.status) {
         case 'open':
-          status = ExchangeOrder.STATUS_OPEN;
+          status = 'open';
           break;
         case 'closed':
-          status = ExchangeOrder.STATUS_DONE;
+          status = 'done';
           break;
         case 'canceled':
-          status = ExchangeOrder.STATUS_CANCELED;
+          status = 'canceled';
           break;
         case 'rejected':
         case 'expired':
-          status = ExchangeOrder.STATUS_REJECTED;
+          status = 'rejected';
           break;
         default:
           console.error(`invalid order status: ${order.status}`);
           return;
       }
 
-      let orderType;
+      let orderType: ExchangeOrder['type'];
       switch (order.type) {
         case 'limit':
           orderType = ExchangeOrder.TYPE_LIMIT;
@@ -249,7 +263,7 @@ module.exports = class BybitUnified {
           order.status,
           order.price,
           order.amount,
-          status === ExchangeOrder.STATUS_REJECTED,
+          status === 'rejected',
           order.clientOrderId ? order.clientOrderId : undefined,
           order.side.toLowerCase() === 'buy' ? 'buy' : 'sell', // secure the value,
           orderType,
@@ -267,11 +281,11 @@ module.exports = class BybitUnified {
     return myOrders;
   }
 
-  static createPositionsWithOpenStateOnly(positions) {
+  static createPositionsWithOpenStateOnly(positions: any[]): Position[] {
     return positions
       .filter(position => ['short', 'long'].includes(position.side?.toLowerCase()))
       .map(position => {
-        const side = position.side.toLowerCase();
+        const side = position.side.toLowerCase() as 'long' | 'short';
         let size = position.contracts;
 
         if (side === 'short') {
@@ -291,23 +305,23 @@ module.exports = class BybitUnified {
       });
   }
 
-  getOrders() {
+  async getOrders(): Promise<ExchangeOrder[]> {
     return this.orderbag.getOrders();
   }
 
-  findOrderById(id) {
+  async findOrderById(id: string | number): Promise<ExchangeOrder | undefined> {
     return this.orderbag.findOrderById(id);
   }
 
-  getOrdersForSymbol(symbol) {
+  async getOrdersForSymbol(symbol: string): Promise<ExchangeOrder[]> {
     return this.orderbag.getOrdersForSymbol(symbol);
   }
 
-  async getPositions() {
+  async getPositions(): Promise<Position[]> {
     return Object.values(this.positions);
   }
 
-  async getPositionForSymbol(symbol) {
+  async getPositionForSymbol(symbol: string): Promise<Position | undefined> {
     for (const position of await this.getPositions()) {
       if (position.symbol === symbol) {
         return position;
@@ -324,12 +338,13 @@ module.exports = class BybitUnified {
    * @param symbol
    * @returns {*}
    */
-  calculatePrice(price, symbol) {
-    if (!(symbol in this.tickSizes)) {
+  calculatePrice(price: number, symbol: string): number | undefined {
+    const tickSize = this.tickSizes[symbol];
+    if (tickSize === undefined) {
       return undefined;
     }
 
-    return orderUtil.calculateNearestSize(price, this.tickSizes[symbol]);
+    return parseFloat(String(orderUtil.calculateNearestSize(price, tickSize)));
   }
 
   /**
@@ -339,20 +354,21 @@ module.exports = class BybitUnified {
    * @param symbol
    * @returns {*}
    */
-  calculateAmount(amount, symbol) {
-    if (!(symbol in this.lotSizes)) {
+  calculateAmount(amount: number, symbol: string): number | undefined {
+    const lotSize = this.lotSizes[symbol];
+    if (lotSize === undefined) {
       return undefined;
     }
 
-    return orderUtil.calculateNearestSize(amount, this.lotSizes[symbol]);
+    return parseFloat(String(orderUtil.calculateNearestSize(amount, lotSize)));
   }
 
-  getName() {
+  getName(): string {
     return 'bybit_unified';
   }
 
-  async order(order) {
-    let orderType;
+  async order(order: Order): Promise<ExchangeOrder | undefined> {
+    let orderType: 'limit' | 'market';
     switch (order.getType()) {
       case Order.TYPE_LIMIT:
         orderType = 'limit';
@@ -371,7 +387,7 @@ module.exports = class BybitUnified {
       reduceOnly: order.isReduceOnly()
     };
 
-    let placedOrder;
+    let placedOrder: any;
     try {
       placedOrder = await this.exchangeAuth.createOrder(
         order.getSymbol(),
@@ -381,7 +397,7 @@ module.exports = class BybitUnified {
         order.getPrice(),
         params
       );
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`${this.getName()}: order place error: ${e.message} ${JSON.stringify(order)}`);
       return ExchangeOrder.createRejectedFromOrder(order, e.message);
     }
@@ -392,24 +408,26 @@ module.exports = class BybitUnified {
     return BybitUnified.createOrders([o])[0];
   }
 
-  async cancelOrder(id) {
+  async cancelOrder(id: string | number): Promise<void> {
     const order = await this.findOrderById(id);
     try {
       await this.exchangeAuth.cancelOrder(id, order.getSymbol());
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`${this.getName()}: order cancel error: ${e.message} ${JSON.stringify(id)}`);
     }
   }
 
-  async cancelAll(symbol) {
+  async cancelAll(symbol: string): Promise<void> {
     try {
       await this.exchangeAuth.cancelAllOrders(symbol);
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`${this.getName()}: order cancel all error: ${e.message} ${JSON.stringify(symbol)}`);
     }
   }
 
-  isInverseSymbol(symbol) {
+  isInverseSymbol(symbol: string): boolean {
     return false;
   }
-};
+}
+
+export default BybitUnified;
