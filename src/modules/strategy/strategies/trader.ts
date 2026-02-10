@@ -1,45 +1,42 @@
-const { SD } = require('technicalindicators');
-const { SMA } = require('technicalindicators');
-const { Lowest } = require('technicalindicators');
-const { isTrendingUp } = require('technicalindicators');
-const { isTrendingDown } = require('technicalindicators');
-const { SignalResult } = require('../dict/signal_result');
-const TA = require('../../../utils/technical_analysis');
-const TechnicalPattern = require('../../../utils/technical_pattern');
-const resample = require('../../../utils/resample');
-const TechnicalAnalysis = require('../../../utils/technical_analysis');
+import { SignalResult } from '../dict/signal_result';
+import { IndicatorBuilder } from '../dict/indicator_builder';
+import { IndicatorPeriod } from '../dict/indicator_period';
+import { TechnicalAnalysis } from '../../../utils/technical_analysis';
+import { Resample } from '../../../utils/resample';
 
-module.exports = class {
-  getName() {
+const TA = new TechnicalAnalysis();
+
+export class Trader {
+  getName(): string {
     return 'trader';
   }
 
-  buildIndicator(indicatorBuilder, options) {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options: Record<string, any>): void {
     indicatorBuilder.add('candles_1m', 'candles', '1m');
     indicatorBuilder.add('bb', 'bb', '15m', {
       length: 40
     });
   }
 
-  async period(indicatorPeriod, options) {
+  async period(indicatorPeriod: IndicatorPeriod, options: Record<string, any>): Promise<SignalResult> {
     const currentValues = indicatorPeriod.getLatestIndicators();
 
     const result = SignalResult.createEmptySignal(currentValues);
 
-    const candles1m = indicatorPeriod.getIndicator('candles_1m');
+    const candles1m = indicatorPeriod.getIndicator('candles_1m') as any[] | undefined;
     if (!candles1m) {
       return result;
     }
 
-    const candles3m = resample.resampleMinutes(candles1m.slice().reverse(), '3');
+    const candles3m = Resample.resampleMinutes(candles1m.slice().reverse(), '3');
 
     const foo = TechnicalAnalysis.getPivotPoints(
-      candles1m.slice(-10).map(c => c.close),
+      candles1m.slice(-10).map((c: any) => c.close),
       3,
       3
     );
 
-    const bb = indicatorPeriod.getLatestIndicator('bb');
+    const bb = indicatorPeriod.getLatestIndicator('bb') as any;
 
     const lastCandle = candles1m.slice(-1)[0];
     result.addDebug('price2', lastCandle.close);
@@ -47,28 +44,29 @@ module.exports = class {
     if (bb && lastCandle && lastCandle.close > bb.upper) {
       result.addDebug('v', 'success');
 
-      const bb = indicatorPeriod.getIndicator('bb');
+      const bbIndicator = indicatorPeriod.getIndicator('bb') as any[];
 
-      const values = bb
+      const values = bbIndicator
         .slice(-10)
         .reverse()
-        .map(b => b.width);
+        .map((b: any) => b.width);
       const value = Math.min(...values);
 
-      if (currentValues.bb.width < 0.05) {
-        result.addDebug('x', currentValues.bb.width);
+      if ((currentValues.bb as any).width < 0.05) {
+        result.addDebug('x', (currentValues.bb as any).width);
         result.setSignal('long');
       }
     }
 
     result.addDebug('pivot', foo);
 
+    const TechnicalPattern = require('../../../utils/technical_pattern');
     result.mergeDebug(TechnicalPattern.volumePump(candles3m.slice().reverse() || []));
 
     return result;
   }
 
-  getBacktestColumns() {
+  getBacktestColumns(): any[] {
     return [
       {
         label: 'price2',
@@ -120,9 +118,9 @@ module.exports = class {
     ];
   }
 
-  getOptions() {
+  getOptions(): Record<string, any> {
     return {
       period: '15m'
     };
   }
-};
+}

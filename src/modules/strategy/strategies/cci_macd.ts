@@ -1,12 +1,16 @@
-const { SignalResult } = require('../dict/signal_result');
-const TA = require('../../../utils/technical_analysis');
+import { SignalResult } from '../dict/signal_result';
+import { IndicatorBuilder } from '../dict/indicator_builder';
+import { IndicatorPeriod } from '../dict/indicator_period';
+import { TechnicalAnalysis } from '../../../utils/technical_analysis';
 
-module.exports = class {
-  getName() {
+const TA = new TechnicalAnalysis();
+
+export class CciMacd {
+  getName(): string {
     return 'cci_macd';
   }
 
-  buildIndicator(indicatorBuilder, options) {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options: Record<string, any>): void {
     indicatorBuilder.add('cci', 'cci', options.period, {
       length: 40
     });
@@ -24,13 +28,13 @@ module.exports = class {
     });
   }
 
-  async period(indicatorPeriod, options) {
+  async period(indicatorPeriod: IndicatorPeriod, options: Record<string, any>): Promise<SignalResult> {
     const currentValues = indicatorPeriod.getLatestIndicators();
 
     const result = SignalResult.createEmptySignal(currentValues);
 
     // which direction is allowed here
-    let allowedSignal = 'unknown';
+    let allowedSignal: string = 'unknown';
     if (currentValues.sma) {
       allowedSignal = indicatorPeriod.getPrice() > currentValues.sma ? 'long' : 'short';
     }
@@ -64,7 +68,7 @@ module.exports = class {
     return result;
   }
 
-  isSideways(indicatorPeriod) {
+  isSideways(indicatorPeriod: IndicatorPeriod): boolean {
     for (const value of indicatorPeriod.visitLatestIndicators(10)) {
       if (value.adx > 25) {
         return false;
@@ -74,19 +78,23 @@ module.exports = class {
     return true;
   }
 
-  macdCciSignalTrigger(indicatorPeriod, result, options) {
-    const macdLooback = indicatorPeriod.getIndicator('macd');
+  macdCciSignalTrigger(
+    indicatorPeriod: IndicatorPeriod,
+    result: SignalResult,
+    options: Record<string, any>
+  ): string | undefined {
+    const macdLooback = indicatorPeriod.getIndicator('macd') as any[];
 
     const macdPivotReversal = options.macd_pivot_reversal || 5;
     const cciTrigger = options.cci_trigger || 150;
 
     const macdPivot = TA.getPivotPoints(
-      macdLooback.slice(macdPivotReversal * -3).map(macd => macd.histogram),
+      macdLooback.slice(macdPivotReversal * -3).map((macd: any) => macd.histogram),
       macdPivotReversal,
       macdPivotReversal
     );
     if (!macdPivot) {
-      return;
+      return undefined;
     }
 
     result.addDebug('macd_pivot', macdPivot);
@@ -109,9 +117,11 @@ module.exports = class {
         }
       }
     }
+
+    return undefined;
   }
 
-  getBacktestColumns() {
+  getBacktestColumns(): any[] {
     return [
       {
         label: 'cci',
@@ -143,7 +153,7 @@ module.exports = class {
     ];
   }
 
-  getOptions() {
+  getOptions(): Record<string, any> {
     return {
       period: '15m',
       macd_pivot_reversal: 5,
@@ -151,4 +161,4 @@ module.exports = class {
       cci_cross_lookback_for_macd_trigger: 12
     };
   }
-};
+}

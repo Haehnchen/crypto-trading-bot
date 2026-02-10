@@ -1,13 +1,15 @@
-const { SignalResult } = require('../dict/signal_result');
+import { SignalResult } from '../dict/signal_result';
+import { IndicatorBuilder } from '../dict/indicator_builder';
+import { IndicatorPeriod } from '../dict/indicator_period';
 
-module.exports = class CCI {
-  getName() {
+export class CCI {
+  getName(): string {
     return 'cci';
   }
 
-  buildIndicator(indicatorBuilder, options) {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options: Record<string, any>): void {
     if (!options.period) {
-      throw 'Invalid period';
+      throw new Error('Invalid period');
     }
 
     indicatorBuilder.add('cci', 'cci', options.period);
@@ -21,7 +23,7 @@ module.exports = class CCI {
     });
   }
 
-  period(indicatorPeriod) {
+  period(indicatorPeriod: IndicatorPeriod): SignalResult | undefined {
     return this.cci(
       indicatorPeriod.getPrice(),
       indicatorPeriod.getIndicator('sma200'),
@@ -31,7 +33,13 @@ module.exports = class CCI {
     );
   }
 
-  async cci(price, sma200Full, ema200Full, cciFull, lastSignal) {
+  async cci(
+    price: number,
+    sma200Full: number[] | undefined,
+    ema200Full: number[] | undefined,
+    cciFull: number[] | undefined,
+    lastSignal: string | undefined
+  ): Promise<SignalResult | undefined> {
     if (
       !cciFull ||
       !sma200Full ||
@@ -40,7 +48,7 @@ module.exports = class CCI {
       sma200Full.length < 2 ||
       ema200Full.length < 2
     ) {
-      return;
+      return undefined;
     }
 
     // remove incomplete candle
@@ -48,7 +56,7 @@ module.exports = class CCI {
     const ema200 = ema200Full.slice(0, -1);
     const cci = cciFull.slice(0, -1);
 
-    const debug = {
+    const debug: Record<string, any> = {
       sma200: sma200.slice(-1)[0],
       ema200: ema200.slice(-1)[0],
       cci: cci.slice(-1)[0]
@@ -78,7 +86,7 @@ module.exports = class CCI {
       // long
 
       if (before <= -100 && last >= -100) {
-        let rangeValues = [];
+        let rangeValues: number[] = [];
 
         for (let i = count - 1; i >= 0; i--) {
           if (cci[i] >= -100) {
@@ -94,8 +102,7 @@ module.exports = class CCI {
         }
       }
     } else if (before >= 100 && last <= 100) {
-      const count = cci.length - 1;
-      let rangeValues = [];
+      let rangeValues: number[] = [];
 
       for (let i = count - 1; i >= 0; i--) {
         if (cci[i] <= 100) {
@@ -114,7 +121,7 @@ module.exports = class CCI {
     return SignalResult.createEmptySignal(debug);
   }
 
-  getBacktestColumns() {
+  getBacktestColumns(): any[] {
     return [
       {
         label: 'cci',
@@ -125,9 +132,9 @@ module.exports = class CCI {
     ];
   }
 
-  getOptions() {
+  getOptions(): Record<string, any> {
     return {
       period: '15m'
     };
   }
-};
+}

@@ -1,34 +1,48 @@
-const moment = require('moment');
-const {
+import moment from 'moment';
+import {
   getPredefinedIndicators,
   getTrendingDirectionLastItem,
   getCrossedSince,
   getBollingerBandPercent,
   getTrendingDirection
-} = require('../utils/technical_analysis');
-const { Ticker } = require('../dict/ticker');
+} from '../utils/technical_analysis';
+import { Ticker } from '../dict/ticker';
+import { Candlestick } from '../dict/candlestick';
+import { CandlestickRepository } from './repository/candlestick_repository';
+import { Tickers } from '../storage/tickers';
 
-module.exports = class Ta {
-  constructor(candlestickRepository, instances, tickers) {
+export interface TaSymbol {
+  exchange: string;
+  symbol: string;
+  trade?: any;
+  strategies?: any[];
+}
+
+export class Ta {
+  private instances: { symbols: TaSymbol[] };
+  private candlestickRepository: CandlestickRepository;
+  private tickers: Tickers;
+
+  constructor(candlestickRepository: CandlestickRepository, instances: { symbols: TaSymbol[] }, tickers: Tickers) {
     this.instances = instances;
     this.candlestickRepository = candlestickRepository;
     this.tickers = tickers;
   }
 
-  getTaForPeriods(periods) {
+  getTaForPeriods(periods: string[]): Promise<any> {
     return new Promise(resolve => {
-      const promises = [];
+      const promises: Promise<any>[] = [];
 
       // filter same pair on different exchanges; last wins
-      const uniqueSymbols = {};
-      this.instances.symbols.forEach(symbol => {
+      const uniqueSymbols: Record<string, TaSymbol> = {};
+      this.instances.symbols.forEach((symbol: TaSymbol) => {
         uniqueSymbols[symbol.symbol] = symbol;
       });
 
-      Object.values(uniqueSymbols).forEach(symbol => {
-        periods.forEach(period => {
+      Object.values(uniqueSymbols).forEach((symbol: TaSymbol) => {
+        periods.forEach((period: string) => {
           promises.push(
-            new Promise(async resolve => {
+            new Promise(async (resolve) => {
               const candles = await this.candlestickRepository.getLookbacksForPair(
                 symbol.exchange,
                 symbol.symbol,
@@ -37,7 +51,7 @@ module.exports = class Ta {
               );
 
               if (candles.length === 0) {
-                resolve();
+                resolve(undefined);
                 return;
               }
 
@@ -50,14 +64,14 @@ module.exports = class Ta {
                 .add(35, 'minutes')
                 .unix();
 
-              const dayCandle = candles.find(candle => candle.time > rangeMin && candle.time < rangeMax);
+              const dayCandle = candles.find((candle: Candlestick) => candle.time > rangeMin && candle.time < rangeMax);
 
-              let change;
+              let change: number | undefined;
               if (dayCandle) {
                 change = 100 * (candles[0].close / dayCandle.close) - 100;
               }
 
-              getPredefinedIndicators(candles.slice().reverse()).then(result => {
+              getPredefinedIndicators(candles.slice().reverse()).then((result: any) => {
                 resolve({
                   symbol: symbol.symbol,
                   exchange: symbol.exchange,
@@ -72,14 +86,14 @@ module.exports = class Ta {
         });
       });
 
-      Promise.all(promises).then(values => {
-        const v = values.filter(value => {
+      Promise.all(promises).then((values: any[]) => {
+        const v = values.filter((value: any) => {
           return value !== undefined;
         });
 
-        const x = {};
+        const x: Record<string, any> = {};
 
-        v.forEach(v => {
+        v.forEach((v: any) => {
           if (!x[v.symbol]) {
             const liveTicker = this.tickers.get(v.exchange, v.symbol);
             x[v.symbol] = {
@@ -92,7 +106,7 @@ module.exports = class Ta {
           }
 
           // flat indicator list
-          const values = {};
+          const values: Record<string, any> = {};
 
           for (const key in v.ta) {
             const taResult = v.ta[key];
@@ -104,9 +118,9 @@ module.exports = class Ta {
             if (key == 'macd') {
               const r = taResult.slice();
 
-              values[key].trend = getTrendingDirectionLastItem(r.slice(-2).map(v => v.histogram));
+              values[key].trend = getTrendingDirectionLastItem(r.slice(-2).map((v: any) => v.histogram));
 
-              const number = getCrossedSince(r.map(v => v.histogram));
+              const number = getCrossedSince(r.map((v: any) => v.histogram));
 
               if (number) {
                 let multiplicator = 1;
@@ -173,4 +187,4 @@ module.exports = class Ta {
       });
     });
   }
-};
+}

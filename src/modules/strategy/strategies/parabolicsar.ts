@@ -1,21 +1,28 @@
-const { SignalResult } = require('../dict/signal_result');
+import { SignalResult } from '../dict/signal_result';
+import { IndicatorBuilder } from '../dict/indicator_builder';
+import { IndicatorPeriod } from '../dict/indicator_period';
 
-module.exports = class PARABOL {
-  getName() {
+export interface PsarResult {
+  result: any;
+  histogram: number;
+}
+
+export class PARABOLIC {
+  getName(): string {
     return 'parabol';
   }
 
-  buildIndicator(indicatorBuilder, options) {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options: Record<string, any>): void {
     if (!options.period) {
-      throw Error('Invalid period');
+      throw new Error('Invalid period');
     }
 
     indicatorBuilder.add('psar', 'PSAR', options.period, options);
   }
 
-  period(indicatorPeriod) {
-    const psar = indicatorPeriod.getIndicator('psar');
-    const psarVal = psar.result;
+  period(indicatorPeriod: IndicatorPeriod): SignalResult | undefined {
+    const psar = indicatorPeriod.getIndicator('psar') as PsarResult[];
+    const psarVal = psar[0].result;
     const price = indicatorPeriod.getPrice();
     const diff = price - psarVal;
 
@@ -23,7 +30,7 @@ module.exports = class PARABOL {
 
     const long = diff > 0;
 
-    const debug = {
+    const debug: Record<string, any> = {
       psar: psar[0],
       histogram: psar[0].histogram,
       last_signal: lastSignal,
@@ -54,11 +61,11 @@ module.exports = class PARABOL {
     return SignalResult.createEmptySignal(debug);
   }
 
-  getBacktestColumns() {
+  getBacktestColumns(): any[] {
     return [
       {
         label: 'trend',
-        value: row => {
+        value: (row: any) => {
           if (typeof row.long !== 'boolean') {
             return undefined;
           }
@@ -75,9 +82,9 @@ module.exports = class PARABOL {
     ];
   }
 
-  getOptions() {
+  getOptions(): Record<string, any> {
     return {
       period: '15m'
     };
   }
-};
+}

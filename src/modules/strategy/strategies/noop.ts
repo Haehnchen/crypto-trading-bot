@@ -1,14 +1,17 @@
-const { SD } = require('technicalindicators');
-const TA = require('../../../utils/technical_analysis');
+import { SD } from 'technicalindicators';
+import { TechnicalAnalysis } from '../../../utils/technical_analysis';
+import { SignalResult } from '../dict/signal_result';
+import { IndicatorBuilder } from '../dict/indicator_builder';
+import { IndicatorPeriod } from '../dict/indicator_period';
 
-const { SignalResult } = require('../dict/signal_result');
+const TA = new TechnicalAnalysis();
 
-module.exports = class {
-  getName() {
+export class Noop {
+  getName(): string {
     return 'noop';
   }
 
-  buildIndicator(indicatorBuilder, options) {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options: Record<string, any>): void {
     indicatorBuilder.add('bb', 'bb', '15m');
     indicatorBuilder.add('rsi', 'rsi', '15m');
     indicatorBuilder.add('mfi', 'mfi', '15m');
@@ -31,7 +34,7 @@ module.exports = class {
     indicatorBuilder.add('candles', 'candles');
   }
 
-  async period(indicatorPeriod, options) {
+  async period(indicatorPeriod: IndicatorPeriod, options: Record<string, any>): Promise<SignalResult> {
     const currentValues = indicatorPeriod.getLatestIndicators();
 
     const bollinger = indicatorPeriod.getIndicator('bb');
@@ -39,15 +42,15 @@ module.exports = class {
     if (bollinger && currentValues.bb) {
       const standardDeviation = SD.calculate({
         period: 150,
-        values: bollinger.slice(-200).map(b => b.width)
+        values: bollinger.slice(-200).map((b: any) => b.width)
       });
 
-      currentValues.bb.sd = standardDeviation.slice(-1)[0];
+      (currentValues.bb as any).sd = standardDeviation.slice(-1)[0];
     }
 
     const currentBB = indicatorPeriod.getLatestIndicator('bb');
     if (currentBB && currentValues.bb) {
-      currentValues.bb.percent = TA.getBollingerBandPercent(
+      (currentValues.bb as any).percent = TA.getBollingerBandPercent(
         indicatorPeriod.getPrice(),
         currentBB.upper,
         currentBB.lower
@@ -56,10 +59,10 @@ module.exports = class {
 
     const intl = new Intl.NumberFormat('en-US', { minimumSignificantDigits: 3, maximumSignificantDigits: 4 });
 
-    currentValues.ranges = (indicatorPeriod.getIndicator('volume_profile') || [])
-      .sort((a, b) => b.totalVolume - a.totalVolume)
+    (currentValues as any).ranges = (indicatorPeriod.getIndicator('volume_profile') as any[] || [])
+      .sort((a: any, b: any) => b.totalVolume - a.totalVolume)
       .slice(0, 3)
-      .map(v => `${intl.format(v.rangeStart)}-${intl.format(v.rangeEnd)}`)
+      .map((v: any) => `${intl.format(v.rangeStart)}-${intl.format(v.rangeEnd)}`)
       .join(', ');
 
     const emptySignal = SignalResult.createEmptySignal(currentValues);
@@ -93,7 +96,7 @@ module.exports = class {
     return emptySignal;
   }
 
-  getBacktestColumns() {
+  getBacktestColumns(): any[] {
     return [
       {
         label: 'BollDev',
@@ -141,13 +144,13 @@ module.exports = class {
       },
       {
         label: 'zigzag',
-        value: row => (row.zigzag && row.zigzag.turningPoint === true ? 'warning' : undefined),
+        value: (row: any) => (row.zigzag && row.zigzag.turningPoint === true ? 'warning' : undefined),
         type: 'icon'
       }
     ];
   }
 
-  getOptions() {
+  getOptions(): Record<string, any> {
     return {
       period: '15m',
       dice: 6,
@@ -155,7 +158,7 @@ module.exports = class {
     };
   }
 
-  getTickPeriod() {
+  getTickPeriod(): string {
     return '1m';
   }
-};
+}

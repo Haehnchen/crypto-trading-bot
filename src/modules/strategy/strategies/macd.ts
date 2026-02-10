@@ -1,13 +1,27 @@
-const { SignalResult } = require('../dict/signal_result');
+import { SignalResult } from '../dict/signal_result';
+import { IndicatorBuilder } from '../dict/indicator_builder';
+import { IndicatorPeriod } from '../dict/indicator_period';
 
-module.exports = class Macd {
-  getName() {
+export interface MacdOptions {
+  period: string;
+  default_ma_type?: string;
+  fast_period?: number;
+  slow_period?: number;
+  signal_period?: number;
+}
+
+export interface MacdHistogram {
+  histogram: number;
+}
+
+export class Macd {
+  getName(): string {
     return 'macd';
   }
 
-  buildIndicator(indicatorBuilder, options) {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options: MacdOptions): void {
     if (!options.period) {
-      throw Error('Invalid period');
+      throw new Error('Invalid period');
     }
 
     indicatorBuilder.add('macd', 'macd_ext', options.period, options);
@@ -21,10 +35,10 @@ module.exports = class Macd {
     });
   }
 
-  period(indicatorPeriod) {
-    const sma200Full = indicatorPeriod.getIndicator('sma200');
-    const macdFull = indicatorPeriod.getIndicator('macd');
-    const hmaFull = indicatorPeriod.getIndicator('hma');
+  period(indicatorPeriod: IndicatorPeriod): SignalResult | undefined {
+    const sma200Full = indicatorPeriod.getIndicator('sma200') as number[] | undefined;
+    const macdFull = indicatorPeriod.getIndicator('macd') as MacdHistogram[] | undefined;
+    const hmaFull = indicatorPeriod.getIndicator('hma') as number[] | undefined;
 
     if (!macdFull || !sma200Full || !hmaFull || macdFull.length < 2 || sma200Full.length < 2) {
       return undefined;
@@ -39,8 +53,8 @@ module.exports = class Macd {
 
     const lastSignal = indicatorPeriod.getLastSignal();
 
-    const debug = {
-      sma200: sma200[0],
+    const debug: Record<string, any> = {
+      sma200: sma200,
       histogram: macd[0].histogram,
       last_signal: lastSignal,
       long: long
@@ -70,11 +84,11 @@ module.exports = class Macd {
     return SignalResult.createEmptySignal(debug);
   }
 
-  getBacktestColumns() {
+  getBacktestColumns(): any[] {
     return [
       {
         label: 'trend',
-        value: row => {
+        value: (row: any) => {
           if (typeof row.long !== 'boolean') {
             return undefined;
           }
@@ -91,7 +105,7 @@ module.exports = class Macd {
     ];
   }
 
-  getOptions() {
+  getOptions(): MacdOptions {
     return {
       period: '15m',
       default_ma_type: 'EMA',
@@ -100,4 +114,4 @@ module.exports = class Macd {
       signal_period: 9
     };
   }
-};
+}

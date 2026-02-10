@@ -1,11 +1,14 @@
-const { SignalResult } = require('../dict/signal_result');
+import { SignalResult } from '../dict/signal_result';
+import { IndicatorBuilder } from '../dict/indicator_builder';
+import { IndicatorPeriod } from '../dict/indicator_period';
+import { Candlestick } from '../../../dict/candlestick';
 
-module.exports = class PivotReversalStrategy {
-  getName() {
+export class PivotReversalStrategy {
+  getName(): string {
     return 'pivot_reversal_strategy';
   }
 
-  buildIndicator(indicatorBuilder, options) {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options: Record<string, any>): void {
     indicatorBuilder.add('candles_1m', 'candles', '1m');
     indicatorBuilder.add('pivot_points', 'pivot_points_high_low', '15m', {
       left: options.left || 4,
@@ -21,18 +24,18 @@ module.exports = class PivotReversalStrategy {
     });
   }
 
-  async period(indicatorPeriod) {
-    let debug;
+  async period(indicatorPeriod: IndicatorPeriod): Promise<SignalResult | undefined> {
+    let debug: Record<string, any>;
     const currentValues = (debug = indicatorPeriod.getLatestIndicators());
-    if (!currentValues.sma200 || currentValues.sma200.length < 10) {
-      return;
+    if (!currentValues.sma200 || (currentValues.sma200 as number[]).length < 10) {
+      return undefined;
     }
 
-    const candles1m = indicatorPeriod.getIndicator('candles_1m');
+    const candles1m = indicatorPeriod.getIndicator('candles_1m') as Candlestick[];
     if (candles1m) {
       debug.candles = candles1m
         .slice(-3)
-        .map(c => c.close)
+        .map((c: Candlestick) => c.close)
         .join(', ');
     }
 
@@ -52,7 +55,7 @@ module.exports = class PivotReversalStrategy {
       return SignalResult.createEmptySignal(debug);
     }
 
-    const long = indicatorPeriod.getPrice() > currentValues.sma200;
+    const long = indicatorPeriod.getPrice() > (currentValues.sma200 as number[]).slice(-1)[0];
 
     const signal = this.getPivotSignal(long, indicatorPeriod);
     if (signal) {
@@ -62,47 +65,49 @@ module.exports = class PivotReversalStrategy {
     return SignalResult.createEmptySignal(debug);
   }
 
-  getPivotSignal(long, indicatorPeriod) {
+  getPivotSignal(long: boolean, indicatorPeriod: IndicatorPeriod): string | undefined {
     for (const value of indicatorPeriod.visitLatestIndicators(3)) {
-      if (!long && value.pivot_points && value.pivot_points.low && value.pivot_points.low.low) {
-        const candles1m = indicatorPeriod.getIndicator('candles_1m');
+      if (!long && value.pivot_points && (value.pivot_points as any).low && (value.pivot_points as any).low.low) {
+        const candles1m = indicatorPeriod.getIndicator('candles_1m') as Candlestick[];
         const mins = candles1m.slice(-7);
 
         const closes =
           mins
-            .map(c => c.close)
-            .reduce((acc, val) => {
+            .map((c: Candlestick) => c.close)
+            .reduce((acc: number, val: number) => {
               return acc + val;
             }, 0) / mins.length;
 
-        if (closes < value.pivot_points.low.low) {
+        if (closes < (value.pivot_points as any).low.low) {
           return 'short';
         }
 
         break;
       }
 
-      if (long && value.pivot_points && value.pivot_points.high && value.pivot_points.high.high) {
-        const candles1m = indicatorPeriod.getIndicator('candles_1m');
+      if (long && value.pivot_points && (value.pivot_points as any).high && (value.pivot_points as any).high.high) {
+        const candles1m = indicatorPeriod.getIndicator('candles_1m') as Candlestick[];
         const mins = candles1m.slice(-7);
 
         const closes =
           mins
-            .map(c => c.close)
-            .reduce((acc, val) => {
+            .map((c: Candlestick) => c.close)
+            .reduce((acc: number, val: number) => {
               return acc + val;
             }, 0) / mins.length;
 
-        if (closes > value.pivot_points.high.high) {
+        if (closes > (value.pivot_points as any).high.high) {
           return 'long';
         }
 
         break;
       }
     }
+
+    return undefined;
   }
 
-  getBacktestColumns() {
+  getBacktestColumns(): any[] {
     return [
       {
         label: 'SMA 50/200',
@@ -137,11 +142,11 @@ module.exports = class PivotReversalStrategy {
     ];
   }
 
-  getOptions() {
+  getOptions(): Record<string, any> {
     return {
       period: '15m',
       left: 4,
       right: 2
     };
   }
-};
+}

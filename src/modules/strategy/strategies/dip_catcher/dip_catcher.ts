@@ -1,11 +1,22 @@
-const { SignalResult } = require('../../dict/signal_result');
+import { SignalResult } from '../../dict/signal_result';
+import { IndicatorBuilder } from '../../dict/indicator_builder';
+import { IndicatorPeriod } from '../../dict/indicator_period';
 
-module.exports = class DipCatcher {
-  getName() {
+export interface DipCatcherOptions {
+  period: string;
+  trend_cloud_multiplier?: number;
+  hma_high_period?: number;
+  hma_high_candle_source?: string;
+  hma_low_period?: number;
+  hma_low_candle_source?: string;
+}
+
+export class DipCatcher {
+  getName(): string {
     return 'dip_catcher';
   }
 
-  buildIndicator(indicatorBuilder, options) {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options: DipCatcherOptions): void {
     // line for short entry or long exit
     indicatorBuilder.add('hma_high', 'hma', options.period, {
       length: options.hma_high_period || 12,
@@ -35,14 +46,14 @@ module.exports = class DipCatcher {
     indicatorBuilder.add('bb', 'bb', '15m');
   }
 
-  period(indicatorPeriod) {
+  period(indicatorPeriod: IndicatorPeriod): SignalResult {
     const currentValues = indicatorPeriod.getLatestIndicators();
 
-    const hma = indicatorPeriod.getIndicator('hma').slice(-2);
-    const hmaLow = indicatorPeriod.getIndicator('hma_low').slice(-2);
-    const hmaHigh = indicatorPeriod.getIndicator('hma_high').slice(-2);
-    const bb = indicatorPeriod.getIndicator('bb').slice(-2);
-    const cloud = indicatorPeriod.getIndicator('cloud').slice(-1);
+    const hma = (indicatorPeriod.getIndicator('hma') as number[]).slice(-2);
+    const hmaLow = (indicatorPeriod.getIndicator('hma_low') as number[]).slice(-2);
+    const hmaHigh = (indicatorPeriod.getIndicator('hma_high') as number[]).slice(-2);
+    const bb = (indicatorPeriod.getIndicator('bb') as any[]).slice(-2);
+    const cloud = (indicatorPeriod.getIndicator('cloud') as any[]).slice(-1);
 
     const emptySignal = SignalResult.createEmptySignal(currentValues);
 
@@ -79,11 +90,11 @@ module.exports = class DipCatcher {
     return emptySignal;
   }
 
-  getBacktestColumns() {
+  getBacktestColumns(): any[] {
     return [
       {
         label: 'bb_hma',
-        value: row => {
+        value: (row: any) => {
           if (!row.bb) {
             return undefined;
           }
@@ -102,7 +113,7 @@ module.exports = class DipCatcher {
       },
       {
         label: 'trend',
-        value: row => {
+        value: (row: any) => {
           if (typeof row.trend !== 'boolean') {
             return undefined;
           }
@@ -118,7 +129,7 @@ module.exports = class DipCatcher {
     ];
   }
 
-  getOptions() {
+  getOptions(): DipCatcherOptions {
     return {
       period: '15m',
       trend_cloud_multiplier: 4,
@@ -128,4 +139,4 @@ module.exports = class DipCatcher {
       hma_low_candle_source: 'close'
     };
   }
-};
+}

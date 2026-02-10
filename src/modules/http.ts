@@ -1,15 +1,53 @@
-const compression = require('compression');
-const express = require('express');
-const layouts = require('express-ejs-layouts');
-const auth = require('basic-auth');
-const cookieParser = require('cookie-parser');
-const crypto = require('crypto');
-const moment = require('moment');
-const { OrderUtil } = require('../utils/order_util');
-const path = require('path');
+import compression from 'compression';
+import express from 'express';
+import layouts from 'express-ejs-layouts';
+import auth from 'basic-auth';
+import cookieParser from 'cookie-parser';
+import crypto from 'crypto';
+import moment from 'moment';
+import { OrderUtil } from '../utils/order_util';
+import path from 'path';
+import ejs from 'ejs';
 
-module.exports = class Http {
-  constructor(systemUtil, ta, signalHttp, backtest, exchangeManager, pairsHttp, logsHttp, candleExportHttp, candleImporter, ordersHttp, tickers, projectDir) {
+export interface TemplateHelpers {
+  priceFormat(value: any): string;
+  formatDate(date: any, format: string): string;
+  escapeHtml(text: any): string;
+  decodeHtml(text: any): string;
+  assetVersion(): string;
+  nodeVersion(): string;
+  memoryUsage(): number;
+}
+
+export class Http {
+  private systemUtil: any;
+  private ta: any;
+  private signalHttp: any;
+  private backtest: any;
+  private exchangeManager: any;
+  private pairsHttp: any;
+  private logsHttp: any;
+  private candleExportHttp: any;
+  private candleImporter: any;
+  private ordersHttp: any;
+  private projectDir: string;
+  private tickers: any;
+  private templateHelpers: TemplateHelpers;
+
+  constructor(
+    systemUtil: any,
+    ta: any,
+    signalHttp: any,
+    backtest: any,
+    exchangeManager: any,
+    pairsHttp: any,
+    logsHttp: any,
+    candleExportHttp: any,
+    candleImporter: any,
+    ordersHttp: any,
+    tickers: any,
+    projectDir: string
+  ) {
     this.systemUtil = systemUtil;
     this.ta = ta;
     this.signalHttp = signalHttp;
@@ -25,7 +63,7 @@ module.exports = class Http {
 
     // Helper functions for templates (previously Twig filters)
     this.templateHelpers = {
-      priceFormat: value => {
+      priceFormat: (value: any): string => {
         if (parseFloat(value) < 1) {
           return Intl.NumberFormat('en-US', {
             useGrouping: false,
@@ -39,7 +77,7 @@ module.exports = class Http {
           maximumFractionDigits: 2
         }).format(value);
       },
-      formatDate: (date, format) => {
+      formatDate: (date: any, format: string): string => {
         if (!date) return '';
 
         // Handle Unix timestamps (convert seconds to milliseconds if needed)
@@ -70,11 +108,11 @@ module.exports = class Http {
         }
         return d.toISOString();
       },
-      escapeHtml: text => {
+      escapeHtml: (text: any): string => {
         if (typeof text !== 'string') return text;
         return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
       },
-      decodeHtml: text => {
+      decodeHtml: (text: any): string => {
         if (typeof text !== 'string') return text;
         return text
           .replace(/&quot;/g, '"')
@@ -83,19 +121,19 @@ module.exports = class Http {
           .replace(/&gt;/g, '>')
           .replace(/&amp;/g, '&');
       },
-      assetVersion: () => {
+      assetVersion: (): string => {
         return crypto
           .createHash('md5')
           .update(String(Math.floor(Date.now() / 1000)))
           .digest('hex')
           .substring(0, 8);
       },
-      nodeVersion: () => process.version,
-      memoryUsage: () => Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
+      nodeVersion: (): string => process.version,
+      memoryUsage: (): number => Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
     };
   }
 
-  start() {
+  start(): void {
     const app = express();
 
     // Configure EJS as template engine
@@ -103,18 +141,18 @@ module.exports = class Http {
     app.set('views', path.join(this.projectDir, 'views'));
 
     // Configure express-ejs-layouts FIRST
-    app.use(layouts);
+    app.use(layouts as any);
     app.set('layout', 'layout');
     app.set('layout extractScripts', true);
     app.set('layout extractStyles', true);
 
     // Helper middleware to add template helpers to all renders
     // This must come AFTER express-ejs-layouts
-    app.use((req, res, next) => {
+    app.use((req: any, res: any, next: any) => {
       res.locals = {
         ...res.locals,
         ...this.templateHelpers,
-        desks: this.systemUtil.getConfig('desks', []).map(d => d.name),
+        desks: this.systemUtil.getConfig('desks', []).map((d: any) => d.name),
         nodeVersion: this.templateHelpers.nodeVersion(),
         memoryUsage: this.templateHelpers.memoryUsage(),
         assetVersion: this.templateHelpers.assetVersion()
@@ -131,7 +169,7 @@ module.exports = class Http {
     const password = this.systemUtil.getConfig('webserver.password');
 
     if (username && password) {
-      app.use((request, response, next) => {
+      app.use((request: any, response: any, next: any) => {
         const user = auth(request);
 
         if (!user || !(user.name === username && user.pass === password)) {
@@ -145,7 +183,7 @@ module.exports = class Http {
 
     const { ta } = this;
 
-    app.get('/', async (req, res) => {
+    app.get('/', async (req: any, res: any) => {
       const data = await ta.getTaForPeriods(this.systemUtil.getConfig('dashboard.periods', ['15m', '1h']));
       res.render('dashboard', {
         activePage: 'dashboard',
@@ -155,7 +193,7 @@ module.exports = class Http {
       });
     });
 
-    app.get('/backtest', async (req, res) => {
+    app.get('/backtest', async (req: any, res: any) => {
       res.render('backtest', {
         activePage: 'backtest',
         title: 'Backtesting | Crypto Bot',
@@ -166,14 +204,14 @@ module.exports = class Http {
       });
     });
 
-    app.post('/backtest/submit', async (req, res) => {
+    app.post('/backtest/submit', async (req: any, res: any) => {
       let pairs = req.body.pair;
 
       if (typeof pairs === 'string') {
         pairs = [pairs];
       }
 
-      const asyncs = pairs.map(pair => async () => {
+      const asyncs = pairs.map((pair: string) => async () => {
         const p = pair.split('.');
 
         return {
@@ -191,7 +229,7 @@ module.exports = class Http {
         };
       });
 
-      const backtests = await Promise.all(asyncs.map(fn => fn()));
+      const backtests = await Promise.all(asyncs.map((fn: any) => fn()));
 
       // single details view
       if (backtests.length === 1) {
@@ -213,7 +251,7 @@ module.exports = class Http {
       });
     });
 
-    app.get('/tradingview/:symbol', (req, res) => {
+    app.get('/tradingview/:symbol', (req: any, res: any) => {
       res.render('tradingview', {
         activePage: 'tradingview',
         title: `${req.params.symbol} | Trading View | Crypto Bot`,
@@ -221,7 +259,7 @@ module.exports = class Http {
       });
     });
 
-    app.get('/signals', async (req, res) => {
+    app.get('/signals', async (req: any, res: any) => {
       res.render('signals', {
         activePage: 'signals',
         title: 'Signals | Crypto Bot',
@@ -229,7 +267,7 @@ module.exports = class Http {
       });
     });
 
-    app.get('/pairs', async (req, res) => {
+    app.get('/pairs', async (req: any, res: any) => {
       const pairs = await this.pairsHttp.getTradePairs();
 
       res.render('pairs', {
@@ -237,13 +275,13 @@ module.exports = class Http {
         title: 'Pairs | Crypto Bot',
         pairs: pairs,
         stats: {
-          positions: pairs.filter(p => p.has_position === true).length,
-          trading: pairs.filter(p => p.is_trading === true).length
+          positions: pairs.filter((p: any) => p.has_position === true).length,
+          trading: pairs.filter((p: any) => p.is_trading === true).length
         }
       });
     });
 
-    app.get('/logs', async (req, res) => {
+    app.get('/logs', async (req: any, res: any) => {
       const logData = await this.logsHttp.getLogsPageVariables(req, res);
       res.render('logs', {
         activePage: 'logs',
@@ -252,7 +290,7 @@ module.exports = class Http {
       });
     });
 
-    app.get('/desks/:desk', async (req, res) => {
+    app.get('/desks/:desk', async (req: any, res: any) => {
       res.render('desks', {
         activePage: 'desks',
         title: `Desk: ${this.systemUtil.getConfig('desks')[req.params.desk].name} | Crypto Bot`,
@@ -262,20 +300,20 @@ module.exports = class Http {
       });
     });
 
-    app.get('/desks/:desk/fullscreen', (req, res) => {
+    app.get('/desks/:desk/fullscreen', (req: any, res: any) => {
       const configElement = this.systemUtil.getConfig('desks')[req.params.desk];
       res.render('tradingview_desk', {
         layout: false,
         desk: configElement,
         interval: req.query.interval || undefined,
         id: req.params.desk,
-        watchlist: configElement.pairs.map(i => i.symbol),
-        desks: this.systemUtil.getConfig('desks', []).map(d => d.name)
+        watchlist: configElement.pairs.map((i: any) => i.symbol),
+        desks: this.systemUtil.getConfig('desks', []).map((d: any) => d.name)
       });
     });
 
-    app.get('/tools/candles', async (req, res) => {
-      const options = {
+    app.get('/tools/candles', async (req: any, res: any) => {
+      const options: any = {
         pairs: await this.candleExportHttp.getPairs(),
         start: moment().subtract(7, 'days').toDate(),
         end: new Date()
@@ -286,7 +324,7 @@ module.exports = class Http {
         const candles = await this.candleExportHttp.getCandles(exchange, symbol, req.query.period, new Date(req.query.start), new Date(req.query.end));
 
         if (req.query.metadata) {
-          candles.map(c => {
+          candles.map((c: any) => {
             c.exchange = exchange;
             c.symbol = symbol;
             c.period = req.query.period;
@@ -313,7 +351,7 @@ module.exports = class Http {
       });
     });
 
-    app.post('/tools/candles', async (req, res) => {
+    app.post('/tools/candles', async (req: any, res: any) => {
       const exchangeCandlesticks = JSON.parse(req.body.json);
       await this.candleImporter.insertCandles(exchangeCandlesticks);
 
@@ -322,7 +360,7 @@ module.exports = class Http {
       res.redirect('/tools/candles');
     });
 
-    app.post('/pairs/:pair', async (req, res) => {
+    app.post('/pairs/:pair', async (req: any, res: any) => {
       const pair = req.params.pair.split('-');
       const { body } = req;
 
@@ -336,7 +374,7 @@ module.exports = class Http {
     });
 
     const { exchangeManager } = this;
-    app.get('/order/:exchange/:id', async (req, res) => {
+    app.get('/order/:exchange/:id', async (req: any, res: any) => {
       const exchangeName = req.params.exchange;
       const { id } = req.params;
 
@@ -351,7 +389,7 @@ module.exports = class Http {
       res.redirect('/trades');
     });
 
-    app.get('/orders', async (req, res) => {
+    app.get('/orders', async (req: any, res: any) => {
       res.render('orders/index', {
         activePage: 'orders',
         title: 'Orders | Crypto Bot',
@@ -359,7 +397,7 @@ module.exports = class Http {
       });
     });
 
-    app.get('/orders/:pair', async (req, res) => {
+    app.get('/orders/:pair', async (req: any, res: any) => {
       const { pair } = req.params;
       const tradingview = pair.split('.');
 
@@ -381,7 +419,7 @@ module.exports = class Http {
       });
     });
 
-    app.post('/orders/:pair', async (req, res) => {
+    app.post('/orders/:pair', async (req: any, res: any) => {
       const { pair } = req.params;
       const tradingview = pair.split('.');
 
@@ -389,8 +427,8 @@ module.exports = class Http {
       const form = req.body;
 
       let success = true;
-      let message;
-      let result;
+      let message: string;
+      let result: any;
 
       try {
         result = await this.ordersHttp.createOrder(pair, form);
@@ -422,17 +460,17 @@ module.exports = class Http {
       });
     });
 
-    app.get('/orders/:pair/cancel/:id', async (req, res) => {
-      const foo = await this.ordersHttp.cancel(req.params.pair, req.params.id);
+    app.get('/orders/:pair/cancel/:id', async (req: any, res: any) => {
+      await this.ordersHttp.cancel(req.params.pair, req.params.id);
       res.redirect(`/orders/${encodeURIComponent(req.params.pair)}`);
     });
 
-    app.get('/orders/:pair/cancel-all', async (req, res) => {
+    app.get('/orders/:pair/cancel-all', async (req: any, res: any) => {
       await this.ordersHttp.cancelAll(req.params.pair);
       res.redirect(`/orders/${encodeURIComponent(req.params.pair)}`);
     });
 
-    app.get('/trades', async (req, res) => {
+    app.get('/trades', async (req: any, res: any) => {
       res.render('trades', {
         activePage: 'trades',
         title: 'Trades | Crypto Bot',
@@ -440,9 +478,9 @@ module.exports = class Http {
       });
     });
 
-    app.get('/trades.json', async (req, res) => {
-      const positions = [];
-      const orders = [];
+    app.get('/trades.json', async (req: any, res: any) => {
+      const positions: any[] = [];
+      const orders: any[] = [];
 
       const exchanges = exchangeManager.all();
       for (const key in exchanges) {
@@ -451,9 +489,9 @@ module.exports = class Http {
         const exchangeName = exchange.getName();
 
         const myPositions = await exchange.getPositions();
-        myPositions.forEach(position => {
-          let currencyValue;
-          let currencyProfit;
+        myPositions.forEach((position: any) => {
+          let currencyValue: number | undefined;
+          let currencyProfit: number | undefined;
 
           if ((exchangeName.includes('bitmex') && ['XBTUSD', 'ETHUSD'].includes(position.symbol)) || exchangeName === 'bybit') {
             currencyValue = Math.abs(position.amount);
@@ -470,8 +508,8 @@ module.exports = class Http {
         });
 
         const myOrders = await exchange.getOrders();
-        myOrders.forEach(order => {
-          const items = {
+        myOrders.forEach((order: any) => {
+          const items: any = {
             exchange: exchange.getName(),
             order: order
           };
@@ -486,8 +524,8 @@ module.exports = class Http {
       }
 
       res.json({
-        orders: orders.sort((a, b) => a.order.symbol.localeCompare(b.order.symbol)),
-        positions: positions.sort((a, b) => a.position.symbol.localeCompare(b.position.symbol))
+        orders: orders.sort((a: any, b: any) => a.order.symbol.localeCompare(b.order.symbol)),
+        positions: positions.sort((a: any, b: any) => a.position.symbol.localeCompare(b.position.symbol))
       });
     });
 
@@ -510,7 +548,7 @@ module.exports = class Http {
    * @param symbol
    * @returns {string}
    */
-  buildTradingViewSymbol(symbol) {
+  buildTradingViewSymbol(symbol: string): string {
     let mySymbol = symbol;
 
     // binance:BTCUSDTPERP
@@ -529,4 +567,4 @@ module.exports = class Http {
 
     return mySymbol.replace('-', '').replace('coinbase_pro', 'coinbase').replace('binance_margin', 'binance').replace('bybit_unified', 'bybit').toUpperCase();
   }
-};
+}

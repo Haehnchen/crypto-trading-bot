@@ -1,13 +1,15 @@
-const { SignalResult } = require('../dict/signal_result');
+import { SignalResult } from '../dict/signal_result';
+import { IndicatorBuilder } from '../dict/indicator_builder';
+import { IndicatorPeriod } from '../dict/indicator_period';
 
-module.exports = class AwesomeOscillatorCrossZero {
-  getName() {
+export class AwesomeOscillatorCrossZero {
+  getName(): string {
     return 'awesome_oscillator_cross_zero';
   }
 
-  buildIndicator(indicatorBuilder, options) {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options: Record<string, any>): void {
     if (!options.period) {
-      throw 'Invalid period';
+      throw new Error('Invalid period');
     }
 
     indicatorBuilder.add('ao', 'ao', options.period, options);
@@ -17,7 +19,7 @@ module.exports = class AwesomeOscillatorCrossZero {
     });
   }
 
-  period(indicatorPeriod) {
+  period(indicatorPeriod: IndicatorPeriod): SignalResult | undefined {
     return this.macd(
       indicatorPeriod.getPrice(),
       indicatorPeriod.getIndicator('sma200'),
@@ -26,16 +28,21 @@ module.exports = class AwesomeOscillatorCrossZero {
     );
   }
 
-  macd(price, sma200Full, aoFull, lastSignal) {
-    if (aoFull.length <= 2 || sma200Full.length < 2) {
-      return;
+  macd(
+    price: number,
+    sma200Full: number[] | undefined,
+    aoFull: number[] | undefined,
+    lastSignal: string | undefined
+  ): SignalResult | undefined {
+    if (!aoFull || aoFull.length <= 2 || !sma200Full || sma200Full.length < 2) {
+      return undefined;
     }
 
     // remove incomplete candle
     const sma200 = sma200Full.slice(0, -1);
     const ao = aoFull.slice(0, -1);
 
-    const debug = {
+    const debug: Record<string, any> = {
       sma200: sma200.slice(-1)[0],
       ao: ao.slice(-1)[0],
       last_signal: lastSignal
@@ -68,9 +75,9 @@ module.exports = class AwesomeOscillatorCrossZero {
     return SignalResult.createEmptySignal(debug);
   }
 
-  getOptions() {
+  getOptions(): Record<string, any> {
     return {
       period: '15m'
     };
   }
-};
+}

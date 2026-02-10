@@ -11,7 +11,7 @@ const { Mail } = require('../notify/mail');
 const { Telegram } = require('../notify/telegram');
 
 const { Tickers } = require('../storage/tickers');
-const Ta = require('../modules/ta.js');
+const { Ta } = require('../modules/ta');
 
 const { TickListener } = require('../modules/listener/tick_listener');
 const { CreateOrderListener } = require('../modules/listener/create_order_listener');
@@ -28,7 +28,7 @@ const StrategyManager = require('./strategy/strategy_manager');
 const { ExchangeManager } = require('./exchange/exchange_manager');
 
 const Trade = require('../modules/trade');
-const Http = require('../modules/http');
+const { Http } = require('../modules/http');
 const Backtest = require('../modules/backtest');
 const Backfill = require('../modules/backfill');
 

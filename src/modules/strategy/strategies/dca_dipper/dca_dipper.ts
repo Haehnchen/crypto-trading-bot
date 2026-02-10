@@ -1,11 +1,23 @@
-const { SignalResult } = require('../../dict/signal_result');
+import { SignalResult } from '../../dict/signal_result';
+import { IndicatorBuilder } from '../../dict/indicator_builder';
+import { IndicatorPeriod } from '../../dict/indicator_period';
 
-module.exports = class DcaDipper {
-  getName() {
+export interface DcaDipperOptions {
+  period: string;
+  amount_currency: string;
+  percent_below_price?: number;
+  hma_period?: number;
+  hma_source?: string;
+  bb_length?: number;
+  bb_stddev?: number;
+}
+
+export class DcaDipper {
+  getName(): string {
     return 'dca_dipper';
   }
 
-  buildIndicator(indicatorBuilder, options) {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options: DcaDipperOptions): void {
     // basic price normalizer
     indicatorBuilder.add('hma', 'hma', options.period, {
       length: options.hma_period || 9,
@@ -18,7 +30,7 @@ module.exports = class DcaDipper {
     });
   }
 
-  period(indicatorPeriod) {
+  period(indicatorPeriod: IndicatorPeriod): SignalResult | undefined {
     const currentValues = indicatorPeriod.getLatestIndicators();
 
     const price = indicatorPeriod.getPrice();
@@ -27,14 +39,14 @@ module.exports = class DcaDipper {
     }
 
     const context = indicatorPeriod.getStrategyContext();
-    const options = context.getOptions();
+    const options = context.getOptions() as DcaDipperOptions;
 
     if (!options.amount_currency) {
       throw new Error('No amount_currency given');
     }
 
-    const hma = indicatorPeriod.getIndicator('hma').slice(-2);
-    const bb = indicatorPeriod.getIndicator('bb').slice(-2);
+    const hma = (indicatorPeriod.getIndicator('hma') as number[]).slice(-2);
+    const bb = (indicatorPeriod.getIndicator('bb') as any[]).slice(-2);
 
     if (bb.length < 2 || hma.length < 2) {
       return undefined;
@@ -68,11 +80,11 @@ module.exports = class DcaDipper {
     return emptySignal;
   }
 
-  getBacktestColumns() {
+  getBacktestColumns(): any[] {
     return [
       {
         label: 'buy',
-        value: row => {
+        value: (row: any) => {
           if (row.buy) {
             return 'success';
           }
@@ -87,7 +99,7 @@ module.exports = class DcaDipper {
     ];
   }
 
-  getOptions() {
+  getOptions(): DcaDipperOptions {
     return {
       period: '15m',
       amount_currency: '12',
@@ -98,4 +110,4 @@ module.exports = class DcaDipper {
       bb_stddev: 2
     };
   }
-};
+}

@@ -1,11 +1,13 @@
-const { SignalResult } = require('../dict/signal_result');
+import { SignalResult } from '../dict/signal_result';
+import { IndicatorBuilder } from '../dict/indicator_builder';
+import { IndicatorPeriod } from '../dict/indicator_period';
 
-module.exports = class {
-  getName() {
+export class ObvPumpDump {
+  getName(): string {
     return 'obv_pump_dump';
   }
 
-  buildIndicator(indicatorBuilder, options) {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, options: Record<string, any>): void {
     indicatorBuilder.add('obv', 'obv', '1m');
 
     indicatorBuilder.add('ema', 'ema', '1m', {
@@ -13,20 +15,20 @@ module.exports = class {
     });
   }
 
-  async period(indicatorPeriod, options) {
+  async period(indicatorPeriod: IndicatorPeriod, options: Record<string, any>): Promise<SignalResult | undefined> {
     const triggerMultiplier = options.trigger_multiplier || 2;
     const triggerTimeWindows = options.trigger_time_windows || 3;
 
-    const obv = indicatorPeriod.getIndicator('obv');
+    const obv = indicatorPeriod.getIndicator('obv') as number[] | undefined;
 
     if (!obv || obv.length <= 20) {
-      return;
+      return undefined;
     }
 
     const price = indicatorPeriod.getPrice();
-    const ema = indicatorPeriod.getIndicator('ema').slice(-1)[0];
+    const ema = (indicatorPeriod.getIndicator('ema') as number[]).slice(-1)[0];
 
-    const debug = {
+    const debug: Record<string, any> = {
       obv: obv.slice(-1)[0],
       ema: ema
     };
@@ -66,11 +68,11 @@ module.exports = class {
     return SignalResult.createEmptySignal(debug);
   }
 
-  getOptions() {
+  getOptions(): Record<string, any> {
     return {
       period: '15m',
       trigger_multiplier: 2,
       trigger_time_windows: 3
     };
   }
-};
+}
