@@ -2,7 +2,7 @@
   "env": {
     "node": true,
     "es6": true,
-    "jquery": true,
+    "browser": true,
     "mocha": true
   },
   "extends": ["airbnb", "prettier", "plugin:node/recommended"],

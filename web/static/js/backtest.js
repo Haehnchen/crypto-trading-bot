@@ -1,27 +1,28 @@
-$(function() {
-  $('table.backtest-table').on('click', 'a.button-debug-toggle', function(e) {
-    e.preventDefault();
-    $(this)
-      .closest('.debug-toggle')
-      .toggleClass('hide');
+document.addEventListener('DOMContentLoaded', function () {
+  // Debug toggle buttons
+  document.querySelectorAll('table.backtest-table').forEach(function (table) {
+    table.addEventListener('click', function (e) {
+      if (e.target.matches('a.button-debug-toggle')) {
+        e.preventDefault();
+        e.target.closest('.debug-toggle').classList.toggle('hide');
+      }
+
+      if (e.target.matches('a.button-debug-toggle-all')) {
+        e.preventDefault();
+        table.querySelectorAll('td .debug-toggle').forEach(function (el) {
+          el.classList.toggle('hide');
+        });
+      }
+    });
   });
 
-  $('table.backtest-table').on('click', 'a.button-debug-toggle-all', function(e) {
-    e.preventDefault();
+  const chart = document.querySelector('.chart');
 
-    $(this)
-      .closest('table.backtest-table')
-      .find('td .debug-toggle')
-      .toggleClass('hide');
-  });
-
-  const chart = $('.chart');
-
-  if (chart.length > 0) {
-    const candles = chart.data('candles');
+  if (chart) {
+    const candles = JSON.parse(chart.dataset.candles || '[]');
 
     const dim = {
-      width: chart.width(),
+      width: chart.clientWidth,
       height: 500,
       margin: { top: 20, right: 60, bottom: 30, left: 60 },
       ohlc: { height: 450 },
@@ -44,7 +45,7 @@ $(function() {
 
     const y = d3.scaleLinear().range([dim.ohlc.height, 0]);
 
-    const yPercent = y.copy(); // Same as y at this stage, will get a different domain later
+    const yPercent = y.copy();
 
     let yInit;
     let yPercentInit;
@@ -52,16 +53,13 @@ $(function() {
 
     const yVolume = d3.scaleLinear().range([y(0), y(0.4)]);
 
-    const candlestick = techan.plot
-      .candlestick()
-      .xScale(x)
-      .yScale(y);
+    const candlestick = techan.plot.candlestick().xScale(x).yScale(y);
 
     const tradearrow = techan.plot
       .tradearrow()
       .xScale(x)
       .yScale(y)
-      .orient(function(d) {
+      .orient(function (d) {
         switch (d.type) {
           case 'close':
             return 'left';
@@ -81,11 +79,7 @@ $(function() {
         valueText.style('display', 'none');
       });
 
-    const volume = techan.plot
-      .volume()
-      .accessor(candlestick.accessor()) // Set the accessor to a ohlc accessor so we get highlighted bars
-      .xScale(x)
-      .yScale(yVolume);
+    const volume = techan.plot.volume().accessor(candlestick.accessor()).xScale(x).yScale(yVolume);
 
     const xAxis = d3.axisBottom(x);
 
@@ -116,21 +110,11 @@ $(function() {
 
     const percentAxis = d3.axisLeft(yPercent).tickFormat(d3.format('+.1%'));
 
-    const percentAnnotation = techan.plot
-      .axisannotation()
-      .axis(percentAxis)
-      .orient('left');
+    const percentAnnotation = techan.plot.axisannotation().axis(percentAxis).orient('left');
 
-    const volumeAxis = d3
-      .axisRight(yVolume)
-      .ticks(3)
-      .tickFormat(d3.format(',.3s'));
+    const volumeAxis = d3.axisRight(yVolume).ticks(3).tickFormat(d3.format(',.3s'));
 
-    const volumeAnnotation = techan.plot
-      .axisannotation()
-      .axis(volumeAxis)
-      .orient('right')
-      .width(35);
+    const volumeAnnotation = techan.plot.axisannotation().axis(volumeAxis).orient('right').width(35);
 
     const ohlcCrosshair = techan.plot
       .crosshair()
@@ -140,11 +124,7 @@ $(function() {
       .yAnnotation([ohlcAnnotation, percentAnnotation, volumeAnnotation])
       .verticalWireRange([0, dim.plot.height]);
 
-    let svg = d3
-      .select('.chart')
-      .append('svg')
-      .attr('width', dim.width)
-      .attr('height', dim.height);
+    let svg = d3.select('.chart').append('svg').attr('width', dim.width).attr('height', dim.height);
 
     var valueText = svg
       .append('text')
@@ -155,26 +135,19 @@ $(function() {
 
     const defs = svg.append('defs');
 
-    defs
-      .append('clipPath')
-      .attr('id', 'ohlcClip')
-      .append('rect')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('width', dim.plot.width)
-      .attr('height', dim.ohlc.height);
+    defs.append('clipPath').attr('id', 'ohlcClip').append('rect').attr('x', 0).attr('y', 0).attr('width', dim.plot.width).attr('height', dim.ohlc.height);
 
     defs
       .selectAll('indicatorClip')
       .data([0, 1])
       .enter()
       .append('clipPath')
-      .attr('id', function(d, i) {
+      .attr('id', function (d, i) {
         return `indicatorClip-${i}`;
       })
       .append('rect')
       .attr('x', 0)
-      .attr('y', function(d, i) {
+      .attr('y', function (d, i) {
         return indicatorTop(i);
       })
       .attr('width', dim.plot.width)
@@ -182,24 +155,14 @@ $(function() {
 
     svg = svg.append('g').attr('transform', `translate(${dim.margin.left},${dim.margin.top})`);
 
-    const title = chart.data('title');
+    const title = chart.dataset.title;
     if (title) {
-      svg
-        .append('text')
-        .attr('class', 'symbol')
-        .attr('x', 20)
-        .text(title);
+      svg.append('text').attr('class', 'symbol').attr('x', 20).text(title);
     }
 
-    svg
-      .append('g')
-      .attr('class', 'x axis')
-      .attr('transform', `translate(0,${dim.plot.height})`);
+    svg.append('g').attr('class', 'x axis').attr('transform', `translate(0,${dim.plot.height})`);
 
-    const ohlcSelection = svg
-      .append('g')
-      .attr('class', 'ohlc')
-      .attr('transform', 'translate(0,0)');
+    const ohlcSelection = svg.append('g').attr('class', 'ohlc').attr('transform', 'translate(0,0)');
 
     ohlcSelection
       .append('g')
@@ -214,36 +177,26 @@ $(function() {
 
     ohlcSelection.append('g').attr('class', 'close annotation up');
 
-    ohlcSelection
-      .append('g')
-      .attr('class', 'volume')
-      .attr('clip-path', 'url(#ohlcClip)');
+    ohlcSelection.append('g').attr('class', 'volume').attr('clip-path', 'url(#ohlcClip)');
 
-    ohlcSelection
-      .append('g')
-      .attr('class', 'candlestick')
-      .attr('clip-path', 'url(#ohlcClip)');
+    ohlcSelection.append('g').attr('class', 'candlestick').attr('clip-path', 'url(#ohlcClip)');
 
     ohlcSelection.append('g').attr('class', 'percent axis');
 
     ohlcSelection.append('g').attr('class', 'volume axis');
 
-    // Add trendlines and other interactions last to be above zoom pane
     svg.append('g').attr('class', 'crosshair ohlc');
 
-    svg
-      .append('g')
-      .attr('class', 'tradearrow')
-      .attr('clip-path', 'url(#ohlcClip)');
+    svg.append('g').attr('class', 'tradearrow').attr('clip-path', 'url(#ohlcClip)');
 
     const accessor = candlestick.accessor();
 
     const trades = [];
 
     const data = candles
-      .map(function(d) {
+      .map(function (d) {
         if (d.signals && d.signals.length > 0) {
-          d.signals.forEach(function(trade) {
+          d.signals.forEach(function (trade) {
             trades.push({
               date: new Date(d.date),
               type: trade.signal,
@@ -261,7 +214,7 @@ $(function() {
           volume: d.volume
         };
       })
-      .sort(function(a, b) {
+      .sort(function (a, b) {
         return d3.ascending(accessor.d(a), accessor.d(b));
       });
 
@@ -270,34 +223,18 @@ $(function() {
     yPercent.domain(techan.scale.plot.percent(y, accessor(data[0])).domain());
     yVolume.domain(techan.scale.plot.volume(data).domain());
 
-    svg
-      .select('g.candlestick')
-      .datum(data)
-      .call(candlestick);
+    svg.select('g.candlestick').datum(data).call(candlestick);
     svg
       .select('g.close.annotation')
       .datum([data[data.length - 1]])
       .call(closeAnnotation);
-    svg
-      .select('g.volume')
-      .datum(data)
-      .call(volume);
+    svg.select('g.volume').datum(data).call(volume);
 
-    svg
-      .select('g.crosshair.ohlc')
-      .call(ohlcCrosshair)
-      .call(zoom);
+    svg.select('g.crosshair.ohlc').call(ohlcCrosshair).call(zoom);
 
-    svg
-      .select('g.tradearrow')
-      .datum(trades)
-      .call(tradearrow);
+    svg.select('g.tradearrow').datum(trades).call(tradearrow);
 
-    // Stash for zooming
-    zoomableInit = x
-      .zoomable()
-      .domain([0, data.length])
-      .copy(); // Zoom in a little to hide indicator preroll
+    zoomableInit = x.zoomable().domain([0, data.length]).copy();
     yInit = y.copy();
     yPercentInit = yPercent.copy();
 
@@ -323,7 +260,6 @@ $(function() {
       svg.select('g.volume.axis').call(volumeAxis);
       svg.select('g.percent.axis').call(percentAxis);
 
-      // We know the data does not change, a simple refresh that does not perform data joins will suffice.
       svg.select('g.candlestick').call(candlestick.refresh);
       svg.select('g.close.annotation').call(closeAnnotation.refresh);
       svg.select('g.volume').call(volume.refresh);

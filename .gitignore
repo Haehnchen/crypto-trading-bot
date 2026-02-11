@@ -1,6 +1,6 @@
 node_modules
-idea
-vscode
+.idea
+.vscode
 
 # Project config
 conf.json
@@ -9,3 +9,4 @@ bot.db
 bot.db-shm
 bot.db-wal
 ./var/
+dist

@@ -1,32 +1,37 @@
-// filter pairs
-$(function() {
+document.addEventListener('DOMContentLoaded', function () {
   var filterTimeout = null;
-  $(".filter-pairs").keyup(function() {
-    var me = $(this);
 
-    if (filterTimeout != null) {
-      clearTimeout(filterTimeout);
-    }
-    filterTimeout = setTimeout(function() {
-      var filter = me.val();
+  document.querySelectorAll('.filter-pairs').forEach(function (input) {
+    input.addEventListener('keyup', function () {
+      var me = this;
 
-      var table = $('.table-pairs');
-      if (filter.length === 0) {
-        table.find('tbody tr').show();
-        return;
+      if (filterTimeout != null) {
+        clearTimeout(filterTimeout);
       }
 
-      table.find('tbody tr[data-search]').each(function() {
-        const me = $(this);
+      filterTimeout = setTimeout(function () {
+        var filter = me.value;
 
-        const search = me.data('search');
+        var table = document.querySelector('.table-pairs');
+        if (!table) return;
 
-        if (search.toLowerCase().includes(filter.toLowerCase())) {
-          me.closest('tr').show();
-        } else {
-          me.closest('tr').hide();
+        if (filter.length === 0) {
+          table.querySelectorAll('tbody tr').forEach(function (row) {
+            row.style.display = '';
+          });
+          return;
         }
-      });
-    }, 250);
+
+        table.querySelectorAll('tbody tr[data-search]').forEach(function (row) {
+          const search = row.dataset.search;
+
+          if (search.toLowerCase().includes(filter.toLowerCase())) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      }, 250);
+    });
   });
 });

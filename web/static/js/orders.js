@@ -1,55 +1,70 @@
-$(function() {
+document.addEventListener('DOMContentLoaded', function () {
   function getPrecision(numberAsString) {
     const n = numberAsString.toString().split('.');
     return n.length > 1 ? n[1].length : 0;
   }
 
-  $('.percent-input-group').on('click', 'button', function(e) {
-    e.preventDefault();
+  // Percent input group buttons
+  document.querySelectorAll('.percent-input-group').forEach(function (group) {
+    group.addEventListener('click', function (e) {
+      if (e.target.tagName === 'BUTTON') {
+        e.preventDefault();
 
-    const input = $(this)
-      .closest('form')
-      .find('#price');
+        const button = e.target;
+        const form = button.closest('form');
+        const input = form.querySelector('#price');
 
-    const percentageChange = parseFloat($(this).val());
+        const percentageChange = parseFloat(button.value);
+        const price = parseFloat(input.value);
 
-    const price = parseFloat(input.val());
-    input.val((price + price * percentageChange / 100).toFixed(getPrecision(price)));
-  });
-
-  $('.form-group-amount').on('keyup', 'input', function(e) {
-    const value = $(this).val();
-
-    if (!value || Number.isNaN(value)) {
-      return;
-    }
-
-    const id = $(this).attr('id');
-
-    const scope = $(this).closest('form');
-    const assetPrice = scope.find('#price').val();
-
-    if (!assetPrice) {
-      return;
-    }
-
-    if (id === 'amount') {
-      scope.find('#amount_currency').val((value * assetPrice).toFixed(getPrecision(parseFloat(assetPrice))));
-    } else {
-      scope.find('#amount').val((value / assetPrice).toFixed(8)); // precision (tick / lot size?)
-    }
-  });
-
-  // Filter pairs
-  $('#filter-pairs').on('keyup', function() {
-    var filter = $(this).val().toLowerCase();
-    $('.pair-link').each(function() {
-      var pair = $(this).data('pair');
-      if (pair.includes(filter)) {
-        $(this).show();
-      } else {
-        $(this).hide();
+        if (!isNaN(price)) {
+          input.value = (price + (price * percentageChange) / 100).toFixed(getPrecision(price));
+        }
       }
     });
   });
+
+  // Amount input fields
+  document.querySelectorAll('.form-group-amount input').forEach(function (input) {
+    input.addEventListener('keyup', function (e) {
+      const value = this.value;
+
+      if (!value || Number.isNaN(parseFloat(value))) {
+        return;
+      }
+
+      const id = this.id;
+      const form = this.closest('form');
+      const assetPrice = form.querySelector('#price').value;
+
+      if (!assetPrice) {
+        return;
+      }
+
+      const priceValue = parseFloat(assetPrice);
+      const amountValue = parseFloat(value);
+
+      if (id === 'amount') {
+        form.querySelector('#amount_currency').value = (amountValue * priceValue).toFixed(getPrecision(priceValue));
+      } else {
+        form.querySelector('#amount').value = (amountValue / priceValue).toFixed(8);
+      }
+    });
+  });
+
+  // Filter pairs
+  const filterInput = document.getElementById('filter-pairs');
+  if (filterInput) {
+    filterInput.addEventListener('keyup', function () {
+      const filter = this.value.toLowerCase();
+      document.querySelectorAll('.pair-link').forEach(function (link) {
+        const pair = link.dataset.pair;
+        if (pair.includes(filter)) {
+          link.style.display = 'block';
+        } else {
+          link.style.display = 'none';
+        }
+      });
+    });
+  }
 });
