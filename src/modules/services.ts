@@ -30,7 +30,7 @@ import { ExchangeManager } from './exchange/exchange_manager';
 import { Trade } from '../modules/trade';
 import { Http } from '../modules/http';
 import { Backtest } from '../modules/backtest';
-import Backfill from '../modules/backfill';
+import { Backfill } from '../modules/backfill';
 
 import { StopLossCalculator } from '../modules/order/stop_loss_calculator';
 import { RiskRewardRatioCalculator } from '../modules/order/risk_reward_ratio_calculator';
@@ -71,6 +71,18 @@ import { CandleImporter } from '../modules/system/candle_importer';
 
 import { OrdersHttp } from '../modules/orders/orders_http';
 
+// Controllers
+import { DashboardController } from '../controller/dashboard_controller';
+import { TradesController } from '../controller/trades_controller';
+import { PairsController } from '../controller/pairs_controller';
+import { OrdersController } from '../controller/orders_controller';
+import { SignalsController } from '../controller/signals_controller';
+import { CandlesController } from '../controller/candles_controller';
+import { BacktestController } from '../controller/backtest_controller';
+import { LogsController } from '../controller/logs_controller';
+import { DesksController } from '../controller/desks_controller';
+import { TradingViewController } from '../controller/tradingview_controller';
+
 // Interfaces
 interface Instances {
   init?: () => Promise<void>;
@@ -106,9 +118,7 @@ interface Parameters {
   projectDir: string;
 }
 
-interface Logger extends ReturnType<typeof createLogger> {
-  add?: (transport: any) => void;
-}
+type Logger = ReturnType<typeof createLogger>;
 
 let db: Sqlite.Database | undefined;
 let instances: Instances;
@@ -218,6 +228,17 @@ export interface Services {
   createTelegram(): any;
   getInstances(): Instances;
   getConfig(): Config;
+  // Controllers
+  getDashboardController(templateHelpers: any): DashboardController;
+  getTradesController(templateHelpers: any): TradesController;
+  getPairsController(templateHelpers: any): PairsController;
+  getOrdersController(templateHelpers: any): OrdersController;
+  getSignalsController(templateHelpers: any): SignalsController;
+  getCandlesController(templateHelpers: any): CandlesController;
+  getBacktestController(templateHelpers: any): BacktestController;
+  getLogsController(templateHelpers: any): LogsController;
+  getDesksController(templateHelpers: any): DesksController;
+  getTradingViewController(templateHelpers: any): TradingViewController;
 }
 
 const services: Services = {
@@ -271,12 +292,7 @@ const services: Services = {
       return backtest;
     }
 
-    return (backtest = new Backtest(
-      this.getInstances(),
-      this.getStrategyManager(),
-      this.getExchangeCandleCombine(),
-      parameters.projectDir
-    ));
+    return (backtest = new Backtest(this.getInstances(), this.getStrategyManager(), this.getExchangeCandleCombine(), parameters.projectDir));
   },
 
   getStopLossCalculator: function (): StopLossCalculator {
@@ -422,14 +438,7 @@ const services: Services = {
     const config = this.getConfig();
     const telegram = _.get(config, 'log.telegram');
 
-    if (
-      telegram &&
-      telegram.chatId &&
-      telegram.chatId.length > 0 &&
-      telegram.token &&
-      telegram.token.length > 0 &&
-      telegram.chatId.length > 0
-    ) {
+    if (telegram && telegram.chatId && telegram.chatId.length > 0 && telegram.token && telegram.token.length > 0 && telegram.chatId.length > 0) {
       if (logger.add) {
         logger.add(new WinstonTelegramLogger(telegram));
       }
@@ -483,20 +492,7 @@ const services: Services = {
   },
 
   createWebserverInstance: function (): Http {
-    return new Http(
-      this.getSystemUtil(),
-      this.getTa(),
-      this.getSignalHttp(),
-      this.getBacktest(),
-      this.getExchangeManager(),
-      this.getHttpPairs(),
-      this.getLogsHttp(),
-      this.getCandleExportHttp(),
-      this.getCandleImporter(),
-      this.getOrdersHttp(),
-      this.getTickers(),
-      parameters.projectDir
-    );
+    return new Http(this.getSystemUtil(), parameters.projectDir, this);
   },
 
   getExchangeManager: function (): ExchangeManager {
@@ -504,12 +500,7 @@ const services: Services = {
       return exchangeManager;
     }
 
-    return (exchangeManager = new ExchangeManager(
-      this.getExchanges(),
-      this.getLogger(),
-      this.getInstances(),
-      this.getConfig()
-    ));
+    return (exchangeManager = new ExchangeManager(this.getExchanges(), this.getLogger(), this.getInstances(), this.getConfig()));
   },
 
   getOrderExecutor: function (): OrderExecutor {
@@ -517,12 +508,7 @@ const services: Services = {
       return orderExecutor;
     }
 
-    return (orderExecutor = new OrderExecutor(
-      this.getExchangeManager(),
-      this.getTickers(),
-      this.getSystemUtil(),
-      this.getLogger()
-    ));
+    return (orderExecutor = new OrderExecutor(this.getExchangeManager(), this.getTickers(), this.getSystemUtil(), this.getLogger()));
   },
 
   getOrderCalculator: function (): OrderCalculator {
@@ -530,12 +516,7 @@ const services: Services = {
       return orderCalculator;
     }
 
-    return (orderCalculator = new OrderCalculator(
-      this.getTickers(),
-      this.getLogger(),
-      this.getExchangeManager(),
-      this.getPairConfig()
-    ));
+    return (orderCalculator = new OrderCalculator(this.getTickers(), this.getLogger(), this.getExchangeManager(), this.getPairConfig()));
   },
 
   getHttpPairs: function (): PairsHttp {
@@ -543,12 +524,7 @@ const services: Services = {
       return pairsHttp;
     }
 
-    return (pairsHttp = new PairsHttp(
-      this.getInstances(),
-      this.getExchangeManager(),
-      this.getPairStateManager(),
-      this.getEventEmitter()
-    ));
+    return (pairsHttp = new PairsHttp(this.getInstances(), this.getExchangeManager(), this.getPairStateManager(), this.getEventEmitter()));
   },
 
   getPairConfig: function (): PairConfig {
@@ -672,13 +648,7 @@ const services: Services = {
       return ordersHttp;
     }
 
-    return (ordersHttp = new OrdersHttp(
-      this.getBacktest(),
-      this.getTickers(),
-      this.getOrderExecutor(),
-      this.getExchangeManager(),
-      this.getPairConfig()
-    ));
+    return (ordersHttp = new OrdersHttp(this.getBacktest(), this.getTickers(), this.getOrderExecutor(), this.getExchangeManager(), this.getPairConfig()));
   },
 
   getExchangeCandleCombine: function (): ExchangeCandleCombine {
@@ -694,11 +664,7 @@ const services: Services = {
       return exchangePositionWatcher;
     }
 
-    return (exchangePositionWatcher = new ExchangePositionWatcher(
-      this.getExchangeManager(),
-      this.getEventEmitter(),
-      this.getLogger()
-    ));
+    return (exchangePositionWatcher = new ExchangePositionWatcher(this.getExchangeManager(), this.getEventEmitter(), this.getLogger()));
   },
 
   getThrottler: function (): Throttler {
@@ -717,14 +683,7 @@ const services: Services = {
     }
 
     return (exchanges = [
-      new Bitmex(
-        this.getEventEmitter(),
-        this.getRequestClient(),
-        this.getCandlestickResample(),
-        this.getLogger(),
-        this.getQueue(),
-        this.getCandleImporter()
-      ),
+      new Bitmex(this.getEventEmitter(), this.getRequestClient(), this.getCandlestickResample(), this.getLogger(), this.getQueue(), this.getCandleImporter()),
       new BitmexTestnet(
         this.getEventEmitter(),
         this.getRequestClient(),
@@ -733,20 +692,8 @@ const services: Services = {
         this.getQueue(),
         this.getCandleImporter()
       ),
-      new Binance(
-        this.getEventEmitter(),
-        this.getLogger(),
-        this.getQueue(),
-        this.getCandleImporter(),
-        this.getThrottler()
-      ),
-      new BinanceMargin(
-        this.getEventEmitter(),
-        this.getLogger(),
-        this.getQueue(),
-        this.getCandleImporter(),
-        this.getThrottler()
-      ),
+      new Binance(this.getEventEmitter(), this.getLogger(), this.getQueue(), this.getCandleImporter(), this.getThrottler()),
+      new BinanceMargin(this.getEventEmitter(), this.getLogger(), this.getQueue(), this.getCandleImporter(), this.getThrottler()),
       new BinanceFutures(
         this.getEventEmitter(),
         this.getRequestClient(),
@@ -765,13 +712,7 @@ const services: Services = {
         this.getCandleImporter(),
         this.getThrottler()
       ),
-      new CoinbasePro(
-        this.getEventEmitter(),
-        this.getLogger(),
-        this.getCandlestickResample(),
-        this.getQueue(),
-        this.getCandleImporter()
-      ),
+      new CoinbasePro(this.getEventEmitter(), this.getLogger(), this.getCandlestickResample(), this.getQueue(), this.getCandleImporter()),
       new Bitfinex(this.getEventEmitter(), this.getLogger(), this.getRequestClient(), this.getCandleImporter()),
       new Bybit(
         this.getEventEmitter(),
@@ -855,6 +796,47 @@ const services: Services = {
 
   getConfig: (): Config => {
     return config;
+  },
+
+  // Controller factory methods
+  getDashboardController: function (templateHelpers: any): DashboardController {
+    return new DashboardController(templateHelpers, this.getTa(), this.getSystemUtil());
+  },
+
+  getTradesController: function (templateHelpers: any): TradesController {
+    return new TradesController(templateHelpers, this.getExchangeManager(), this.getOrdersHttp(), this.getTickers());
+  },
+
+  getPairsController: function (templateHelpers: any): PairsController {
+    return new PairsController(templateHelpers, this.getHttpPairs());
+  },
+
+  getOrdersController: function (templateHelpers: any): OrdersController {
+    return new OrdersController(templateHelpers, this.getOrdersHttp(), this.getExchangeManager());
+  },
+
+  getSignalsController: function (templateHelpers: any): SignalsController {
+    return new SignalsController(templateHelpers, this.getSignalHttp());
+  },
+
+  getCandlesController: function (templateHelpers: any): CandlesController {
+    return new CandlesController(templateHelpers, this.getCandleExportHttp(), this.getCandleImporter());
+  },
+
+  getBacktestController: function (templateHelpers: any): BacktestController {
+    return new BacktestController(templateHelpers, this.getBacktest());
+  },
+
+  getLogsController: function (templateHelpers: any): LogsController {
+    return new LogsController(templateHelpers, this.getLogsHttp());
+  },
+
+  getDesksController: function (templateHelpers: any): DesksController {
+    return new DesksController(templateHelpers, this.getSystemUtil());
+  },
+
+  getTradingViewController: function (templateHelpers: any): TradingViewController {
+    return new TradingViewController(templateHelpers);
   }
 };
 

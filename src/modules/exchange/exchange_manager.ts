@@ -20,6 +20,8 @@ export interface ExchangeInstance {
   isInverseSymbol(symbol: string): boolean;
   calculateAmount(amount: number, symbol: string): number | undefined;
   calculatePrice(price: number, symbol: string): number | undefined;
+  getOrders(): Promise<ExchangeOrder[]>;
+  cancelOrder(id: string): Promise<any>;
 }
 
 export class ExchangeManager {
@@ -60,10 +62,7 @@ export class ExchangeManager {
     const activeExchanges = exchanges.filter(exchange => exchange.getName() in symbols);
 
     activeExchanges.forEach((activeExchange: ExchangeInstance) =>
-      activeExchange.start(
-        _.get(this.config, `exchanges.${activeExchange.getName()}`, {}),
-        symbols[activeExchange.getName()]
-      )
+      activeExchange.start(_.get(this.config, `exchanges.${activeExchange.getName()}`, {}), symbols[activeExchange.getName()])
     );
 
     this.exchanges = activeExchanges;

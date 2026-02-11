@@ -4,62 +4,21 @@ import layouts from 'express-ejs-layouts';
 import auth from 'basic-auth';
 import cookieParser from 'cookie-parser';
 import crypto from 'crypto';
-import moment from 'moment';
-import { OrderUtil } from '../utils/order_util';
 import path from 'path';
-import ejs from 'ejs';
-
-export interface TemplateHelpers {
-  priceFormat(value: any): string;
-  formatDate(date: any, format: string): string;
-  escapeHtml(text: any): string;
-  decodeHtml(text: any): string;
-  assetVersion(): string;
-  nodeVersion(): string;
-  memoryUsage(): number;
-}
+import { SystemUtil } from '../modules/system/system_util';
+import { Services } from './services';
+import { TemplateHelpers } from '../controller/base_controller';
 
 export class Http {
-  private systemUtil: any;
-  private ta: any;
-  private signalHttp: any;
-  private backtest: any;
-  private exchangeManager: any;
-  private pairsHttp: any;
-  private logsHttp: any;
-  private candleExportHttp: any;
-  private candleImporter: any;
-  private ordersHttp: any;
+  private systemUtil: SystemUtil;
   private projectDir: string;
-  private tickers: any;
+  private services: Services;
   private templateHelpers: TemplateHelpers;
 
-  constructor(
-    systemUtil: any,
-    ta: any,
-    signalHttp: any,
-    backtest: any,
-    exchangeManager: any,
-    pairsHttp: any,
-    logsHttp: any,
-    candleExportHttp: any,
-    candleImporter: any,
-    ordersHttp: any,
-    tickers: any,
-    projectDir: string
-  ) {
+  constructor(systemUtil: SystemUtil, projectDir: string, services: Services) {
     this.systemUtil = systemUtil;
-    this.ta = ta;
-    this.signalHttp = signalHttp;
-    this.backtest = backtest;
-    this.exchangeManager = exchangeManager;
-    this.pairsHttp = pairsHttp;
-    this.logsHttp = logsHttp;
-    this.candleExportHttp = candleExportHttp;
-    this.candleImporter = candleImporter;
-    this.ordersHttp = ordersHttp;
     this.projectDir = projectDir;
-    this.tickers = tickers;
+    this.services = services;
 
     // Helper functions for templates (previously Twig filters)
     this.templateHelpers = {
@@ -181,353 +140,24 @@ export class Http {
       });
     }
 
-    const { ta } = this;
+    // Create a single main router that all controllers will register to
+    // Controllers now define their full paths internally
+    const mainRouter = express.Router();
 
-    app.get('/', async (req: any, res: any) => {
-      const data = await ta.getTaForPeriods(this.systemUtil.getConfig('dashboard.periods', ['15m', '1h']));
-      res.render('dashboard', {
-        activePage: 'dashboard',
-        title: 'Dashboard | Crypto Bot',
-        periods: data.periods,
-        rows: Object.values(data.rows) // Convert object to array
-      });
-    });
+    // Register all controller routes to the main router with full paths
+    this.services.getDashboardController(this.templateHelpers).registerRoutes(mainRouter);
+    this.services.getTradesController(this.templateHelpers).registerRoutes(mainRouter);
+    this.services.getPairsController(this.templateHelpers).registerRoutes(mainRouter);
+    this.services.getOrdersController(this.templateHelpers).registerRoutes(mainRouter);
+    this.services.getSignalsController(this.templateHelpers).registerRoutes(mainRouter);
+    this.services.getCandlesController(this.templateHelpers).registerRoutes(mainRouter);
+    this.services.getBacktestController(this.templateHelpers).registerRoutes(mainRouter);
+    this.services.getLogsController(this.templateHelpers).registerRoutes(mainRouter);
+    this.services.getDesksController(this.templateHelpers).registerRoutes(mainRouter);
+    this.services.getTradingViewController(this.templateHelpers).registerRoutes(mainRouter);
 
-    app.get('/backtest', async (req: any, res: any) => {
-      res.render('backtest', {
-        activePage: 'backtest',
-        title: 'Backtesting | Crypto Bot',
-        stylesheet:
-          '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.min.css" integrity="sha512-yVvxUQV0QESBt1SyZbNJMAwyKvFTLMyXSyBHDO4BG5t7k/Lw34tyqlSDlKIrIENIzCl+RVUNjmCPG+V/GMesRw==" crossorigin="anonymous" />',
-        strategies: this.backtest.getBacktestStrategies(),
-        pairs: await this.backtest.getBacktestPairs()
-      });
-    });
-
-    app.post('/backtest/submit', async (req: any, res: any) => {
-      let pairs = req.body.pair;
-
-      if (typeof pairs === 'string') {
-        pairs = [pairs];
-      }
-
-      const asyncs = pairs.map((pair: string) => async () => {
-        const p = pair.split('.');
-
-        return {
-          pair: pair,
-          result: await this.backtest.getBacktestResult(
-            parseInt(req.body.ticker_interval, 10),
-            req.body.hours,
-            req.body.strategy,
-            req.body.candle_period,
-            p[0],
-            p[1],
-            req.body.options ? JSON.parse(req.body.options) : {},
-            req.body.initial_capital
-          )
-        };
-      });
-
-      const backtests = await Promise.all(asyncs.map((fn: any) => fn()));
-
-      // single details view
-      if (backtests.length === 1) {
-        res.render('backtest_submit', {
-          activePage: 'backtest',
-          title: 'Backtesting Results | Crypto Bot',
-          stylesheet: '<link rel="stylesheet" href="/css/backtest.css?v=' + this.templateHelpers.assetVersion() + '">',
-          ...backtests[0].result
-        });
-        return;
-      }
-
-      // multiple view
-      res.render('backtest_submit_multiple', {
-        activePage: 'backtest',
-        title: 'Backtesting Results | Crypto Bot',
-        stylesheet: '<link rel="stylesheet" href="/css/backtest.css?v=' + this.templateHelpers.assetVersion() + '">',
-        backtests: backtests
-      });
-    });
-
-    app.get('/tradingview/:symbol', (req: any, res: any) => {
-      res.render('tradingview', {
-        activePage: 'tradingview',
-        title: `${req.params.symbol} | Trading View | Crypto Bot`,
-        symbol: this.buildTradingViewSymbol(req.params.symbol)
-      });
-    });
-
-    app.get('/signals', async (req: any, res: any) => {
-      res.render('signals', {
-        activePage: 'signals',
-        title: 'Signals | Crypto Bot',
-        signals: await this.signalHttp.getSignals(Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 30)
-      });
-    });
-
-    app.get('/pairs', async (req: any, res: any) => {
-      const pairs = await this.pairsHttp.getTradePairs();
-
-      res.render('pairs', {
-        activePage: 'pairs',
-        title: 'Pairs | Crypto Bot',
-        pairs: pairs,
-        stats: {
-          positions: pairs.filter((p: any) => p.has_position === true).length,
-          trading: pairs.filter((p: any) => p.is_trading === true).length
-        }
-      });
-    });
-
-    app.get('/logs', async (req: any, res: any) => {
-      const logData = await this.logsHttp.getLogsPageVariables(req, res);
-      res.render('logs', {
-        activePage: 'logs',
-        title: 'Logs | Crypto Bot',
-        ...logData
-      });
-    });
-
-    app.get('/desks/:desk', async (req: any, res: any) => {
-      res.render('desks', {
-        activePage: 'desks',
-        title: `Desk: ${this.systemUtil.getConfig('desks')[req.params.desk].name} | Crypto Bot`,
-        desk: this.systemUtil.getConfig('desks')[req.params.desk],
-        interval: req.query.interval || undefined,
-        id: req.params.desk
-      });
-    });
-
-    app.get('/desks/:desk/fullscreen', (req: any, res: any) => {
-      const configElement = this.systemUtil.getConfig('desks')[req.params.desk];
-      res.render('tradingview_desk', {
-        layout: false,
-        desk: configElement,
-        interval: req.query.interval || undefined,
-        id: req.params.desk,
-        watchlist: configElement.pairs.map((i: any) => i.symbol),
-        desks: this.systemUtil.getConfig('desks', []).map((d: any) => d.name)
-      });
-    });
-
-    app.get('/tools/candles', async (req: any, res: any) => {
-      const options: any = {
-        pairs: await this.candleExportHttp.getPairs(),
-        start: moment().subtract(7, 'days').toDate(),
-        end: new Date()
-      };
-
-      if (req.query.pair && req.query.period && req.query.start && req.query.end) {
-        const [exchange, symbol] = req.query.pair.split('.');
-        const candles = await this.candleExportHttp.getCandles(exchange, symbol, req.query.period, new Date(req.query.start), new Date(req.query.end));
-
-        if (req.query.metadata) {
-          candles.map((c: any) => {
-            c.exchange = exchange;
-            c.symbol = symbol;
-            c.period = req.query.period;
-            return c;
-          });
-        }
-
-        options.start = new Date(req.query.start);
-        options.end = new Date(req.query.end);
-
-        options.exchange = exchange;
-        options.symbol = symbol;
-        options.period = req.query.period;
-        options.candles = candles;
-        options.candles_json = JSON.stringify(candles, null, 2);
-      }
-
-      res.render('candles', {
-        activePage: 'candles',
-        title: 'Candles | Crypto Bot',
-        stylesheet:
-          '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.min.css" integrity="sha512-yVvxUQV0QESBt1SyZbNJMAwyKvFTLMyXSyBHDO4BG5t7k/Lw34tyqlSDlKIrIENIzCl+RVUNjmCPG+V/GMesRw==" crossorigin="anonymous" />',
-        ...options
-      });
-    });
-
-    app.post('/tools/candles', async (req: any, res: any) => {
-      const exchangeCandlesticks = JSON.parse(req.body.json);
-      await this.candleImporter.insertCandles(exchangeCandlesticks);
-
-      console.log(`Imported: ${exchangeCandlesticks.length} items`);
-
-      res.redirect('/tools/candles');
-    });
-
-    app.post('/pairs/:pair', async (req: any, res: any) => {
-      const pair = req.params.pair.split('-');
-      const { body } = req;
-
-      const symbol = req.params.pair.substring(pair[0].length + 1);
-
-      await this.pairsHttp.triggerOrder(pair[0], symbol, body.action);
-
-      setTimeout(() => {
-        res.redirect('/pairs');
-      }, 800);
-    });
-
-    const { exchangeManager } = this;
-    app.get('/order/:exchange/:id', async (req: any, res: any) => {
-      const exchangeName = req.params.exchange;
-      const { id } = req.params;
-
-      const exchange = exchangeManager.get(exchangeName);
-
-      try {
-        await exchange.cancelOrder(id);
-      } catch (e) {
-        console.log(`Cancel order error: ${JSON.stringify([exchangeName, id, String(e)])}`);
-      }
-
-      res.redirect('/trades');
-    });
-
-    app.get('/orders', async (req: any, res: any) => {
-      res.render('orders/index', {
-        activePage: 'orders',
-        title: 'Orders | Crypto Bot',
-        pairs: this.ordersHttp.getPairs()
-      });
-    });
-
-    app.get('/orders/:pair', async (req: any, res: any) => {
-      const { pair } = req.params;
-      const tradingview = pair.split('.');
-
-      const ticker = this.ordersHttp.getTicker(pair);
-
-      res.render('orders/orders', {
-        activePage: 'orders',
-        title: `Order: ${pair} | Crypto Bot`,
-        pair: pair,
-        pairs: this.ordersHttp.getPairs(),
-        orders: await this.ordersHttp.getOrders(pair),
-        position: await this.exchangeManager.getPosition(tradingview[0], tradingview[1]),
-        ticker: ticker,
-        tradingview: this.buildTradingViewSymbol(`${tradingview[0]}:${tradingview[1]}`),
-        form: {
-          price: ticker ? ticker.bid : undefined,
-          type: 'limit'
-        }
-      });
-    });
-
-    app.post('/orders/:pair', async (req: any, res: any) => {
-      const { pair } = req.params;
-      const tradingview = pair.split('.');
-
-      const ticker = this.ordersHttp.getTicker(pair);
-      const form = req.body;
-
-      let success = true;
-      let message: string;
-      let result: any;
-
-      try {
-        result = await this.ordersHttp.createOrder(pair, form);
-        message = JSON.stringify(result);
-
-        if (!result || result.shouldCancelOrderProcess()) {
-          success = false;
-        }
-      } catch (e) {
-        success = false;
-        message = String(e);
-      }
-
-      res.render('orders/orders', {
-        activePage: 'orders',
-        title: `Order: ${pair} | Crypto Bot`,
-        pair: pair,
-        pairs: this.ordersHttp.getPairs(),
-        orders: await this.ordersHttp.getOrders(pair),
-        ticker: ticker,
-        position: await this.exchangeManager.getPosition(tradingview[0], tradingview[1]),
-        form: form,
-        tradingview: this.buildTradingViewSymbol(`${tradingview[0]}:${tradingview[1]}`),
-        alert: {
-          title: success ? 'Order Placed' : 'Place Error',
-          type: success ? 'success' : 'danger',
-          message: message
-        }
-      });
-    });
-
-    app.get('/orders/:pair/cancel/:id', async (req: any, res: any) => {
-      await this.ordersHttp.cancel(req.params.pair, req.params.id);
-      res.redirect(`/orders/${encodeURIComponent(req.params.pair)}`);
-    });
-
-    app.get('/orders/:pair/cancel-all', async (req: any, res: any) => {
-      await this.ordersHttp.cancelAll(req.params.pair);
-      res.redirect(`/orders/${encodeURIComponent(req.params.pair)}`);
-    });
-
-    app.get('/trades', async (req: any, res: any) => {
-      res.render('trades', {
-        activePage: 'trades',
-        title: 'Trades | Crypto Bot',
-        javascript: `<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script><script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader/dist/vue3-sfc-loader.js"></script><script src="/js/trades.js?v=${this.templateHelpers.assetVersion()}" type="module"></script>`
-      });
-    });
-
-    app.get('/trades.json', async (req: any, res: any) => {
-      const positions: any[] = [];
-      const orders: any[] = [];
-
-      const exchanges = exchangeManager.all();
-      for (const key in exchanges) {
-        const exchange = exchanges[key];
-
-        const exchangeName = exchange.getName();
-
-        const myPositions = await exchange.getPositions();
-        myPositions.forEach((position: any) => {
-          let currencyValue: number | undefined;
-          let currencyProfit: number | undefined;
-
-          if ((exchangeName.includes('bitmex') && ['XBTUSD', 'ETHUSD'].includes(position.symbol)) || exchangeName === 'bybit') {
-            currencyValue = Math.abs(position.amount);
-          } else if (position.amount && position.entry) {
-            currencyValue = position.entry * Math.abs(position.amount);
-          }
-
-          positions.push({
-            exchange: exchangeName,
-            position: position,
-            currency: currencyValue,
-            currencyProfit: position.getProfit() ? currencyValue + (currencyValue / 100) * position.getProfit() : undefined
-          });
-        });
-
-        const myOrders = await exchange.getOrders();
-        myOrders.forEach((order: any) => {
-          const items: any = {
-            exchange: exchange.getName(),
-            order: order
-          };
-
-          const ticker = this.tickers.get(exchange.getName(), order.symbol);
-          if (ticker) {
-            items.percent_to_price = OrderUtil.getPercentDifferent(order.price, ticker.bid);
-          }
-
-          orders.push(items);
-        });
-      }
-
-      res.json({
-        orders: orders.sort((a: any, b: any) => a.order.symbol.localeCompare(b.order.symbol)),
-        positions: positions.sort((a: any, b: any) => a.position.symbol.localeCompare(b.position.symbol))
-      });
-    });
+    // Mount the main router at root
+    app.use('/', mainRouter);
 
     const ip = this.systemUtil.getConfig('webserver.ip', '0.0.0.0');
     const port = this.systemUtil.getConfig('webserver.port', 8080);
@@ -535,36 +165,5 @@ export class Http {
     app.listen(port, ip);
 
     console.log(`Webserver listening on: http://${ip}:${port}`);
-  }
-
-  /**
-   * Tricky way to normalize our tradingview views
-   *
-   * eg:
-   *  - binance_futures:BTCUSDT => binance:BTCUSDTPERP
-   *  - binance_margin:BTCUSDT => binance:BTCUSDT
-   *  - coinbase_pro:BTC-USDT => coinbase:BTCUSDT
-   *
-   * @param symbol
-   * @returns {string}
-   */
-  buildTradingViewSymbol(symbol: string): string {
-    let mySymbol = symbol;
-
-    // binance:BTCUSDTPERP
-    if (mySymbol.includes('binance_futures')) {
-      mySymbol = mySymbol.replace('binance_futures', 'binance');
-      mySymbol += 'PERP';
-    }
-
-    if (mySymbol.includes('bybit_unified') && mySymbol.endsWith(':USDT')) {
-      mySymbol = mySymbol.replace(':USDT', '.P').replace('/', '');
-    }
-
-    if (mySymbol.includes('bybit_unified') && mySymbol.endsWith(':USDC')) {
-      mySymbol = mySymbol.replace(':USDC', '.P').replace('/', '');
-    }
-
-    return mySymbol.replace('-', '').replace('coinbase_pro', 'coinbase').replace('binance_margin', 'binance').replace('bybit_unified', 'bybit').toUpperCase();
   }
 }
