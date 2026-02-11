@@ -9,12 +9,15 @@ import { TickerEvent } from '../event/ticker_event';
 import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderSide, ExchangeOrderType } from '../dict/exchange_order';
 import { Order as MyOrder } from '../dict/order';
 import { EventEmitter } from 'events';
+import type { Logger } from '../modules/services';
+import type { CandleImporter } from '../modules/system/candle_importer';
+import type { RequestClient } from '../utils/request_client';
 
 export class Bitfinex {
   private eventEmitter: EventEmitter;
-  private candleImport: any;
-  private logger: any;
-  private requestClient: any;
+  private candleImport: CandleImporter;
+  private logger: Logger;
+  private requestClient: RequestClient;
   private tickers: Record<string, Ticker>;
 
   private positions: Record<string, Position>;
@@ -22,7 +25,7 @@ export class Bitfinex {
   private client: any;
   private balanceInfo?: any;
 
-  constructor(eventEmitter: EventEmitter, logger: any, requestClient: any, candleImport: any) {
+  constructor(eventEmitter: EventEmitter, logger: Logger, requestClient: RequestClient, candleImport: CandleImporter) {
     this.eventEmitter = eventEmitter;
     this.candleImport = candleImport;
     this.logger = logger;
@@ -236,11 +239,7 @@ export class Bitfinex {
     } catch (e: any) {
       this.logger.error(`Bitfinex: cancel order error: ${e}`);
 
-      if (
-        String(e)
-          .toLowerCase()
-          .includes('not found')
-      ) {
+      if (String(e).toLowerCase().includes('not found')) {
         this.logger.info(`Bitfinex: "Order not found" clear`);
         delete this.orders[id];
       }
@@ -453,9 +452,7 @@ export class Bitfinex {
     });
 
     ws.once('open', () => {
-      me.logger.info(
-        `Bitfinex: public websocket ${index} connection open. Subscription to ${subscriptions.length} channels`
-      );
+      me.logger.info(`Bitfinex: public websocket ${index} connection open. Subscription to ${subscriptions.length} channels`);
 
       subscriptions.forEach(subscription => {
         (ws as any)[subscription.type](subscription.parameter);
@@ -467,11 +464,7 @@ export class Bitfinex {
 
       me.eventEmitter.emit(
         'ticker',
-        new TickerEvent(
-          'bitfinex',
-          symbol,
-          (me.tickers[symbol] = new Ticker('bitfinex', symbol, parseInt(moment().format('X'), 10), ticker.bid, ticker.ask))
-        )
+        new TickerEvent('bitfinex', symbol, (me.tickers[symbol] = new Ticker('bitfinex', symbol, parseInt(moment().format('X'), 10), ticker.bid, ticker.ask)))
       );
     });
 
@@ -492,7 +485,7 @@ export class Bitfinex {
       const myCandles: any[] = [];
 
       if (Array.isArray(candles)) {
-        candles.forEach(function(candle: any) {
+        candles.forEach(function (candle: any) {
           myCandles.push(candle);
         });
       } else {
@@ -500,10 +493,10 @@ export class Bitfinex {
       }
 
       const sticks = myCandles
-        .filter(function(candle: any) {
+        .filter(function (candle: any) {
           return typeof candle.mts !== 'undefined';
         })
-        .map(function(candle: any) {
+        .map(function (candle: any) {
           return new ExchangeCandlestick(
             'bitfinex',
             mySymbol,

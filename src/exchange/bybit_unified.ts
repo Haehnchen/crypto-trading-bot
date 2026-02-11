@@ -10,12 +10,18 @@ import { OrderBag } from './utils/order_bag';
 import { Order } from '../dict/order';
 import { orderUtil } from '../utils/order_util';
 import { EventEmitter } from 'events';
+import type { Logger } from '../modules/services';
+import type { QueueManager } from '../utils/queue';
+import type { CandleImporter } from '../modules/system/candle_importer';
+import type { Throttler } from '../utils/throttler';
+import type { RequestClient } from '../utils/request_client';
+import type { CandlestickResample } from '../modules/system/candlestick_resample';
 
 export class BybitUnified {
   private eventEmitter: EventEmitter;
-  private logger: any;
-  private queue: any;
-  private candleImporter: any;
+  private logger: Logger;
+  private queue: QueueManager;
+  private candleImporter: CandleImporter;
   private orderbag: OrderBag;
 
   private apiKey?: string;
@@ -29,7 +35,15 @@ export class BybitUnified {
   private intervals: NodeJS.Timeout[];
   private exchangeAuth?: any;
 
-  constructor(eventEmitter: EventEmitter, requestClient: any, candlestickResample: any, logger: any, queue: any, candleImporter: any, throttler: any) {
+  constructor(
+    eventEmitter: EventEmitter,
+    requestClient: RequestClient,
+    candlestickResample: CandlestickResample,
+    logger: Logger,
+    queue: QueueManager,
+    candleImporter: CandleImporter,
+    throttler: Throttler
+  ) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;

@@ -12,13 +12,17 @@ import { Order } from '../dict/order';
 import { OrderBag } from './utils/order_bag';
 import { TradesUtil } from './utils/trades_util';
 import { EventEmitter } from 'events';
+import type { Logger } from '../modules/services';
+import type { QueueManager } from '../utils/queue';
+import type { CandleImporter } from '../modules/system/candle_importer';
+import type { Throttler } from '../utils/throttler';
 
 export class Binance {
   private eventEmitter: EventEmitter;
-  private logger: any;
-  private queue: any;
-  private candleImport: any;
-  private throttler: any;
+  private logger: Logger;
+  private queue: QueueManager;
+  private candleImport: CandleImporter;
+  private throttler: Throttler;
   private client: any;
   private exchangePairs: Record<string, ExchangePairInfo>;
   private symbols: any[];
@@ -27,7 +31,7 @@ export class Binance {
   private balances: any[];
   private orderbag: OrderBag;
 
-  constructor(eventEmitter: EventEmitter, logger: any, queue: any, candleImport: any, throttler: any) {
+  constructor(eventEmitter: EventEmitter, logger: Logger, queue: QueueManager, candleImport: CandleImporter, throttler: Throttler) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;
@@ -113,25 +117,24 @@ export class Binance {
 
       symbol.periods.forEach((interval: string) => {
         // backfill
-        this.queue.add(() => {
-          client.candles({ symbol: symbol.symbol, limit: 500, interval: interval as any }).then(async candles => {
-            const ourCandles = candles.map(
-              candle =>
-                new ExchangeCandlestick(
-                  'binance',
-                  symbol.symbol,
-                  interval,
-                  Math.round(candle.openTime / 1000),
-                  parseFloat(candle.open),
-                  parseFloat(candle.high),
-                  parseFloat(candle.low),
-                  parseFloat(candle.close),
-                  parseFloat(candle.volume)
-                )
-            );
+        this.queue.add(async () => {
+          const candles = await client.candles({ symbol: symbol.symbol, limit: 500, interval: interval as any });
+          const ourCandles = candles.map(
+            candle =>
+              new ExchangeCandlestick(
+                'binance',
+                symbol.symbol,
+                interval,
+                Math.round(candle.openTime / 1000),
+                parseFloat(candle.open),
+                parseFloat(candle.high),
+                parseFloat(candle.low),
+                parseFloat(candle.close),
+                parseFloat(candle.volume)
+              )
+          );
 
-            await this.candleImport.insertThrottledCandles(ourCandles);
-          });
+          await this.candleImport.insertThrottledCandles(ourCandles);
         });
 
         // live candles
@@ -518,7 +521,8 @@ export class Binance {
         // on multiple pair path orders with latest date wins
         const assetPositionsOrdered = assetPositions.sort(
           // order by latest
-          (a, b) => (b.createdAt ? b.createdAt.getTime() : new Date('1970-01-01').getTime()) - (a.createdAt ? a.createdAt.getTime() : new Date('1970-01-01').getTime())
+          (a, b) =>
+            (b.createdAt ? b.createdAt.getTime() : new Date('1970-01-01').getTime()) - (a.createdAt ? a.createdAt.getTime() : new Date('1970-01-01').getTime())
         );
 
         positions.push(assetPositionsOrdered[0]);

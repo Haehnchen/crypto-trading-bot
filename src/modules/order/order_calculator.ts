@@ -2,11 +2,13 @@ import { Tickers } from '../../storage/tickers';
 import { PairConfig } from '../pairs/pair_config';
 import { OrderCapital } from '../../dict/order_capital';
 import { Ticker } from '../../dict/ticker';
+import type { Logger } from '../services';
+import type { ExchangeManager } from '../exchange/exchange_manager';
 
 export class OrderCalculator {
   private tickers: Tickers;
-  private logger: any;
-  private exchangeManager: any;
+  private logger: Logger;
+  private exchangeManager: ExchangeManager;
   private pairConfig: PairConfig;
 
   /**
@@ -15,7 +17,7 @@ export class OrderCalculator {
    * @param exchangeManager {ExchangeManager}
    * @param pairConfig {PairConfig}
    */
-  constructor(tickers: Tickers, logger: any, exchangeManager: any, pairConfig: PairConfig) {
+  constructor(tickers: Tickers, logger: Logger, exchangeManager: ExchangeManager, pairConfig: PairConfig) {
     this.tickers = tickers;
     this.logger = logger;
     this.exchangeManager = exchangeManager;
@@ -33,9 +35,7 @@ export class OrderCalculator {
     const exchange = this.exchangeManager.get(exchangeName);
 
     let amountAsset = capital.getAsset();
-    let amountCurrency = balancePercent
-      ? (exchange.getTradableBalance() * balancePercent) / 100
-      : capital.getCurrency();
+    let amountCurrency = balancePercent && exchange.getTradableBalance ? (exchange.getTradableBalance() * balancePercent) / 100 : capital.getCurrency();
 
     if (!amountAsset && !amountCurrency) {
       throw new Error(`Invalid capital`);
@@ -70,9 +70,7 @@ export class OrderCalculator {
   async convertCurrencyToAsset(exchangeName: string, symbol: string, currencyAmount: number): Promise<number | undefined> {
     const ticker = this.tickers.get(exchangeName, symbol);
     if (!ticker || !ticker.bid) {
-      this.logger.error(
-        `Invalid ticker for calculate currency capital:${JSON.stringify([exchangeName, symbol, currencyAmount])}`
-      );
+      this.logger.error(`Invalid ticker for calculate currency capital:${JSON.stringify([exchangeName, symbol, currencyAmount])}`);
       return undefined;
     }
 
@@ -90,9 +88,7 @@ export class OrderCalculator {
   async convertAssetToCurrency(exchangeName: string, symbol: string, currencyAmount: number): Promise<number | undefined> {
     const ticker = this.tickers.get(exchangeName, symbol);
     if (!ticker || !ticker.bid) {
-      this.logger.error(
-        `Invalid ticker for calculate currency capital:${JSON.stringify([exchangeName, symbol, currencyAmount])}`
-      );
+      this.logger.error(`Invalid ticker for calculate currency capital:${JSON.stringify([exchangeName, symbol, currencyAmount])}`);
       return undefined;
     }
 

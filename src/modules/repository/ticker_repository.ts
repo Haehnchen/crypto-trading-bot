@@ -1,3 +1,5 @@
+import type { Logger } from '../services';
+
 export interface Database {
   prepare(sql: string): Statement;
   transaction(fn: () => void): any;
@@ -17,9 +19,9 @@ export interface Ticker {
 
 export class TickerRepository {
   private db: Database;
-  private logger: any;
+  private logger: Logger;
 
-  constructor(db: Database, logger: any) {
+  constructor(db: Database, logger: Logger) {
     this.db = db;
     this.logger = logger;
   }

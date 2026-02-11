@@ -1,9 +1,12 @@
+import type { Logger } from '../modules/services';
+import type { SystemUtil } from '../modules/system/system_util';
+
 export class Mail {
   private mailer: any;
-  private systemUtil: any;
-  private logger: any;
+  private systemUtil: SystemUtil;
+  private logger: Logger;
 
-  constructor(mailer: any, systemUtil: any, logger: any) {
+  constructor(mailer: any, systemUtil: SystemUtil, logger: Logger) {
     this.mailer = mailer;
     this.systemUtil = systemUtil;
     this.logger = logger;

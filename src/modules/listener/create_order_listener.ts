@@ -1,11 +1,12 @@
 import { OrderEvent } from '../../event/order_event';
 import { ExchangeManager } from '../exchange/exchange_manager';
+import type { Logger } from '../services';
 
 export class CreateOrderListener {
   private exchangeManager: ExchangeManager;
-  private logger: any;
+  private logger: Logger;
 
-  constructor(exchangeManager: ExchangeManager, logger: any) {
+  constructor(exchangeManager: ExchangeManager, logger: Logger) {
     this.exchangeManager = exchangeManager;
     this.logger = logger;
   }

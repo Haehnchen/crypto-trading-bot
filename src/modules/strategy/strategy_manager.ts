@@ -11,6 +11,9 @@ import { Ticker } from '../../dict/ticker';
 import { PositionSide } from '../../dict/position';
 import { SignalResult } from './dict/signal_result';
 import { Position } from '../../dict/position';
+import type { Logger } from '../services';
+import type { TechnicalAnalysisValidator } from '../../utils/technical_analysis_validator';
+import type { ExchangeCandleCombine } from '../exchange/exchange_candle_combine';
 
 export interface BacktestColumn {
   value: string | ((row: Record<string, any>) => any);
@@ -40,13 +43,13 @@ export interface StrategyInfo {
 }
 
 export class StrategyManager {
-  private technicalAnalysisValidator: any;
-  private exchangeCandleCombine: any;
+  private technicalAnalysisValidator: TechnicalAnalysisValidator;
+  private exchangeCandleCombine: ExchangeCandleCombine;
   private projectDir: string;
-  private logger: any;
+  private logger: Logger;
   private strategies?: StrategyInfo[];
 
-  constructor(technicalAnalysisValidator: any, exchangeCandleCombine: any, logger: any, projectDir: string) {
+  constructor(technicalAnalysisValidator: TechnicalAnalysisValidator, exchangeCandleCombine: ExchangeCandleCombine, logger: Logger, projectDir: string) {
     this.technicalAnalysisValidator = technicalAnalysisValidator;
     this.exchangeCandleCombine = exchangeCandleCombine;
     this.projectDir = projectDir;
@@ -295,23 +298,12 @@ export class StrategyManager {
       const unixtime = Math.floor(Date.now() / 1000);
       const olderThenCurrentPeriod = unixtime - (unixtime % periodAsMinute) - periodAsMinute * 0.1;
 
-      const lookbacks = await this.exchangeCandleCombine.fetchCombinedCandles(
-        exchange,
-        symbol,
-        period,
-        foreignExchanges,
-        olderThenCurrentPeriod
-      );
+      const lookbacks = await this.exchangeCandleCombine.fetchCombinedCandles(exchange, symbol, period, foreignExchanges, olderThenCurrentPeriod);
 
       if (lookbacks[exchange] && lookbacks[exchange].length > 0) {
         // check if candle to close time is outside our allow time window
-        if (
-          validateLookbacks &&
-          !this.technicalAnalysisValidator.isValidCandleStickLookback(lookbacks[exchange].slice(), period)
-        ) {
-          this.logger.info(
-            `Strategy skipped: outdated candle sticks: ${JSON.stringify([period, strategyName, exchange, symbol])}`
-          );
+        if (validateLookbacks && !this.technicalAnalysisValidator.isValidCandleStickLookback(lookbacks[exchange].slice(), period)) {
+          this.logger.info(`Strategy skipped: outdated candle sticks: ${JSON.stringify([period, strategyName, exchange, symbol])}`);
 
           // stop current run
           return {};
@@ -330,10 +322,7 @@ export class StrategyManager {
       }
 
       for (const foreignExchange of foreignExchanges) {
-        if (
-          !lookbacks[foreignExchange.name + foreignExchange.symbol] ||
-          lookbacks[foreignExchange.name + foreignExchange.symbol].length === 0
-        ) {
+        if (!lookbacks[foreignExchange.name + foreignExchange.symbol] || lookbacks[foreignExchange.name + foreignExchange.symbol].length === 0) {
           continue;
         }
 
@@ -342,10 +331,7 @@ export class StrategyManager {
           continue;
         }
 
-        const result = await ta.createIndicatorsLookback(
-          lookbacks[foreignExchange.name + foreignExchange.symbol].slice().reverse(),
-          indicators
-        );
+        const result = await ta.createIndicatorsLookback(lookbacks[foreignExchange.name + foreignExchange.symbol].slice().reverse(), indicators);
 
         // array merge
         for (const x in result) {

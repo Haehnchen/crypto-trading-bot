@@ -4,6 +4,7 @@ import { StrategyManager } from './strategy/strategy_manager';
 import { convertPeriodToMinute, resampleMinutes } from '../utils/resample';
 import { CommonUtil, PositionSide } from '../utils/common_util';
 import { SignalResult } from './strategy/dict/signal_result';
+import type { ExchangeCandleCombine } from './exchange/exchange_candle_combine';
 
 export interface BacktestPair {
   name: string;
@@ -77,10 +78,15 @@ export interface ExchangeCandle {
 export class Backtest {
   private instances: { symbols: { exchange: string; symbol: string }[] };
   private strategyManager: StrategyManager;
-  private exchangeCandleCombine: any;
+  private exchangeCandleCombine: ExchangeCandleCombine;
   private projectDir: string;
 
-  constructor(instances: any, strategyManager: StrategyManager, exchangeCandleCombine: any, projectDir: string) {
+  constructor(
+    instances: { symbols: { exchange: string; symbol: string }[] },
+    strategyManager: StrategyManager,
+    exchangeCandleCombine: ExchangeCandleCombine,
+    projectDir: string
+  ) {
     this.instances = instances;
     this.strategyManager = strategyManager;
     this.exchangeCandleCombine = exchangeCandleCombine;
@@ -147,13 +153,7 @@ export class Backtest {
         fetchCombinedCandles: async (mainExchange: string, symbol: string, period: string, exchanges: any[] = []) => {
           const key = mainExchange + symbol + period;
           if (!periodCache[key]) {
-            periodCache[key] = await this.exchangeCandleCombine.fetchCombinedCandlesSince(
-              mainExchange,
-              symbol,
-              period,
-              exchanges,
-              prefillWindow
-            );
+            periodCache[key] = await this.exchangeCandleCombine.fetchCombinedCandlesSince(mainExchange, symbol, period, exchanges, prefillWindow);
           }
 
           const filter: Record<string, any> = {};
@@ -179,7 +179,7 @@ export class Backtest {
 
       const end = moment().unix();
       while (current < end) {
-        const strategyManager = new StrategyManager({}, mockedRepository, {}, this.projectDir);
+        const strategyManager = new StrategyManager({} as any, mockedRepository as any, {} as any, this.projectDir);
 
         const item = (await strategyManager.executeStrategyBacktest(
           strategy,

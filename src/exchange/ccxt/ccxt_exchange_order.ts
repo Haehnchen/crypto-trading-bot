@@ -4,6 +4,7 @@ import { OrderBag } from '../utils/order_bag';
 import { Order } from '../../dict/order';
 import { ExchangeOrder } from '../../dict/exchange_order';
 import { CcxtUtil } from '../utils/ccxt_util';
+import type { Logger } from '../../modules/services';
 
 // CCXT Exchange type (using any for now due to typing issues)
 type CcxtExchange = any;
@@ -24,11 +25,11 @@ export interface CancelOrderArgs {
 export class CcxtExchangeOrder {
   private orderbag: OrderBag;
   private symbols: any[];
-  private logger: any;
+  private logger: Logger;
   private ccxtClient: CcxtExchange;
   private callbacks?: OrderCallbacks;
 
-  constructor(ccxtClient: CcxtExchange, symbols: any[], logger: any, callbacks?: OrderCallbacks) {
+  constructor(ccxtClient: CcxtExchange, symbols: any[], logger: Logger, callbacks?: OrderCallbacks) {
     this.orderbag = new OrderBag();
     this.symbols = symbols;
     this.logger = logger;
@@ -53,14 +54,7 @@ export class CcxtExchangeOrder {
     switch (order.getType()) {
       case Order.TYPE_STOP:
       case Order.TYPE_LIMIT:
-        promise = this.ccxtClient.createOrder(
-          order.getSymbol(),
-          order.getType(),
-          side,
-          order.getAmount(),
-          order.getPrice(),
-          parameters.args || undefined
-        );
+        promise = this.ccxtClient.createOrder(order.getSymbol(), order.getType(), side, order.getAmount(), order.getPrice(), parameters.args || undefined);
         break;
       case Order.TYPE_MARKET:
         promise = this.ccxtClient.createOrder(order.getSymbol(), order.getType(), side, order.getAmount());
@@ -229,9 +223,9 @@ export class CcxtExchangeOrder {
     return CcxtUtil.createExchangeOrder(ccxtOrder);
   }
 
-  static createEmpty(logger: any): CcxtExchangeOrder {
+  static createEmpty(logger: Logger): CcxtExchangeOrder {
     const Empty = class extends CcxtExchangeOrder {
-      constructor(myLogger: any) {
+      constructor(myLogger: Logger) {
         super(undefined as any, [], myLogger);
       }
 

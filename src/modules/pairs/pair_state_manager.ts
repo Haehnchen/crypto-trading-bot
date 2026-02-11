@@ -1,17 +1,29 @@
 import { PairState, PairStateType } from '../../dict/pair_state';
 import { OrderCapital } from '../../dict/order_capital';
 import { PairInterval } from './pair_interval';
+import type { Logger } from '../services';
+import type { PairConfig } from './pair_config';
+import type { SystemUtil } from '../system/system_util';
+import type { PairStateExecution } from './pair_state_execution';
+import type { OrderExecutor } from '../order/order_executor';
 
 export class PairStateManager {
-  private logger: any;
-  private pairConfig: any;
-  private systemUtil: any;
-  private pairStateExecution: any;
-  private orderExecutor: any;
+  private logger: Logger;
+  private pairConfig: PairConfig;
+  private systemUtil: SystemUtil;
+  private pairStateExecution: PairStateExecution;
+  private orderExecutor: OrderExecutor;
   private stats: Record<string, PairState>;
   private pairInterval: PairInterval;
 
-  constructor(logger: any, pairConfig: any, systemUtil: any, pairStateExecution: any, orderExecutor: any, pairInterval?: PairInterval) {
+  constructor(
+    logger: Logger,
+    pairConfig: PairConfig,
+    systemUtil: SystemUtil,
+    pairStateExecution: PairStateExecution,
+    orderExecutor: OrderExecutor,
+    pairInterval?: PairInterval
+  ) {
     this.logger = logger;
     this.pairConfig = pairConfig;
     this.systemUtil = systemUtil;

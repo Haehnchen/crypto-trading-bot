@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { ExchangePosition } from '../../dict/exchange_position';
 import { ExchangeOrder } from '../../dict/exchange_order';
 import { Position } from '../../dict/position';
+import type { Logger } from '../services';
 
 export interface SymbolInstance {
   exchange: string;
@@ -22,6 +23,8 @@ export interface ExchangeInstance {
   calculatePrice(price: number, symbol: string): number | undefined;
   getOrders(): Promise<ExchangeOrder[]>;
   cancelOrder(id: string): Promise<any>;
+  cancelAll(symbol: string): Promise<any>;
+  getTradableBalance?(): number | undefined;
 }
 
 export class ExchangeManager {
@@ -31,7 +34,7 @@ export class ExchangeManager {
   private exchangesIterator: ExchangeInstance[];
   private exchanges: ExchangeInstance[];
 
-  constructor(exchangesIterator: ExchangeInstance[], logger: any, instances: { symbols: SymbolInstance[] }, config: any) {
+  constructor(exchangesIterator: ExchangeInstance[], logger: Logger, instances: { symbols: SymbolInstance[] }, config: any) {
     this.logger = logger;
     this.instances = instances;
     this.config = config;

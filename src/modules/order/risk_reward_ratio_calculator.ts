@@ -2,6 +2,7 @@ import { Order } from '../../dict/order';
 import { ExchangeOrder } from '../../dict/exchange_order';
 import { OrderUtil } from '../../utils/order_util';
 import { Position } from '../../dict/position';
+import type { Logger } from '../services';
 
 export interface RiskRewardOptions {
   stop_percent?: number;
@@ -21,9 +22,9 @@ export interface RiskRewardOrder {
 }
 
 export class RiskRewardRatioCalculator {
-  private logger: any;
+  private logger: Logger;
 
-  constructor(logger: any) {
+  constructor(logger: Logger) {
     this.logger = logger;
   }
 
@@ -52,11 +53,7 @@ export class RiskRewardRatioCalculator {
     return result;
   }
 
-  async syncRatioRewardOrders(
-    position: Position,
-    orders: Order[],
-    options: RiskRewardOptions
-  ): Promise<Record<string, RiskRewardOrder>> {
+  async syncRatioRewardOrders(position: Position, orders: Order[], options: RiskRewardOptions): Promise<Record<string, RiskRewardOrder>> {
     const newOrders: Record<string, RiskRewardOrder> = {};
 
     const riskRewardRatio = this.calculateForOpenPosition(position, options);
@@ -126,11 +123,7 @@ export class RiskRewardRatioCalculator {
     return newOrders;
   }
 
-  async createRiskRewardOrdersOrders(
-    position: Position,
-    orders: Order[],
-    options: RiskRewardOptions
-  ): Promise<RiskRewardOrder[]> {
+  async createRiskRewardOrdersOrders(position: Position, orders: Order[], options: RiskRewardOptions): Promise<RiskRewardOrder[]> {
     const ratioOrders = await this.syncRatioRewardOrders(position, orders, options);
 
     const newOrders: RiskRewardOrder[] = [];

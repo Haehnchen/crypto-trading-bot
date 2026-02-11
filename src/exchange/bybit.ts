@@ -13,14 +13,20 @@ import { Position } from '../dict/position';
 import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderSide, ExchangeOrderType } from '../dict/exchange_order';
 import { orderUtil } from '../utils/order_util';
 import { EventEmitter } from 'events';
+import type { Logger } from '../modules/services';
+import type { QueueManager } from '../utils/queue';
+import type { CandleImporter } from '../modules/system/candle_importer';
+import type { Throttler } from '../utils/throttler';
+import type { RequestClient } from '../utils/request_client';
+import type { CandlestickResample } from '../modules/system/candlestick_resample';
 
 export class Bybit {
   private eventEmitter: EventEmitter;
-  private logger: any;
-  private queue: any;
-  private candleImporter: any;
-  private requestClient: any;
-  private throttler: any;
+  private logger: Logger;
+  private queue: QueueManager;
+  private candleImporter: CandleImporter;
+  private requestClient: RequestClient;
+  private throttler: Throttler;
 
   private apiKey: string | undefined;
   private apiSecret: string | undefined;
@@ -33,7 +39,15 @@ export class Bybit {
   private intervals: NodeJS.Timeout[];
   private leverageUpdated: Record<string, Date>;
 
-  constructor(eventEmitter: EventEmitter, requestClient: any, candlestickResample: any, logger: any, queue: any, candleImporter: any, throttler: any) {
+  constructor(
+    eventEmitter: EventEmitter,
+    requestClient: RequestClient,
+    candlestickResample: CandlestickResample,
+    logger: Logger,
+    queue: QueueManager,
+    candleImporter: CandleImporter,
+    throttler: Throttler
+  ) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;
@@ -90,7 +104,7 @@ export class Bybit {
     const ws = new WebSocket('wss://stream.bybit.com/realtime');
 
     const me = this;
-    ws.onopen = function() {
+    ws.onopen = function () {
       me.logger.info('Bybit: Connection opened.');
 
       symbols.forEach((symbol: any) => {
@@ -109,10 +123,7 @@ export class Bybit {
         me.apiSecret = config.secret;
 
         const expires = new Date().getTime() + 10000;
-        const signature = crypto
-          .createHmac('sha256', config.secret)
-          .update(`GET/realtime${expires}`)
-          .digest('hex');
+        const signature = crypto.createHmac('sha256', config.secret).update(`GET/realtime${expires}`).digest('hex');
 
         ws.send(JSON.stringify({ op: 'auth', args: [config.key, expires, signature] }));
 
@@ -141,7 +152,7 @@ export class Bybit {
       }
     };
 
-    ws.onmessage = async function(event: any) {
+    ws.onmessage = async function (event: any) {
       if (event.type === 'message') {
         const data = JSON.parse(event.data);
 
@@ -203,11 +214,7 @@ export class Bybit {
 
             eventEmitter.emit(
               'ticker',
-              new TickerEvent(
-                me.getName(),
-                symbol,
-                (me.tickers[symbol] = new Ticker(me.getName(), symbol, parseInt(moment().format('X'), 10), bid, ask))
-              )
+              new TickerEvent(me.getName(), symbol, (me.tickers[symbol] = new Ticker(me.getName(), symbol, parseInt(moment().format('X'), 10), bid, ask)))
             );
           });
         } else if (data.data && data.topic && ['order', 'stop_order'].includes(data.topic.toLowerCase())) {
@@ -245,7 +252,7 @@ export class Bybit {
       }
     };
 
-    ws.onclose = function() {
+    ws.onclose = function () {
       logger.info('Bybit: Connection closed.');
 
       for (const interval of me.intervals) {
@@ -263,45 +270,50 @@ export class Bybit {
     symbols.forEach((symbol: any) => {
       symbol.periods.forEach((period: string) => {
         // for bot init prefill data: load latest candles from api
-        this.queue.add(() => {
+        this.queue.add(async () => {
           const minutes = Resample.convertPeriodToMinute(period);
 
           // from is required calculate to be inside window
           const from = Math.floor(new Date().getTime() / 1000) - minutes * 195 * 60;
 
           const s = `${me.getBaseUrl()}/v2/public/kline/list?symbol=${symbol.symbol}&from=${from}&interval=${minutes}`;
-          request(s, { json: true }, async (err, res, body) => {
-            if (err) {
-              console.log(`Bybit: Candle backfill error: ${String(err)}`);
-              logger.error(`Bybit: Candle backfill error: ${String(err)}`);
-              return;
-            }
+          await new Promise<void>((resolve, reject) => {
+            request(s, { json: true }, async (err, res, body) => {
+              if (err) {
+                console.log(`Bybit: Candle backfill error: ${String(err)}`);
+                logger.error(`Bybit: Candle backfill error: ${String(err)}`);
+                resolve();
+                return;
+              }
 
-            if (!body || !body.result || !Array.isArray(body.result)) {
-              console.log(`Bybit: Candle backfill error: ${JSON.stringify(body)}`);
-              logger.error(`Bybit Candle backfill error: ${JSON.stringify(body)}`);
-              return;
-            }
+              if (!body || !body.result || !Array.isArray(body.result)) {
+                console.log(`Bybit: Candle backfill error: ${JSON.stringify(body)}`);
+                logger.error(`Bybit Candle backfill error: ${JSON.stringify(body)}`);
+                resolve();
+                return;
+              }
 
-            const candleSticks = body.result.map((candle: any) => {
-              return new ExchangeCandlestick(
-                me.getName(),
-                candle.symbol,
-                period,
-                candle.open_time,
-                candle.open,
-                candle.high,
-                candle.low,
-                candle.close,
-                candle.volume
+              const candleSticks = body.result.map((candle: any) => {
+                return new ExchangeCandlestick(
+                  me.getName(),
+                  candle.symbol,
+                  period,
+                  candle.open_time,
+                  candle.open,
+                  candle.high,
+                  candle.low,
+                  candle.close,
+                  candle.volume
+                );
+              });
+
+              await this.candleImporter.insertThrottledCandles(
+                candleSticks.map((candle: any) => {
+                  return ExchangeCandlestick.createFromCandle(me.getName(), symbol.symbol, period, candle);
+                })
               );
+              resolve();
             });
-
-            await this.candleImporter.insertThrottledCandles(
-              candleSticks.map((candle: any) => {
-                return ExchangeCandlestick.createFromCandle(me.getName(), symbol.symbol, period, candle);
-              })
-            );
           });
         });
       });
@@ -378,15 +390,9 @@ export class Bybit {
       let position = this.positions[x];
       if (position.entry && this.tickers[position.symbol]) {
         if (position.side === 'long') {
-          position = Position.createProfitUpdate(
-            position,
-            (this.tickers[position.symbol].bid / position.entry - 1) * 100
-          );
+          position = Position.createProfitUpdate(position, (this.tickers[position.symbol].bid / position.entry - 1) * 100);
         } else if (position.side === 'short') {
-          position = Position.createProfitUpdate(
-            position,
-            (position.entry / this.tickers[position.symbol].ask - 1) * 100
-          );
+          position = Position.createProfitUpdate(position, (position.entry / this.tickers[position.symbol].ask - 1) * 100);
         }
       }
 
@@ -490,10 +496,7 @@ export class Bybit {
         parametersSorted[key] = parameters[key];
       });
 
-    parametersSorted.sign = crypto
-      .createHmac('sha256', this.apiSecret!)
-      .update(querystring.stringify(parametersSorted))
-      .digest('hex');
+    parametersSorted.sign = crypto.createHmac('sha256', this.apiSecret!).update(querystring.stringify(parametersSorted)).digest('hex');
 
     let url: string;
     if (isConditionalOrder) {
@@ -574,10 +577,7 @@ export class Bybit {
           .sort()
           .forEach((key: string) => (parametersSorted2[key] = parameters2[key]));
 
-        parametersSorted2.sign = crypto
-          .createHmac('sha256', this.apiSecret!)
-          .update(querystring.stringify(parametersSorted2))
-          .digest('hex');
+        parametersSorted2.sign = crypto.createHmac('sha256', this.apiSecret!).update(querystring.stringify(parametersSorted2)).digest('hex');
 
         const url1 = `${this.getBaseUrl()}/v2/private/order/list?${querystring.stringify(parametersSorted2)}`;
         const placedOrder = await this.requestClient.executeRequestRetry(
@@ -657,10 +657,7 @@ export class Bybit {
       timestamp: new Date().getTime()
     };
 
-    parameters.sign = crypto
-      .createHmac('sha256', this.apiSecret!)
-      .update(querystring.stringify(parameters))
-      .digest('hex');
+    parameters.sign = crypto.createHmac('sha256', this.apiSecret!).update(querystring.stringify(parameters)).digest('hex');
 
     const result = await this.requestClient.executeRequestRetry(
       {
@@ -712,10 +709,7 @@ export class Bybit {
       timestamp: new Date().getTime()
     };
 
-    parameters.sign = crypto
-      .createHmac('sha256', this.apiSecret!)
-      .update(querystring.stringify(parameters))
-      .digest('hex');
+    parameters.sign = crypto.createHmac('sha256', this.apiSecret!).update(querystring.stringify(parameters)).digest('hex');
 
     let url: string;
     if (isConditionalOrder) {
@@ -819,9 +813,7 @@ export class Bybit {
           position.symbol,
           side,
           size,
-          position.unrealised_pnl && position.position_value
-            ? parseFloat(((position.unrealised_pnl / position.position_value) * 100).toFixed(2))
-            : null,
+          position.unrealised_pnl && position.position_value ? parseFloat(((position.unrealised_pnl / position.position_value) * 100).toFixed(2)) : null,
           new Date(),
           parseFloat(position.entry_price),
           new Date()
@@ -862,11 +854,7 @@ export class Bybit {
         orderType = ExchangeOrder.TYPE_STOP;
       }
 
-      if (
-        ['new', 'partiallyfilled', 'pendingnew', 'doneforday', 'stopped', 'created', 'untriggered'].includes(
-          orderStatus!
-        )
-      ) {
+      if (['new', 'partiallyfilled', 'pendingnew', 'doneforday', 'stopped', 'created', 'untriggered'].includes(orderStatus!)) {
         status = 'open';
       } else if (orderStatus === 'filled') {
         status = 'done';
@@ -976,10 +964,7 @@ export class Bybit {
             timestamp: new Date().getTime() // 1 min in the future
           };
 
-          parameter.sign = crypto
-            .createHmac('sha256', this.apiSecret!)
-            .update(querystring.stringify(parameter))
-            .digest('hex');
+          parameter.sign = crypto.createHmac('sha256', this.apiSecret!).update(querystring.stringify(parameter)).digest('hex');
 
           const url = `${this.getBaseUrl()}/v2/private/order/list?${querystring.stringify(parameter)}`;
           const result = await this.requestClient.executeRequestRetry(
@@ -1037,10 +1022,7 @@ export class Bybit {
           timestamp: new Date().getTime()
         };
 
-        parameter.sign = crypto
-          .createHmac('sha256', this.apiSecret!)
-          .update(querystring.stringify(parameter))
-          .digest('hex');
+        parameter.sign = crypto.createHmac('sha256', this.apiSecret!).update(querystring.stringify(parameter)).digest('hex');
 
         const url = `${this.getBaseUrl()}/v2/private/stop-order/list?${querystring.stringify(parameter)}`;
         const result = await this.requestClient.executeRequestRetry(
@@ -1108,10 +1090,7 @@ export class Bybit {
       timestamp: new Date().getTime() // 1 min in the future
     };
 
-    parameter.sign = crypto
-      .createHmac('sha256', this.apiSecret!)
-      .update(querystring.stringify(parameter))
-      .digest('hex');
+    parameter.sign = crypto.createHmac('sha256', this.apiSecret!).update(querystring.stringify(parameter)).digest('hex');
 
     const url = `${this.getBaseUrl()}/v2/private/position/list?${querystring.stringify(parameter)}`;
     const result = await this.requestClient.executeRequestRetry(

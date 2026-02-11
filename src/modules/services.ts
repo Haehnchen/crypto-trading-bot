@@ -118,7 +118,7 @@ interface Parameters {
   projectDir: string;
 }
 
-type Logger = ReturnType<typeof createLogger>;
+export type Logger = ReturnType<typeof createLogger>;
 
 let db: Sqlite.Database | undefined;
 let instances: Instances;

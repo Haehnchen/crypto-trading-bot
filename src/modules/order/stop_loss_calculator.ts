@@ -1,5 +1,6 @@
 import { Tickers } from '../../storage/tickers';
 import { Position } from '../../dict/position';
+import type { Logger } from '../services';
 
 export interface StopLossOptions {
   percent?: number;
@@ -7,18 +8,14 @@ export interface StopLossOptions {
 
 export class StopLossCalculator {
   private tickers: Tickers;
-  private logger: any;
+  private logger: Logger;
 
-  constructor(tickers: Tickers, logger: any) {
+  constructor(tickers: Tickers, logger: Logger) {
     this.tickers = tickers;
     this.logger = logger;
   }
 
-  async calculateForOpenPosition(
-    exchange: string,
-    position: Position,
-    options: StopLossOptions = { percent: 3 }
-  ): Promise<number | undefined> {
+  async calculateForOpenPosition(exchange: string, position: Position, options: StopLossOptions = { percent: 3 }): Promise<number | undefined> {
     const { tickers } = this;
 
     return new Promise(resolve => {
@@ -56,18 +53,14 @@ export class StopLossCalculator {
 
       if (position.side === 'long') {
         if (price > ticker.ask) {
-          this.logger.info(
-            `Ticker out of range stop loss (long): ${JSON.stringify(position)}${JSON.stringify(ticker)}`
-          );
+          this.logger.info(`Ticker out of range stop loss (long): ${JSON.stringify(position)}${JSON.stringify(ticker)}`);
 
           resolve(undefined);
           return;
         }
       } else if (position.side === 'short') {
         if (price < ticker.bid) {
-          this.logger.info(
-            `Ticker out of range stop loss (short): ${JSON.stringify(position)}${JSON.stringify(ticker)}`
-          );
+          this.logger.info(`Ticker out of range stop loss (short): ${JSON.stringify(position)}${JSON.stringify(ticker)}`);
 
           resolve(undefined);
           return;

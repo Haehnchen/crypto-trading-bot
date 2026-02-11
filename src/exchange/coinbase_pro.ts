@@ -10,6 +10,10 @@ import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderSide, ExchangeOrderTyp
 import { Position } from '../dict/position';
 import { Order } from '../dict/order';
 import { EventEmitter } from 'events';
+import type { Logger } from '../modules/services';
+import type { QueueManager } from '../utils/queue';
+import type { CandleImporter } from '../modules/system/candle_importer';
+import type { CandlestickResample } from '../modules/system/candlestick_resample';
 
 interface FillInfo {
   size: number;
@@ -25,10 +29,10 @@ interface ExchangePairInfo {
 
 export class CoinbasePro {
   private eventEmitter: EventEmitter;
-  private queue: any;
-  private logger: any;
-  private candlestickResample: any;
-  private candleImporter: any;
+  private queue: QueueManager;
+  private logger: Logger;
+  private candlestickResample: CandlestickResample;
+  private candleImporter: CandleImporter;
   private candlesFromTrades: CandlesFromTrades;
 
   private client: any;
@@ -42,7 +46,7 @@ export class CoinbasePro {
   private candles?: Record<string, any>;
   private lastCandleMap?: Record<string, any>;
 
-  constructor(eventEmitter: EventEmitter, logger: any, candlestickResample: any, queue: any, candleImporter: any) {
+  constructor(eventEmitter: EventEmitter, logger: Logger, candlestickResample: CandlestickResample, queue: QueueManager, candleImporter: CandleImporter) {
     this.eventEmitter = eventEmitter;
     this.queue = queue;
     this.logger = logger;
@@ -82,14 +86,7 @@ export class CoinbasePro {
 
     let isAuth = false;
 
-    if (
-      config.key &&
-      config.secret &&
-      config.passphrase &&
-      config.key.length > 0 &&
-      config.secret.length > 0 &&
-      config.passphrase.length > 0
-    ) {
+    if (config.key && config.secret && config.passphrase && config.key.length > 0 && config.secret.length > 0 && config.passphrase.length > 0) {
       isAuth = true;
       // for user related websocket actions
       channels.push('user');
@@ -125,25 +122,12 @@ export class CoinbasePro {
           try {
             candles = await this.client.getProductHistoricRates(symbol.symbol, { granularity: granularity });
           } catch (e) {
-            this.logger.error(
-              `Coinbase Pro: candles fetch error: ${JSON.stringify([symbol.symbol, interval, String(e)])}`
-            );
+            this.logger.error(`Coinbase Pro: candles fetch error: ${JSON.stringify([symbol.symbol, interval, String(e)])}`);
             return;
           }
 
           const ourCandles = candles.map(
-            (candle: any) =>
-              new ExchangeCandlestick(
-                this.getName(),
-                symbol.symbol,
-                interval,
-                candle[0],
-                candle[3],
-                candle[2],
-                candle[1],
-                candle[4],
-                candle[5]
-              )
+            (candle: any) => new ExchangeCandlestick(this.getName(), symbol.symbol, interval, candle[0], candle[3], candle[2], candle[1], candle[4], candle[5])
           );
 
           await this.candleImporter.insertThrottledCandles(ourCandles);
@@ -348,11 +332,7 @@ export class CoinbasePro {
   async getPositions(): Promise<Position[]> {
     const capitals: Record<string, number> = {};
     this.symbols
-      .filter(
-        (s: any) =>
-          s.trade &&
-          ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0))
-      )
+      .filter((s: any) => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
       .forEach((s: any) => {
         if (s.trade.capital > 0) {
           capitals[s.symbol] = s.trade.capital;
@@ -500,11 +480,7 @@ export class CoinbasePro {
       symbols.push(productId);
     } else {
       symbols = this.symbols
-        .filter(
-          (s: any) =>
-            s.trade &&
-            ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0))
-        )
+        .filter((s: any) => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
         .map((x: any) => {
           return x.symbol;
         });
@@ -551,9 +527,7 @@ export class CoinbasePro {
 
       if (
         e.message &&
-        (e.message.match(/HTTP\s4\d{2}/i) ||
-          e.message.toLowerCase().includes('size is too accurate') ||
-          e.message.toLowerCase().includes('size is too small'))
+        (e.message.match(/HTTP\s4\d{2}/i) || e.message.toLowerCase().includes('size is too accurate') || e.message.toLowerCase().includes('size is too small'))
       ) {
         return ExchangeOrder.createRejectedFromOrder(order, e.message);
       }

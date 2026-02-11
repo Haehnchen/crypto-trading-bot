@@ -15,13 +15,17 @@ import { Position } from '../dict/position';
 import { Order } from '../dict/order';
 import { OrderBag } from './utils/order_bag';
 import { EventEmitter } from 'events';
+import type { Logger } from '../modules/services';
+import type { QueueManager } from '../utils/queue';
+import type { CandleImporter } from '../modules/system/candle_importer';
+import type { Throttler } from '../utils/throttler';
 
 export class BinanceMargin {
   private eventEmitter: EventEmitter;
-  private candleImport: any;
-  private logger: any;
-  private queue: any;
-  private throttler: any;
+  private candleImport: CandleImporter;
+  private logger: Logger;
+  private queue: QueueManager;
+  private throttler: Throttler;
   private client: any;
   private exchangePairs: Record<string, ExchangePairInfo>;
   private symbols: any[];
@@ -31,7 +35,7 @@ export class BinanceMargin {
   private balances: any[];
   private orderbag: OrderBag;
 
-  constructor(eventEmitter: EventEmitter, logger: any, queue: any, candleImport: any, throttler: any) {
+  constructor(eventEmitter: EventEmitter, logger: Logger, queue: QueueManager, candleImport: CandleImporter, throttler: Throttler) {
     this.eventEmitter = eventEmitter;
     this.candleImport = candleImport;
     this.logger = logger;
@@ -111,37 +115,30 @@ export class BinanceMargin {
           new TickerEvent(
             'binance_margin',
             symbol.symbol,
-            (this.tickers[symbol.symbol] = new Ticker(
-              'binance_margin',
-              symbol.symbol,
-              parseInt(moment().format('X'), 10),
-              ticker.bestBid,
-              ticker.bestAsk
-            ))
+            (this.tickers[symbol.symbol] = new Ticker('binance_margin', symbol.symbol, parseInt(moment().format('X'), 10), ticker.bestBid, ticker.bestAsk))
           )
         );
       });
 
       symbol.periods.forEach((interval: string) => {
         // backfill
-        this.queue.add(() => {
-          client.candles({ symbol: symbol.symbol, limit: 500, interval: interval as any }).then(async candles => {
-            const ourCandles = candles.map((candle: any) => {
-              return new ExchangeCandlestick(
-                'binance_margin',
-                symbol.symbol,
-                interval,
-                Math.round(candle.openTime / 1000),
-                parseFloat(candle.open),
-                parseFloat(candle.high),
-                parseFloat(candle.low),
-                parseFloat(candle.close),
-                parseFloat(candle.volume)
-              );
-            });
-
-            await this.candleImport.insertThrottledCandles(ourCandles);
+        this.queue.add(async () => {
+          const candles = await client.candles({ symbol: symbol.symbol, limit: 500, interval: interval as any });
+          const ourCandles = candles.map((candle: any) => {
+            return new ExchangeCandlestick(
+              'binance_margin',
+              symbol.symbol,
+              interval,
+              Math.round(candle.openTime / 1000),
+              parseFloat(candle.open),
+              parseFloat(candle.high),
+              parseFloat(candle.low),
+              parseFloat(candle.close),
+              parseFloat(candle.volume)
+            );
           });
+
+          await this.candleImport.insertThrottledCandles(ourCandles);
         });
 
         // live candles
@@ -205,9 +202,7 @@ export class BinanceMargin {
       // -2010: insufficient balance
       // -XXXX: borrow amount has exceed
       if (
-        (e.message &&
-          (e.message.toLowerCase().includes('insufficient balance') ||
-            e.message.toLowerCase().includes('borrow amount has exceed'))) ||
+        (e.message && (e.message.toLowerCase().includes('insufficient balance') || e.message.toLowerCase().includes('borrow amount has exceed'))) ||
         (e.code && e.code === -2010)
       ) {
         return ExchangeOrder.createRejectedFromOrder(order, `${e.code} - ${e.message}`);
@@ -431,8 +426,7 @@ export class BinanceMargin {
 
       // clean orders with state is switching from open to close
       const orderStatus = event.orderStatus.toLowerCase();
-      const isRemoveEvent =
-        ['canceled', 'filled', 'rejected'].includes(orderStatus) && event.orderId && this.orderbag.get(event.orderId);
+      const isRemoveEvent = ['canceled', 'filled', 'rejected'].includes(orderStatus) && event.orderId && this.orderbag.get(event.orderId);
 
       if (isRemoveEvent) {
         this.logger.info(`Binance Margin: Removing non open order: ${orderStatus} - ${JSON.stringify(event)}`);
@@ -511,11 +505,7 @@ export class BinanceMargin {
     // fetch all based on our allowed symbol capital
     if (symbols.length === 0) {
       const allSymbols = this.symbols
-        .filter(
-          s =>
-            s.trade &&
-            ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0))
-        )
+        .filter(s => s.trade && ((s.trade.capital && s.trade.capital > 0) || (s.trade.currency_capital && s.trade.currency_capital > 0)))
         .map(s => s.symbol);
 
       // we need position first and randomly add other

@@ -4,17 +4,20 @@ import { Order } from '../../dict/order';
 import { PairState } from '../../dict/pair_state';
 import { ExchangeOrder } from '../../dict/exchange_order';
 import { Tickers } from '../../storage/tickers';
+import type { Logger } from '../services';
+import type { ExchangeManager } from '../exchange/exchange_manager';
+import type { SystemUtil } from '../system/system_util';
 
 export class OrderExecutor {
-  private exchangeManager: any;
+  private exchangeManager: ExchangeManager;
   private tickers: Tickers;
-  private logger: any;
-  private systemUtil: any;
+  private logger: Logger;
+  private systemUtil: SystemUtil;
   private runningOrders: Record<string | number, Date>;
   private tickerPriceInterval: number;
   private tickerPriceRetries: number;
 
-  constructor(exchangeManager: any, tickers: Tickers, systemUtil: any, logger: any) {
+  constructor(exchangeManager: ExchangeManager, tickers: Tickers, systemUtil: SystemUtil, logger: Logger) {
     this.exchangeManager = exchangeManager;
     this.tickers = tickers;
     this.logger = logger;
@@ -59,7 +62,13 @@ export class OrderExecutor {
       const price = await this.getCurrentPrice(pairState.getExchange(), pairState.getSymbol(), exchangeOrder.getLongOrShortSide());
 
       if (!price) {
-        this.logger.error(`OrderAdjust: stop adjusting order; can not find up to date ticker price: ${JSON.stringify([pairState.getExchange(), pairState.getSymbol(), exchangeOrder.getLongOrShortSide()])}`);
+        this.logger.error(
+          `OrderAdjust: stop adjusting order; can not find up to date ticker price: ${JSON.stringify([
+            pairState.getExchange(),
+            pairState.getSymbol(),
+            exchangeOrder.getLongOrShortSide()
+          ])}`
+        );
         delete this.runningOrders[exchangeOrder.id];
         return;
       }
@@ -68,7 +77,16 @@ export class OrderExecutor {
       const percentPriceDifference = Math.abs(((currentOrderPrice - price) / price) * 100);
 
       if (percentPriceDifference > this.systemUtil.getConfig('order.adjust_price_diff', 0.15)) {
-        this.logger.info(`OrderAdjust: adjusting order price: ${JSON.stringify([percentPriceDifference, exchangeOrder.id, pairState.getExchange(), pairState.getSymbol(), currentOrderPrice, price])}`);
+        this.logger.info(
+          `OrderAdjust: adjusting order price: ${JSON.stringify([
+            percentPriceDifference,
+            exchangeOrder.id,
+            pairState.getExchange(),
+            pairState.getSymbol(),
+            currentOrderPrice,
+            price
+          ])}`
+        );
 
         try {
           const order = Order.createUpdateOrderOnCurrent(exchangeOrder, price);
@@ -104,12 +122,12 @@ export class OrderExecutor {
 
     const amount = exchangeInstance.calculateAmount(order.getAmount(), order.getSymbol());
     if (amount) {
-      order.amount = parseFloat(amount);
+      order.amount = amount;
     }
 
     const price = exchangeInstance.calculatePrice(order.getPrice(), order.getSymbol());
     if (price) {
-      order.price = parseFloat(price);
+      order.price = price;
     }
 
     return this.executeOrder(exchangeName, order);

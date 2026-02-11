@@ -1,4 +1,5 @@
 import { Telegraf } from 'telegraf';
+import type { Logger } from '../modules/services';
 
 export interface TelegramConfig {
   chat_id: string | number;
@@ -7,9 +8,9 @@ export interface TelegramConfig {
 export class Telegram {
   private telegraf: Telegraf;
   private config: TelegramConfig;
-  private logger: any;
+  private logger: Logger;
 
-  constructor(telegraf: Telegraf, config: TelegramConfig, logger: any) {
+  constructor(telegraf: Telegraf, config: TelegramConfig, logger: Logger) {
     this.telegraf = telegraf;
     this.config = config;
     this.logger = logger;

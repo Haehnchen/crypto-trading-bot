@@ -1,15 +1,18 @@
 import { ExchangePosition } from '../../dict/exchange_position';
 import { Position } from '../../dict/position';
 import { PositionStateChangeEvent } from '../../event/position_state_change_event';
+import type { Logger } from '../services';
+import type { ExchangeManager } from './exchange_manager';
+import type { EventEmitter } from 'events';
 
 export class ExchangePositionWatcher {
-  private exchangeManager: any;
-  private eventEmitter: any;
-  private logger: any;
+  private exchangeManager: ExchangeManager;
+  private eventEmitter: EventEmitter;
+  private logger: Logger;
   private positions: Record<string, ExchangePosition>;
   private init: boolean;
 
-  constructor(exchangeManager: any, eventEmitter: any, logger: any) {
+  constructor(exchangeManager: ExchangeManager, eventEmitter: EventEmitter, logger: Logger) {
     this.exchangeManager = exchangeManager;
     this.eventEmitter = eventEmitter;
     this.logger = logger;
@@ -40,14 +43,9 @@ export class ExchangePositionWatcher {
       if (!(key in this.positions)) {
         // new position
         const position = exchangePosition.getPosition();
-        this.logger.info(
-          `Position opened:${JSON.stringify([exchangePosition.getExchange(), exchangePosition.getSymbol(), position])}`
-        );
+        this.logger.info(`Position opened:${JSON.stringify([exchangePosition.getExchange(), exchangePosition.getSymbol(), position])}`);
         this.positions[key] = exchangePosition;
-        this.eventEmitter.emit(
-          PositionStateChangeEvent.EVENT_NAME,
-          PositionStateChangeEvent.createOpened(exchangePosition)
-        );
+        this.eventEmitter.emit(PositionStateChangeEvent.EVENT_NAME, PositionStateChangeEvent.createOpened(exchangePosition));
       }
     }
 
@@ -58,10 +56,7 @@ export class ExchangePositionWatcher {
         this.logger.info(`Position closed:${JSON.stringify([position.getSymbol(), position])}`);
 
         delete this.positions[key];
-        this.eventEmitter.emit(
-          PositionStateChangeEvent.EVENT_NAME,
-          PositionStateChangeEvent.createClosed(exchangePosition)
-        );
+        this.eventEmitter.emit(PositionStateChangeEvent.EVENT_NAME, PositionStateChangeEvent.createClosed(exchangePosition));
       }
     }
   }

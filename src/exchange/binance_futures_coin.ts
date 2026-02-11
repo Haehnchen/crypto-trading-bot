@@ -12,13 +12,19 @@ import { ExchangeCandlestick } from '../dict/exchange_candlestick';
 import { Position } from '../dict/position';
 import { CcxtExchangeOrder } from './ccxt/ccxt_exchange_order';
 import { EventEmitter } from 'events';
+import type { Logger } from '../modules/services';
+import type { QueueManager } from '../utils/queue';
+import type { CandleImporter } from '../modules/system/candle_importer';
+import type { Throttler } from '../utils/throttler';
+import type { RequestClient } from '../utils/request_client';
+import type { CandlestickResample } from '../modules/system/candlestick_resample';
 
 export class BinanceFuturesCoin {
   private eventEmitter: EventEmitter;
-  private logger: any;
-  private queue: any;
-  private candleImporter: any;
-  private throttler: any;
+  private logger: Logger;
+  private queue: QueueManager;
+  private candleImporter: CandleImporter;
+  private throttler: Throttler;
   private exchange: any;
   private ccxtExchangeOrder: CcxtExchangeOrder;
   private positions: Record<string, Position>;
@@ -28,7 +34,15 @@ export class BinanceFuturesCoin {
   private intervals: NodeJS.Timeout[];
   private ccxtClient?: any;
 
-  constructor(eventEmitter: EventEmitter, requestClient: any, candlestickResample: any, logger: any, queue: any, candleImporter: any, throttler: any) {
+  constructor(
+    eventEmitter: EventEmitter,
+    requestClient: RequestClient,
+    candlestickResample: CandlestickResample,
+    logger: Logger,
+    queue: QueueManager,
+    candleImporter: CandleImporter,
+    throttler: Throttler
+  ) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
     this.queue = queue;
@@ -150,9 +164,7 @@ export class BinanceFuturesCoin {
           try {
             ohlcvs = await ccxtClient.fetchOHLCV(symbol.symbol.replace('USDT', '/USDT'), period, undefined, 500);
           } catch (e) {
-            me.logger.info(
-              `Binance Futures: candles fetch error: ${JSON.stringify([symbol.symbol, period, String(e)])}`
-            );
+            me.logger.info(`Binance Futures: candles fetch error: ${JSON.stringify([symbol.symbol, period, String(e)])}`);
 
             return;
           }
@@ -302,16 +314,7 @@ export class BinanceFuturesCoin {
     const positionAmt = parseFloat(position.pa);
     const entryPrice = parseFloat(position.ep);
 
-    return new Position(
-      position.s,
-      positionAmt < 0 ? 'short' : 'long',
-      positionAmt,
-      undefined,
-      new Date(),
-      entryPrice,
-      undefined,
-      position
-    );
+    return new Position(position.s, positionAmt < 0 ? 'short' : 'long', positionAmt, undefined, new Date(), entryPrice, undefined, position);
   }
 
   /**
@@ -328,9 +331,7 @@ export class BinanceFuturesCoin {
         if (position.s in this.positions && position.pa === '0') {
           delete this.positions[position.s];
 
-          this.logger.info(
-            `Binance Futures: Websocket position closed/removed: ${JSON.stringify([position.s, position])}`
-          );
+          this.logger.info(`Binance Futures: Websocket position closed/removed: ${JSON.stringify([position.s, position])}`);
 
           return;
         }
@@ -350,13 +351,7 @@ export class BinanceFuturesCoin {
 
         // position update
         if (position.s in this.positions) {
-          this.logger.info(
-            `Binance Futures: Websocket position update: ${JSON.stringify([
-              position.s,
-              position.pa,
-              this.positions[position.s].getAmount()
-            ])}`
-          );
+          this.logger.info(`Binance Futures: Websocket position update: ${JSON.stringify([position.s, position.pa, this.positions[position.s].getAmount()])}`);
         }
       }, this);
     }
@@ -411,27 +406,21 @@ export class BinanceFuturesCoin {
     const me = this;
     const ws = new WebSocket('wss://dstream.binance.com/stream');
 
-    ws.onerror = function(event: any) {
-      me.logger.error(
-        `Binance Futures: Public stream (${indexConnection}) error: ${JSON.stringify([event.code, event.message])}`
-      );
+    ws.onerror = function (event: any) {
+      me.logger.error(`Binance Futures: Public stream (${indexConnection}) error: ${JSON.stringify([event.code, event.message])}`);
     };
 
     const subscriptionTimeouts: Record<number, NodeJS.Timeout> = {};
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       me.logger.info(`Binance Futures: Public stream (${indexConnection}) opened.`);
 
-      me.logger.info(
-        `Binance Futures: Needed Websocket (${indexConnection}) subscriptions: ${JSON.stringify(subscriptions.length)}`
-      );
+      me.logger.info(`Binance Futures: Needed Websocket (${indexConnection}) subscriptions: ${JSON.stringify(subscriptions.length)}`);
 
       // "we are only allowed to send 5 requests per second"; but limit it also for the "SUBSCRIBE" itself who knows upcoming changes on this
       _.chunk(subscriptions, 15).forEach((subscriptionChunk: string[], index: number) => {
         subscriptionTimeouts[index] = setTimeout(() => {
-          me.logger.debug(
-            `Binance Futures: Public stream (${indexConnection}) subscribing: ${JSON.stringify(subscriptionChunk)}`
-          );
+          me.logger.debug(`Binance Futures: Public stream (${indexConnection}) subscribing: ${JSON.stringify(subscriptionChunk)}`);
 
           ws.send(
             JSON.stringify({
@@ -446,7 +435,7 @@ export class BinanceFuturesCoin {
       });
     };
 
-    ws.onmessage = async function(event: any) {
+    ws.onmessage = async function (event: any) {
       if (event.type && event.type === 'message') {
         const body = JSON.parse(event.data);
 
@@ -483,13 +472,8 @@ export class BinanceFuturesCoin {
       }
     };
 
-    ws.onclose = function(event: any) {
-      me.logger.error(
-        `Binance Futures: Public Stream (${indexConnection}) connection closed: ${JSON.stringify([
-          event.code,
-          event.message
-        ])}`
-      );
+    ws.onclose = function (event: any) {
+      me.logger.error(`Binance Futures: Public Stream (${indexConnection}) connection closed: ${JSON.stringify([event.code, event.message])}`);
 
       Object.values(subscriptionTimeouts).forEach(timeout => {
         clearTimeout(timeout);
@@ -513,15 +497,15 @@ export class BinanceFuturesCoin {
 
     const me = this;
     const ws = new WebSocket(`wss://dstream.binance.com/ws/${response.listenKey}`);
-    ws.onerror = function(e: any) {
+    ws.onerror = function (e: any) {
       me.logger.info(`Binance Futures: Connection error: ${String(e)}`);
     };
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       me.logger.info(`Binance Futures: Opened user stream`);
     };
 
-    ws.onmessage = async function(event: any) {
+    ws.onmessage = async function (event: any) {
       if (event && event.type === 'message') {
         const message = JSON.parse(event.data);
 
@@ -556,7 +540,7 @@ export class BinanceFuturesCoin {
       }
     }, 1000 * 60 * 10);
 
-    ws.onclose = function(event: any) {
+    ws.onclose = function (event: any) {
       me.logger.error(`Binance futures: User stream connection closed: ${JSON.stringify([event.code, event.message])}`);
       clearInterval(heartbeat);
 
