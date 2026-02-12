@@ -3,11 +3,10 @@ import { ExchangeOrder } from '../../dict/exchange_order';
 import { Tickers } from '../../storage/tickers';
 import { ExchangeManager } from '../exchange/exchange_manager';
 import { PairConfig } from '../pairs/pair_config';
-import { Backtest, OrderExecutor } from '../services';
+import { OrderExecutor } from '../services';
 
 export class OrdersHttp {
   constructor(
-    private backtest: Backtest,
     private tickers: Tickers,
     private orderExecutor: OrderExecutor,
     private exchangeManager: ExchangeManager,

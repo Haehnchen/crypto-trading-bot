@@ -1,4 +1,4 @@
-import * as Resample from './resample';
+import { convertPeriodToMinute } from './resample';
 
 export interface CandlestickLookback {
   time: number;
@@ -19,7 +19,7 @@ export class TechnicalAnalysisValidator {
 
     // we only get candles if we trades inside this range
     // as low timeframes can be silent allow some failings
-    const minutes = Resample.convertPeriodToMinute(period);
+    const minutes = convertPeriodToMinute(period);
     if (minutes === 1) {
       factor = 40;
     } else if (minutes === 2) {

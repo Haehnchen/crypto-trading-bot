@@ -1,7 +1,7 @@
 import moment from 'moment';
 import { StrategyManager } from './strategy/strategy_manager';
 import { convertPeriodToMinute } from '../utils/resample';
-import { CommonUtil, PositionSide } from '../utils/common_util';
+import { getProfitAsPercent, PositionSide } from '../utils/common_util';
 import { SignalResult } from './strategy/dict/signal_result';
 import type { ExchangeCandleCombine } from './exchange/exchange_candle_combine';
 
@@ -189,7 +189,7 @@ export class Backtest {
         // position profit
         if (lastSignal.price && lastSignal.signal) {
           const positionSide: PositionSide = lastSignal.signal === 'long' ? 'long' : 'short';
-          item.profit = CommonUtil.getProfitAsPercent(positionSide, item.price || 0, lastSignal.price);
+          item.profit = getProfitAsPercent(positionSide, item.price || 0, lastSignal.price);
         }
 
         if (currentSignal === 'long' || currentSignal === 'short') {

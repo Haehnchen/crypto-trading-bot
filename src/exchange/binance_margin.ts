@@ -9,7 +9,7 @@ import { ExchangeCandlestick } from '../dict/exchange_candlestick';
 import { Ticker } from '../dict/ticker';
 import { TickerEvent } from '../event/ticker_event';
 import { ExchangeOrder } from '../dict/exchange_order';
-import { OrderUtil } from '../utils/order_util';
+import { calculateNearestSize } from '../utils/order_util';
 import { TradesUtil } from './utils/trades_util';
 import { Position } from '../dict/position';
 import { Order } from '../dict/order';
@@ -276,7 +276,7 @@ export class BinanceMargin {
       return undefined;
     }
 
-    return parseFloat(String(OrderUtil.calculateNearestSize(price, pairInfo.tick_size)));
+    return parseFloat(String(calculateNearestSize(price, pairInfo.tick_size)));
   }
 
   /**
@@ -292,7 +292,7 @@ export class BinanceMargin {
       return undefined;
     }
 
-    return parseFloat(String(OrderUtil.calculateNearestSize(amount, pairInfo.lot_size)));
+    return parseFloat(String(calculateNearestSize(amount, pairInfo.lot_size)));
   }
 
   async getPositions(): Promise<Position[]> {

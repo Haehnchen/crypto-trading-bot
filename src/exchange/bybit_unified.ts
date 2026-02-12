@@ -4,11 +4,11 @@ import { Ticker } from '../dict/ticker';
 import { TickerEvent } from '../event/ticker_event';
 import { ExchangeCandlestick } from '../dict/exchange_candlestick';
 import { Position } from '../dict/position';
-import CommonUtil = require('../utils/common_util');
+import { getProfitAsPercent } from '../utils/common_util';
 import { ExchangeOrder } from '../dict/exchange_order';
 import { OrderBag } from './utils/order_bag';
 import { Order } from '../dict/order';
-import { orderUtil } from '../utils/order_util';
+import { calculateNearestSize } from '../utils/order_util';
 import { EventEmitter } from 'events';
 import type { Logger } from '../modules/services';
 import type { QueueManager } from '../utils/queue';
@@ -280,7 +280,7 @@ export class BybitUnified {
           position.symbol,
           side,
           size,
-          position.markPrice && position.entryPrice ? CommonUtil.getProfitAsPercent(side, position.markPrice, position.entryPrice) : undefined,
+          position.markPrice && position.entryPrice ? getProfitAsPercent(side, position.markPrice, position.entryPrice) : undefined,
           new Date(),
           parseFloat(position.entryPrice),
           new Date(),
@@ -328,7 +328,7 @@ export class BybitUnified {
       return undefined;
     }
 
-    return parseFloat(String(orderUtil.calculateNearestSize(price, tickSize)));
+    return parseFloat(String(calculateNearestSize(price, tickSize)));
   }
 
   /**
@@ -344,7 +344,7 @@ export class BybitUnified {
       return undefined;
     }
 
-    return parseFloat(String(orderUtil.calculateNearestSize(amount, lotSize)));
+    return parseFloat(String(calculateNearestSize(amount, lotSize)));
   }
 
   getName(): string {

@@ -10,10 +10,3 @@ export function getProfitAsPercent(side: PositionSide, currentPrice: number, ent
       throw new Error(`Invalid direction given for profit ${side}`);
   }
 }
-
-/**
- * Export an object with all functions for backwards compatibility with JS imports
- */
-export const CommonUtil = {
-  getProfitAsPercent,
-};

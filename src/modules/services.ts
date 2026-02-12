@@ -353,7 +353,6 @@ const services: Services = {
       this.getExchangeManager(),
       this.getPairStateManager(),
       this.getLogger(),
-      this.getSystemUtil(),
       this.getOrderExecutor(),
       this.getOrderCalculator()
     ));
@@ -512,7 +511,7 @@ const services: Services = {
       return exchangeManager;
     }
 
-    return (exchangeManager = new ExchangeManager(this.getExchanges(), this.getLogger(), this.getInstances(), this.getConfig()));
+    return (exchangeManager = new ExchangeManager(this.getExchanges(), this.getInstances(), this.getConfig()));
   },
 
   getOrderExecutor: function (): OrderExecutor {
@@ -660,7 +659,7 @@ const services: Services = {
       return ordersHttp;
     }
 
-    return (ordersHttp = new OrdersHttp(this.getBacktest(), this.getTickers(), this.getOrderExecutor(), this.getExchangeManager(), this.getPairConfig()));
+    return (ordersHttp = new OrdersHttp(this.getTickers(), this.getOrderExecutor(), this.getExchangeManager(), this.getPairConfig()));
   },
 
   getExchangeCandleCombine: function (): ExchangeCandleCombine {
@@ -808,7 +807,7 @@ const services: Services = {
   },
 
   getTradesController: function (templateHelpers: any): TradesController {
-    return new TradesController(templateHelpers, this.getExchangeManager(), this.getOrdersHttp(), this.getTickers());
+    return new TradesController(templateHelpers, this.getExchangeManager(), this.getTickers());
   },
 
   getPairsController: function (templateHelpers: any): PairsController {

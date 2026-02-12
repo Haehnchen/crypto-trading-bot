@@ -7,7 +7,7 @@ import { Tickers } from '../../storage/tickers';
 import { ExchangeManager } from '../exchange/exchange_manager';
 import { OrderCalculator } from '../order/order_calculator';
 import { Notify } from '../../notify/notify';
-import { Logger, StrategyManager, PairStateManager, SystemUtil, OrderExecutor } from '../services';
+import { Logger, StrategyManager, PairStateManager, OrderExecutor } from '../services';
 import { SignalLogger } from '../signal/signal_logger';
 
 export interface StrategyConfig {
@@ -41,7 +41,6 @@ export class TickListener {
     private exchangeManager: ExchangeManager,
     private pairStateManager: PairStateManager,
     private logger: Logger,
-    private systemUtil: SystemUtil,
     private orderExecutor: OrderExecutor,
     private orderCalculator: OrderCalculator
   ) {}

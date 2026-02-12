@@ -9,11 +9,11 @@ import { Candlestick } from '../dict/candlestick';
 import { Ticker } from '../dict/ticker';
 import { ExchangeCandlestick } from '../dict/exchange_candlestick';
 import { TickerEvent } from '../event/ticker_event';
-import { Resample } from '../utils/resample';
+import { resampleMinutes, convertPeriodToMinute } from '../utils/resample';
 import { Position } from '../dict/position';
 import { Order } from '../dict/order';
 import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderType } from '../dict/exchange_order';
-import { orderUtil } from '../utils/order_util';
+import { calculateNearestSize } from '../utils/order_util';
 
 // Types for BitMEX API responses
 interface BitmexInstrument {
@@ -291,9 +291,9 @@ export class Bitmex {
                 resamples[symbol.symbol][period].length > 0
               ) {
                 for (const periodTo of resamples[symbol.symbol][period]) {
-                  const resampledCandles = Resample.resampleMinutes(
+                  const resampledCandles = resampleMinutes(
                     candleSticks.slice(),
-                    Resample.convertPeriodToMinute(periodTo) // 15m > 15
+                    convertPeriodToMinute(periodTo) // 15m > 15
                   );
 
                   const candles = resampledCandles.map(candle => {
@@ -560,7 +560,7 @@ export class Bitmex {
       return undefined;
     }
 
-    return orderUtil.calculateNearestSize(price, this.tickSizes[symbol]);
+    return calculateNearestSize(price, this.tickSizes[symbol]);
   }
 
   /**
@@ -594,7 +594,7 @@ export class Bitmex {
       return undefined;
     }
 
-    return orderUtil.calculateNearestSize(amount, this.lotSizes[symbol]);
+    return calculateNearestSize(amount, this.lotSizes[symbol]);
   }
 
   getName(): string {

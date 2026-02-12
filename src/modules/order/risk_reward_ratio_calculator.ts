@@ -1,6 +1,6 @@
 import { Order } from '../../dict/order';
 import { ExchangeOrder } from '../../dict/exchange_order';
-import { OrderUtil } from '../../utils/order_util';
+import { isPercentDifferentGreaterThen } from '../../utils/order_util';
 import { Position } from '../../dict/position';
 import type { Logger } from '../services';
 
@@ -74,7 +74,7 @@ export class RiskRewardRatioCalculator {
       const stopOrder = stopOrders[0];
 
       // only +1% amount change is important for us
-      if (OrderUtil.isPercentDifferentGreaterThen(position.amount, stopOrder.amount, 1)) {
+      if (isPercentDifferentGreaterThen(position.amount, stopOrder.amount, 1)) {
         let amount = Math.abs(position.amount);
         if (position.isLong()) {
           amount *= -1;
@@ -103,7 +103,7 @@ export class RiskRewardRatioCalculator {
       const targetOrder = targetOrders[0];
 
       // only +1% amount change is important for us
-      if (OrderUtil.isPercentDifferentGreaterThen(position.amount, targetOrder.amount, 1)) {
+      if (isPercentDifferentGreaterThen(position.amount, targetOrder.amount, 1)) {
         let amount = Math.abs(position.amount);
         if (position.isLong()) {
           amount *= -1;

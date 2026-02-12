@@ -2,7 +2,6 @@ import _ from 'lodash';
 import { ExchangePosition } from '../../dict/exchange_position';
 import { ExchangeOrder } from '../../dict/exchange_order';
 import { Position } from '../../dict/position';
-import type { Logger } from '../services';
 
 export interface SymbolInstance {
   exchange: string;
@@ -32,7 +31,6 @@ export class ExchangeManager {
 
   constructor(
     private readonly exchangesIterator: ExchangeInstance[],
-    private logger: Logger,
     private instances: { symbols: SymbolInstance[] },
     private readonly config: any
   ) {}

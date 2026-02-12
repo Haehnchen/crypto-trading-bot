@@ -8,10 +8,10 @@ import { Ticker } from '../dict/ticker';
 import { TickerEvent } from '../event/ticker_event';
 import { Order } from '../dict/order';
 import { ExchangeCandlestick } from '../dict/exchange_candlestick';
-import { Resample } from '../utils/resample';
+import { convertPeriodToMinute } from '../utils/resample';
 import { Position } from '../dict/position';
 import { ExchangeOrder, ExchangeOrderStatus } from '../dict/exchange_order';
-import { orderUtil } from '../utils/order_util';
+import { calculateNearestSize } from '../utils/order_util';
 import { EventEmitter } from 'events';
 import type { Logger } from '../modules/services';
 import type { QueueManager } from '../utils/queue';
@@ -81,7 +81,7 @@ export class Bybit {
 
       symbols.forEach((symbol: any) => {
         symbol.periods.forEach((p: string) => {
-          const periodMinute = Resample.convertPeriodToMinute(p);
+          const periodMinute = convertPeriodToMinute(p);
 
           ws.send(JSON.stringify({ op: 'subscribe', args: [`klineV2.${periodMinute}.${symbol.symbol}`] }));
         });
@@ -180,8 +180,8 @@ export class Bybit {
             // add price spread around the last price; as we not getting the bid and ask of the orderbook directly
             // prevent also floating issues
             if (symbol in me.tickSizes) {
-              bid = parseFloat(String(orderUtil.calculateNearestSize(bid - me.tickSizes[symbol], me.tickSizes[symbol])));
-              ask = parseFloat(String(orderUtil.calculateNearestSize(ask + me.tickSizes[symbol], me.tickSizes[symbol])));
+              bid = parseFloat(String(calculateNearestSize(bid - me.tickSizes[symbol], me.tickSizes[symbol])));
+              ask = parseFloat(String(calculateNearestSize(ask + me.tickSizes[symbol], me.tickSizes[symbol])));
             }
 
             eventEmitter.emit(
@@ -243,7 +243,7 @@ export class Bybit {
       symbol.periods.forEach((period: string) => {
         // for bot init prefill data: load latest candles from api
         this.queue.add(async () => {
-          const minutes = Resample.convertPeriodToMinute(period);
+          const minutes = convertPeriodToMinute(period);
 
           // from is required calculate to be inside window
           const from = Math.floor(new Date().getTime() / 1000) - minutes * 195 * 60;
@@ -397,7 +397,7 @@ export class Bybit {
       return undefined;
     }
 
-    return parseFloat(String(orderUtil.calculateNearestSize(price, tickSize)));
+    return parseFloat(String(calculateNearestSize(price, tickSize)));
   }
 
   /**
@@ -432,7 +432,7 @@ export class Bybit {
       return undefined;
     }
 
-    return parseFloat(String(orderUtil.calculateNearestSize(amount, lotSize)));
+    return parseFloat(String(calculateNearestSize(amount, lotSize)));
   }
 
   getName(): string {

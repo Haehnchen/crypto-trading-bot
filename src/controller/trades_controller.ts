@@ -1,15 +1,13 @@
 import { BaseController, TemplateHelpers } from './base_controller';
 import { ExchangeManager } from '../modules/exchange/exchange_manager';
-import { OrdersHttp } from '../modules/orders/orders_http';
 import { Tickers } from '../storage/tickers';
-import { OrderUtil } from '../utils/order_util';
+import { getPercentDifferent } from '../utils/order_util';
 import express from 'express';
 
 export class TradesController extends BaseController {
   constructor(
     templateHelpers: TemplateHelpers,
     private exchangeManager: ExchangeManager,
-    private ordersHttp: OrdersHttp,
     private tickers: Tickers
   ) {
     super(templateHelpers);
@@ -62,7 +60,7 @@ export class TradesController extends BaseController {
 
           const ticker = this.tickers.get(exchange.getName(), order.symbol);
           if (ticker) {
-            items.percent_to_price = OrderUtil.getPercentDifferent(order.price, ticker.bid);
+            items.percent_to_price = getPercentDifferent(order.price, ticker.bid);
           }
 
           orders.push(items);

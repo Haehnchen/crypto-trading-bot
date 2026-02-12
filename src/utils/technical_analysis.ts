@@ -258,20 +258,3 @@ export function getPivotPointsWithWicks(candles: Candlestick[], left: number, ri
 
   return result;
 }
-
-/**
- * Export an object with all functions for backwards compatibility with JS imports
- */
-export const ta = {
-  getBollingerBandPercent,
-  getPercentTrendStrength,
-  candles2MarketData,
-  getPredefinedIndicators,
-  calculateReadyIndicators,
-  createIndicatorsLookback,
-  getTrendingDirection,
-  getTrendingDirectionLastItem,
-  getCrossedSince,
-  getPivotPoints,
-  getPivotPointsWithWicks
-};

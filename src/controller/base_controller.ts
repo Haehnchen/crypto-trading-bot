@@ -15,7 +15,7 @@ export interface TemplateHelpers {
 }
 
 export abstract class BaseController implements Controller {
-  constructor(protected templateHelpers: TemplateHelpers) {}
+  protected constructor(protected templateHelpers: TemplateHelpers) {}
 
   abstract registerRoutes(router: express.Router): void;
 

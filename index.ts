@@ -13,7 +13,7 @@ program
   .action(async (options: any) => {
     await services.boot(__dirname);
 
-    const cmd = new TradeCommand(options.instance);
+    const cmd = new TradeCommand();
     cmd.execute();
   });
 
@@ -42,7 +42,7 @@ program
   .description('')
   .option('-i, --instance <file>', 'Instance to start', 'instance.json')
   .action((options: any) => {
-    const cmd = new ServerCommand(options.instance);
+    const cmd = new ServerCommand();
     cmd.execute();
   });
 

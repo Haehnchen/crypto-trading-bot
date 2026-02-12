@@ -3,8 +3,8 @@ import moment from 'moment';
 import { ExchangeCandlestick } from '../dict/exchange_candlestick';
 import { Ticker } from '../dict/ticker';
 import { TickerEvent } from '../event/ticker_event';
-import { OrderUtil } from '../utils/order_util';
-import { Resample } from '../utils/resample';
+import { calculateNearestSize } from '../utils/order_util';
+import { convertPeriodToMinute } from '../utils/resample';
 import { CandlesFromTrades } from './utils/candles_from_trades';
 import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderType } from '../dict/exchange_order';
 import { Position } from '../dict/position';
@@ -99,7 +99,7 @@ export class CoinbasePro {
       symbol.periods.forEach((interval: string) =>
         this.queue.add(async () => {
           // backfill
-          const granularity = Resample.convertPeriodToMinute(interval) * 60;
+          const granularity = convertPeriodToMinute(interval) * 60;
 
           let candles;
           try {
@@ -287,7 +287,7 @@ export class CoinbasePro {
       return undefined;
     }
 
-    return parseFloat(String(OrderUtil.calculateNearestSize(price, pairInfo.tick_size)));
+    return parseFloat(String(calculateNearestSize(price, pairInfo.tick_size)));
   }
 
   /**
@@ -303,7 +303,7 @@ export class CoinbasePro {
       return undefined;
     }
 
-    return parseFloat(String(OrderUtil.calculateNearestSize(amount, pairInfo.lot_size)));
+    return parseFloat(String(calculateNearestSize(amount, pairInfo.lot_size)));
   }
 
   async getPositions(): Promise<Position[]> {

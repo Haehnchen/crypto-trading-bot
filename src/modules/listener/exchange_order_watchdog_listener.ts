@@ -1,4 +1,4 @@
-import { OrderUtil } from '../../utils/order_util';
+import { syncStopLossOrder, syncTrailingStopLossOrder } from '../../utils/order_util';
 import { Order } from '../../dict/order';
 import { StopLossCalculator } from '../order/stop_loss_calculator';
 import { RiskRewardRatioCalculator } from '../order/risk_reward_ratio_calculator';
@@ -124,7 +124,7 @@ export class ExchangeOrderWatchdogListener {
     const { stopLossCalculator } = this;
 
     const orders = await exchange.getOrdersForSymbol(position.getSymbol());
-    const orderChanges = OrderUtil.syncStopLossOrder(position, orders);
+    const orderChanges = syncStopLossOrder(position, orders);
 
     for (const orderChange of orderChanges) {
       logger.info(
@@ -342,7 +342,7 @@ export class ExchangeOrderWatchdogListener {
     }
 
     const orders = await exchange.getOrdersForSymbol(position.symbol);
-    const orderChanges = OrderUtil.syncTrailingStopLossOrder(position, orders);
+    const orderChanges = syncTrailingStopLossOrder(position, orders);
     await Promise.all(
       orderChanges.map(async (orderChange: any) => {
         if (orderChange.id) {

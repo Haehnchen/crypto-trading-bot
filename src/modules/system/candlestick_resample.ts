@@ -1,4 +1,4 @@
-import { Resample } from '../../utils/resample';
+import { convertPeriodToMinute, resampleMinutes } from '../../utils/resample';
 import { ExchangeCandlestick } from '../../dict/exchange_candlestick';
 import { CandlestickRepository } from '../../repository';
 import { CandleImporter } from './candle_importer';
@@ -23,8 +23,8 @@ export class CandlestickResample {
     periodTo: string,
     limitCandles: boolean = false
   ): Promise<void> {
-    const toMinute = Resample.convertPeriodToMinute(periodTo);
-    const fromMinute = Resample.convertPeriodToMinute(periodFrom);
+    const toMinute = convertPeriodToMinute(periodTo);
+    const fromMinute = convertPeriodToMinute(periodFrom);
 
     if (fromMinute > toMinute) {
       throw new Error('Invalid resample "from" must be geater then "to"');
@@ -49,7 +49,7 @@ export class CandlestickResample {
       return;
     }
 
-    const resampleCandlesticks = Resample.resampleMinutes(candlesticks, toMinute);
+    const resampleCandlesticks = resampleMinutes(candlesticks, toMinute);
 
     const candles = resampleCandlesticks.map(candle => {
       return new ExchangeCandlestick(

@@ -3,9 +3,9 @@ import path from 'path';
 import _ from 'lodash';
 import { IndicatorBuilder } from './dict/indicator_builder';
 import { IndicatorPeriod } from './dict/indicator_period';
-import * as ta from '../../utils/technical_analysis';
-import { Resample } from '../../utils/resample';
-import { CommonUtil } from '../../utils/common_util';
+import { createIndicatorsLookback } from '../../utils/technical_analysis';
+import { convertPeriodToMinute } from '../../utils/resample';
+import { getProfitAsPercent } from '../../utils/common_util';
 import { StrategyContext } from '../../dict/strategy_context';
 import { Ticker } from '../../dict/ticker';
 import { SignalResult } from './dict/signal_result';
@@ -198,7 +198,7 @@ export class StrategyManager {
           symbol,
           positionSide,
           amount,
-          CommonUtil.getProfitAsPercent(positionSide, price, lastSignalEntry),
+          getProfitAsPercent(positionSide, price, lastSignalEntry),
           new Date(),
           lastSignalEntry,
           new Date()
@@ -289,7 +289,7 @@ export class StrategyManager {
       });
 
       // filter candles in the futures: eg current non closed candle
-      const periodAsMinute = Resample.convertPeriodToMinute(period) * 60;
+      const periodAsMinute = convertPeriodToMinute(period) * 60;
       const unixtime = Math.floor(Date.now() / 1000);
       const olderThenCurrentPeriod = unixtime - (unixtime % periodAsMinute) - periodAsMinute * 0.1;
 
@@ -306,7 +306,7 @@ export class StrategyManager {
 
         const indicators = periodGroup.filter(group => !group.options.exchange && !group.options.symbol);
 
-        const result = await ta.createIndicatorsLookback(lookbacks[exchange].slice().reverse(), indicators);
+        const result = await createIndicatorsLookback(lookbacks[exchange].slice().reverse(), indicators);
 
         // array merge
         for (const x in result) {
@@ -326,7 +326,7 @@ export class StrategyManager {
           continue;
         }
 
-        const result = await ta.createIndicatorsLookback(lookbacks[foreignExchange.name + foreignExchange.symbol].slice().reverse(), indicators);
+        const result = await createIndicatorsLookback(lookbacks[foreignExchange.name + foreignExchange.symbol].slice().reverse(), indicators);
 
         // array merge
         for (const x in result) {
