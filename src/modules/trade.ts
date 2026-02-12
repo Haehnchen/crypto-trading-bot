@@ -128,7 +128,7 @@ export class Trade {
       me.tickerDatabaseListener.onTicker(tickerEvent);
     });
 
-    eventEmitter.on('orderbook', (orderbookEvent: any) => {
+    eventEmitter.on('orderbook', (_orderbookEvent: any) => {
       // console.log(orderbookEvent.orderbook)
     });
 
@@ -139,7 +139,7 @@ export class Trade {
     });
 
     eventEmitter.on('watchdog', async () => {
-      me.exchangeOrderWatchdogListener.onTick();
+      await me.exchangeOrderWatchdogListener.onTick();
       await me.exchangePositionWatcher.onPositionStateChangeTick();
     });
 

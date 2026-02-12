@@ -24,25 +24,21 @@ export class BybitUnified {
   private candleImporter: CandleImporter;
   private orderbag: OrderBag;
 
-  private apiKey?: string;
-  private apiSecret?: string;
   private tickSizes: Record<string, number>;
   private lotSizes: Record<string, number>;
   private positions: Record<string, Position>;
   private orders: Record<string, ExchangeOrder>;
   private tickers: Record<string, Ticker>;
-  private symbols: any[];
-  private intervals: NodeJS.Timeout[];
   private exchangeAuth?: any;
 
   constructor(
     eventEmitter: EventEmitter,
-    requestClient: RequestClient,
-    candlestickResample: CandlestickResample,
+    _requestClient: RequestClient,
+    _candlestickResample: CandlestickResample,
     logger: Logger,
     queue: QueueManager,
     candleImporter: CandleImporter,
-    throttler: Throttler
+    _throttler: Throttler
   ) {
     this.eventEmitter = eventEmitter;
     this.logger = logger;
@@ -55,8 +51,6 @@ export class BybitUnified {
     this.positions = {};
     this.orders = {};
     this.tickers = {};
-    this.symbols = [];
-    this.intervals = [];
     this.orderbag = new OrderBag();
   }
 
@@ -65,11 +59,9 @@ export class BybitUnified {
     const { logger } = this;
     const { tickSizes } = this;
     const { lotSizes } = this;
-    this.intervals = [];
     const me = this;
     this.orderbag = new OrderBag();
 
-    this.symbols = symbols;
     this.positions = {};
     this.orders = {};
 
@@ -205,7 +197,7 @@ export class BybitUnified {
     }, 1000);
   }
 
-  async updateOrderViaRest(exchange: any, me?: any): Promise<void> {
+  async updateOrderViaRest(exchange: any, _me?: any): Promise<void> {
     try {
       const orders = await exchange.fetchOpenOrders();
       this.orderbag.set(BybitUnified.createOrders(orders));
@@ -439,7 +431,7 @@ export class BybitUnified {
     }
   }
 
-  isInverseSymbol(symbol: string): boolean {
+  isInverseSymbol(_symbol: string): boolean {
     return false;
   }
 }

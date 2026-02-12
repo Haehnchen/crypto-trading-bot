@@ -12,9 +12,9 @@ export class OrderExecutor {
   private tickers: Tickers;
   private logger: Logger;
   private systemUtil: SystemUtil;
-  private runningOrders: Record<string | number, Date>;
-  private tickerPriceInterval: number;
-  private tickerPriceRetries: number;
+  private readonly runningOrders: Record<string | number, Date>;
+  private readonly tickerPriceInterval: number;
+  private readonly tickerPriceRetries: number;
 
   constructor(exchangeManager: ExchangeManager, tickers: Tickers, systemUtil: SystemUtil, logger: Logger) {
     this.exchangeManager = exchangeManager;

@@ -41,7 +41,7 @@ export class TickListener {
   private systemUtil: SystemUtil;
   private orderExecutor: OrderExecutor;
   private orderCalculator: OrderCalculator;
-  private notified: Record<string, Date>;
+  private readonly notified: Record<string, Date>;
 
   constructor(
     tickers: Tickers,

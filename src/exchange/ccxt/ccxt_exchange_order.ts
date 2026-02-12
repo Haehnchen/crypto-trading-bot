@@ -23,14 +23,12 @@ export interface CancelOrderArgs {
 
 export class CcxtExchangeOrder {
   private orderbag: OrderBag;
-  private symbols: any[];
   private logger: Logger;
-  private ccxtClient: CcxtExchange;
-  private callbacks?: OrderCallbacks;
+  private readonly ccxtClient: CcxtExchange;
+  private readonly callbacks?: OrderCallbacks;
 
-  constructor(ccxtClient: CcxtExchange, symbols: any[], logger: Logger, callbacks?: OrderCallbacks) {
+  constructor(ccxtClient: CcxtExchange, _symbols: any[], logger: Logger, callbacks?: OrderCallbacks) {
     this.orderbag = new OrderBag();
-    this.symbols = symbols;
     this.logger = logger;
     this.ccxtClient = ccxtClient;
     this.callbacks = callbacks;
@@ -228,7 +226,7 @@ export class CcxtExchangeOrder {
         super(undefined as any, [], myLogger);
       }
 
-      async createOrder(order: Order): Promise<ExchangeOrder | undefined> {
+      async createOrder(_order: Order): Promise<ExchangeOrder | undefined> {
         logger.info(`Empty CCXT state: createOrder stopped`);
         return undefined;
       }
@@ -238,12 +236,12 @@ export class CcxtExchangeOrder {
         return [];
       }
 
-      async updateOrder(id: string | number, order: Partial<Pick<Order, 'amount' | 'price'>>): Promise<ExchangeOrder | undefined> {
+      async updateOrder(_id: string | number, _order: Partial<Pick<Order, 'amount' | 'price'>>): Promise<ExchangeOrder | undefined> {
         logger.info(`Empty CCXT state: updateOrder stopped`);
         return undefined;
       }
 
-      async cancelOrder(id: string | number): Promise<ExchangeOrder | undefined> {
+      async cancelOrder(_id: string | number): Promise<ExchangeOrder | undefined> {
         logger.info(`Empty CCXT state: cancelOrder stopped`);
         return undefined;
       }

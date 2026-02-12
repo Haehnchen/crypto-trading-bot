@@ -1,7 +1,7 @@
 import services from '../modules/services';
 
 export class TradeCommand {
-  constructor(instance: string) {}
+  constructor(_instance: string) {}
 
   execute(): void {
     services.createTradeInstance().start();

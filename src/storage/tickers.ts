@@ -2,7 +2,7 @@ import moment from 'moment';
 import { Ticker } from '../dict/ticker';
 
 export class Tickers {
-  private tickers: Record<string, Ticker>;
+  private readonly tickers: Record<string, Ticker>;
 
   constructor() {
     this.tickers = {};

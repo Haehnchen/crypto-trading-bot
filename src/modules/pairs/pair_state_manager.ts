@@ -13,7 +13,7 @@ export class PairStateManager {
   private systemUtil: SystemUtil;
   private pairStateExecution: PairStateExecution;
   private orderExecutor: OrderExecutor;
-  private stats: Record<string, PairState>;
+  private readonly stats: Record<string, PairState>;
   private pairInterval: PairInterval;
 
   constructor(

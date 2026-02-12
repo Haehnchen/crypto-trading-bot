@@ -69,16 +69,16 @@ import { CandleImporter } from './system/candle_importer';
 import { OrdersHttp } from './orders/orders_http';
 
 // Controllers
-import { DashboardController } from '../controller/dashboard_controller';
-import { TradesController } from '../controller/trades_controller';
-import { PairsController } from '../controller/pairs_controller';
-import { OrdersController } from '../controller/orders_controller';
-import { SignalsController } from '../controller/signals_controller';
-import { CandlesController } from '../controller/candles_controller';
-import { BacktestController } from '../controller/backtest_controller';
-import { LogsController } from '../controller/logs_controller';
-import { DesksController } from '../controller/desks_controller';
-import { TradingViewController } from '../controller/tradingview_controller';
+import { DashboardController } from '../controller';
+import { TradesController } from '../controller';
+import { PairsController } from '../controller';
+import { OrdersController } from '../controller';
+import { SignalsController } from '../controller';
+import { CandlesController } from '../controller';
+import { BacktestController } from '../controller';
+import { LogsController } from '../controller';
+import { DesksController } from '../controller';
+import { TradingViewController } from '../controller';
 
 // Interfaces
 interface Instances {
@@ -781,7 +781,7 @@ const services: Services = {
     return mail.createTransport({
       host: config.notify?.mail?.server,
       port: config.notify?.mail?.port,
-      secure: config.notify?.mail?.port == 465 ? true : false,
+      secure: config.notify?.mail?.port == 465,
       auth: {
         user: config.notify?.mail?.username,
         pass: config.notify?.mail?.password

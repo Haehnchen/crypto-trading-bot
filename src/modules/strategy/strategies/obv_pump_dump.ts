@@ -7,7 +7,7 @@ export class ObvPumpDump {
     return 'obv_pump_dump';
   }
 
-  buildIndicator(indicatorBuilder: IndicatorBuilder, options: Record<string, any>): void {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, _options: Record<string, any>): void {
     indicatorBuilder.add('obv', 'obv', '1m');
 
     indicatorBuilder.add('ema', 'ema', '1m', {

@@ -33,8 +33,8 @@ interface InternalCandle {
 export class CandlesFromTrades {
   private candlestickResample: CandlestickResample;
   private candleImporter: CandleImporter;
-  private candles: Record<string, Record<number, InternalCandle>>;
-  private lastCandleMap: Record<string, InternalCandle>;
+  private readonly candles: Record<string, Record<number, InternalCandle>>;
+  private readonly lastCandleMap: Record<string, InternalCandle>;
 
   constructor(candlestickResample: CandlestickResample, candleImporter: CandleImporter) {
     this.candlestickResample = candlestickResample;

@@ -5,7 +5,7 @@ export interface Config {
 }
 
 export class SystemUtil {
-  private config: Config;
+  private readonly config: Config;
 
   constructor(config: Config) {
     this.config = config;

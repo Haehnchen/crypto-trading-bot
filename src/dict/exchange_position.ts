@@ -1,8 +1,8 @@
 import { Position } from './position';
 
 export class ExchangePosition {
-  private _exchange: string;
-  private _position: Position;
+  private readonly _exchange: string;
+  private readonly _position: Position;
 
   constructor(exchange: string, position: Position) {
     if (!(position instanceof Position)) {

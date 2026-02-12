@@ -125,8 +125,6 @@ export class ExchangeOrder {
       case 'sell':
         return 'short';
     }
-
-    throw `Invalid side:${this.side}`;
   }
 
   shouldCancelOrderProcess(): boolean {

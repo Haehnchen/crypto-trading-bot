@@ -26,7 +26,6 @@ export class ExchangePositionWatcher {
     // first run after start
     if (!this.init) {
       exchangePositions.forEach((exchangePosition: ExchangePosition) => {
-        const position = exchangePosition.getPosition();
         this.positions[exchangePosition.getKey()] = exchangePosition;
       });
 

@@ -1,5 +1,5 @@
 export class PairInterval {
-  private intervals: Record<string, NodeJS.Timeout>;
+  private readonly intervals: Record<string, NodeJS.Timeout>;
 
   constructor() {
     this.intervals = {};

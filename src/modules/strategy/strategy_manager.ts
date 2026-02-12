@@ -46,7 +46,7 @@ export class StrategyManager {
   private technicalAnalysisValidator: TechnicalAnalysisValidator;
   private exchangeCandleCombine: ExchangeCandleCombine;
   private projectDir: string;
-  private logger: Logger;
+  private readonly logger: Logger;
   private strategies?: StrategyInfo[];
 
   constructor(technicalAnalysisValidator: TechnicalAnalysisValidator, exchangeCandleCombine: ExchangeCandleCombine, logger: Logger, projectDir: string) {
@@ -100,7 +100,6 @@ export class StrategyManager {
       // Allow strategies to be wrapped by any folder depth:
       // "foo/bar" => "foo/bar/bar.ts" or "foo/bar/bar.js"
       recursiveReadDirSyncWithDirectoryOnly(dir).forEach(folder => {
-        const baseName = path.basename(folder);
         const folderName = path.basename(folder);
 
         // Check if either .ts or .js file exists for this folder

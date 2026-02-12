@@ -30,8 +30,8 @@ export interface ExchangeInstance {
 export class ExchangeManager {
   private logger: any;
   private instances: { symbols: SymbolInstance[] };
-  private config: any;
-  private exchangesIterator: ExchangeInstance[];
+  private readonly config: any;
+  private readonly exchangesIterator: ExchangeInstance[];
   private exchanges: ExchangeInstance[];
 
   constructor(exchangesIterator: ExchangeInstance[], logger: Logger, instances: { symbols: SymbolInstance[] }, config: any) {

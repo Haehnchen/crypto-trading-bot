@@ -120,15 +120,15 @@ export class Bitmex {
 
   private apiKey: string | undefined;
   private apiSecret: string | undefined;
-  private tickSizes: Record<string, number>;
-  private lotSizes: Record<string, number>;
+  private readonly tickSizes: Record<string, number>;
+  private readonly lotSizes: Record<string, number>;
   private leverageUpdated: Record<string, Date>;
-  private retryOverloadMs: number;
-  private retryOverloadLimit: number;
+  private readonly retryOverloadMs: number;
+  private readonly retryOverloadLimit: number;
 
   private positions: Record<string, Position>;
   private orders: Record<string, ExchangeOrder>;
-  private tickers: Record<string, Ticker>;
+  private readonly tickers: Record<string, Ticker>;
   private symbols: BitmexSymbol[];
   private inversedSymboles: string[];
 
@@ -720,7 +720,7 @@ export class Bitmex {
   async updateLeverage(symbol: string): Promise<boolean> {
     const { logger } = this;
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       const config = this.symbols.find((cSymbol: BitmexSymbol) => cSymbol.symbol === symbol);
       if (!config) {
         this.logger.error(`Bitmex: Invalid leverage config for:${symbol}`);

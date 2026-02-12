@@ -78,7 +78,7 @@ export class Backtest {
   private instances: { symbols: { exchange: string; symbol: string }[] };
   private strategyManager: StrategyManager;
   private exchangeCandleCombine: ExchangeCandleCombine;
-  private projectDir: string;
+  private readonly projectDir: string;
 
   constructor(
     instances: { symbols: { exchange: string; symbol: string }[] },

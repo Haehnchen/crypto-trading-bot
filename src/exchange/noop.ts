@@ -4,7 +4,7 @@
 export class Noop {
   constructor() {}
 
-  start(config: any, symbols: any[]): void {}
+  start(_config: any, _symbols: any[]): void {}
 
   getName(): string {
     return 'noop';

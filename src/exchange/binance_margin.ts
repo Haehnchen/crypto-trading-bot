@@ -29,9 +29,8 @@ export class BinanceMargin {
   private client: any;
   private exchangePairs: Record<string, ExchangePairInfo>;
   private symbols: any[];
-  private positions: Position[];
-  private trades: Record<string, any[]>;
-  private tickers: Record<string, Ticker>;
+  private readonly trades: Record<string, any[]>;
+  private readonly tickers: Record<string, Ticker>;
   private balances: any[];
   private orderbag: OrderBag;
 
@@ -45,7 +44,6 @@ export class BinanceMargin {
     this.client = undefined;
     this.exchangePairs = {};
     this.symbols = [];
-    this.positions = [];
     this.trades = {};
     this.tickers = {};
     this.balances = [];
@@ -628,7 +626,7 @@ export class BinanceMargin {
       });
   }
 
-  isInverseSymbol(symbol: string): boolean {
+  isInverseSymbol(_symbol: string): boolean {
     return false;
   }
 }

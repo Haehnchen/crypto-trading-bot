@@ -9,7 +9,7 @@ export class Noop {
     return 'noop';
   }
 
-  buildIndicator(indicatorBuilder: IndicatorBuilder, options: Record<string, any>): void {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, _options: Record<string, any>): void {
     indicatorBuilder.add('bb', 'bb', '15m');
     indicatorBuilder.add('rsi', 'rsi', '15m');
     indicatorBuilder.add('mfi', 'mfi', '15m');

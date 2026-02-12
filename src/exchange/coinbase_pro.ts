@@ -699,7 +699,7 @@ export class CoinbasePro {
     return 'coinbase_pro';
   }
 
-  isInverseSymbol(symbol: string): boolean {
+  isInverseSymbol(_symbol: string): boolean {
     return false;
   }
 }

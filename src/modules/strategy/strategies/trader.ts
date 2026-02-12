@@ -10,14 +10,14 @@ export class Trader {
     return 'trader';
   }
 
-  buildIndicator(indicatorBuilder: IndicatorBuilder, options: Record<string, any>): void {
+  buildIndicator(indicatorBuilder: IndicatorBuilder, _options: Record<string, any>): void {
     indicatorBuilder.add('candles_1m', 'candles', '1m');
     indicatorBuilder.add('bb', 'bb', '15m', {
       length: 40
     });
   }
 
-  async period(indicatorPeriod: IndicatorPeriod, options: Record<string, any>): Promise<SignalResult> {
+  async period(indicatorPeriod: IndicatorPeriod, _options: Record<string, any>): Promise<SignalResult> {
     const currentValues = indicatorPeriod.getLatestIndicators();
 
     const result = SignalResult.createEmptySignal(currentValues);
@@ -45,11 +45,10 @@ export class Trader {
 
       const bbIndicator = indicatorPeriod.getIndicator('bb') as any[];
 
-      const values = bbIndicator
+      bbIndicator
         .slice(-10)
         .reverse()
         .map((b: any) => b.width);
-      const value = Math.min(...values);
 
       if ((currentValues.bb as any).width < 0.05) {
         result.addDebug('x', (currentValues.bb as any).width);

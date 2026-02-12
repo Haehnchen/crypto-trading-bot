@@ -26,8 +26,8 @@ export class Binance {
   private client: any;
   private exchangePairs: Record<string, ExchangePairInfo>;
   private symbols: any[];
-  private trades: Record<string, any[]>;
-  private tickers: Record<string, Ticker>;
+  private readonly trades: Record<string, any[]>;
+  private readonly tickers: Record<string, Ticker>;
   private balances: any[];
   private orderbag: OrderBag;
 
@@ -760,7 +760,7 @@ export class Binance {
     this.exchangePairs = exchangePairs;
   }
 
-  isInverseSymbol(symbol: string): boolean {
+  isInverseSymbol(_symbol: string): boolean {
     return false;
   }
 }

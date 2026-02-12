@@ -7,7 +7,7 @@ export interface IndicatorDefinition {
 }
 
 export class IndicatorBuilder {
-  private indicators: Record<string, IndicatorDefinition>;
+  private readonly indicators: Record<string, IndicatorDefinition>;
 
   constructor() {
     this.indicators = {};

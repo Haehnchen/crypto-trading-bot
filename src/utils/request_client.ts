@@ -13,7 +13,7 @@ export interface RequestResult {
 }
 
 export class RequestClient {
-  private logger?: Logger;
+  private readonly logger?: Logger;
 
   constructor(logger?: Logger) {
     this.logger = logger;

@@ -25,19 +25,15 @@ export class BinanceFuturesCoin {
   private queue: QueueManager;
   private candleImporter: CandleImporter;
   private throttler: Throttler;
-  private exchange: any;
   private ccxtExchangeOrder: CcxtExchangeOrder;
   private positions: Record<string, Position>;
-  private orders: Record<string, any>;
-  private tickers: Record<string, Ticker>;
-  private symbols: any[];
-  private intervals: NodeJS.Timeout[];
+  private readonly tickers: Record<string, Ticker>;
   private ccxtClient?: any;
 
   constructor(
     eventEmitter: EventEmitter,
-    requestClient: RequestClient,
-    candlestickResample: CandlestickResample,
+    _requestClient: RequestClient,
+    _candlestickResample: CandlestickResample,
     logger: Logger,
     queue: QueueManager,
     candleImporter: CandleImporter,
@@ -48,15 +44,11 @@ export class BinanceFuturesCoin {
     this.queue = queue;
     this.candleImporter = candleImporter;
     this.throttler = throttler;
-    this.exchange = null;
 
     this.ccxtExchangeOrder = CcxtExchangeOrder.createEmpty(logger);
 
     this.positions = {};
-    this.orders = {};
     this.tickers = {};
-    this.symbols = [];
-    this.intervals = [];
   }
 
   backfill(symbol: string, period: string, start: Date): Promise<Candlestick[]> {
@@ -108,7 +100,6 @@ export class BinanceFuturesCoin {
 
   start(config: any, symbols: any[]): void {
     const { logger } = this;
-    this.exchange = null;
 
     const ccxtClient = (this.ccxtClient = new ccxt.binance({
       apiKey: config.key,
@@ -116,11 +107,7 @@ export class BinanceFuturesCoin {
       options: { defaultType: 'delivery', warnOnFetchOpenOrdersWithoutSymbol: false }
     }));
 
-    this.intervals = [];
-
-    this.symbols = symbols;
     this.positions = {};
-    this.orders = {};
     this.ccxtExchangeOrder = BinanceFuturesCoin.createCustomCcxtOrderInstance(ccxtClient, symbols, logger);
 
     const me = this;
@@ -235,11 +222,11 @@ export class BinanceFuturesCoin {
     return (await this.getPositions()).find(position => position.symbol === symbol);
   }
 
-  calculatePrice(price: number, symbol: string): number {
+  calculatePrice(price: number, _symbol: string): number {
     return price; // done by ccxt
   }
 
-  calculateAmount(amount: number, symbol: string): number {
+  calculateAmount(amount: number, _symbol: string): number {
     return amount; // done by ccxt
   }
 
@@ -375,7 +362,7 @@ export class BinanceFuturesCoin {
     this.logger.debug(`Binance Futures: positions updates: ${positions.length}`);
   }
 
-  isInverseSymbol(symbol: string): boolean {
+  isInverseSymbol(_symbol: string): boolean {
     return true;
   }
 

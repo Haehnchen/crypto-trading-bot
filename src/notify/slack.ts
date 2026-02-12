@@ -26,7 +26,7 @@ export class Slack {
         icon_emoji: this.config.icon_emoji || ':ghost:'
       }
     };
-    request(postOptions, (error: any, response: any, body: any) => {
+    request(postOptions, (error: any, _response: any, _body: any) => {
       if (error) {
         console.log(error);
       }

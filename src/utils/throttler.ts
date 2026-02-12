@@ -5,7 +5,7 @@ export interface Logger {
 
 export class Throttler {
   private logger: Logger;
-  private tasks: Record<string, NodeJS.Timeout>;
+  private readonly tasks: Record<string, NodeJS.Timeout>;
 
   constructor(logger: Logger) {
     this.logger = logger;

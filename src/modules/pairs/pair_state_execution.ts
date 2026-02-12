@@ -240,7 +240,7 @@ export class PairStateExecution {
     return this.orderExecutor.executeOrder(exchangeName, myOrder);
   }
 
-  async executeCloseOrder(exchangeName: string, symbol: string, orderSize: number, options: Record<string, any>, pairState?: PairState): Promise<ExchangeOrder | undefined> {
+  async executeCloseOrder(exchangeName: string, symbol: string, orderSize: number, options: Record<string, any>, _pairState?: PairState): Promise<ExchangeOrder | undefined> {
     // round to nearest exchange amount size
     const exchangeOrderSize = this.exchangeManager.get(exchangeName).calculateAmount(orderSize, symbol);
     if (!exchangeOrderSize) {

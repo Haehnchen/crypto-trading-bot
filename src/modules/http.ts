@@ -7,13 +7,13 @@ import crypto from 'crypto';
 import path from 'path';
 import { SystemUtil } from './system/system_util';
 import { Services } from './services';
-import { TemplateHelpers } from '../controller/base_controller';
+import { TemplateHelpers } from '../controller';
 
 export class Http {
   private systemUtil: SystemUtil;
-  private projectDir: string;
+  private readonly projectDir: string;
   private services: Services;
-  private templateHelpers: TemplateHelpers;
+  private readonly templateHelpers: TemplateHelpers;
 
   constructor(systemUtil: SystemUtil, projectDir: string, services: Services) {
     this.systemUtil = systemUtil;

@@ -30,14 +30,14 @@ export class Bybit {
 
   private apiKey: string | undefined;
   private apiSecret: string | undefined;
-  private tickSizes: Record<string, number>;
-  private lotSizes: Record<string, number>;
+  private readonly tickSizes: Record<string, number>;
+  private readonly lotSizes: Record<string, number>;
   private positions: Record<string, Position>;
   private orders: Record<string, ExchangeOrder>;
-  private tickers: Record<string, Ticker>;
+  private readonly tickers: Record<string, Ticker>;
   private symbols: any[];
   private intervals: NodeJS.Timeout[];
-  private leverageUpdated: Record<string, Date>;
+  private readonly leverageUpdated: Record<string, Date>;
 
   constructor(
     eventEmitter: EventEmitter,
@@ -277,7 +277,7 @@ export class Bybit {
           const from = Math.floor(new Date().getTime() / 1000) - minutes * 195 * 60;
 
           const s = `${me.getBaseUrl()}/v2/public/kline/list?symbol=${symbol.symbol}&from=${from}&interval=${minutes}`;
-          await new Promise<void>((resolve, reject) => {
+          await new Promise<void>((resolve, _reject) => {
             request(s, { json: true }, async (err, res, body) => {
               if (err) {
                 console.log(`Bybit: Candle backfill error: ${String(err)}`);
@@ -1191,7 +1191,7 @@ export class Bybit {
     return 'https://api.bybit.com';
   }
 
-  isInverseSymbol(symbol: string): boolean {
+  isInverseSymbol(_symbol: string): boolean {
     return true;
   }
 }

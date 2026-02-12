@@ -18,10 +18,10 @@ export class Bitfinex {
   private candleImport: CandleImporter;
   private logger: Logger;
   private requestClient: RequestClient;
-  private tickers: Record<string, Ticker>;
+  private readonly tickers: Record<string, Ticker>;
 
   private positions: Record<string, Position>;
-  private orders: Record<string, ExchangeOrder>;
+  private readonly orders: Record<string, ExchangeOrder>;
   private client: any;
   private balanceInfo?: any;
 
