@@ -10,7 +10,7 @@ import { Order } from '../dict/order';
 import { ExchangeCandlestick } from '../dict/exchange_candlestick';
 import { Resample } from '../utils/resample';
 import { Position } from '../dict/position';
-import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderSide, ExchangeOrderType } from '../dict/exchange_order';
+import { ExchangeOrder, ExchangeOrderStatus } from '../dict/exchange_order';
 import { orderUtil } from '../utils/order_util';
 import { EventEmitter } from 'events';
 import type { Logger } from '../modules/services';
@@ -783,7 +783,7 @@ export class Bybit {
     // cancel order; mostly it can already be canceled
     await this.cancelOrder(id);
 
-    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount)) as Promise<ExchangeOrder | undefined>;
+    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
   }
 
   /**

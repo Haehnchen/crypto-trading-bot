@@ -1,7 +1,6 @@
 import moment from 'moment';
-import _ from 'lodash';
 import { StrategyManager } from './strategy/strategy_manager';
-import { convertPeriodToMinute, resampleMinutes } from '../utils/resample';
+import { convertPeriodToMinute } from '../utils/resample';
 import { CommonUtil, PositionSide } from '../utils/common_util';
 import { SignalResult } from './strategy/dict/signal_result';
 import type { ExchangeCandleCombine } from './exchange/exchange_candle_combine';

@@ -1,4 +1,3 @@
-import ccxt from 'ccxt';
 import _ from 'lodash';
 import { OrderBag } from '../utils/order_bag';
 import { Order } from '../../dict/order';

@@ -6,7 +6,7 @@ import { TickerEvent } from '../event/ticker_event';
 import { OrderUtil } from '../utils/order_util';
 import { Resample } from '../utils/resample';
 import { CandlesFromTrades } from './utils/candles_from_trades';
-import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderSide, ExchangeOrderType } from '../dict/exchange_order';
+import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderType } from '../dict/exchange_order';
 import { Position } from '../dict/position';
 import { Order } from '../dict/order';
 import { EventEmitter } from 'events';

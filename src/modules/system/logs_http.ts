@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { LogsRepository } from '../../repository';
 
 export class LogsHttp {

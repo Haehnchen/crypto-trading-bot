@@ -1,5 +1,4 @@
 import moment from 'moment';
-import _ from 'lodash';
 import { ExchangeCandlestick } from '../dict/exchange_candlestick';
 import { CandleImporter } from './system/candle_importer';
 

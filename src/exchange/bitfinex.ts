@@ -6,7 +6,7 @@ import { ExchangeCandlestick } from '../dict/exchange_candlestick';
 import { Ticker } from '../dict/ticker';
 import { Position } from '../dict/position';
 import { TickerEvent } from '../event/ticker_event';
-import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderSide, ExchangeOrderType } from '../dict/exchange_order';
+import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderType } from '../dict/exchange_order';
 import { Order as MyOrder } from '../dict/order';
 import { EventEmitter } from 'events';
 import type { Logger } from '../modules/services';

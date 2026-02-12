@@ -1,7 +1,6 @@
 import { Tickers } from '../../storage/tickers';
 import { PairConfig } from '../pairs/pair_config';
 import { OrderCapital } from '../../dict/order_capital';
-import { Ticker } from '../../dict/ticker';
 import type { Logger } from '../services';
 import type { ExchangeManager } from '../exchange/exchange_manager';
 

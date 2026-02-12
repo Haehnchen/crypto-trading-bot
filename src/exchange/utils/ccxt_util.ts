@@ -1,4 +1,4 @@
-import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderSide, ExchangeOrderType } from '../../dict/exchange_order';
+import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderType } from '../../dict/exchange_order';
 import { Position } from '../../dict/position';
 
 interface CCXTOrder {

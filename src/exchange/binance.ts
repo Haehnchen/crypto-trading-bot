@@ -549,7 +549,7 @@ export class Binance {
     // cancel order; mostly it can already be canceled
     await this.cancelOrder(id);
 
-    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount)) as Promise<ExchangeOrder>;
+    return this.order(Order.createUpdateOrderOnCurrent(currentOrder, order.price, order.amount));
   }
 
   getName(): string {

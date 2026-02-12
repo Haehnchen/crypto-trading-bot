@@ -12,7 +12,7 @@ import { TickerEvent } from '../event/ticker_event';
 import { Resample } from '../utils/resample';
 import { Position } from '../dict/position';
 import { Order } from '../dict/order';
-import { ExchangeOrder, ExchangeOrderSide, ExchangeOrderStatus, ExchangeOrderType } from '../dict/exchange_order';
+import { ExchangeOrder, ExchangeOrderStatus, ExchangeOrderType } from '../dict/exchange_order';
 import { orderUtil } from '../utils/order_util';
 
 // Types for BitMEX API responses
@@ -319,7 +319,7 @@ export class Bitmex {
                 resamples[symbol.symbol][period] &&
                 resamples[symbol.symbol][period].length > 0
               ) {
-                resamples[symbol.symbol][period].forEach(async periodTo => {
+                for (const periodTo of resamples[symbol.symbol][period]) {
                   const resampledCandles = Resample.resampleMinutes(
                     candleSticks.slice(),
                     Resample.convertPeriodToMinute(periodTo) // 15m > 15
@@ -330,7 +330,7 @@ export class Bitmex {
                   });
 
                   await this.candleImporter.insertThrottledCandles(candles);
-                });
+                }
               }
             }
           );
@@ -364,9 +364,9 @@ export class Bitmex {
             resamples[symbol.symbol][period] &&
             resamples[symbol.symbol][period].length > 0
           ) {
-            resamples[symbol.symbol][period].forEach(async periodTo => {
+            for (const periodTo of resamples[symbol.symbol][period]) {
               await me.candlestickResample.resample(this.getName(), symbol.symbol, period, periodTo, true);
-            });
+            }
           }
         });
       });

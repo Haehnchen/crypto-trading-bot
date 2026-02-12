@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import moment from 'moment';
 import { Order } from '../../dict/order';
 import { PairState } from '../../dict/pair_state';

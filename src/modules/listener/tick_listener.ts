@@ -209,7 +209,7 @@ export class TickListener {
     );
     this.notified[noteKey] = new Date();
 
-    await this.pairStateManager.update(symbol.exchange, symbol.symbol, signal);
+    this.pairStateManager.update(symbol.exchange, symbol.symbol, signal);
   }
 
   async placeStrategyOrders(placedOrder: any[], symbol: SymbolInstance): Promise<void> {

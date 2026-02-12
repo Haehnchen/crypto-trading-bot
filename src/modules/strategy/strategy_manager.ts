@@ -8,7 +8,6 @@ import { Resample } from '../../utils/resample';
 import { CommonUtil } from '../../utils/common_util';
 import { StrategyContext } from '../../dict/strategy_context';
 import { Ticker } from '../../dict/ticker';
-import { PositionSide } from '../../dict/position';
 import { SignalResult } from './dict/signal_result';
 import { Position } from '../../dict/position';
 import type { Logger } from '../services';

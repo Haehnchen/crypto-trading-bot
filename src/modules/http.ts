@@ -5,7 +5,7 @@ import auth from 'basic-auth';
 import cookieParser from 'cookie-parser';
 import crypto from 'crypto';
 import path from 'path';
-import { SystemUtil } from '../modules/system/system_util';
+import { SystemUtil } from './system/system_util';
 import { Services } from './services';
 import { TemplateHelpers } from '../controller/base_controller';
 

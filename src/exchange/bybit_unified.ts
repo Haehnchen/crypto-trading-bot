@@ -104,7 +104,7 @@ export class BybitUnified {
             }
           }
 
-          me.candleImporter.insertThrottledCandles(cxchangeCandlesticks);
+          await me.candleImporter.insertThrottledCandles(cxchangeCandlesticks);
         } catch (e) {
           logger.error('watchOHLCVForSymbols error', e);
         }

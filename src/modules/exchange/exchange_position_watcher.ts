@@ -1,5 +1,4 @@
 import { ExchangePosition } from '../../dict/exchange_position';
-import { Position } from '../../dict/position';
 import { PositionStateChangeEvent } from '../../event/position_state_change_event';
 import type { Logger } from '../services';
 import type { ExchangeManager } from './exchange_manager';

@@ -11,41 +11,41 @@ import { Mail } from '../notify/mail';
 import { Telegram } from '../notify/telegram';
 
 import { Tickers } from '../storage/tickers';
-import { Ta } from '../modules/ta';
+import { Ta } from './ta';
 
-import { TickListener } from '../modules/listener/tick_listener';
-import { CreateOrderListener } from '../modules/listener/create_order_listener';
-import { TickerDatabaseListener } from '../modules/listener/ticker_database_listener';
-import { ExchangeOrderWatchdogListener } from '../modules/listener/exchange_order_watchdog_listener';
-import { ExchangePositionWatcher } from '../modules/exchange/exchange_position_watcher';
+import { TickListener } from './listener/tick_listener';
+import { CreateOrderListener } from './listener/create_order_listener';
+import { TickerDatabaseListener } from './listener/ticker_database_listener';
+import { ExchangeOrderWatchdogListener } from './listener/exchange_order_watchdog_listener';
+import { ExchangePositionWatcher } from './exchange/exchange_position_watcher';
 
-import { SignalLogger } from '../modules/signal/signal_logger';
-import { SignalHttp } from '../modules/signal/signal_http';
+import { SignalLogger } from './signal/signal_logger';
+import { SignalHttp } from './signal/signal_http';
 
 import { SignalRepository, CandlestickRepository } from '../repository';
 import { StrategyManager } from './strategy/strategy_manager';
 import { ExchangeManager } from './exchange/exchange_manager';
 
-import { Trade } from '../modules/trade';
-import { Http } from '../modules/http';
-import { Backtest } from '../modules/backtest';
-import { Backfill } from '../modules/backfill';
+import { Trade } from './trade';
+import { Http } from './http';
+import { Backtest } from './backtest';
+import { Backfill } from './backfill';
 
-import { StopLossCalculator } from '../modules/order/stop_loss_calculator';
-import { RiskRewardRatioCalculator } from '../modules/order/risk_reward_ratio_calculator';
-import { PairsHttp } from '../modules/pairs/pairs_http';
-import { OrderExecutor } from '../modules/order/order_executor';
-import { OrderCalculator } from '../modules/order/order_calculator';
-import { PairStateManager } from '../modules/pairs/pair_state_manager';
-import { PairStateExecution } from '../modules/pairs/pair_state_execution';
-import { PairConfig } from '../modules/pairs/pair_config';
-import { SystemUtil } from '../modules/system/system_util';
+import { StopLossCalculator } from './order/stop_loss_calculator';
+import { RiskRewardRatioCalculator } from './order/risk_reward_ratio_calculator';
+import { PairsHttp } from './pairs/pairs_http';
+import { OrderExecutor } from './order/order_executor';
+import { OrderCalculator } from './order/order_calculator';
+import { PairStateManager } from './pairs/pair_state_manager';
+import { PairStateExecution } from './pairs/pair_state_execution';
+import { PairConfig } from './pairs/pair_config';
+import { SystemUtil } from './system/system_util';
 import { TechnicalAnalysisValidator } from '../utils/technical_analysis_validator';
 import { WinstonSqliteTransport } from '../utils/winston_sqlite_transport';
 import WinstonTelegramLogger from 'winston-telegram';
 import { LogsHttp } from './system/logs_http';
 import { LogsRepository, TickerLogRepository, TickerRepository } from '../repository';
-import { CandlestickResample } from '../modules/system/candlestick_resample';
+import { CandlestickResample } from './system/candlestick_resample';
 import { RequestClient } from '../utils/request_client';
 import { Throttler } from '../utils/throttler';
 import { QueueManager } from '../utils/queue';
@@ -62,11 +62,11 @@ import { Bybit } from '../exchange/bybit';
 import { BybitUnified } from '../exchange/bybit_unified';
 import { Noop } from '../exchange/noop';
 
-import { ExchangeCandleCombine } from '../modules/exchange/exchange_candle_combine';
-import { CandleExportHttp } from '../modules/system/candle_export_http';
-import { CandleImporter } from '../modules/system/candle_importer';
+import { ExchangeCandleCombine } from './exchange/exchange_candle_combine';
+import { CandleExportHttp } from './system/candle_export_http';
+import { CandleImporter } from './system/candle_importer';
 
-import { OrdersHttp } from '../modules/orders/orders_http';
+import { OrdersHttp } from './orders/orders_http';
 
 // Controllers
 import { DashboardController } from '../controller/dashboard_controller';

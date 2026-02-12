@@ -11,16 +11,9 @@ export function getProfitAsPercent(side: PositionSide, currentPrice: number, ent
   }
 }
 
-export function camelToSnakeCase(text: string): string {
-  return text.replace(/(.)([A-Z][a-z]+)/, '$1_$2')
-    .replace(/([a-z0-9])([A-Z])/, '$1_$2')
-    .toLowerCase();
-}
-
 /**
  * Export an object with all functions for backwards compatibility with JS imports
  */
 export const CommonUtil = {
   getProfitAsPercent,
-  camelToSnakeCase
 };

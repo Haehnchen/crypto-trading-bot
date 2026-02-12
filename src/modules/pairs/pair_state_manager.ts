@@ -83,7 +83,7 @@ export class PairStateManager {
 
       // state: can be cleared only onPairStateExecutionTick
       if (!pairState.isCleared() && pairState.hasAdjustedPrice() && stateKey in this.stats) {
-        await this.orderExecutor.adjustOpenOrdersPrice(pairState);
+        this.orderExecutor.adjustOpenOrdersPrice(pairState);
       }
     });
   }

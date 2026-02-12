@@ -50,24 +50,24 @@ export class ExchangeOrderWatchdogListener {
     this.tickers = tickers;
   }
 
-  onTick(): void {
+  async onTick(): Promise<void> {
     const { instances } = this;
 
-    this.exchangeManager.all().forEach(async (exchange: any) => {
+    for (const exchange of this.exchangeManager.all()) {
       const positions = await exchange.getPositions();
 
       if (positions.length === 0) {
-        return;
+        continue;
       }
 
-      positions.forEach(async (position: any) => {
+      for (const position of positions) {
         const pair = instances.symbols.find(
           (instance: SymbolInstance) =>
             instance.exchange === exchange.getName() && instance.symbol === position.symbol
         );
 
         if (!pair || !pair.watchdogs) {
-          return;
+          continue;
         }
 
         if (!this.pairStateManager.isNeutral(exchange.getName(), position.symbol)) {
@@ -78,7 +78,7 @@ export class ExchangeOrderWatchdogListener {
             })}`
           );
 
-          return;
+          continue;
         }
 
         const stopLoss = pair.watchdogs.find((watchdog: WatchdogConfig) => watchdog.name === 'stoploss');
@@ -100,8 +100,8 @@ export class ExchangeOrderWatchdogListener {
         if (trailingStoplossWatch) {
           await this.trailingStoplossWatch(exchange, position, trailingStoplossWatch);
         }
-      });
-    });
+      }
+    }
   }
 
   async onPositionChanged(positionStateChangeEvent: any): Promise<void> {
@@ -144,7 +144,7 @@ export class ExchangeOrderWatchdogListener {
     const orders = await exchange.getOrdersForSymbol(position.getSymbol());
     const orderChanges = OrderUtil.syncStopLossOrder(position, orders);
 
-    orderChanges.forEach(async (orderChange: any) => {
+    for (const orderChange of orderChanges) {
       logger.info(
         `Stoploss update: ${JSON.stringify({
           order: orderChange,
@@ -171,20 +171,20 @@ export class ExchangeOrderWatchdogListener {
           );
         }
 
-        return;
+        continue;
       }
 
       // create
       let price = await stopLossCalculator.calculateForOpenPosition(exchange.getName(), position, stopLoss);
       if (!price) {
         console.log('Stop loss: auto price skipping');
-        return;
+        continue;
       }
 
       const calculatedPrice = exchange.calculatePrice(price, position.getSymbol());
       if (!calculatedPrice) {
         console.log('Stop loss: auto price skipping');
-        return;
+        continue;
       }
 
       const order = Order.createStopLossOrder(position.getSymbol(), calculatedPrice, orderChange.amount);
@@ -199,7 +199,7 @@ export class ExchangeOrderWatchdogListener {
           })}`
         );
       }
-    });
+    }
   }
 
   async riskRewardRatioWatchdog(exchange: any, position: any, riskRewardRatioOptions: any): Promise<void> {
@@ -213,7 +213,7 @@ export class ExchangeOrderWatchdogListener {
       riskRewardRatioOptions
     );
 
-    orderChanges.forEach(async (orderChange: any) => {
+    for (const orderChange of orderChanges) {
       logger.info(
         `Risk Reward: needed order change detected: ${JSON.stringify({
           orderChange: orderChange,
@@ -252,7 +252,7 @@ export class ExchangeOrderWatchdogListener {
           );
         }
 
-        return;
+        continue;
       }
 
       const price = exchange.calculatePrice(orderChange.price, symbol);
@@ -265,7 +265,7 @@ export class ExchangeOrderWatchdogListener {
           })}`
         );
 
-        return;
+        continue;
       }
 
       // we need to normalize the price here: more general solution?
@@ -285,7 +285,7 @@ export class ExchangeOrderWatchdogListener {
       ourOrder.price = price;
 
       await this.orderExecutor.executeOrder(exchange.getName(), ourOrder);
-    });
+    }
   }
 
   async stoplossWatch(exchange: any, position: any, config: WatchdogConfig): Promise<void> {
