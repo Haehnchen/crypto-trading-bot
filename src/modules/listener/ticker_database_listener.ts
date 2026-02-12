@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { TickerRepository } from '../repository/ticker_repository';
+import { TickerRepository } from '../../repository';
 import { TickerEvent } from '../../event/ticker_event';
 
 export class TickerDatabaseListener {

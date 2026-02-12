@@ -1,5 +1,5 @@
 import { Candlestick } from '../../dict/candlestick';
-import { CandlestickRepository } from '../repository/candlestick_repository';
+import { CandlestickRepository } from '../../repository';
 
 export interface ExchangeSymbolPair {
   name: string;

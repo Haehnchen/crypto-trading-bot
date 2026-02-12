@@ -10,8 +10,7 @@ import { CreateOrderListener } from './listener/create_order_listener';
 import { TickListener } from './listener/tick_listener';
 import { TickerDatabaseListener } from './listener/ticker_database_listener';
 import { ExchangeOrderWatchdogListener } from './listener/exchange_order_watchdog_listener';
-import { LogsRepository } from './repository/logs_repository';
-import { TickerLogRepository } from './repository/ticker_log_repository';
+import { LogsRepository, TickerLogRepository } from '../repository';
 import { ExchangePositionWatcher } from './exchange/exchange_position_watcher';
 
 export class Trade {

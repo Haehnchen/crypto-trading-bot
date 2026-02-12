@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { CandlestickRepository } from '../repository/candlestick_repository';
+import { CandlestickRepository } from '../../repository';
 import { ExchangeCandlestick } from '../../dict/exchange_candlestick';
 
 export class CandleImporter {

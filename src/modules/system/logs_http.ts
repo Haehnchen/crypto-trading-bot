@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { LogsRepository } from '../repository/logs_repository';
+import { LogsRepository } from '../../repository';
 
 export class LogsHttp {
   private logsRepository: LogsRepository;

@@ -8,7 +8,7 @@ import {
 } from '../utils/technical_analysis';
 import { Ticker } from '../dict/ticker';
 import { Candlestick } from '../dict/candlestick';
-import { CandlestickRepository } from './repository/candlestick_repository';
+import { CandlestickRepository } from '../repository';
 import { Tickers } from '../storage/tickers';
 
 export interface TaSymbol {

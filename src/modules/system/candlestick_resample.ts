@@ -1,6 +1,6 @@
 import { Resample } from '../../utils/resample';
 import { ExchangeCandlestick } from '../../dict/exchange_candlestick';
-import { CandlestickRepository } from '../repository/candlestick_repository';
+import { CandlestickRepository } from '../../repository';
 import { CandleImporter } from './candle_importer';
 
 export class CandlestickResample {

@@ -1,4 +1,4 @@
-import { CandlestickRepository } from '../repository/candlestick_repository';
+import { CandlestickRepository } from '../../repository';
 import { PairConfig } from '../pairs/pair_config';
 
 export interface ExchangeSymbolPair {

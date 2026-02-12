@@ -1,5 +1,5 @@
-import { Candlestick } from '../../dict/candlestick';
-import { ExchangeCandlestick } from '../../dict/exchange_candlestick';
+import { Candlestick } from '../dict/candlestick';
+import { ExchangeCandlestick } from '../dict/exchange_candlestick';
 
 export interface Database {
   prepare(sql: string): Statement;

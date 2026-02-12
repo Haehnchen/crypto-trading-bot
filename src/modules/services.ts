@@ -22,8 +22,7 @@ import { ExchangePositionWatcher } from '../modules/exchange/exchange_position_w
 import { SignalLogger } from '../modules/signal/signal_logger';
 import { SignalHttp } from '../modules/signal/signal_http';
 
-import { SignalRepository } from '../modules/repository/signal_repository';
-import { CandlestickRepository } from '../modules/repository/candlestick_repository';
+import { SignalRepository, CandlestickRepository } from '../repository';
 import { StrategyManager } from './strategy/strategy_manager';
 import { ExchangeManager } from './exchange/exchange_manager';
 
@@ -45,9 +44,7 @@ import { TechnicalAnalysisValidator } from '../utils/technical_analysis_validato
 import { WinstonSqliteTransport } from '../utils/winston_sqlite_transport';
 import WinstonTelegramLogger from 'winston-telegram';
 import { LogsHttp } from './system/logs_http';
-import { LogsRepository } from '../modules/repository/logs_repository';
-import { TickerLogRepository } from '../modules/repository/ticker_log_repository';
-import { TickerRepository } from '../modules/repository/ticker_repository';
+import { LogsRepository, TickerLogRepository, TickerRepository } from '../repository';
 import { CandlestickResample } from '../modules/system/candlestick_resample';
 import { RequestClient } from '../utils/request_client';
 import { Throttler } from '../utils/throttler';
@@ -126,8 +123,7 @@ export { CreateOrderListener } from './listener/create_order_listener';
 export { TickListener } from './listener/tick_listener';
 export { TickerDatabaseListener } from './listener/ticker_database_listener';
 export { ExchangeOrderWatchdogListener } from './listener/exchange_order_watchdog_listener';
-export { LogsRepository } from './repository/logs_repository';
-export { TickerLogRepository } from './repository/ticker_log_repository';
+export { LogsRepository, TickerLogRepository } from '../repository';
 export { ExchangePositionWatcher } from './exchange/exchange_position_watcher';
 export { StrategyManager } from './strategy/strategy_manager';
 export { SignalLogger } from './signal/signal_logger';

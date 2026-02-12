@@ -1,4 +1,4 @@
-import { SignalRepository } from '../repository/signal_repository';
+import { SignalRepository } from '../../repository';
 
 export class SignalHttp {
   private signalRepository: SignalRepository;

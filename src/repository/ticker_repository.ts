@@ -1,4 +1,4 @@
-import type { Logger } from '../services';
+import type { Logger } from '../modules/services';
 
 export interface Database {
   prepare(sql: string): Statement;
