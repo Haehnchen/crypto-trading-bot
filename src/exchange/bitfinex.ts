@@ -199,26 +199,20 @@ export class Bitfinex {
   }
 
   async getPositions(): Promise<Position[]> {
-    return new Promise(resolve => {
-      const positions = Object.values(this.positions).map(position =>
-        position.entry && this.tickers[position.symbol]
-          ? Position.createProfitUpdate(
-              position,
-              (position.side === Position.SIDE_LONG
-                ? this.tickers[position.symbol].bid / position.entry - 1
-                : position.entry / this.tickers[position.symbol].ask - 1) * 100
-            )
-          : position
-      );
-      resolve(positions);
-    });
+    return Object.values(this.positions).map(position =>
+      position.entry && this.tickers[position.symbol]
+        ? Position.createProfitUpdate(
+            position,
+            (position.side === Position.SIDE_LONG
+              ? this.tickers[position.symbol].bid / position.entry - 1
+              : position.entry / this.tickers[position.symbol].ask - 1) * 100
+          )
+        : position
+    );
   }
 
-  getPositionForSymbol(symbol: string): Promise<Position | undefined> {
-    return new Promise(resolve => {
-      const position = Object.values(this.positions).find(pos => pos.symbol === symbol);
-      resolve(position);
-    });
+  async getPositionForSymbol(symbol: string): Promise<Position | undefined> {
+    return Object.values(this.positions).find(pos => pos.symbol === symbol);
   }
 
   async cancelOrder(id: string | number): Promise<ExchangeOrder | undefined> {

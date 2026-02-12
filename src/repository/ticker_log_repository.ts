@@ -15,17 +15,13 @@ export class TickerLogRepository {
     this.db = db;
   }
 
-  cleanOldLogEntries(days: number = 14): Promise<void> {
-    return new Promise(resolve => {
-      const stmt = this.db.prepare('DELETE FROM ticker_log WHERE income_at < $income_at');
+  async cleanOldLogEntries(days: number = 14): Promise<void> {
+    const stmt = this.db.prepare('DELETE FROM ticker_log WHERE income_at < $income_at');
 
-      stmt.run({
-        income_at: moment()
-          .subtract(days, 'days')
-          .unix()
-      });
-
-      resolve();
+    stmt.run({
+      income_at: moment()
+        .subtract(days, 'days')
+        .unix()
     });
   }
 }

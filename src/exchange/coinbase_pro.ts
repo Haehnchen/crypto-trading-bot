@@ -271,30 +271,24 @@ export class CoinbasePro {
     return this.candlesFromTrades.onTrade(this.getName(), trade, symbols);
   }
 
-  getOrders(): Promise<ExchangeOrder[]> {
-    return new Promise(resolve => {
-      const orders: ExchangeOrder[] = [];
+  async getOrders(): Promise<ExchangeOrder[]> {
+    const orders: ExchangeOrder[] = [];
 
-      for (const key in this.orders) {
-        if (this.orders[key].status === 'open') {
-          orders.push(this.orders[key]);
-        }
+    for (const key in this.orders) {
+      if (this.orders[key].status === 'open') {
+        orders.push(this.orders[key]);
       }
+    }
 
-      resolve(orders);
-    });
+    return orders;
   }
 
-  findOrderById(id: string | number): Promise<ExchangeOrder | undefined> {
-    return new Promise(async resolve => {
-      resolve((await this.getOrders()).find(order => order.id === id || order.id == id));
-    });
+  async findOrderById(id: string | number): Promise<ExchangeOrder | undefined> {
+    return (await this.getOrders()).find(order => order.id === id || order.id == id);
   }
 
-  getOrdersForSymbol(symbol: string): Promise<ExchangeOrder[]> {
-    return new Promise(async resolve => {
-      resolve((await this.getOrders()).filter(order => order.symbol === symbol));
-    });
+  async getOrdersForSymbol(symbol: string): Promise<ExchangeOrder[]> {
+    return (await this.getOrders()).filter(order => order.symbol === symbol);
   }
 
   /**

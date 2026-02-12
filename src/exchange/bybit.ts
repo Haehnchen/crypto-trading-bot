@@ -560,60 +560,56 @@ export class Bybit {
    * @param order
    * @returns {Promise<ExchangeOrder | undefined>}
    */
-  validatePlacedOrder(order: ExchangeOrder): Promise<ExchangeOrder | undefined> {
-    return new Promise(resolve => {
-      setTimeout(async () => {
-        // calling a direct "order_id" is not given any result
-        // we fetch latest order and find our id
-        const parameters2: Record<string, any> = {
-          api_key: this.apiKey,
-          timestamp: new Date().getTime(),
-          symbol: order.symbol,
-          limit: 5
-        };
+  async validatePlacedOrder(order: ExchangeOrder): Promise<ExchangeOrder | undefined> {
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-        const parametersSorted2: Record<string, any> = {};
-        Object.keys(parameters2)
-          .sort()
-          .forEach((key: string) => (parametersSorted2[key] = parameters2[key]));
+    // calling a direct "order_id" is not given any result
+    // we fetch latest order and find our id
+    const parameters2: Record<string, any> = {
+      api_key: this.apiKey,
+      timestamp: new Date().getTime(),
+      symbol: order.symbol,
+      limit: 5
+    };
 
-        parametersSorted2.sign = crypto.createHmac('sha256', this.apiSecret!).update(querystring.stringify(parametersSorted2)).digest('hex');
+    const parametersSorted2: Record<string, any> = {};
+    Object.keys(parameters2)
+      .sort()
+      .forEach((key: string) => (parametersSorted2[key] = parameters2[key]));
 
-        const url1 = `${this.getBaseUrl()}/v2/private/order/list?${querystring.stringify(parametersSorted2)}`;
-        const placedOrder = await this.requestClient.executeRequestRetry(
-          {
-            method: 'GET',
-            url: url1,
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json'
-            }
-          },
-          (r: any) => {
-            return r && r.response && r.response.statusCode >= 500;
-          }
-        );
+    parametersSorted2.sign = crypto.createHmac('sha256', this.apiSecret!).update(querystring.stringify(parametersSorted2)).digest('hex');
 
-        const { body } = placedOrder;
-
-        const json = JSON.parse(body);
-        if (!json.result || !json.result.data) {
-          this.logger.error(`Bybit: Invalid order body:${JSON.stringify({ body: body })}`);
-          resolve(undefined);
-          return;
+    const url1 = `${this.getBaseUrl()}/v2/private/order/list?${querystring.stringify(parametersSorted2)}`;
+    const placedOrder = await this.requestClient.executeRequestRetry(
+      {
+        method: 'GET',
+        url: url1,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
         }
+      },
+      (r: any) => {
+        return r && r.response && r.response.statusCode >= 500;
+      }
+    );
 
-        const find = json.result.data.find((o: any) => (o.order_id = order.id));
-        if (!find) {
-          this.logger.error(`Bybit: Order not found:${JSON.stringify({ body: body })}`);
-          resolve(undefined);
-          return;
-        }
+    const { body } = placedOrder;
 
-        const orders = Bybit.createOrders([find]);
-        resolve(orders[0]);
-      }, 1000);
-    });
+    const json = JSON.parse(body);
+    if (!json.result || !json.result.data) {
+      this.logger.error(`Bybit: Invalid order body:${JSON.stringify({ body: body })}`);
+      return undefined;
+    }
+
+    const find = json.result.data.find((o: any) => (o.order_id = order.id));
+    if (!find) {
+      this.logger.error(`Bybit: Order not found:${JSON.stringify({ body: body })}`);
+      return undefined;
+    }
+
+    const orders = Bybit.createOrders([find]);
+    return orders[0];
   }
 
   /**

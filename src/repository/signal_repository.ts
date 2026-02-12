@@ -14,11 +14,9 @@ export class SignalRepository {
     this.db = db;
   }
 
-  getSignals(since: number): Promise<any[]> {
-    return new Promise(resolve => {
-      const stmt = this.db.prepare('SELECT * from signals where income_at > ? order by income_at DESC LIMIT 100');
-      resolve(stmt.all(since));
-    });
+  async getSignals(since: number): Promise<any[]> {
+    const stmt = this.db.prepare('SELECT * from signals where income_at > ? order by income_at DESC LIMIT 100');
+    return stmt.all(since);
   }
 
   insertSignal(exchange: string, symbol: string, options: Record<string, any>, side: string, strategy: string): void {

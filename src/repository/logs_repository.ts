@@ -16,45 +16,37 @@ export class LogsRepository {
     this.db = db;
   }
 
-  getLatestLogs(excludes: string[] = ['debug'], limit: number = 200): Promise<any[]> {
-    return new Promise(resolve => {
-      let sql = `SELECT * from logs order by created_at DESC LIMIT ${limit}`;
+  async getLatestLogs(excludes: string[] = ['debug'], limit: number = 200): Promise<any[]> {
+    let sql = `SELECT * from logs order by created_at DESC LIMIT ${limit}`;
 
-      const parameters: Record<string, any> = {};
+    const parameters: Record<string, any> = {};
 
-      if (excludes.length > 0) {
-        sql = `SELECT * from logs WHERE level NOT IN (${excludes
-          .map((exclude, index) => `$level_${index}`)
-          .join(', ')}) order by created_at DESC LIMIT ${limit}`;
+    if (excludes.length > 0) {
+      sql = `SELECT * from logs WHERE level NOT IN (${excludes
+        .map((exclude, index) => `$level_${index}`)
+        .join(', ')}) order by created_at DESC LIMIT ${limit}`;
 
-        excludes.forEach((exclude, index) => {
-          parameters[`level_${index}`] = exclude;
-        });
-      }
-
-      const stmt = this.db.prepare(sql);
-      resolve(stmt.all(parameters));
-    });
-  }
-
-  getLevels(): Promise<string[]> {
-    return new Promise(resolve => {
-      const stmt = this.db.prepare('SELECT level from logs GROUP BY level');
-      resolve(stmt.all().map((r: any) => r.level));
-    });
-  }
-
-  cleanOldLogEntries(days: number = 7): Promise<void> {
-    return new Promise(resolve => {
-      const stmt = this.db.prepare('DELETE FROM logs WHERE created_at < $created_at');
-
-      stmt.run({
-        created_at: moment()
-          .subtract(days, 'days')
-          .unix()
+      excludes.forEach((exclude, index) => {
+        parameters[`level_${index}`] = exclude;
       });
+    }
 
-      resolve();
+    const stmt = this.db.prepare(sql);
+    return stmt.all(parameters);
+  }
+
+  async getLevels(): Promise<string[]> {
+    const stmt = this.db.prepare('SELECT level from logs GROUP BY level');
+    return stmt.all().map((r: any) => r.level);
+  }
+
+  async cleanOldLogEntries(days: number = 7): Promise<void> {
+    const stmt = this.db.prepare('DELETE FROM logs WHERE created_at < $created_at');
+
+    stmt.run({
+      created_at: moment()
+        .subtract(days, 'days')
+        .unix()
     });
   }
 }
