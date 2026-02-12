@@ -3,18 +3,19 @@ import { ExchangeOrder } from '../../dict/exchange_order';
 import { Tickers } from '../../storage/tickers';
 import { ExchangeManager } from '../exchange/exchange_manager';
 import { PairConfig } from '../pairs/pair_config';
+import { Backtest, OrderExecutor } from '../services';
 
 export class OrdersHttp {
-  private backtest: any;
+  private backtest: Backtest;
   private tickers: Tickers;
-  private orderExecutor: any;
+  private orderExecutor: OrderExecutor;
   private exchangeManager: ExchangeManager;
   private pairConfig: PairConfig;
 
   constructor(
-    backtest: any,
+    backtest: Backtest,
     tickers: Tickers,
-    orderExecutor: any,
+    orderExecutor: OrderExecutor,
     exchangeManager: ExchangeManager,
     pairConfig: PairConfig
   ) {
@@ -46,7 +47,7 @@ export class OrdersHttp {
     const orders = await this.exchangeManager.getOrders(res[0], res[1]);
 
     for (const order of orders) {
-      await this.orderExecutor.cancelOrder(res[0], order.id);
+      await this.orderExecutor.cancelOrder(res[0], String(order.id));
     }
   }
 

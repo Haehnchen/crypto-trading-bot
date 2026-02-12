@@ -1,6 +1,14 @@
 import _ from 'lodash';
 import { InstancesConfig } from './pair_config';
 import { ExchangeManager } from '../exchange/exchange_manager';
+import { PairStateManager } from '../services';
+import { EventEmitter } from 'events';
+
+export interface StrategyConfig {
+  strategy: string;
+  interval?: string;
+  options?: Record<string, any>;
+}
 
 export interface SymbolInstance {
   exchange: string;
@@ -9,9 +17,9 @@ export interface SymbolInstance {
     capital?: number;
     currency_capital?: number;
     balance_percent?: number;
-    strategies?: any[];
+    strategies?: StrategyConfig[];
   };
-  strategies?: any[];
+  strategies?: StrategyConfig[];
   watchdogs?: string[];
 }
 
@@ -24,8 +32,8 @@ export interface TradePairItem {
   trade_capital: number;
   trade_currency_capital: number;
   trade_balance_percent: number;
-  strategies: any[];
-  strategies_trade: any[];
+  strategies: StrategyConfig[];
+  strategies_trade: StrategyConfig[];
   weight: number;
   strategy_names: string[];
   process?: string;
@@ -34,14 +42,14 @@ export interface TradePairItem {
 export class PairsHttp {
   private instances: InstancesConfig;
   private exchangeManager: ExchangeManager;
-  private pairStateManager: any;
-  private eventEmitter: any;
+  private pairStateManager: PairStateManager;
+  private eventEmitter: EventEmitter;
 
   constructor(
     instances: InstancesConfig,
     exchangeManager: ExchangeManager,
-    pairStateManager: any,
-    eventEmitter: any
+    pairStateManager: PairStateManager,
+    eventEmitter: EventEmitter
   ) {
     this.instances = instances;
     this.exchangeManager = exchangeManager;

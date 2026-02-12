@@ -3,38 +3,48 @@ import crypto from 'crypto';
 import os from 'os';
 import { PositionStateChangeEvent } from '../event/position_state_change_event';
 import { EventEmitter } from 'events';
+import { Notify } from '../notify/notify';
+import { Logger, SystemUtil, PairStateManager } from './services';
+import { Tickers } from '../storage/tickers';
+import { CreateOrderListener } from './listener/create_order_listener';
+import { TickListener } from './listener/tick_listener';
+import { TickerDatabaseListener } from './listener/ticker_database_listener';
+import { ExchangeOrderWatchdogListener } from './listener/exchange_order_watchdog_listener';
+import { LogsRepository } from './repository/logs_repository';
+import { TickerLogRepository } from './repository/ticker_log_repository';
+import { ExchangePositionWatcher } from './exchange/exchange_position_watcher';
 
 export class Trade {
   private eventEmitter: EventEmitter;
   private instances: { symbols: { exchange: string; symbol: string }[] };
-  private notify: any;
-  private logger: any;
-  private createOrderListener: any;
-  private tickListener: any;
-  private tickers: any;
-  private tickerDatabaseListener: any;
-  private exchangeOrderWatchdogListener: any;
-  private systemUtil: any;
-  private logsRepository: any;
-  private tickerLogRepository: any;
-  private exchangePositionWatcher: any;
-  private pairStateManager: any;
+  private notify: Notify;
+  private logger: Logger;
+  private createOrderListener: CreateOrderListener;
+  private tickListener: TickListener;
+  private tickers: Tickers;
+  private tickerDatabaseListener: TickerDatabaseListener;
+  private exchangeOrderWatchdogListener: ExchangeOrderWatchdogListener;
+  private systemUtil: SystemUtil;
+  private logsRepository: LogsRepository;
+  private tickerLogRepository: TickerLogRepository;
+  private exchangePositionWatcher: ExchangePositionWatcher;
+  private pairStateManager: PairStateManager;
 
   constructor(
     eventEmitter: EventEmitter,
     instances: { symbols: { exchange: string; symbol: string }[] },
-    notify: any,
-    logger: any,
-    createOrderListener: any,
-    tickListener: any,
-    tickers: any,
-    tickerDatabaseListener: any,
-    exchangeOrderWatchdogListener: any,
-    systemUtil: any,
-    logsRepository: any,
-    tickerLogRepository: any,
-    exchangePositionWatcher: any,
-    pairStateManager: any
+    notify: Notify,
+    logger: Logger,
+    createOrderListener: CreateOrderListener,
+    tickListener: TickListener,
+    tickers: Tickers,
+    tickerDatabaseListener: TickerDatabaseListener,
+    exchangeOrderWatchdogListener: ExchangeOrderWatchdogListener,
+    systemUtil: SystemUtil,
+    logsRepository: LogsRepository,
+    tickerLogRepository: TickerLogRepository,
+    exchangePositionWatcher: ExchangePositionWatcher,
+    pairStateManager: PairStateManager
   ) {
     this.eventEmitter = eventEmitter;
     this.instances = instances;

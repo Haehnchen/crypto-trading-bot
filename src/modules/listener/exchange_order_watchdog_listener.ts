@@ -3,6 +3,8 @@ import { Order } from '../../dict/order';
 import { StopLossCalculator } from '../order/stop_loss_calculator';
 import { RiskRewardRatioCalculator } from '../order/risk_reward_ratio_calculator';
 import { Tickers } from '../../storage/tickers';
+import { ExchangeManager } from '../exchange/exchange_manager';
+import { Logger, PairStateManager, OrderExecutor } from '../services';
 
 export interface WatchdogConfig {
   name: string;
@@ -19,23 +21,23 @@ export interface SymbolInstance {
 }
 
 export class ExchangeOrderWatchdogListener {
-  private exchangeManager: any;
+  private exchangeManager: ExchangeManager;
   private instances: { symbols: SymbolInstance[] };
   private stopLossCalculator: StopLossCalculator;
   private riskRewardRatioCalculator: RiskRewardRatioCalculator;
-  private orderExecutor: any;
-  private pairStateManager: any;
-  private logger: any;
+  private orderExecutor: OrderExecutor;
+  private pairStateManager: PairStateManager;
+  private logger: Logger;
   private tickers: Tickers;
 
   constructor(
-    exchangeManager: any,
+    exchangeManager: ExchangeManager,
     instances: { symbols: SymbolInstance[] },
     stopLossCalculator: StopLossCalculator,
     riskRewardRatioCalculator: RiskRewardRatioCalculator,
-    orderExecutor: any,
-    pairStateManager: any,
-    logger: any,
+    orderExecutor: OrderExecutor,
+    pairStateManager: PairStateManager,
+    logger: Logger,
     tickers: Tickers
   ) {
     this.exchangeManager = exchangeManager;

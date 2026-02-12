@@ -40,6 +40,7 @@ export interface StrategyInfo {
   period(indicatorPeriod: IndicatorPeriod, options?: Record<string, any>): Promise<SignalResult | undefined>;
   getBacktestColumns?(): BacktestColumn[];
   getOptions?(): Record<string, any>;
+  getTickPeriod?(): string;
 }
 
 export class StrategyManager {

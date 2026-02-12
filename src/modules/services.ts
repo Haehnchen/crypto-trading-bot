@@ -119,6 +119,22 @@ interface Parameters {
 }
 
 export type Logger = ReturnType<typeof createLogger>;
+export { SystemUtil } from './system/system_util';
+export { PairStateManager } from './pairs/pair_state_manager';
+export { Tickers } from '../storage/tickers';
+export { CreateOrderListener } from './listener/create_order_listener';
+export { TickListener } from './listener/tick_listener';
+export { TickerDatabaseListener } from './listener/ticker_database_listener';
+export { ExchangeOrderWatchdogListener } from './listener/exchange_order_watchdog_listener';
+export { LogsRepository } from './repository/logs_repository';
+export { TickerLogRepository } from './repository/ticker_log_repository';
+export { ExchangePositionWatcher } from './exchange/exchange_position_watcher';
+export { StrategyManager } from './strategy/strategy_manager';
+export { SignalLogger } from './signal/signal_logger';
+export { OrderExecutor } from './order/order_executor';
+export { OrderCalculator } from './order/order_calculator';
+export { Backtest } from './backtest';
+export { PairConfig } from './pairs/pair_config';
 
 let db: Sqlite.Database | undefined;
 let instances: Instances;

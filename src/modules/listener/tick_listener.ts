@@ -6,6 +6,9 @@ import { OrderCapital } from '../../dict/order_capital';
 import { Tickers } from '../../storage/tickers';
 import { ExchangeManager } from '../exchange/exchange_manager';
 import { OrderCalculator } from '../order/order_calculator';
+import { Notify } from '../../notify/notify';
+import { Logger, StrategyManager, PairStateManager, SystemUtil, OrderExecutor } from '../services';
+import { SignalLogger } from '../signal/signal_logger';
 
 export interface StrategyConfig {
   strategy: string;
@@ -29,28 +32,28 @@ export interface SymbolInstance {
 export class TickListener {
   private tickers: Tickers;
   private instances: { symbols: SymbolInstance[] };
-  private notifier: any;
-  private signalLogger: any;
-  private strategyManager: any;
+  private notifier: Notify;
+  private signalLogger: SignalLogger;
+  private strategyManager: StrategyManager;
   private exchangeManager: ExchangeManager;
-  private pairStateManager: any;
-  private logger: any;
-  private systemUtil: any;
-  private orderExecutor: any;
+  private pairStateManager: PairStateManager;
+  private logger: Logger;
+  private systemUtil: SystemUtil;
+  private orderExecutor: OrderExecutor;
   private orderCalculator: OrderCalculator;
   private notified: Record<string, Date>;
 
   constructor(
     tickers: Tickers,
     instances: { symbols: SymbolInstance[] },
-    notifier: any,
-    signalLogger: any,
-    strategyManager: any,
+    notifier: Notify,
+    signalLogger: SignalLogger,
+    strategyManager: StrategyManager,
     exchangeManager: ExchangeManager,
-    pairStateManager: any,
-    logger: any,
-    systemUtil: any,
-    orderExecutor: any,
+    pairStateManager: PairStateManager,
+    logger: Logger,
+    systemUtil: SystemUtil,
+    orderExecutor: OrderExecutor,
     orderCalculator: OrderCalculator
   ) {
     this.tickers = tickers;
@@ -66,6 +69,10 @@ export class TickListener {
     this.orderCalculator = orderCalculator;
 
     this.notified = {};
+  }
+
+  onTick(): void {
+    // Tick event handler - currently unused but called from trade.ts
   }
 
   async visitStrategy(strategy: StrategyConfig, symbol: SymbolInstance): Promise<void> {
