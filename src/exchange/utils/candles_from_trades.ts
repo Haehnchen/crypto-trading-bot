@@ -31,18 +31,10 @@ interface InternalCandle {
 }
 
 export class CandlesFromTrades {
-  private candlestickResample: CandlestickResample;
-  private candleImporter: CandleImporter;
-  private readonly candles: Record<string, Record<number, InternalCandle>>;
-  private readonly lastCandleMap: Record<string, InternalCandle>;
+  private readonly candles: Record<string, Record<number, InternalCandle>> = {};
+  private readonly lastCandleMap: Record<string, InternalCandle> = {};
 
-  constructor(candlestickResample: CandlestickResample, candleImporter: CandleImporter) {
-    this.candlestickResample = candlestickResample;
-    this.candleImporter = candleImporter;
-
-    this.candles = {};
-    this.lastCandleMap = {};
-  }
+  constructor(private candlestickResample: CandlestickResample, private candleImporter: CandleImporter) {}
 
   async onTrades(exchangeName: string, trades: Trade[], symbols: SymbolConfig[] = []): Promise<void> {
     for (const trade of trades) {

@@ -6,20 +6,17 @@ export type PositionState = 'opened' | 'closed';
 export class PositionStateChangeEvent {
   static readonly EVENT_NAME = 'position_state_changed';
 
-  private readonly _state: PositionState;
-  private readonly _exchangePosition: ExchangePosition;
-
-  constructor(state: PositionState, exchangePosition: ExchangePosition) {
-    if (!(exchangePosition instanceof ExchangePosition)) {
+  constructor(
+    private readonly _state: PositionState,
+    private readonly _exchangePosition: ExchangePosition
+  ) {
+    if (!(_exchangePosition instanceof ExchangePosition)) {
       throw 'TypeError: invalid exchangePosition';
     }
 
-    if (!['opened', 'closed'].includes(state)) {
-      throw `TypeError: invalid state: ${state}`;
+    if (!['opened', 'closed'].includes(_state)) {
+      throw `TypeError: invalid state: ${_state}`;
     }
-
-    this._state = state;
-    this._exchangePosition = exchangePosition;
   }
 
   isOpened(): boolean {

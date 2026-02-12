@@ -1,16 +1,13 @@
 import { Position } from './position';
 
 export class ExchangePosition {
-  private readonly _exchange: string;
-  private readonly _position: Position;
-
-  constructor(exchange: string, position: Position) {
-    if (!(position instanceof Position)) {
+  constructor(
+    private readonly _exchange: string,
+    private readonly _position: Position
+  ) {
+    if (!(_position instanceof Position)) {
       throw new Error(`TypeError: invalid position`);
     }
-
-    this._exchange = exchange;
-    this._position = position;
   }
 
   getKey(): string {

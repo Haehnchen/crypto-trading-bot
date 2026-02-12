@@ -13,16 +13,10 @@ export class PairState {
   static readonly STATE_CANCEL: PairStateType = 'cancel';
 
   time: Date;
-  exchange: string;
-  symbol: string;
-  state: PairStateType;
-  options?: any;
   capital?: OrderCapital;
   order?: Order;
   exchangeOrder?: ExchangeOrder;
   retries: number;
-  adjustedPrice: boolean;
-  clearCallback: ClearCallback;
   cleared: boolean;
 
   /**
@@ -78,12 +72,12 @@ export class PairState {
   }
 
   constructor(
-    exchange: string,
-    symbol: string,
-    state: PairStateType,
-    options?: any,
-    adjustedPrice: boolean = false,
-    clearCallback: ClearCallback = () => {}
+    public exchange: string,
+    public symbol: string,
+    public state: PairStateType,
+    public options?: any,
+    public adjustedPrice: boolean = false,
+    public clearCallback: ClearCallback = () => {}
   ) {
     if (![PairState.STATE_LONG, PairState.STATE_SHORT, PairState.STATE_CLOSE, PairState.STATE_CANCEL].includes(state)) {
       throw new Error(`Invalidate state: ${state}`);
@@ -94,15 +88,7 @@ export class PairState {
     }
 
     this.time = new Date();
-    this.exchange = exchange;
-    this.symbol = symbol;
-    this.state = state;
-    this.options = options;
-    this.order = undefined;
-    this.exchangeOrder = undefined;
     this.retries = 0;
-    this.adjustedPrice = adjustedPrice;
-    this.clearCallback = clearCallback;
     this.cleared = false;
   }
 

@@ -1,19 +1,12 @@
 export class Candlestick {
-  time: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-
-  constructor(time: number, open: number, high: number, low: number, close: number, volume: number) {
-    this.time = time;
-    this.open = open;
-    this.high = high;
-    this.low = low;
-    this.close = close;
-    this.volume = volume;
-  }
+  constructor(
+    public time: number,
+    public open: number,
+    public high: number,
+    public low: number,
+    public close: number,
+    public volume: number
+  ) {}
 
   getArray(): { time: number; open: number; high: number; low: number; close: number; volume: number } {
     return {

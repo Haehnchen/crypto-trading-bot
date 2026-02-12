@@ -13,44 +13,22 @@ import { EventEmitter } from 'events';
 import type { Logger } from '../modules/services';
 import type { QueueManager } from '../utils/queue';
 import type { CandleImporter } from '../modules/system/candle_importer';
-import type { Throttler } from '../utils/throttler';
-import type { RequestClient } from '../utils/request_client';
-import type { CandlestickResample } from '../modules/system/candlestick_resample';
 
 export class BybitUnified {
-  private eventEmitter: EventEmitter;
-  private logger: Logger;
-  private queue: QueueManager;
-  private candleImporter: CandleImporter;
   private orderbag: OrderBag;
-
-  private tickSizes: Record<string, number>;
-  private lotSizes: Record<string, number>;
-  private positions: Record<string, Position>;
-  private orders: Record<string, ExchangeOrder>;
-  private tickers: Record<string, Ticker>;
+  private tickSizes: Record<string, number> = {};
+  private lotSizes: Record<string, number> = {};
+  private positions: Record<string, Position> = {};
+  private orders: Record<string, ExchangeOrder> = {};
+  private tickers: Record<string, Ticker> = {};
   private exchangeAuth?: any;
 
   constructor(
-    eventEmitter: EventEmitter,
-    _requestClient: RequestClient,
-    _candlestickResample: CandlestickResample,
-    logger: Logger,
-    queue: QueueManager,
-    candleImporter: CandleImporter,
-    _throttler: Throttler
+    private eventEmitter: EventEmitter,
+    private logger: Logger,
+    private queue: QueueManager,
+    private candleImporter: CandleImporter
   ) {
-    this.eventEmitter = eventEmitter;
-    this.logger = logger;
-    this.queue = queue;
-    this.candleImporter = candleImporter;
-
-    this.tickSizes = {};
-    this.lotSizes = {};
-
-    this.positions = {};
-    this.orders = {};
-    this.tickers = {};
     this.orderbag = new OrderBag();
   }
 

@@ -111,57 +111,28 @@ interface CandlestickResample {
 }
 
 export class Bitmex {
-  private eventEmitter: EventEmitter;
-  private requestClient: RequestClient;
-  private candlestickResample: CandlestickResample;
-  private logger: Logger;
-  private queue: Queue;
-  private candleImporter: CandleImporter;
-
   private apiKey: string | undefined;
   private apiSecret: string | undefined;
-  private readonly tickSizes: Record<string, number>;
-  private readonly lotSizes: Record<string, number>;
-  private leverageUpdated: Record<string, Date>;
-  private readonly retryOverloadMs: number;
-  private readonly retryOverloadLimit: number;
+  private readonly tickSizes: Record<string, number> = {};
+  private readonly lotSizes: Record<string, number> = {};
+  private leverageUpdated: Record<string, Date> = {};
+  private readonly retryOverloadMs = 944; // Overload: API docs says use 500ms we give us more space
+  private readonly retryOverloadLimit = 5; // Overload: Retry until fail finally
 
-  private positions: Record<string, Position>;
-  private orders: Record<string, ExchangeOrder>;
-  private readonly tickers: Record<string, Ticker>;
-  private symbols: BitmexSymbol[];
-  private inversedSymboles: string[];
+  private positions: Record<string, Position> = {};
+  private orders: Record<string, ExchangeOrder> = {};
+  private readonly tickers: Record<string, Ticker> = {};
+  private symbols: BitmexSymbol[] = [];
+  private inversedSymboles: string[] = [];
 
   constructor(
-    eventEmitter: EventEmitter,
-    requestClient: RequestClient,
-    candlestickResample: CandlestickResample,
-    logger: Logger,
-    queue: Queue,
-    candleImporter: CandleImporter
-  ) {
-    this.eventEmitter = eventEmitter;
-    this.requestClient = requestClient;
-    this.candlestickResample = candlestickResample;
-    this.logger = logger;
-    this.queue = queue;
-    this.candleImporter = candleImporter;
-
-    this.apiKey = undefined;
-    this.apiSecret = undefined;
-    this.tickSizes = {};
-    this.lotSizes = {};
-    this.leverageUpdated = {};
-    this.retryOverloadMs = 944; // Overload: API docs says use 500ms we give us more space
-    this.retryOverloadLimit = 5; // Overload: Retry until fail finally
-
-    this.positions = {};
-    this.orders = {};
-    this.tickers = {};
-    this.symbols = [];
-
-    this.inversedSymboles = [];
-  }
+    private eventEmitter: EventEmitter,
+    private requestClient: RequestClient,
+    private candlestickResample: CandlestickResample,
+    private logger: Logger,
+    private queue: Queue,
+    private candleImporter: CandleImporter
+  ) {}
 
   backfill(symbol: string, period: string, start: Date): Promise<Candlestick[]> {
     return new Promise((resolve, reject) => {

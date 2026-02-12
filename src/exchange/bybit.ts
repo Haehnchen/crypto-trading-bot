@@ -18,55 +18,27 @@ import type { QueueManager } from '../utils/queue';
 import type { CandleImporter } from '../modules/system/candle_importer';
 import type { Throttler } from '../utils/throttler';
 import type { RequestClient } from '../utils/request_client';
-import type { CandlestickResample } from '../modules/system/candlestick_resample';
 
 export class Bybit {
-  private eventEmitter: EventEmitter;
-  private logger: Logger;
-  private queue: QueueManager;
-  private candleImporter: CandleImporter;
-  private requestClient: RequestClient;
-  private throttler: Throttler;
-
   private apiKey: string | undefined;
   private apiSecret: string | undefined;
-  private readonly tickSizes: Record<string, number>;
-  private readonly lotSizes: Record<string, number>;
-  private positions: Record<string, Position>;
-  private orders: Record<string, ExchangeOrder>;
-  private readonly tickers: Record<string, Ticker>;
-  private symbols: any[];
-  private intervals: NodeJS.Timeout[];
-  private readonly leverageUpdated: Record<string, Date>;
+  private readonly tickSizes: Record<string, number> = {};
+  private readonly lotSizes: Record<string, number> = {};
+  private positions: Record<string, Position> = {};
+  private orders: Record<string, ExchangeOrder> = {};
+  private readonly tickers: Record<string, Ticker> = {};
+  private symbols: any[] = [];
+  private intervals: NodeJS.Timeout[] = [];
+  private readonly leverageUpdated: Record<string, Date> = {};
 
   constructor(
-    eventEmitter: EventEmitter,
-    requestClient: RequestClient,
-    candlestickResample: CandlestickResample,
-    logger: Logger,
-    queue: QueueManager,
-    candleImporter: CandleImporter,
-    throttler: Throttler
-  ) {
-    this.eventEmitter = eventEmitter;
-    this.logger = logger;
-    this.queue = queue;
-    this.candleImporter = candleImporter;
-    this.requestClient = requestClient;
-    this.throttler = throttler;
-
-    this.apiKey = undefined;
-    this.apiSecret = undefined;
-    this.tickSizes = {};
-    this.lotSizes = {};
-
-    this.positions = {};
-    this.orders = {};
-    this.tickers = {};
-    this.symbols = [];
-    this.intervals = [];
-    this.leverageUpdated = {};
-  }
+    private eventEmitter: EventEmitter,
+    private requestClient: RequestClient,
+    private logger: Logger,
+    private queue: QueueManager,
+    private candleImporter: CandleImporter,
+    private throttler: Throttler
+  ) {}
 
   start(config: any, symbols: any[]): void {
     const { eventEmitter } = this;

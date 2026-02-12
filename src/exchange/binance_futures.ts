@@ -16,39 +16,21 @@ import type { Logger } from '../modules/services';
 import type { QueueManager } from '../utils/queue';
 import type { CandleImporter } from '../modules/system/candle_importer';
 import type { Throttler } from '../utils/throttler';
-import type { RequestClient } from '../utils/request_client';
-import type { CandlestickResample } from '../modules/system/candlestick_resample';
 
 export class BinanceFutures {
-  private eventEmitter: EventEmitter;
-  private logger: Logger;
-  private queue: QueueManager;
-  private candleImporter: CandleImporter;
-  private throttler: Throttler;
   private ccxtExchangeOrder: CcxtExchangeOrder;
-  private positions: Record<string, Position>;
-  private readonly tickers: Record<string, Ticker>;
+  private positions: Record<string, Position> = {};
+  private readonly tickers: Record<string, Ticker> = {};
   private ccxtClient?: any;
 
   constructor(
-    eventEmitter: EventEmitter,
-    _requestClient: RequestClient,
-    _candlestickResample: CandlestickResample,
-    logger: Logger,
-    queue: QueueManager,
-    candleImporter: CandleImporter,
-    throttler: Throttler
+    private eventEmitter: EventEmitter,
+    private logger: Logger,
+    private queue: QueueManager,
+    private candleImporter: CandleImporter,
+    private throttler: Throttler
   ) {
-    this.eventEmitter = eventEmitter;
-    this.logger = logger;
-    this.queue = queue;
-    this.candleImporter = candleImporter;
-    this.throttler = throttler;
-
     this.ccxtExchangeOrder = CcxtExchangeOrder.createEmpty(logger);
-
-    this.positions = {};
-    this.tickers = {};
   }
 
   backfill(symbol: string, period: string, start: Date): Promise<Candlestick[]> {

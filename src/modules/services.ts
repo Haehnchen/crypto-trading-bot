@@ -708,8 +708,6 @@ const services: Services = {
       new BinanceMargin(this.getEventEmitter(), this.getLogger(), this.getQueue(), this.getCandleImporter(), this.getThrottler()),
       new BinanceFutures(
         this.getEventEmitter(),
-        this.getRequestClient(),
-        this.getCandlestickResample(),
         this.getLogger(),
         this.getQueue(),
         this.getCandleImporter(),
@@ -717,8 +715,6 @@ const services: Services = {
       ),
       new BinanceFuturesCoin(
         this.getEventEmitter(),
-        this.getRequestClient(),
-        this.getCandlestickResample(),
         this.getLogger(),
         this.getQueue(),
         this.getCandleImporter(),
@@ -729,7 +725,6 @@ const services: Services = {
       new Bybit(
         this.getEventEmitter(),
         this.getRequestClient(),
-        this.getCandlestickResample(),
         this.getLogger(),
         this.getQueue(),
         this.getCandleImporter(),
@@ -737,12 +732,9 @@ const services: Services = {
       ),
       new BybitUnified(
         this.getEventEmitter(),
-        this.getRequestClient(),
-        this.getCandlestickResample(),
         this.getLogger(),
         this.getQueue(),
-        this.getCandleImporter(),
-        this.getThrottler()
+        this.getCandleImporter()
       ),
       new Noop()
     ]);

@@ -28,42 +28,25 @@ interface ExchangePairInfo {
 }
 
 export class CoinbasePro {
-  private eventEmitter: EventEmitter;
-  private queue: QueueManager;
-  private logger: Logger;
-  private candlestickResample: CandlestickResample;
-  private candleImporter: CandleImporter;
   private candlesFromTrades: CandlesFromTrades;
-
   private client: any;
-  private orders: Record<string, ExchangeOrder>;
-  private exchangePairs: Record<string, ExchangePairInfo>;
-  private symbols: any[];
-  private tickers: Record<string, Ticker>;
-  private fills: Record<string, any[]>;
-  private balances: any[];
-  private intervals: NodeJS.Timeout[];
+  private orders: Record<string, ExchangeOrder> = {};
+  private exchangePairs: Record<string, ExchangePairInfo> = {};
+  private symbols: any[] = [];
+  private tickers: Record<string, Ticker> = {};
+  private fills: Record<string, any[]> = {};
+  private balances: any[] = [];
+  private intervals: NodeJS.Timeout[] = [];
   private candles?: Record<string, any>;
   private lastCandleMap?: Record<string, any>;
 
-  constructor(eventEmitter: EventEmitter, logger: Logger, candlestickResample: CandlestickResample, queue: QueueManager, candleImporter: CandleImporter) {
-    this.eventEmitter = eventEmitter;
-    this.queue = queue;
-    this.logger = logger;
-    this.candlestickResample = candlestickResample;
-    this.candleImporter = candleImporter;
-
-    this.client = undefined;
-
-    this.orders = {};
-    this.exchangePairs = {};
-    this.symbols = [];
-    this.tickers = {};
-    this.fills = {};
-    this.balances = [];
-
-    this.intervals = [];
-
+  constructor(
+    private eventEmitter: EventEmitter,
+    private logger: Logger,
+    private candlestickResample: CandlestickResample,
+    private queue: QueueManager,
+    private candleImporter: CandleImporter
+  ) {
     this.candlesFromTrades = new CandlesFromTrades(candlestickResample, candleImporter);
   }
 

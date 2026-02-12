@@ -3,18 +3,16 @@ import { TickerRepository } from '../../repository';
 import { TickerEvent } from '../../event/ticker_event';
 
 export class TickerDatabaseListener {
-  private trottle: Record<string, any>;
+  private trottle: Record<string, any> = {};
 
-  constructor(tickerRepository: TickerRepository) {
-    this.trottle = {};
-
+  constructor(private tickerRepository: TickerRepository) {
     setInterval(async () => {
       const tickers = Object.values(this.trottle);
       this.trottle = {};
 
       if (tickers.length > 0) {
         for (const chunk of _.chunk(tickers, 100)) {
-          await tickerRepository.insertTickers(chunk);
+          await this.tickerRepository.insertTickers(chunk);
         }
       }
     }, 1000 * 15);

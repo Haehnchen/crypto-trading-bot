@@ -24,26 +24,18 @@ export class Order {
 
   static readonly OPTION_POST_ONLY = 'post_only';
 
-  id: string | number;
-  symbol: string;
-  side: OrderSide;
-  price: number;
-  amount: number;
-  type: OrderType;
-  options: OrderOptions;
-
-  constructor(id: string | number, symbol: string, side: OrderSide, price: number, amount: number, type: OrderType, options: OrderOptions = {}) {
+  constructor(
+    public id: string | number,
+    public symbol: string,
+    public side: OrderSide,
+    public price: number,
+    public amount: number,
+    public type: OrderType,
+    public options: OrderOptions = {}
+  ) {
     if (![Order.SIDE_LONG, Order.SIDE_SHORT].includes(side)) {
       throw new Error(`Invalid order side given: ${side}`);
     }
-
-    this.id = id;
-    this.symbol = symbol;
-    this.side = side;
-    this.price = price;
-    this.amount = amount;
-    this.type = type;
-    this.options = options;
   }
 
   hasAdjustedPrice(): boolean {

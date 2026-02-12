@@ -4,15 +4,6 @@ export class Position {
   static readonly SIDE_LONG: PositionSide = 'long';
   static readonly SIDE_SHORT: PositionSide = 'short';
 
-  symbol: string;
-  side: PositionSide;
-  amount: number;
-  profit: number;
-  updatedAt: Date;
-  entry: number;
-  createdAt: Date;
-  raw?: any;
-
   /**
    * @param symbol 'BTCUSD'
    * @param side "long" or "short"
@@ -23,7 +14,16 @@ export class Position {
    * @param createdAt
    * @param raw
    */
-  constructor(symbol: string, side: PositionSide, amount: number, profit: number, updatedAt: Date, entry: number, createdAt: Date, raw?: any) {
+  constructor(
+    public symbol: string,
+    public side: PositionSide,
+    public amount: number,
+    public profit: number,
+    public updatedAt: Date,
+    public entry: number,
+    public createdAt: Date,
+    public raw?: any
+  ) {
     if (![Position.SIDE_LONG, Position.SIDE_SHORT].includes(side)) {
       throw new Error(`Invalid position direction given:${side}`);
     }
@@ -35,15 +35,6 @@ export class Position {
     if (amount > 0 && side === Position.SIDE_SHORT) {
       throw new Error(`Invalid direction amount:${side}`);
     }
-
-    this.symbol = symbol;
-    this.side = side;
-    this.amount = amount;
-    this.profit = profit;
-    this.updatedAt = updatedAt;
-    this.entry = entry;
-    this.createdAt = createdAt;
-    this.raw = raw;
   }
 
   getSide(): PositionSide {

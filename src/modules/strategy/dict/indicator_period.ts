@@ -9,13 +9,7 @@ export interface IndicatorValues {
 }
 
 export class IndicatorPeriod {
-  private readonly strategyContext: StrategyContext;
-  private readonly indicators: IndicatorValues;
-
-  constructor(strategyContext: StrategyContext, indicators: IndicatorValues) {
-    this.strategyContext = strategyContext;
-    this.indicators = indicators;
-  }
+  constructor(private readonly strategyContext: StrategyContext, private readonly indicators: IndicatorValues) {}
 
   getPrice(): number | undefined {
     return this.strategyContext.bid;

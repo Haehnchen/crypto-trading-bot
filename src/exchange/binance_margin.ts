@@ -21,34 +21,21 @@ import type { CandleImporter } from '../modules/system/candle_importer';
 import type { Throttler } from '../utils/throttler';
 
 export class BinanceMargin {
-  private eventEmitter: EventEmitter;
-  private candleImport: CandleImporter;
-  private logger: Logger;
-  private queue: QueueManager;
-  private throttler: Throttler;
   private client: any;
-  private exchangePairs: Record<string, ExchangePairInfo>;
-  private symbols: any[];
-  private readonly trades: Record<string, any[]>;
-  private readonly tickers: Record<string, Ticker>;
-  private balances: any[];
-  private orderbag: OrderBag;
+  private exchangePairs: Record<string, ExchangePairInfo> = {};
+  private symbols: any[] = [];
+  private readonly trades: Record<string, any[]> = {};
+  private readonly tickers: Record<string, Ticker> = {};
+  private balances: any[] = [];
+  private orderbag = new OrderBag();
 
-  constructor(eventEmitter: EventEmitter, logger: Logger, queue: QueueManager, candleImport: CandleImporter, throttler: Throttler) {
-    this.eventEmitter = eventEmitter;
-    this.candleImport = candleImport;
-    this.logger = logger;
-    this.queue = queue;
-    this.throttler = throttler;
-
-    this.client = undefined;
-    this.exchangePairs = {};
-    this.symbols = [];
-    this.trades = {};
-    this.tickers = {};
-    this.balances = [];
-    this.orderbag = new OrderBag();
-  }
+  constructor(
+    private eventEmitter: EventEmitter,
+    private logger: Logger,
+    private queue: QueueManager,
+    private candleImport: CandleImporter,
+    private throttler: Throttler
+  ) {}
 
   start(config: any, symbols: any[]): void {
     this.symbols = symbols;

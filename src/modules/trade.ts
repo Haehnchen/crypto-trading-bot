@@ -14,52 +14,22 @@ import { LogsRepository, TickerLogRepository } from '../repository';
 import { ExchangePositionWatcher } from './exchange/exchange_position_watcher';
 
 export class Trade {
-  private eventEmitter: EventEmitter;
-  private instances: { symbols: { exchange: string; symbol: string }[] };
-  private notify: Notify;
-  private logger: Logger;
-  private createOrderListener: CreateOrderListener;
-  private tickListener: TickListener;
-  private tickers: Tickers;
-  private tickerDatabaseListener: TickerDatabaseListener;
-  private exchangeOrderWatchdogListener: ExchangeOrderWatchdogListener;
-  private systemUtil: SystemUtil;
-  private logsRepository: LogsRepository;
-  private tickerLogRepository: TickerLogRepository;
-  private exchangePositionWatcher: ExchangePositionWatcher;
-  private pairStateManager: PairStateManager;
-
   constructor(
-    eventEmitter: EventEmitter,
-    instances: { symbols: { exchange: string; symbol: string }[] },
-    notify: Notify,
-    logger: Logger,
-    createOrderListener: CreateOrderListener,
-    tickListener: TickListener,
-    tickers: Tickers,
-    tickerDatabaseListener: TickerDatabaseListener,
-    exchangeOrderWatchdogListener: ExchangeOrderWatchdogListener,
-    systemUtil: SystemUtil,
-    logsRepository: LogsRepository,
-    tickerLogRepository: TickerLogRepository,
-    exchangePositionWatcher: ExchangePositionWatcher,
-    pairStateManager: PairStateManager
-  ) {
-    this.eventEmitter = eventEmitter;
-    this.instances = instances;
-    this.notify = notify;
-    this.logger = logger;
-    this.createOrderListener = createOrderListener;
-    this.tickListener = tickListener;
-    this.tickers = tickers;
-    this.tickerDatabaseListener = tickerDatabaseListener;
-    this.exchangeOrderWatchdogListener = exchangeOrderWatchdogListener;
-    this.systemUtil = systemUtil;
-    this.logsRepository = logsRepository;
-    this.tickerLogRepository = tickerLogRepository;
-    this.exchangePositionWatcher = exchangePositionWatcher;
-    this.pairStateManager = pairStateManager;
-  }
+    private eventEmitter: EventEmitter,
+    private instances: { symbols: { exchange: string; symbol: string }[] },
+    private notify: Notify,
+    private logger: Logger,
+    private createOrderListener: CreateOrderListener,
+    private tickListener: TickListener,
+    private tickers: Tickers,
+    private tickerDatabaseListener: TickerDatabaseListener,
+    private exchangeOrderWatchdogListener: ExchangeOrderWatchdogListener,
+    private systemUtil: SystemUtil,
+    private logsRepository: LogsRepository,
+    private tickerLogRepository: TickerLogRepository,
+    private exchangePositionWatcher: ExchangePositionWatcher,
+    private pairStateManager: PairStateManager
+  ) {}
 
   start(): void {
     this.logger.debug('Trade module started');

@@ -14,26 +14,18 @@ import type { CandleImporter } from '../modules/system/candle_importer';
 import type { RequestClient } from '../utils/request_client';
 
 export class Bitfinex {
-  private eventEmitter: EventEmitter;
-  private candleImport: CandleImporter;
-  private logger: Logger;
-  private requestClient: RequestClient;
-  private readonly tickers: Record<string, Ticker>;
-
-  private positions: Record<string, Position>;
-  private readonly orders: Record<string, ExchangeOrder>;
+  private readonly tickers: Record<string, Ticker> = {};
+  private positions: Record<string, Position> = {};
+  private readonly orders: Record<string, ExchangeOrder> = {};
   private client: any;
   private balanceInfo?: any;
 
-  constructor(eventEmitter: EventEmitter, logger: Logger, requestClient: RequestClient, candleImport: CandleImporter) {
-    this.eventEmitter = eventEmitter;
-    this.candleImport = candleImport;
-    this.logger = logger;
-    this.positions = {};
-    this.orders = {};
-    this.requestClient = requestClient;
-    this.tickers = {};
-  }
+  constructor(
+    private eventEmitter: EventEmitter,
+    private logger: Logger,
+    private requestClient: RequestClient,
+    private candleImport: CandleImporter
+  ) {}
 
   start(config: any, symbols: any[]): void {
     const subscriptions: any[] = [];

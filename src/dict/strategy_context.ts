@@ -3,25 +3,18 @@ import { Position } from './position';
 export class StrategyContext {
   bid: number;
   ask: number;
-  options: any;
   lastSignal?: string;
   amount?: number;
   entry?: number;
   profit?: number;
-  backtest: boolean;
 
-  constructor(options: any, ticker: any, isBacktest: boolean) {
+  constructor(
+    public options: any,
+    ticker: any,
+    public backtest: boolean
+  ) {
     this.bid = ticker.bid;
     this.ask = ticker.ask;
-
-    this.options = options;
-
-    this.lastSignal = undefined;
-    this.amount = undefined;
-    this.entry = undefined;
-    this.profit = undefined;
-
-    this.backtest = isBacktest;
   }
 
   static createFromPosition(options: any, ticker: any, position: Position, isBacktest: boolean = false): StrategyContext {

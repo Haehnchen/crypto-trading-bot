@@ -28,20 +28,14 @@ export interface ExchangeInstance {
 }
 
 export class ExchangeManager {
-  private logger: any;
-  private instances: { symbols: SymbolInstance[] };
-  private readonly config: any;
-  private readonly exchangesIterator: ExchangeInstance[];
-  private exchanges: ExchangeInstance[];
+  private exchanges: ExchangeInstance[] = [];
 
-  constructor(exchangesIterator: ExchangeInstance[], logger: Logger, instances: { symbols: SymbolInstance[] }, config: any) {
-    this.logger = logger;
-    this.instances = instances;
-    this.config = config;
-    this.exchangesIterator = exchangesIterator;
-
-    this.exchanges = [];
-  }
+  constructor(
+    private readonly exchangesIterator: ExchangeInstance[],
+    private logger: Logger,
+    private instances: { symbols: SymbolInstance[] },
+    private readonly config: any
+  ) {}
 
   init(): void {
     const exchanges = this.exchangesIterator;

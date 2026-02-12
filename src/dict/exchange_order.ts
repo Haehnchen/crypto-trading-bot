@@ -28,33 +28,25 @@ export class ExchangeOrder {
   static readonly SIDE_SHORT: ExchangeOrderSideLongShort = 'short';
   static readonly SIDE_LONG: ExchangeOrderSideLongShort = 'long';
 
-  id: string | number;
-  symbol: string;
-  status: ExchangeOrderStatus;
-  price: number;
-  amount: number;
-  retry: boolean;
-  ourId: string | number | undefined;
   side: ExchangeOrderSide;
   type: ExchangeOrderType;
   createdAt: Date;
   updatedAt: Date;
-  raw?: any;
   options: ExchangeOrderOptions;
 
   constructor(
-    id: string | number,
-    symbol: string,
-    status: ExchangeOrderStatus,
-    price: number,
-    amount: number,
-    retry: boolean,
-    ourId?: string | number,
+    public id: string | number,
+    public symbol: string,
+    public status: ExchangeOrderStatus,
+    public price: number,
+    public amount: number,
+    public retry: boolean,
+    public ourId?: string | number,
     side?: ExchangeOrderSide,
     type?: ExchangeOrderType,
     createdAt?: Date,
     updatedAt?: Date,
-    raw?: any,
+    public raw?: any,
     options: ExchangeOrderOptions = {}
   ) {
     if (side && side !== 'buy' && side !== 'sell') {
@@ -75,18 +67,10 @@ export class ExchangeOrder {
       throw `Invalid order type: ${type}`;
     }
 
-    this.id = id;
-    this.symbol = symbol;
-    this.status = status;
-    this.price = price;
-    this.amount = amount;
-    this.retry = retry;
-    this.ourId = ourId;
     this.side = side || 'buy';
     this.type = type || 'unknown';
     this.createdAt = createdAt || new Date();
     this.updatedAt = updatedAt || new Date();
-    this.raw = raw;
     this.options = options;
   }
 
