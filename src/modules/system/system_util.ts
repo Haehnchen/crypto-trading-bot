@@ -5,11 +5,7 @@ export interface Config {
 }
 
 export class SystemUtil {
-  private readonly config: Config;
-
-  constructor(config: Config) {
-    this.config = config;
-  }
+  constructor(private readonly config: Config) {}
 
   /**
    * Provide the configuration inside "conf.json" with a comma separated access for array structures

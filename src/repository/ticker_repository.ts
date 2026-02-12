@@ -18,13 +18,7 @@ export interface Ticker {
 }
 
 export class TickerRepository {
-  private db: Database;
-  private logger: Logger;
-
-  constructor(db: Database, logger: Logger) {
-    this.db = db;
-    this.logger = logger;
-  }
+  constructor(private db: Database, private logger: Logger) {}
 
   async insertTickers(tickers: Ticker[]): Promise<void> {
     const upsert = this.db.prepare(

@@ -6,15 +6,7 @@ export interface TelegramConfig {
 }
 
 export class Telegram {
-  private telegraf: Telegraf;
-  private config: TelegramConfig;
-  private logger: Logger;
-
-  constructor(telegraf: Telegraf, config: TelegramConfig, logger: Logger) {
-    this.telegraf = telegraf;
-    this.config = config;
-    this.logger = logger;
-  }
+  constructor(private telegraf: Telegraf, private config: TelegramConfig, private logger: Logger) {}
 
   send(message: string): void {
     const chatId = this.config.chat_id;

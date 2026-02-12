@@ -7,11 +7,7 @@ export interface SlackConfig {
 }
 
 export class Slack {
-  private config: SlackConfig;
-
-  constructor(config: SlackConfig) {
-    this.config = config;
-  }
+  constructor(private config: SlackConfig) {}
 
   send(message: string): void {
     const postOptions = {

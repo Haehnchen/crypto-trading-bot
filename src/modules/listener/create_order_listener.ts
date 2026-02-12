@@ -3,13 +3,7 @@ import { ExchangeManager } from '../exchange/exchange_manager';
 import type { Logger } from '../services';
 
 export class CreateOrderListener {
-  private exchangeManager: ExchangeManager;
-  private logger: Logger;
-
-  constructor(exchangeManager: ExchangeManager, logger: Logger) {
-    this.exchangeManager = exchangeManager;
-    this.logger = logger;
-  }
+  constructor(private exchangeManager: ExchangeManager, private logger: Logger) {}
 
   async onCreateOrder(orderEvent: OrderEvent): Promise<void> {
     this.logger.debug(`Create Order:${JSON.stringify(orderEvent)}`);

@@ -40,22 +40,12 @@ export interface TradePairItem {
 }
 
 export class PairsHttp {
-  private instances: InstancesConfig;
-  private exchangeManager: ExchangeManager;
-  private pairStateManager: PairStateManager;
-  private eventEmitter: EventEmitter;
-
   constructor(
-    instances: InstancesConfig,
-    exchangeManager: ExchangeManager,
-    pairStateManager: PairStateManager,
-    eventEmitter: EventEmitter
-  ) {
-    this.instances = instances;
-    this.exchangeManager = exchangeManager;
-    this.pairStateManager = pairStateManager;
-    this.eventEmitter = eventEmitter;
-  }
+    private instances: InstancesConfig,
+    private exchangeManager: ExchangeManager,
+    private pairStateManager: PairStateManager,
+    private eventEmitter: EventEmitter
+  ) {}
 
   async getTradePairs(): Promise<TradePairItem[]> {
     const pairs = await Promise.all(

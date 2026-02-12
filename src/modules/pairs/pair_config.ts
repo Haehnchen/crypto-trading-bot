@@ -16,11 +16,7 @@ export interface InstancesConfig {
 }
 
 export class PairConfig {
-  private instances: InstancesConfig;
-
-  constructor(instances: InstancesConfig) {
-    this.instances = instances;
-  }
+  constructor(private instances: InstancesConfig) {}
 
   /**
    * @param exchangeName string

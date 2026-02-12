@@ -5,20 +5,10 @@ import type { ExchangeManager } from './exchange_manager';
 import type { EventEmitter } from 'events';
 
 export class ExchangePositionWatcher {
-  private exchangeManager: ExchangeManager;
-  private eventEmitter: EventEmitter;
-  private logger: Logger;
-  private positions: Record<string, ExchangePosition>;
-  private init: boolean;
+  private positions: Record<string, ExchangePosition> = {};
+  private init = false;
 
-  constructor(exchangeManager: ExchangeManager, eventEmitter: EventEmitter, logger: Logger) {
-    this.exchangeManager = exchangeManager;
-    this.eventEmitter = eventEmitter;
-    this.logger = logger;
-
-    this.positions = {};
-    this.init = false;
-  }
+  constructor(private exchangeManager: ExchangeManager, private eventEmitter: EventEmitter, private logger: Logger) {}
 
   async onPositionStateChangeTick(): Promise<void> {
     const exchangePositions: ExchangePosition[] = await this.exchangeManager.getPositions();

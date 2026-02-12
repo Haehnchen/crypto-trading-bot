@@ -10,11 +10,7 @@ export interface Statement {
 }
 
 export class LogsRepository {
-  private db: Database;
-
-  constructor(db: Database) {
-    this.db = db;
-  }
+  constructor(private db: Database) {}
 
   async getLatestLogs(excludes: string[] = ['debug'], limit: number = 200): Promise<any[]> {
     let sql = `SELECT * from logs order by created_at DESC LIMIT ${limit}`;

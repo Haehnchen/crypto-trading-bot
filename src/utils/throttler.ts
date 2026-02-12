@@ -4,13 +4,9 @@ export interface Logger {
 }
 
 export class Throttler {
-  private logger: Logger;
-  private readonly tasks: Record<string, NodeJS.Timeout>;
+  private readonly tasks: Record<string, NodeJS.Timeout> = {};
 
-  constructor(logger: Logger) {
-    this.logger = logger;
-    this.tasks = {};
-  }
+  constructor(private logger: Logger) {}
 
   addTask(key: string, func: () => Promise<void>, timeout: number = 1000): void {
     if (func.constructor.name !== 'AsyncFunction') {

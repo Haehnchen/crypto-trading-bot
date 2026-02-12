@@ -3,11 +3,7 @@ export interface Notifier {
 }
 
 export class Notify {
-  private notifier: Notifier[];
-
-  constructor(notifier: Notifier[]) {
-    this.notifier = notifier;
-  }
+  constructor(private notifier: Notifier[]) {}
 
   send(message: string): void {
     this.notifier.forEach(notify => notify.send(message));

@@ -16,12 +16,6 @@ import type { OrderExecutor } from '../order/order_executor';
  * @type {module.PairStateExecution}
  */
 export class PairStateExecution {
-  private exchangeManager: ExchangeManager;
-  private orderCalculator: OrderCalculator;
-  private orderExecutor: OrderExecutor;
-  private logger: Logger;
-  private ticker: Tickers;
-
   /**
    * @param exchangeManager
    * @param orderCalculator
@@ -29,13 +23,13 @@ export class PairStateExecution {
    * @param logger
    * @param ticker
    */
-  constructor(exchangeManager: ExchangeManager, orderCalculator: OrderCalculator, orderExecutor: OrderExecutor, logger: Logger, ticker: Tickers) {
-    this.exchangeManager = exchangeManager;
-    this.orderCalculator = orderCalculator;
-    this.orderExecutor = orderExecutor;
-    this.logger = logger;
-    this.ticker = ticker;
-  }
+  constructor(
+    private exchangeManager: ExchangeManager,
+    private orderCalculator: OrderCalculator,
+    private orderExecutor: OrderExecutor,
+    private logger: Logger,
+    private ticker: Tickers
+  ) {}
 
   /**
    * @param pairState {PairState}

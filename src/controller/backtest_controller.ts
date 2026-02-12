@@ -3,11 +3,8 @@ import { Backtest } from '../modules/backtest';
 import express from 'express';
 
 export class BacktestController extends BaseController {
-  private backtest: Backtest;
-
-  constructor(templateHelpers: TemplateHelpers, backtest: Backtest) {
+  constructor(templateHelpers: TemplateHelpers, private backtest: Backtest) {
     super(templateHelpers);
-    this.backtest = backtest;
   }
 
   registerRoutes(router: express.Router): void {

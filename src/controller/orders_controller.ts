@@ -4,13 +4,8 @@ import { ExchangeManager } from '../modules/exchange/exchange_manager';
 import express from 'express';
 
 export class OrdersController extends BaseController {
-  private ordersHttp: OrdersHttp;
-  private exchangeManager: ExchangeManager;
-
-  constructor(templateHelpers: TemplateHelpers, ordersHttp: OrdersHttp, exchangeManager: ExchangeManager) {
+  constructor(templateHelpers: TemplateHelpers, private ordersHttp: OrdersHttp, private exchangeManager: ExchangeManager) {
     super(templateHelpers);
-    this.ordersHttp = ordersHttp;
-    this.exchangeManager = exchangeManager;
   }
 
   registerRoutes(router: express.Router): void {

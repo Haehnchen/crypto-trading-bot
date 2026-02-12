@@ -8,24 +8,16 @@ import type { ExchangeManager } from '../exchange/exchange_manager';
 import type { SystemUtil } from '../system/system_util';
 
 export class OrderExecutor {
-  private exchangeManager: ExchangeManager;
-  private tickers: Tickers;
-  private logger: Logger;
-  private systemUtil: SystemUtil;
-  private readonly runningOrders: Record<string | number, Date>;
-  private readonly tickerPriceInterval: number;
-  private readonly tickerPriceRetries: number;
+  private readonly runningOrders: Record<string | number, Date> = {};
+  private readonly tickerPriceInterval = 200;
+  private readonly tickerPriceRetries = 40;
 
-  constructor(exchangeManager: ExchangeManager, tickers: Tickers, systemUtil: SystemUtil, logger: Logger) {
-    this.exchangeManager = exchangeManager;
-    this.tickers = tickers;
-    this.logger = logger;
-    this.systemUtil = systemUtil;
-    this.runningOrders = {};
-
-    this.tickerPriceInterval = 200;
-    this.tickerPriceRetries = 40;
-  }
+  constructor(
+    private exchangeManager: ExchangeManager,
+    private tickers: Tickers,
+    private systemUtil: SystemUtil,
+    private logger: Logger
+  ) {}
 
   /**
    * Keep open orders in orderbook at first position
@@ -138,7 +130,7 @@ export class OrderExecutor {
     });
   }
 
-  async cancelOrder(exchangeName: string, orderId: string): Promise<any> {
+  async cancelOrder(exchangeName: string, orderId: string | number): Promise<any> {
     const exchange = this.exchangeManager.get(exchangeName);
     if (!exchange) {
       console.error(`CancelOrder: Invalid exchange: ${exchangeName}`);

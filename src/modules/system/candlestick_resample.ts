@@ -4,13 +4,7 @@ import { CandlestickRepository } from '../../repository';
 import { CandleImporter } from './candle_importer';
 
 export class CandlestickResample {
-  private candlestickRepository: CandlestickRepository;
-  private candleImporter: CandleImporter;
-
-  constructor(candlestickRepository: CandlestickRepository, candleImporter: CandleImporter) {
-    this.candlestickRepository = candlestickRepository;
-    this.candleImporter = candleImporter;
-  }
+  constructor(private candlestickRepository: CandlestickRepository, private candleImporter: CandleImporter) {}
 
   /**
    * Resample a eg "15m" range to a "1h"

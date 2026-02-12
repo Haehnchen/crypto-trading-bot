@@ -8,11 +8,7 @@ export interface Statement {
 }
 
 export class SignalRepository {
-  private db: Database;
-
-  constructor(db: Database) {
-    this.db = db;
-  }
+  constructor(private db: Database) {}
 
   async getSignals(since: number): Promise<any[]> {
     const stmt = this.db.prepare('SELECT * from signals where income_at > ? order by income_at DESC LIMIT 100');

@@ -9,11 +9,7 @@ export interface Statement {
 }
 
 export class TickerLogRepository {
-  private db: Database;
-
-  constructor(db: Database) {
-    this.db = db;
-  }
+  constructor(private db: Database) {}
 
   async cleanOldLogEntries(days: number = 14): Promise<void> {
     const stmt = this.db.prepare('DELETE FROM ticker_log WHERE income_at < $income_at');

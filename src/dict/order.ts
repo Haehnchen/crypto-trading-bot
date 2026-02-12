@@ -24,7 +24,7 @@ export class Order {
 
   static readonly OPTION_POST_ONLY = 'post_only';
 
-  id: number;
+  id: string | number;
   symbol: string;
   side: OrderSide;
   price: number;
@@ -32,7 +32,7 @@ export class Order {
   type: OrderType;
   options: OrderOptions;
 
-  constructor(id: number, symbol: string, side: OrderSide, price: number, amount: number, type: OrderType, options: OrderOptions = {}) {
+  constructor(id: string | number, symbol: string, side: OrderSide, price: number, amount: number, type: OrderType, options: OrderOptions = {}) {
     if (![Order.SIDE_LONG, Order.SIDE_SHORT].includes(side)) {
       throw new Error(`Invalid order side given: ${side}`);
     }
@@ -50,7 +50,7 @@ export class Order {
     return this.options.adjust_price === true;
   }
 
-  getId(): number {
+  getId(): string | number {
     return this.id;
   }
 
@@ -221,7 +221,7 @@ export class Order {
     );
   }
 
-  static createPriceUpdateOrder(id: number, price: number, side: OrderSide): Order {
+  static createPriceUpdateOrder(id: string | number, price: number, side: OrderSide): Order {
     return new Order(id, '', side, price, 0, Order.TYPE_LIMIT, {});
   }
 
@@ -237,7 +237,7 @@ export class Order {
     );
   }
 
-  static createUpdateOrder(id: number, price?: number, amount?: number): Order {
+  static createUpdateOrder(id: string | number, price?: number, amount?: number): Order {
     const side: OrderSide = (price && price < 0) || (amount && amount < 0) ? Order.SIDE_SHORT : Order.SIDE_LONG;
     return new Order(id, '', side, price || 0, amount || 0, Order.TYPE_LIMIT, {});
   }

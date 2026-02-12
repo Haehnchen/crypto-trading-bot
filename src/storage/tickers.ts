@@ -2,11 +2,9 @@ import moment from 'moment';
 import { Ticker } from '../dict/ticker';
 
 export class Tickers {
-  private readonly tickers: Record<string, Ticker>;
+  private readonly tickers: Record<string, Ticker> = {};
 
-  constructor() {
-    this.tickers = {};
-  }
+  constructor() {}
 
   set(ticker: Ticker): void {
     this.tickers[`${ticker.exchange}.${ticker.symbol}`] = ticker;

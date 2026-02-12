@@ -13,11 +13,7 @@ export interface RequestResult {
 }
 
 export class RequestClient {
-  private readonly logger?: Logger;
-
-  constructor(logger?: Logger) {
-    this.logger = logger;
-  }
+  constructor(private readonly logger?: Logger) {}
 
   executeRequest(options: any): Promise<RequestResult> {
     return new Promise(resolve => {

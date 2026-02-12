@@ -43,18 +43,14 @@ export interface StrategyInfo {
 }
 
 export class StrategyManager {
-  private technicalAnalysisValidator: TechnicalAnalysisValidator;
-  private exchangeCandleCombine: ExchangeCandleCombine;
-  private projectDir: string;
-  private readonly logger: Logger;
   private strategies?: StrategyInfo[];
 
-  constructor(technicalAnalysisValidator: TechnicalAnalysisValidator, exchangeCandleCombine: ExchangeCandleCombine, logger: Logger, projectDir: string) {
-    this.technicalAnalysisValidator = technicalAnalysisValidator;
-    this.exchangeCandleCombine = exchangeCandleCombine;
-    this.projectDir = projectDir;
-
-    this.logger = logger;
+  constructor(
+    private technicalAnalysisValidator: TechnicalAnalysisValidator,
+    private exchangeCandleCombine: ExchangeCandleCombine,
+    private readonly logger: Logger,
+    private projectDir: string
+  ) {
     this.strategies = undefined;
   }
 

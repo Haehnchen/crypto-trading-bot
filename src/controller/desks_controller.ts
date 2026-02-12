@@ -3,11 +3,8 @@ import { SystemUtil } from '../modules/system/system_util';
 import express from 'express';
 
 export class DesksController extends BaseController {
-  private systemUtil: SystemUtil;
-
-  constructor(templateHelpers: TemplateHelpers, systemUtil: SystemUtil) {
+  constructor(templateHelpers: TemplateHelpers, private systemUtil: SystemUtil) {
     super(templateHelpers);
-    this.systemUtil = systemUtil;
   }
 
   registerRoutes(router: express.Router): void {

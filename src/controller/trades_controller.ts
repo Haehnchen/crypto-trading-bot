@@ -6,15 +6,13 @@ import { OrderUtil } from '../utils/order_util';
 import express from 'express';
 
 export class TradesController extends BaseController {
-  private exchangeManager: ExchangeManager;
-  private ordersHttp: OrdersHttp;
-  private tickers: Tickers;
-
-  constructor(templateHelpers: TemplateHelpers, exchangeManager: ExchangeManager, ordersHttp: OrdersHttp, tickers: Tickers) {
+  constructor(
+    templateHelpers: TemplateHelpers,
+    private exchangeManager: ExchangeManager,
+    private ordersHttp: OrdersHttp,
+    private tickers: Tickers
+  ) {
     super(templateHelpers);
-    this.exchangeManager = exchangeManager;
-    this.ordersHttp = ordersHttp;
-    this.tickers = tickers;
   }
 
   registerRoutes(router: express.Router): void {

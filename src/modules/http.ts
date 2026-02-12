@@ -10,16 +10,13 @@ import { Services } from './services';
 import { TemplateHelpers } from '../controller';
 
 export class Http {
-  private systemUtil: SystemUtil;
-  private readonly projectDir: string;
-  private services: Services;
   private readonly templateHelpers: TemplateHelpers;
 
-  constructor(systemUtil: SystemUtil, projectDir: string, services: Services) {
-    this.systemUtil = systemUtil;
-    this.projectDir = projectDir;
-    this.services = services;
-
+  constructor(
+    private systemUtil: SystemUtil,
+    private readonly projectDir: string,
+    private services: Services
+  ) {
     // Helper functions for templates (previously Twig filters)
     this.templateHelpers = {
       priceFormat: (value: any): string => {

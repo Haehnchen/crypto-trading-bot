@@ -7,13 +7,7 @@ export interface StopLossOptions {
 }
 
 export class StopLossCalculator {
-  private tickers: Tickers;
-  private logger: Logger;
-
-  constructor(tickers: Tickers, logger: Logger) {
-    this.tickers = tickers;
-    this.logger = logger;
-  }
+  constructor(private tickers: Tickers, private logger: Logger) {}
 
   async calculateForOpenPosition(exchange: string, position: Position, options: StopLossOptions = { percent: 3 }): Promise<number | undefined> {
     if (!position.entry) {

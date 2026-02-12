@@ -22,11 +22,7 @@ export interface RiskRewardOrder {
 }
 
 export class RiskRewardRatioCalculator {
-  private logger: Logger;
-
-  constructor(logger: Logger) {
-    this.logger = logger;
-  }
+  constructor(private logger: Logger) {}
 
   calculateForOpenPosition(position: Position, options: RiskRewardOptions = { stop_percent: 3, target_percent: 6 }): RiskRewardResult | undefined {
     let entryPrice = position.entry;

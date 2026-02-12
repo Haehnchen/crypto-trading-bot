@@ -3,11 +3,8 @@ import { SignalHttp } from '../modules/signal/signal_http';
 import express from 'express';
 
 export class SignalsController extends BaseController {
-  private signalHttp: SignalHttp;
-
-  constructor(templateHelpers: TemplateHelpers, signalHttp: SignalHttp) {
+  constructor(templateHelpers: TemplateHelpers, private signalHttp: SignalHttp) {
     super(templateHelpers);
-    this.signalHttp = signalHttp;
   }
 
   registerRoutes(router: express.Router): void {

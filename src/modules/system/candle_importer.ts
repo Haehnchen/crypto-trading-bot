@@ -3,14 +3,10 @@ import { CandlestickRepository } from '../../repository';
 import { ExchangeCandlestick } from '../../dict/exchange_candlestick';
 
 export class CandleImporter {
-  private candlestickRepository: CandlestickRepository;
-  private trottle: Record<string, ExchangeCandlestick>;
-  private promises: Array<() => void>;
+  private trottle: Record<string, ExchangeCandlestick> = {};
+  private promises: Array<() => void> = [];
 
-  constructor(candlestickRepository: CandlestickRepository) {
-    this.candlestickRepository = candlestickRepository;
-    this.trottle = {};
-    this.promises = [];
+  constructor(private candlestickRepository: CandlestickRepository) {
 
     setInterval(async () => {
       const candles = Object.values(this.trottle);

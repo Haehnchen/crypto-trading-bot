@@ -6,25 +6,13 @@ import { PairConfig } from '../pairs/pair_config';
 import { Backtest, OrderExecutor } from '../services';
 
 export class OrdersHttp {
-  private backtest: Backtest;
-  private tickers: Tickers;
-  private orderExecutor: OrderExecutor;
-  private exchangeManager: ExchangeManager;
-  private pairConfig: PairConfig;
-
   constructor(
-    backtest: Backtest,
-    tickers: Tickers,
-    orderExecutor: OrderExecutor,
-    exchangeManager: ExchangeManager,
-    pairConfig: PairConfig
-  ) {
-    this.backtest = backtest;
-    this.tickers = tickers;
-    this.orderExecutor = orderExecutor;
-    this.exchangeManager = exchangeManager;
-    this.pairConfig = pairConfig;
-  }
+    private backtest: Backtest,
+    private tickers: Tickers,
+    private orderExecutor: OrderExecutor,
+    private exchangeManager: ExchangeManager,
+    private pairConfig: PairConfig
+  ) {}
 
   getPairs(): string[] {
     return this.pairConfig.getAllPairNames();

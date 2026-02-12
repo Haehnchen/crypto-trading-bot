@@ -21,34 +21,16 @@ export interface SymbolInstance {
 }
 
 export class ExchangeOrderWatchdogListener {
-  private exchangeManager: ExchangeManager;
-  private instances: { symbols: SymbolInstance[] };
-  private stopLossCalculator: StopLossCalculator;
-  private riskRewardRatioCalculator: RiskRewardRatioCalculator;
-  private orderExecutor: OrderExecutor;
-  private pairStateManager: PairStateManager;
-  private logger: Logger;
-  private tickers: Tickers;
-
   constructor(
-    exchangeManager: ExchangeManager,
-    instances: { symbols: SymbolInstance[] },
-    stopLossCalculator: StopLossCalculator,
-    riskRewardRatioCalculator: RiskRewardRatioCalculator,
-    orderExecutor: OrderExecutor,
-    pairStateManager: PairStateManager,
-    logger: Logger,
-    tickers: Tickers
-  ) {
-    this.exchangeManager = exchangeManager;
-    this.instances = instances;
-    this.stopLossCalculator = stopLossCalculator;
-    this.riskRewardRatioCalculator = riskRewardRatioCalculator;
-    this.orderExecutor = orderExecutor;
-    this.pairStateManager = pairStateManager;
-    this.logger = logger;
-    this.tickers = tickers;
-  }
+    private exchangeManager: ExchangeManager,
+    private instances: { symbols: SymbolInstance[] },
+    private stopLossCalculator: StopLossCalculator,
+    private riskRewardRatioCalculator: RiskRewardRatioCalculator,
+    private orderExecutor: OrderExecutor,
+    private pairStateManager: PairStateManager,
+    private logger: Logger,
+    private tickers: Tickers
+  ) {}
 
   async onTick(): Promise<void> {
     const { instances } = this;

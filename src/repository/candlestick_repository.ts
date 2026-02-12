@@ -17,11 +17,7 @@ export interface ExchangeSymbolPair {
 }
 
 export class CandlestickRepository {
-  private db: Database;
-
-  constructor(db: Database) {
-    this.db = db;
-  }
+  constructor(private db: Database) {}
 
   async getLookbacksForPair(
     exchange: string,

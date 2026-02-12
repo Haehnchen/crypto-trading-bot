@@ -5,13 +5,8 @@ import { CandleImporter } from '../modules/system/candle_importer';
 import express from 'express';
 
 export class CandlesController extends BaseController {
-  private candleExportHttp: CandleExportHttp;
-  private candleImporter: CandleImporter;
-
-  constructor(templateHelpers: TemplateHelpers, candleExportHttp: CandleExportHttp, candleImporter: CandleImporter) {
+  constructor(templateHelpers: TemplateHelpers, private candleExportHttp: CandleExportHttp, private candleImporter: CandleImporter) {
     super(templateHelpers);
-    this.candleExportHttp = candleExportHttp;
-    this.candleImporter = candleImporter;
   }
 
   registerRoutes(router: express.Router): void {

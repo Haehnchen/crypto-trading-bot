@@ -3,11 +3,8 @@ import { PairsHttp } from '../modules/pairs/pairs_http';
 import express from 'express';
 
 export class PairsController extends BaseController {
-  private pairsHttp: PairsHttp;
-
-  constructor(templateHelpers: TemplateHelpers, pairsHttp: PairsHttp) {
+  constructor(templateHelpers: TemplateHelpers, private pairsHttp: PairsHttp) {
     super(templateHelpers);
-    this.pairsHttp = pairsHttp;
   }
 
   registerRoutes(router: express.Router): void {

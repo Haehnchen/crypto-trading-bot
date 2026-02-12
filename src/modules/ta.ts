@@ -19,15 +19,11 @@ export interface TaSymbol {
 }
 
 export class Ta {
-  private instances: { symbols: TaSymbol[] };
-  private candlestickRepository: CandlestickRepository;
-  private tickers: Tickers;
-
-  constructor(candlestickRepository: CandlestickRepository, instances: { symbols: TaSymbol[] }, tickers: Tickers) {
-    this.instances = instances;
-    this.candlestickRepository = candlestickRepository;
-    this.tickers = tickers;
-  }
+  constructor(
+    private candlestickRepository: CandlestickRepository,
+    private instances: { symbols: TaSymbol[] },
+    private tickers: Tickers
+  ) {}
 
   async getTaForPeriods(periods: string[]): Promise<any> {
     const promises: Promise<any>[] = [];

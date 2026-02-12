@@ -3,11 +3,8 @@ import { LogsHttp } from '../modules/system/logs_http';
 import express from 'express';
 
 export class LogsController extends BaseController {
-  private logsHttp: LogsHttp;
-
-  constructor(templateHelpers: TemplateHelpers, logsHttp: LogsHttp) {
+  constructor(templateHelpers: TemplateHelpers, private logsHttp: LogsHttp) {
     super(templateHelpers);
-    this.logsHttp = logsHttp;
   }
 
   registerRoutes(router: express.Router): void {

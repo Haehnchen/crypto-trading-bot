@@ -75,22 +75,12 @@ export interface ExchangeCandle {
 }
 
 export class Backtest {
-  private instances: { symbols: { exchange: string; symbol: string }[] };
-  private strategyManager: StrategyManager;
-  private exchangeCandleCombine: ExchangeCandleCombine;
-  private readonly projectDir: string;
-
   constructor(
-    instances: { symbols: { exchange: string; symbol: string }[] },
-    strategyManager: StrategyManager,
-    exchangeCandleCombine: ExchangeCandleCombine,
-    projectDir: string
-  ) {
-    this.instances = instances;
-    this.strategyManager = strategyManager;
-    this.exchangeCandleCombine = exchangeCandleCombine;
-    this.projectDir = projectDir;
-  }
+    private instances: { symbols: { exchange: string; symbol: string }[] },
+    private strategyManager: StrategyManager,
+    private exchangeCandleCombine: ExchangeCandleCombine,
+    private readonly projectDir: string
+  ) {}
 
   async getBacktestPairs(): Promise<BacktestPair[]> {
     // @TODO: resolve n+1 problem (issue on big database)

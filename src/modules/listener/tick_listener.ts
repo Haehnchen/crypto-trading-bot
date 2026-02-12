@@ -30,46 +30,21 @@ export interface SymbolInstance {
 }
 
 export class TickListener {
-  private tickers: Tickers;
-  private instances: { symbols: SymbolInstance[] };
-  private notifier: Notify;
-  private signalLogger: SignalLogger;
-  private strategyManager: StrategyManager;
-  private exchangeManager: ExchangeManager;
-  private pairStateManager: PairStateManager;
-  private logger: Logger;
-  private systemUtil: SystemUtil;
-  private orderExecutor: OrderExecutor;
-  private orderCalculator: OrderCalculator;
-  private readonly notified: Record<string, Date>;
+  private readonly notified: Record<string, Date> = {};
 
   constructor(
-    tickers: Tickers,
-    instances: { symbols: SymbolInstance[] },
-    notifier: Notify,
-    signalLogger: SignalLogger,
-    strategyManager: StrategyManager,
-    exchangeManager: ExchangeManager,
-    pairStateManager: PairStateManager,
-    logger: Logger,
-    systemUtil: SystemUtil,
-    orderExecutor: OrderExecutor,
-    orderCalculator: OrderCalculator
-  ) {
-    this.tickers = tickers;
-    this.instances = instances;
-    this.notifier = notifier;
-    this.signalLogger = signalLogger;
-    this.strategyManager = strategyManager;
-    this.exchangeManager = exchangeManager;
-    this.pairStateManager = pairStateManager;
-    this.logger = logger;
-    this.systemUtil = systemUtil;
-    this.orderExecutor = orderExecutor;
-    this.orderCalculator = orderCalculator;
-
-    this.notified = {};
-  }
+    private tickers: Tickers,
+    private instances: { symbols: SymbolInstance[] },
+    private notifier: Notify,
+    private signalLogger: SignalLogger,
+    private strategyManager: StrategyManager,
+    private exchangeManager: ExchangeManager,
+    private pairStateManager: PairStateManager,
+    private logger: Logger,
+    private systemUtil: SystemUtil,
+    private orderExecutor: OrderExecutor,
+    private orderCalculator: OrderCalculator
+  ) {}
 
   onTick(): void {
     // Tick event handler - currently unused but called from trade.ts

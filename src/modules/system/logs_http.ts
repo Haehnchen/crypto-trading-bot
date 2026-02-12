@@ -1,11 +1,7 @@
 import { LogsRepository } from '../../repository';
 
 export class LogsHttp {
-  private logsRepository: LogsRepository;
-
-  constructor(logsRepository: LogsRepository) {
-    this.logsRepository = logsRepository;
-  }
+  constructor(private logsRepository: LogsRepository) {}
 
   async getLogsPageVariables(request: any, response: any): Promise<any> {
     let excludeLevels: string[] = request.query.exclude_levels || [];

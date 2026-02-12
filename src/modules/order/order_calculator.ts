@@ -5,23 +5,18 @@ import type { Logger } from '../services';
 import type { ExchangeManager } from '../exchange/exchange_manager';
 
 export class OrderCalculator {
-  private tickers: Tickers;
-  private logger: Logger;
-  private exchangeManager: ExchangeManager;
-  private pairConfig: PairConfig;
-
   /**
    * @param tickers {Tickers}
    * @param logger {Logger}
    * @param exchangeManager {ExchangeManager}
    * @param pairConfig {PairConfig}
    */
-  constructor(tickers: Tickers, logger: Logger, exchangeManager: ExchangeManager, pairConfig: PairConfig) {
-    this.tickers = tickers;
-    this.logger = logger;
-    this.exchangeManager = exchangeManager;
-    this.pairConfig = pairConfig;
-  }
+  constructor(
+    private tickers: Tickers,
+    private logger: Logger,
+    private exchangeManager: ExchangeManager,
+    private pairConfig: PairConfig
+  ) {}
 
   /**
    * @param exchangeName String

@@ -15,14 +15,14 @@ export interface ExchangeInstance {
   getPositions(): Promise<Position[]>;
   getPositionForSymbol(symbol: string): Promise<Position | undefined>;
   getOrdersForSymbol(symbol: string): Promise<ExchangeOrder[]>;
-  findOrderById(id: string): Promise<ExchangeOrder | undefined>;
-  updateOrder(id: string, order: any): Promise<any>;
+  findOrderById(id: string | number): Promise<ExchangeOrder | undefined>;
+  updateOrder(id: string | number, order: any): Promise<any>;
   order(order: any): Promise<any>;
   isInverseSymbol(symbol: string): boolean;
   calculateAmount(amount: number, symbol: string): number | undefined;
   calculatePrice(price: number, symbol: string): number | undefined;
   getOrders(): Promise<ExchangeOrder[]>;
-  cancelOrder(id: string): Promise<any>;
+  cancelOrder(id: string | number): Promise<any>;
   cancelAll(symbol: string): Promise<any>;
   getTradableBalance?(): number | undefined;
 }

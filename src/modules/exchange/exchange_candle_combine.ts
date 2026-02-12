@@ -7,11 +7,7 @@ export interface ExchangeSymbolPair {
 }
 
 export class ExchangeCandleCombine {
-  private candlestickRepository: CandlestickRepository;
-
-  constructor(candlestickRepository: CandlestickRepository) {
-    this.candlestickRepository = candlestickRepository;
-  }
+  constructor(private candlestickRepository: CandlestickRepository) {}
 
   async fetchCombinedCandles(
     mainExchange: string,

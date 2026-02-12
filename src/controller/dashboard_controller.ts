@@ -4,13 +4,8 @@ import { SystemUtil } from '../modules/system/system_util';
 import express from 'express';
 
 export class DashboardController extends BaseController {
-  private ta: Ta;
-  private systemUtil: SystemUtil;
-
-  constructor(templateHelpers: TemplateHelpers, ta: Ta, systemUtil: SystemUtil) {
+  constructor(templateHelpers: TemplateHelpers, private ta: Ta, private systemUtil: SystemUtil) {
     super(templateHelpers);
-    this.ta = ta;
-    this.systemUtil = systemUtil;
   }
 
   registerRoutes(router: express.Router): void {

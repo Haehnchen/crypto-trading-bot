@@ -7,13 +7,7 @@ export interface ExchangeSymbolPair {
 }
 
 export class CandleExportHttp {
-  private candlestickRepository: CandlestickRepository;
-  private pairConfig: PairConfig;
-
-  constructor(candlestickRepository: CandlestickRepository, pairConfig: PairConfig) {
-    this.candlestickRepository = candlestickRepository;
-    this.pairConfig = pairConfig;
-  }
+  constructor(private candlestickRepository: CandlestickRepository, private pairConfig: PairConfig) {}
 
   async getCandles(exchange: string, symbol: string, period: string, start: Date, end: Date): Promise<any[]> {
     return this.candlestickRepository.getCandlesInWindow(exchange, symbol, period, start, end);

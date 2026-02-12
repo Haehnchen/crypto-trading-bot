@@ -8,13 +8,7 @@ export interface ExchangeInstance {
 }
 
 export class Backfill {
-  private exchangesIterator: ExchangeInstance[];
-  private candleImporter: CandleImporter;
-
-  constructor(exchangesIterator: ExchangeInstance[], candleImporter: CandleImporter) {
-    this.exchangesIterator = exchangesIterator;
-    this.candleImporter = candleImporter;
-  }
+  constructor(private exchangesIterator: ExchangeInstance[], private candleImporter: CandleImporter) {}
 
   async backfill(exchangeName: string, symbol: string, period: string, date: number): Promise<void> {
     const exchange = this.exchangesIterator.find((e: ExchangeInstance) => e.getName() === exchangeName);
