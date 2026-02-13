@@ -1,22 +1,32 @@
 import { BaseController, TemplateHelpers } from './base_controller';
 import { DeskService } from '../modules/system/desk_service';
+import { SymbolSearchService } from '../modules/system/symbol_search_service';
 import express from 'express';
 
 export class DesksController extends BaseController {
-  constructor(templateHelpers: TemplateHelpers, private deskService: DeskService) {
+  constructor(
+    templateHelpers: TemplateHelpers,
+    private deskService: DeskService,
+    private symbolSearchService: SymbolSearchService
+  ) {
     super(templateHelpers);
   }
 
   registerRoutes(router: express.Router): void {
+    // API endpoint for symbol autocomplete
+    router.get('/desk/api/symbols', async (req: any, res: any) => {
+      const query = req.query.q || '';
+      const symbols = await this.symbolSearchService.searchSymbols(query);
+      res.json(symbols);
+    });
+
     // Desk management UI
     router.get('/desk', (req: any, res: any) => {
       const deskList = this.deskService.getDesks();
       res.render('desk/index', {
         activePage: 'desk',
         title: 'Desk Settings | Crypto Bot',
-        deskList,
-        success: req.query.success,
-        error: req.query.error
+        deskList
       });
     });
 
@@ -40,7 +50,7 @@ export class DesksController extends BaseController {
       const id = parseInt(req.params.id, 10);
 
       if (isNaN(id) || id < 0 || id >= desks.length) {
-        return res.redirect('/desk?error=' + encodeURIComponent('Desk not found'));
+        return res.redirect('/desk');
       }
 
       res.render('desk/form', {

@@ -41,6 +41,7 @@ import { PairStateExecution } from './pairs/pair_state_execution';
 import { PairConfig } from './pairs/pair_config';
 import { SystemUtil } from './system/system_util';
 import { DeskService } from './system/desk_service';
+import { SymbolSearchService } from './system/symbol_search_service';
 import { TechnicalAnalysisValidator } from '../utils/technical_analysis_validator';
 import { WinstonSqliteTransport } from '../utils/winston_sqlite_transport';
 import WinstonTelegramLogger from 'winston-telegram';
@@ -127,6 +128,7 @@ export { ExchangeOrderWatchdogListener } from './listener/exchange_order_watchdo
 export { LogsRepository, TickerLogRepository } from '../repository';
 export { ExchangePositionWatcher } from './exchange/exchange_position_watcher';
 export { DeskService } from './system/desk_service';
+export { SymbolSearchService } from './system/symbol_search_service';
 export { StrategyManager } from './strategy/strategy_manager';
 export { SignalLogger } from './signal/signal_logger';
 export { OrderExecutor } from './order/order_executor';
@@ -186,6 +188,7 @@ let ordersHttp: OrdersHttp;
 let pairConfig: PairConfig;
 let throttler: Throttler;
 let deskService: DeskService;
+let symbolSearchService: SymbolSearchService;
 
 const parameters: Parameters = {
   projectDir: ''
@@ -255,6 +258,7 @@ export interface Services {
   getDesksController(templateHelpers: any): DesksController;
   getTradingViewController(templateHelpers: any): TradingViewController;
   getDeskService(): DeskService;
+  getSymbolSearchService(): SymbolSearchService;
 }
 
 const services: Services = {
@@ -839,7 +843,7 @@ const services: Services = {
   },
 
   getDesksController: function (templateHelpers: any): DesksController {
-    return new DesksController(templateHelpers, this.getDeskService());
+    return new DesksController(templateHelpers, this.getDeskService(), this.getSymbolSearchService());
   },
 
   getTradingViewController: function (templateHelpers: any): TradingViewController {
@@ -852,6 +856,14 @@ const services: Services = {
     }
 
     return (deskService = new DeskService(this.getSystemUtil()));
+  },
+
+  getSymbolSearchService: function (): SymbolSearchService {
+    if (symbolSearchService) {
+      return symbolSearchService;
+    }
+
+    return (symbolSearchService = new SymbolSearchService());
   }
 };
 

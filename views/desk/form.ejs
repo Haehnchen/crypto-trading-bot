@@ -65,8 +65,10 @@
 
                 <!-- Add Pair Form -->
                 <div class="flex gap-2 mb-4">
-                    <input type="text" id="newPairSymbol" placeholder="e.g., binance:BTCUSDT"
-                           class="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="flex-1 relative">
+                        <input type="text" id="newPairSymbol" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type to search symbols..." autocomplete="off">
+                        <div id="symbolDropdown" class="absolute left-0 right-0 top-full bg-white border border-gray-300 rounded mt-1 shadow-lg hidden z-10 max-h-60 overflow-y-auto"></div>
+                    </div>
                     <button type="button" onclick="addPair()"
                             class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm whitespace-nowrap cursor-pointer">
                         <i class="fas fa-plus mr-1"></i> Add Pair
@@ -132,6 +134,10 @@
 <script>
 let pairIndex = <%= typeof desk !== 'undefined' && desk.pairs ? desk.pairs.length : 0 %>;
 let draggedRow = null;
+let symbolInput = document.getElementById('newPairSymbol');
+let symbolDropdown = document.getElementById('symbolDropdown');
+let selectedIndex = -1;
+let symbols = [];
 
 // Initialize Tom Select for intervals
 new TomSelect('#intervals', {
@@ -148,6 +154,93 @@ new TomSelect('#intervals', {
         this.wrapper.classList.add('border', 'border-gray-300', 'rounded', 'text-sm');
     }
 });
+
+// Simple autocomplete for symbol input
+let debounceTimer;
+symbolInput.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(function() {
+        const query = symbolInput.value.trim();
+        if (query.length < 1) {
+            hideDropdown();
+            return;
+        }
+        fetch('/desk/api/symbols?q=' + encodeURIComponent(query))
+            .then(response => response.json())
+            .then(data => {
+                symbols = data;
+                renderDropdown();
+            });
+    }, 400);
+});
+
+symbolInput.addEventListener('keydown', function(e) {
+    const items = symbolDropdown.querySelectorAll('.dropdown-item');
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+        updateSelection(items);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, -1);
+        updateSelection(items);
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+            selectSymbol(symbols[selectedIndex].value);
+        } else {
+            addPair();
+        }
+    } else if (e.key === 'Escape') {
+        hideDropdown();
+    }
+});
+
+symbolInput.addEventListener('blur', function() {
+    setTimeout(hideDropdown, 200);
+});
+
+function renderDropdown() {
+    if (symbols.length === 0) {
+        hideDropdown();
+        return;
+    }
+    selectedIndex = -1;
+    symbolDropdown.innerHTML = symbols.map((s, i) =>
+        '<div class="dropdown-item px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm" data-index="' + i + '">' +
+        escapeHtml(s.text) + (s.description ? ' <span class="text-gray-400">' + escapeHtml(s.description) + '</span>' : '') +
+        '</div>'
+    ).join('');
+    symbolDropdown.classList.remove('hidden');
+
+    symbolDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('mousedown', function() {
+            const index = parseInt(this.dataset.index);
+            selectSymbol(symbols[index].value);
+        });
+    });
+}
+
+function updateSelection(items) {
+    items.forEach((item, i) => {
+        item.classList.toggle('bg-blue-50', i === selectedIndex);
+    });
+    if (selectedIndex >= 0) {
+        items[selectedIndex].scrollIntoView({ block: 'nearest' });
+    }
+}
+
+function selectSymbol(value) {
+    symbolInput.value = value;
+    hideDropdown();
+    symbolInput.focus();
+}
+
+function hideDropdown() {
+    symbolDropdown.classList.add('hidden');
+    symbols = [];
+    selectedIndex = -1;
+}
 
 // Drag and drop functionality
 const tbody = document.getElementById('pairsTableBody');
@@ -192,11 +285,10 @@ function updatePairIndexes() {
 }
 
 function addPair() {
-    const input = document.getElementById('newPairSymbol');
-    const symbol = input.value.trim();
+    const symbol = symbolInput.value.trim();
 
     if (!symbol) {
-        input.focus();
+        symbolInput.focus();
         return;
     }
 
@@ -205,7 +297,8 @@ function addPair() {
     for (let i = 0; i < existingSymbols.length; i++) {
         if (existingSymbols[i].value.toLowerCase() === symbol.toLowerCase()) {
             alert('This pair already exists in the list.');
-            input.select();
+            symbolInput.value = '';
+            symbolInput.focus();
             return;
         }
     }
@@ -217,7 +310,6 @@ function addPair() {
     }
 
     const tbody = document.getElementById('pairsTableBody');
-    const currentCount = tbody.querySelectorAll('.pair-row').length;
 
     const row = document.createElement('tr');
     row.className = 'hover:bg-gray-100 pair-row';
@@ -239,8 +331,9 @@ function addPair() {
 
     tbody.appendChild(row);
     pairIndex++;
-    input.value = '';
-    input.focus();
+    symbolInput.value = '';
+    symbolInput.focus();
+    hideDropdown();
     updatePairIndexes();
 }
 
@@ -267,12 +360,4 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
-
-// Allow pressing Enter to add a pair
-document.getElementById('newPairSymbol').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        addPair();
-    }
-});
 </script>
