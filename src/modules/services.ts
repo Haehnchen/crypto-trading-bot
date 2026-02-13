@@ -40,6 +40,7 @@ import { PairStateManager } from './pairs/pair_state_manager';
 import { PairStateExecution } from './pairs/pair_state_execution';
 import { PairConfig } from './pairs/pair_config';
 import { SystemUtil } from './system/system_util';
+import { DeskService } from './system/desk_service';
 import { TechnicalAnalysisValidator } from '../utils/technical_analysis_validator';
 import { WinstonSqliteTransport } from '../utils/winston_sqlite_transport';
 import WinstonTelegramLogger from 'winston-telegram';
@@ -125,6 +126,7 @@ export { TickerDatabaseListener } from './listener/ticker_database_listener';
 export { ExchangeOrderWatchdogListener } from './listener/exchange_order_watchdog_listener';
 export { LogsRepository, TickerLogRepository } from '../repository';
 export { ExchangePositionWatcher } from './exchange/exchange_position_watcher';
+export { DeskService } from './system/desk_service';
 export { StrategyManager } from './strategy/strategy_manager';
 export { SignalLogger } from './signal/signal_logger';
 export { OrderExecutor } from './order/order_executor';
@@ -183,6 +185,7 @@ let tickerRepository: TickerRepository;
 let ordersHttp: OrdersHttp;
 let pairConfig: PairConfig;
 let throttler: Throttler;
+let deskService: DeskService;
 
 const parameters: Parameters = {
   projectDir: ''
@@ -251,6 +254,7 @@ export interface Services {
   getLogsController(templateHelpers: any): LogsController;
   getDesksController(templateHelpers: any): DesksController;
   getTradingViewController(templateHelpers: any): TradingViewController;
+  getDeskService(): DeskService;
 }
 
 const services: Services = {
@@ -835,11 +839,19 @@ const services: Services = {
   },
 
   getDesksController: function (templateHelpers: any): DesksController {
-    return new DesksController(templateHelpers, this.getSystemUtil());
+    return new DesksController(templateHelpers, this.getDeskService());
   },
 
   getTradingViewController: function (templateHelpers: any): TradingViewController {
     return new TradingViewController(templateHelpers);
+  },
+
+  getDeskService: function (): DeskService {
+    if (deskService) {
+      return deskService;
+    }
+
+    return (deskService = new DeskService(this.getSystemUtil()));
   }
 };
 

@@ -1,0 +1,78 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-[1200px] mx-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-semibold">Desk Settings</h1>
+            <a href="/desk/new" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm cursor-pointer">
+                <i class="fas fa-plus mr-1"></i> New Desk
+            </a>
+        </div>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <div class="bg-white overflow-x-auto">
+            <table class="w-full border-collapse text-sm">
+                <thead>
+                    <tr>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1">Name</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 text-center">Grid</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 text-center">Height</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 text-center">Intervals</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 text-center">Pairs</th>
+                        <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (deskList.length === 0) { %>
+                        <tr>
+                            <td colspan="6" class="border border-gray-200 px-2 py-8 text-center text-gray-500">
+                                No desks configured. <a href="/desk/new" class="text-blue-600 hover:underline cursor-pointer">Create your first desk</a>.
+                            </td>
+                        </tr>
+                    <% } else { %>
+                        <% deskList.forEach(function(desk, index) { %>
+                            <tr class="hover:bg-gray-100">
+                                <td class="border border-gray-200 px-2 py-1 whitespace-nowrap">
+                                    <a href="/desks/<%= index %>" class="text-blue-600 hover:underline font-medium cursor-pointer">
+                                        <i class="fas fa-desktop text-gray-400 mr-2"></i><%= desk.name %>
+                                    </a>
+                                </td>
+                                <td class="border border-gray-200 px-2 py-1 text-center"><%= desk.grid %></td>
+                                <td class="border border-gray-200 px-2 py-1 text-center"><%= desk.height %>px</td>
+                                <td class="border border-gray-200 px-2 py-1 text-center">
+                                    <% if (desk.intervals && desk.intervals.length > 0) { %>
+                                        <% const formattedIntervals = desk.intervals.map(function(i) {
+                                            if (i >= 1440) return (i / 1440) + 'd';
+                                            if (i >= 60) return (i / 60) + 'h';
+                                            return i + 'm';
+                                        }); %>
+                                        <%= formattedIntervals.join(', ') %>
+                                    <% } else { %>
+                                        <span class="text-gray-400">-</span>
+                                    <% } %>
+                                </td>
+                                <td class="border border-gray-200 px-2 py-1 text-center">
+                                    <span class="bg-gray-100 px-2 py-0.5 rounded text-xs"><%= desk.pairs ? desk.pairs.length : 0 %></span>
+                                </td>
+                                <td class="border border-gray-200 px-2 py-1 text-center whitespace-nowrap">
+                                    <a href="/desk/<%= index %>/edit" class="inline-block px-3 py-1 text-xs bg-green-100 text-green-700 hover:bg-green-200 rounded cursor-pointer">
+                                        <i class="fas fa-edit mr-1"></i>Edit
+                                    </a>
+                                    <form action="/desk/<%= index %>/delete" method="POST" class="inline ml-1">
+                                        <button type="submit" class="px-3 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 rounded cursor-pointer" onclick="return confirm('Delete desk &quot;<%= desk.name %>&quot;?');">
+                                            <i class="fas fa-trash mr-1"></i>Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

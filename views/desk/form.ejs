@@ -1,0 +1,278 @@
+<!-- Content -->
+<div class="p-4">
+    <div class="max-w-[900px] mx-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-semibold"><%= isNew ? 'Create Desk' : 'Edit Desk' %></h1>
+            <a href="/desk" class="text-gray-600 hover:text-gray-800 cursor-pointer">
+                <i class="fas fa-arrow-left mr-1"></i> Back to list
+            </a>
+        </div>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <form action="<%= isNew ? '/desk' : '/desk/' + deskId %>" method="POST" class="bg-white rounded shadow p-6" id="deskForm">
+            <!-- General Settings -->
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-4 pb-2 border-b">General Settings</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                        <input type="text" id="name" name="name" value="<%= typeof desk !== 'undefined' && desk.name ? desk.name : '' %>"
+                               class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label for="grid" class="block text-sm font-medium text-gray-700 mb-1">Grid (charts per row)</label>
+                        <input type="number" id="grid" name="grid" value="<%= typeof desk !== 'undefined' && desk.grid ? desk.grid : 4 %>" min="1" max="6"
+                               class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="height" class="block text-sm font-medium text-gray-700 mb-1">Chart Height (px)</label>
+                        <input type="number" id="height" name="height" value="<%= typeof desk !== 'undefined' && desk.height ? desk.height : 400 %>" min="200" max="800"
+                               class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="intervals" class="block text-sm font-medium text-gray-700 mb-1">Intervals</label>
+                        <select id="intervals" name="intervals" multiple class="w-full">
+                            <% const availableIntervals = [
+                                { value: 1, label: '1m' },
+                                { value: 3, label: '3m' },
+                                { value: 5, label: '5m' },
+                                { value: 15, label: '15m' },
+                                { value: 30, label: '30m' },
+                                { value: 60, label: '1h' },
+                                { value: 120, label: '2h' },
+                                { value: 240, label: '4h' },
+                                { value: 480, label: '8h' },
+                                { value: 720, label: '12h' },
+                                { value: 1440, label: '1d' }
+                            ]; %>
+                            <% const selectedIntervals = typeof desk !== 'undefined' && desk.intervals ? desk.intervals : [15, 60, 1440]; %>
+                            <% availableIntervals.forEach(function(interval) { %>
+                                <option value="<%= interval.value %>" <%= selectedIntervals.includes(interval.value) ? 'selected' : '' %>><%= interval.label %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pairs Section -->
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-4 pb-2 border-b">Pairs</h2>
+
+                <!-- Add Pair Form -->
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="newPairSymbol" placeholder="e.g., binance:BTCUSDT"
+                           class="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="button" onclick="addPair()"
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm whitespace-nowrap cursor-pointer">
+                        <i class="fas fa-plus mr-1"></i> Add Pair
+                    </button>
+                </div>
+
+                <!-- Pairs Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse text-sm">
+                        <thead>
+                            <tr>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 w-8"></th>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1">Symbol</th>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-2 py-1 text-center w-24">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pairsTableBody">
+                            <% if (typeof desk !== 'undefined' && desk.pairs && desk.pairs.length > 0) { %>
+                                <% desk.pairs.forEach(function(pair, index) { %>
+                                    <tr class="hover:bg-gray-100 pair-row" draggable="true" data-index="<%= index %>">
+                                        <td class="border border-gray-200 px-2 py-1 text-gray-400 cursor-move drag-handle">
+                                            <i class="fas fa-grip-vertical"></i>
+                                        </td>
+                                        <td class="border border-gray-200 px-2 py-1 whitespace-nowrap">
+                                            <input type="hidden" name="pairs[<%= index %>][symbol]" value="<%= pair.symbol %>">
+                                            <span class="font-mono"><%= pair.symbol %></span>
+                                        </td>
+                                        <td class="border border-gray-200 px-2 py-1 text-center">
+                                            <button type="button" onclick="removePair(this)" class="text-red-600 hover:text-red-800 cursor-pointer">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr id="noPairsRow">
+                                    <td colspan="3" class="border border-gray-200 px-2 py-8 text-center text-gray-400">
+                                        No pairs added yet. Add your first pair above.
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                    Format: <code class="bg-gray-100 px-1 rounded">exchange:symbol</code> (e.g., binance:BTCUSDT, bybit:ETHUSDT) or <code class="bg-gray-100 px-1 rounded">symbol</code> (e.g., SPX500USD, EURUSD). Drag rows to reorder.
+                </p>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="flex justify-end gap-3 pt-4">
+                <a href="/desk" class="px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded text-sm cursor-pointer">
+                    <i class="fas fa-save mr-1"></i> <%= isNew ? 'Create Desk' : 'Save Changes' %>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let pairIndex = <%= typeof desk !== 'undefined' && desk.pairs ? desk.pairs.length : 0 %>;
+let draggedRow = null;
+
+// Initialize Tom Select for intervals
+new TomSelect('#intervals', {
+    plugins: ['remove_button'],
+    persist: false,
+    create: false,
+    placeholder: 'Select intervals...',
+    render: {
+        option: function(data, escape) {
+            return '<div class="py-1">' + escape(data.text) + '</div>';
+        }
+    },
+    onInitialize: function() {
+        this.wrapper.classList.add('border', 'border-gray-300', 'rounded', 'text-sm');
+    }
+});
+
+// Drag and drop functionality
+const tbody = document.getElementById('pairsTableBody');
+
+tbody.addEventListener('dragstart', function(e) {
+    if (e.target.classList.contains('pair-row')) {
+        draggedRow = e.target;
+        e.target.style.opacity = '0.85';
+    }
+});
+
+tbody.addEventListener('dragend', function(e) {
+    if (e.target.classList.contains('pair-row')) {
+        e.target.style.opacity = '1';
+        draggedRow = null;
+        updatePairIndexes();
+    }
+});
+
+tbody.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    const row = e.target.closest('.pair-row');
+    if (row && draggedRow && row !== draggedRow) {
+        const rect = row.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        if (e.clientY < midY) {
+            row.parentNode.insertBefore(draggedRow, row);
+        } else {
+            row.parentNode.insertBefore(draggedRow, row.nextSibling);
+        }
+    }
+});
+
+function updatePairIndexes() {
+    const rows = document.querySelectorAll('.pair-row');
+    rows.forEach((row, index) => {
+        const input = row.querySelector('input[name^="pairs["]');
+        if (input) {
+            input.name = 'pairs[' + index + '][symbol]';
+        }
+    });
+}
+
+function addPair() {
+    const input = document.getElementById('newPairSymbol');
+    const symbol = input.value.trim();
+
+    if (!symbol) {
+        input.focus();
+        return;
+    }
+
+    // Check for duplicates
+    const existingSymbols = document.querySelectorAll('input[name^="pairs["]');
+    for (let i = 0; i < existingSymbols.length; i++) {
+        if (existingSymbols[i].value.toLowerCase() === symbol.toLowerCase()) {
+            alert('This pair already exists in the list.');
+            input.select();
+            return;
+        }
+    }
+
+    // Remove "no pairs" message if present
+    const noPairsRow = document.getElementById('noPairsRow');
+    if (noPairsRow) {
+        noPairsRow.remove();
+    }
+
+    const tbody = document.getElementById('pairsTableBody');
+    const currentCount = tbody.querySelectorAll('.pair-row').length;
+
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-gray-100 pair-row';
+    row.draggable = true;
+    row.innerHTML = `
+        <td class="border border-gray-200 px-2 py-1 text-gray-400 cursor-move drag-handle">
+            <i class="fas fa-grip-vertical"></i>
+        </td>
+        <td class="border border-gray-200 px-2 py-1 whitespace-nowrap">
+            <input type="hidden" name="pairs[${pairIndex}][symbol]" value="${escapeHtml(symbol)}">
+            <span class="font-mono">${escapeHtml(symbol)}</span>
+        </td>
+        <td class="border border-gray-200 px-2 py-1 text-center">
+            <button type="button" onclick="removePair(this)" class="text-red-600 hover:text-red-800 cursor-pointer">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    `;
+
+    tbody.appendChild(row);
+    pairIndex++;
+    input.value = '';
+    input.focus();
+    updatePairIndexes();
+}
+
+function removePair(button) {
+    const row = button.closest('tr');
+    row.remove();
+
+    // Add "no pairs" message if empty
+    const tbody = document.getElementById('pairsTableBody');
+    if (tbody.querySelectorAll('.pair-row').length === 0) {
+        tbody.innerHTML = `
+            <tr id="noPairsRow">
+                <td colspan="3" class="border border-gray-200 px-2 py-8 text-center text-gray-400">
+                    No pairs added yet. Add your first pair above.
+                </td>
+            </tr>
+        `;
+    }
+    updatePairIndexes();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Allow pressing Enter to add a pair
+document.getElementById('newPairSymbol').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addPair();
+    }
+});
+</script>

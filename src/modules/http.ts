@@ -108,7 +108,7 @@ export class Http {
       res.locals = {
         ...res.locals,
         ...this.templateHelpers,
-        desks: this.systemUtil.getConfig('desks', []).map((d: any) => d.name),
+        desks: this.services.getDeskService().getDeskNames(),
         nodeVersion: this.templateHelpers.nodeVersion(),
         memoryUsage: this.templateHelpers.memoryUsage(),
         assetVersion: this.templateHelpers.assetVersion()

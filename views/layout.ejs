@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css">
     <!-- Tailwind CSS 4 -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Tom Select -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <!-- Custom styles -->
     <link rel="stylesheet" href="/css/style.css">
 
@@ -44,6 +47,10 @@
                             Desks <i class="fas fa-caret-down text-xs"></i>
                         </button>
                         <div class="hidden group-hover:block absolute left-0 top-full bg-white border border-gray-200 rounded shadow-lg min-w-48 z-50 py-1">
+                            <a href="/desk" class="block px-4 py-1 text-sm text-gray-600 hover:bg-gray-100">
+                                <i class="fas fa-cog text-gray-400"></i> &nbsp; Settings
+                            </a>
+                            <div class="border-t border-gray-200 my-1"></div>
                             <% desks.forEach(function(desk, index) { %>
                                 <a href="/desks/<%= index %>" class="block px-4 py-1 text-sm text-gray-700 hover:bg-gray-100"><%= desk %></a>
                             <% }); %>

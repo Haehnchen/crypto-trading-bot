@@ -15,7 +15,7 @@
                         <div class="space-y-4">
                             <div>
                                 <label for="form-pair" class="block font-medium mb-1">Pair</label>
-                                <select class="w-full border border-gray-300 rounded px-3 py-2 chosen-select" id="form-pair" name="pair" data-placeholder="Select one or multiple symbols" required multiple>
+                                <select class="w-full" id="form-pair" name="pair" data-placeholder="Select one or multiple symbols" required multiple>
                                     <% pairs.forEach(function(pair) { %>
                                         <option data-options="<%- pair.options ? JSON.stringify(pair.options).replace(/"/g, '&quot;') : '' %>"><%= pair.name %></option>
                                     <% }); %>
@@ -25,7 +25,7 @@
 
                             <div>
                                 <label for="form-strategies" class="block font-medium mb-1">Strategy</label>
-                                <select class="w-full border border-gray-300 rounded px-3 py-2 chosen-select" id="form-strategies" name="strategy" required>
+                                <select class="w-full border border-gray-300 rounded px-3 py-2" id="form-strategies" name="strategy" required>
                                     <option disabled selected value> -- select an option -- </option>
                                     <% strategies.forEach(function(strategy) { %>
                                         <option data-options="<%- strategy.options ? JSON.stringify(strategy.options).replace(/"/g, '&quot;') : '' %>"><%= strategy.name %></option>
