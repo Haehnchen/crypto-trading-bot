@@ -85,7 +85,7 @@
     "url": "https://github.com/Haehnchen/crypto-trading-bot.git"
   },
   "scripts": {
-    "start": "node dist/index.js trade",
+    "start": "npm run build && node dist/index.js trade",
     "start:dev": "ts-node index.ts trade",
     "start:watch": "ts-node --watch index.ts trade",
     "postinstall": "patch-package",
