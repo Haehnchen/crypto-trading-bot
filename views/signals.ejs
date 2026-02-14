@@ -37,7 +37,7 @@
                         </td>
                         <td class="border border-gray-200 px-3 py-2"><%= signal.strategy %></td>
                         <td class="border border-gray-200 px-3 py-2 whitespace-nowrap">
-                            <% const date = new Date(signal.income_at); %>
+                            <% const date = new Date(signal.income_at * 1000); %>
                             <%= String(date.getDate()).padStart(2, '0') %>.<%= String(date.getMonth() + 1).padStart(2, '0') %>.<%= String(date.getFullYear()).slice(-2) %> <%= String(date.getHours()).padStart(2, '0') %>:<%= String(date.getMinutes()).padStart(2, '0') %>
                         </td>
                         <td class="border border-gray-200 px-3 py-2"><%= signal.state %></td>
