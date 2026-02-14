@@ -31,6 +31,7 @@ export interface SymbolInstance {
 
 export class TickListener {
   private readonly notified: Record<string, Date> = {};
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private tickers: Tickers,
@@ -283,6 +284,24 @@ export class TickListener {
         });
       });
     });
+
+    // Cleanup old notified entries every hour to prevent memory leak
+    // Entries older than 1 hour are no longer needed for signal slowdown logic
+    if (!this.cleanupInterval) {
+      this.cleanupInterval = setInterval(() => {
+        const cutoff = moment().subtract(1, 'hour').toDate();
+        let cleaned = 0;
+        for (const key in this.notified) {
+          if (this.notified[key] < cutoff) {
+            delete this.notified[key];
+            cleaned++;
+          }
+        }
+        if (cleaned > 0) {
+          this.logger.debug(`TickListener: Cleaned ${cleaned} old notified entries`);
+        }
+      }, 60 * 60 * 1000); // Run every hour
+    }
   }
 
   getFirstTimeoutAndInterval(period: string): [number, number] {

@@ -43,7 +43,9 @@ export class BybitUnified {
     this.positions = {};
     this.orders = {};
 
-    const exchange = new ccxt.pro.bybit({ newUpdates: false });
+    // newUpdates: true ensures ccxt.pro only keeps the latest update, not all historical data
+    // This prevents unbounded memory growth from accumulated websocket messages
+    const exchange = new ccxt.pro.bybit({ newUpdates: true });
 
     setTimeout(async () => {
       const result = (await exchange.fetchMarkets()).filter(i => i.type === 'swap' && i.quote === 'USDT');
