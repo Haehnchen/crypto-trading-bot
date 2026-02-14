@@ -46,61 +46,137 @@ export interface IndicatorResult {
   [key: string]: any;
 }
 
-export type IndicatorFunction = (source: any[], indicator: Indicator) => Promise<IndicatorResult>;
+// Source types for indicators
+export type PriceSource = number[];
+export type CandleSource = Candlestick[];
+export type AnySource = PriceSource | CandleSource;
 
-export interface IndicatorsCollection {
-  bb: IndicatorFunction;
-  obv: IndicatorFunction;
-  ao: IndicatorFunction;
-  wma: IndicatorFunction;
-  dema: IndicatorFunction;
-  tema: IndicatorFunction;
-  trima: IndicatorFunction;
-  kama: IndicatorFunction;
-  roc: IndicatorFunction;
-  atr: IndicatorFunction;
-  mfi: IndicatorFunction;
-  sma: IndicatorFunction;
-  ema: IndicatorFunction;
-  rsi: IndicatorFunction;
-  hma: IndicatorFunction;
-  cci: IndicatorFunction;
-  vwma: IndicatorFunction;
-  stoch: IndicatorFunction;
-  macd: IndicatorFunction;
-  adx: IndicatorFunction;
-  macd_ext: IndicatorFunction;
-  bb_talib: IndicatorFunction;
-  stoch_rsi: IndicatorFunction;
-  psar: IndicatorFunction;
-  heikin_ashi: IndicatorFunction;
-  volume_profile: IndicatorFunction;
-  volume_by_price: IndicatorFunction;
-  zigzag: IndicatorFunction;
-  ichimoku_cloud: IndicatorFunction;
-  pivot_points_high_low: IndicatorFunction;
-  wicked: IndicatorFunction;
-  candles: IndicatorFunction;
+// Typed indicator function types
+export type PriceIndicatorFn = (source: PriceSource, indicator: Indicator) => Promise<IndicatorResult>;
+export type CandleIndicatorFn = (source: CandleSource, indicator: Indicator) => Promise<IndicatorResult>;
+export type AnyIndicatorFn = (source: AnySource, indicator: Indicator) => Promise<IndicatorResult>;
+
+// Talib result types
+interface TalibResult {
+  nbElement: number;
+  begIndex: number;
+  result: Record<string, Float64Array>;
+}
+
+interface TalibModule {
+  execute: (params: Record<string, unknown>) => TalibResult;
 }
 
 // Lazy load modules
-const getTalib = () => require('talib') as { execute: (params: any, callback: (err: any, result: any) => void) => void };
-const getTechnicalIndicators = () => require('technicalindicators');
+const getTalib = (): TalibModule => require('talib');
+const getTechnicalIndicators = (): typeof import('technicalindicators') => require('technicalindicators');
 const getTechnicalAnalysis = () => require('./technical_analysis');
 
 /**
- * Promisified talib.execute
+ * Execute talib synchronously (talib now supports sync calls)
  */
-async function talibExecute(request: any): Promise<any> {
-  return new Promise((resolve, reject) => {
-    getTalib().execute(request, (err: any, result: any) => {
-      if (err) {
-        resolve(null); // Return null instead of rejecting to match original behavior
-        return;
-      }
-      resolve(result);
-    });
-  });
+function talibExecute(request: Record<string, unknown>): TalibResult {
+  return getTalib().execute(request);
+}
+
+/**
+ * Talib input field types
+ */
+type TalibInputField = 'high' | 'low' | 'close' | 'open' | 'volume';
+
+/**
+ * Configuration for a talib indicator
+ */
+interface TalibIndicatorConfig {
+  name: string;
+  inputs?: TalibInputField[];
+  optInputs?: Record<string, { talibKey: string; default?: number }>;
+}
+
+/**
+ * Build talib request from candles or price array
+ */
+function buildTalibRequestFromCandles(
+  candles: CandleSource,
+  config: TalibIndicatorConfig,
+  options: Record<string, unknown>
+): Record<string, unknown> {
+  const request: Record<string, unknown> = {
+    name: config.name,
+    startIdx: 0,
+    endIdx: candles.length - 1
+  };
+
+  // Extract candle fields
+  if (config.inputs) {
+    for (const field of config.inputs) {
+      request[field] = candles.map(c => c[field]);
+    }
+  }
+
+  // Add optional parameters
+  if (config.optInputs) {
+    for (const [optKey, cfg] of Object.entries(config.optInputs)) {
+      const value = options[optKey];
+      request[cfg.talibKey] = value !== undefined ? value : cfg.default;
+    }
+  }
+
+  return request;
+}
+
+/**
+ * Build talib request from price array
+ */
+function buildTalibRequestFromPrices(
+  prices: PriceSource,
+  config: TalibIndicatorConfig,
+  options: Record<string, unknown>
+): Record<string, unknown> {
+  const request: Record<string, unknown> = {
+    name: config.name,
+    startIdx: 0,
+    endIdx: prices.length - 1,
+    inReal: prices.slice()
+  };
+
+  // Add optional parameters
+  if (config.optInputs) {
+    for (const [optKey, cfg] of Object.entries(config.optInputs)) {
+      const value = options[optKey];
+      request[cfg.talibKey] = value !== undefined ? value : cfg.default;
+    }
+  }
+
+  return request;
+}
+
+/**
+ * Execute a simple talib indicator that returns a single array of values
+ */
+function executeSimpleTalib(
+  prices: PriceSource,
+  indicator: Indicator,
+  config: TalibIndicatorConfig
+): IndicatorResult {
+  const { options = {} } = indicator;
+  const result = talibExecute(buildTalibRequestFromPrices(prices, config, options));
+  const outputKey = Object.keys(result.result)[0];
+  return { [indicator.key]: Array.from(result.result[outputKey]) };
+}
+
+/**
+ * Execute a candle-based talib indicator that returns a single array of values
+ */
+function executeCandleTalib(
+  candles: CandleSource,
+  indicator: Indicator,
+  config: TalibIndicatorConfig
+): IndicatorResult {
+  const { options = {} } = indicator;
+  const result = talibExecute(buildTalibRequestFromCandles(candles, config, options));
+  const outputKey = Object.keys(result.result)[0];
+  return { [indicator.key]: Array.from(result.result[outputKey]) };
 }
 
 /**
@@ -112,7 +188,7 @@ function zigzag(ticks: Candlestick[], deviation: number = 5, arraySize: number =
   let lastDeviation = 0;
   deviation /= 100;
 
-  const startingTick = arraySize == -1 ? 0 : ticks.length - arraySize;
+  const startingTick = arraySize === -1 ? 0 : ticks.length - arraySize;
 
   for (let i = startingTick; i < ticks.length; ++i) {
     const close = parseFloat(ticks[i].close.toString());
@@ -121,7 +197,7 @@ function zigzag(ticks: Candlestick[], deviation: number = 5, arraySize: number =
     let positiveDeviation = high / basePrice - 1;
     let negativeDeviation = low / basePrice - 1;
 
-    if (basePrice == -1) {
+    if (basePrice === -1) {
       basePrice = close;
       lastDeviation = 0;
       turningPoints.push({ timePeriod: i, value: close, deviation: lastDeviation });
@@ -133,22 +209,18 @@ function zigzag(ticks: Candlestick[], deviation: number = 5, arraySize: number =
         positiveDeviation += lastDeviation;
         turningPoints.pop();
       }
-
       turningPoints.push({ timePeriod: i, value: high, deviation: positiveDeviation });
       lastDeviation = positiveDeviation;
       basePrice = high;
-    }
-    else if (negativeDeviation <= -deviation || (negativeDeviation < 0 && lastDeviation < 0)) {
+    } else if (negativeDeviation <= -deviation || (negativeDeviation < 0 && lastDeviation < 0)) {
       if (lastDeviation < 0) {
         negativeDeviation += lastDeviation;
         turningPoints.pop();
       }
-
       turningPoints.push({ timePeriod: i, value: low, deviation: negativeDeviation });
       lastDeviation = negativeDeviation;
       basePrice = low;
-    }
-    else if (i === ticks.length - 1) {
+    } else if (i === ticks.length - 1) {
       if (positiveDeviation > 0) turningPoints.push({ timePeriod: i, value: high, deviation: positiveDeviation });
       else turningPoints.push({ timePeriod: i, value: low, deviation: negativeDeviation });
     }
@@ -220,49 +292,6 @@ function calculateWMA(data: number[], period: number): number[] {
 }
 
 /**
- * Build talib request from config
- */
-function buildTalibRequest(
-  source: any[],
-  name: string,
-  options: Record<string, any>,
-  config: {
-    inputs?: ('high' | 'low' | 'close' | 'volume' | 'open')[];
-    optInputs?: Record<string, { talibKey: string; default?: any }>;
-  }
-): any {
-  const request: any = {
-    name,
-    startIdx: 0,
-    endIdx: source.length - 1
-  };
-
-  // Handle inputs
-  if (config.inputs && source.length > 0 && typeof source[0] === 'object') {
-    if (config.inputs.includes('high')) request.high = source.map((c: any) => c.high);
-    if (config.inputs.includes('low')) request.low = source.map((c: any) => c.low);
-    if (config.inputs.includes('close')) request.close = source.map((c: any) => c.close);
-    if (config.inputs.includes('open')) request.open = source.map((c: any) => c.open);
-    if (config.inputs.includes('volume')) request.volume = source.map((c: any) => c.volume);
-  } else {
-    request.inReal = source.slice();
-  }
-
-  // Add optional parameters
-  if (config.optInputs) {
-    for (const [optKey, cfg] of Object.entries(config.optInputs)) {
-      if (options[optKey] !== undefined) {
-        request[cfg.talibKey] = options[optKey];
-      } else if (cfg.default !== undefined) {
-        request[cfg.talibKey] = cfg.default;
-      }
-    }
-  }
-
-  return request;
-}
-
-/**
  * Indicators that require full candle data (not just close prices)
  */
 export const sourceCandle = [
@@ -284,16 +313,16 @@ export const sourceCandle = [
   'psar',
   'hma',
   'candles'
-];
+] as const;
 
-export const indicators: IndicatorsCollection = {
-  // Bollinger Bands
-  bb: async (source: any[], indicator: Indicator) => {
+export const indicators = {
+  // Bollinger Bands - requires price array
+  bb: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { options = {} } = indicator;
-    const stddev = options.stddev || 2;
-    const length = options.length || 20;
+    const stddev = (options.stddev as number) || 2;
+    const length = (options.length as number) || 20;
 
-    const result = await talibExecute({
+    const result = talibExecute({
       name: 'BBANDS',
       startIdx: 0,
       endIdx: source.length - 1,
@@ -304,9 +333,7 @@ export const indicators: IndicatorsCollection = {
       optInMAType: 0
     });
 
-    if (!result) return { [indicator.key]: [] };
-
-    const finalResult: any[] = [];
+    const finalResult: Array<{ upper: number; middle: number; lower: number; width: number }> = [];
     for (let i = 0; i < result.nbElement; i++) {
       finalResult.push({
         upper: result.result.outRealUpperBand[i],
@@ -318,29 +345,22 @@ export const indicators: IndicatorsCollection = {
     return { [indicator.key]: finalResult };
   },
 
-  // On Balance Volume
-  obv: async (source: any[], indicator: Indicator) => {
-    const closes = source.map((c: any) => c.close);
-    const volumes = source.map((c: any) => c.volume);
-
-    const result = await talibExecute({
+  // On Balance Volume - requires candles
+  obv: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
+    const result = talibExecute({
       name: 'OBV',
       startIdx: 0,
       endIdx: source.length - 1,
-      inReal: closes,
-      volume: volumes
+      inReal: source.map(c => c.close),
+      volume: source.map(c => c.volume)
     });
 
-    if (!result) return { [indicator.key]: [] };
     return { [indicator.key]: Array.from(result.result.outReal) };
   },
 
-  // Awesome Oscillator
-  ao: async (source: any[], indicator: Indicator) => {
-    const highs = source.map((c: any) => c.high);
-    const lows = source.map((c: any) => c.low);
-    const medianPrices = highs.map((h: number, i: number) => (h + lows[i]) / 2);
-
+  // Awesome Oscillator - requires candles
+  ao: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
+    const medianPrices = source.map(c => (c.high + c.low) / 2);
     const sma5 = calculateSMA(medianPrices, 5);
     const sma34 = calculateSMA(medianPrices, 34);
 
@@ -353,129 +373,104 @@ export const indicators: IndicatorsCollection = {
     return { [indicator.key]: result };
   },
 
-  // Weighted Moving Average
-  wma: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'WMA', options, {
+  // Weighted Moving Average - requires price array
+  wma: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeSimpleTalib(source, indicator, {
+      name: 'WMA',
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 9 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Double EMA
-  dema: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'DEMA', options, {
+  // Double EMA - requires price array
+  dema: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeSimpleTalib(source, indicator, {
+      name: 'DEMA',
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 9 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Triple EMA
-  tema: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'TEMA', options, {
+  // Triple EMA - requires price array
+  tema: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeSimpleTalib(source, indicator, {
+      name: 'TEMA',
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 9 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Triangular MA
-  trima: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'TRIMA', options, {
+  // Triangular MA - requires price array
+  trima: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeSimpleTalib(source, indicator, {
+      name: 'TRIMA',
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 9 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Kaufman Adaptive MA
-  kama: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'KAMA', options, {
+  // Kaufman Adaptive MA - requires price array
+  kama: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeSimpleTalib(source, indicator, {
+      name: 'KAMA',
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 9 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Rate of Change
-  roc: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'ROC', options, {
+  // Rate of Change - requires price array
+  roc: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeSimpleTalib(source, indicator, {
+      name: 'ROC',
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Average True Range
-  atr: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'ATR', options, {
+  // Average True Range - requires candles
+  atr: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeCandleTalib(source, indicator, {
+      name: 'ATR',
       inputs: ['high', 'low', 'close'],
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Money Flow Index
-  mfi: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'MFI', options, {
+  // Money Flow Index - requires candles
+  mfi: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeCandleTalib(source, indicator, {
+      name: 'MFI',
       inputs: ['high', 'low', 'close', 'volume'],
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Simple Moving Average
-  sma: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'SMA', options, {
+  // Simple Moving Average - requires price array
+  sma: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeSimpleTalib(source, indicator, {
+      name: 'SMA',
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Exponential Moving Average
-  ema: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'EMA', options, {
+  // Exponential Moving Average - requires price array
+  ema: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeSimpleTalib(source, indicator, {
+      name: 'EMA',
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Relative Strength Index
-  rsi: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'RSI', options, {
+  // Relative Strength Index - requires price array
+  rsi: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeSimpleTalib(source, indicator, {
+      name: 'RSI',
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Hull Moving Average - custom implementation
-  hma: async (source: any[], indicator: Indicator) => {
-    const period = indicator?.options?.length || 9;
-    const candleSource = (indicator.options && indicator.options.source) || 'close';
+  // Hull Moving Average - can take candles or price array
+  hma: async (source: AnySource, indicator: Indicator): Promise<IndicatorResult> => {
+    const period = (indicator?.options?.length as number) || 9;
+    const candleSource = (indicator.options?.source as string) || 'close';
 
-    let data: number[];
-    if (typeof source[0] === 'object') {
-      data = source.map((c: any) => c[candleSource]);
-    } else {
-      data = source.slice();
-    }
+    const data: number[] = typeof source[0] === 'object'
+      ? (source as CandleSource).map(c => c[candleSource as keyof Candlestick] as number)
+      : (source as PriceSource).slice();
 
     const halfPeriod = Math.floor(period / 2);
     const sqrtPeriod = Math.floor(Math.sqrt(period));
@@ -489,34 +484,29 @@ export const indicators: IndicatorsCollection = {
       rawData.push(2 * wmaHalf[i + offset] - wmaFull[i]);
     }
 
-    const hma = calculateWMA(rawData, sqrtPeriod);
-    return { [indicator.key]: hma };
+    return { [indicator.key]: calculateWMA(rawData, sqrtPeriod) };
   },
 
-  // Commodity Channel Index
-  cci: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'CCI', options, {
+  // Commodity Channel Index - requires candles
+  cci: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeCandleTalib(source, indicator, {
+      name: 'CCI',
       inputs: ['high', 'low', 'close'],
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 20 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Volume Weighted MA
-  vwma: async (source: any[], indicator: Indicator) => {
-    const period = indicator?.options?.length || 20;
-    const closes = source.map((c: any) => c.close);
-    const volumes = source.map((c: any) => c.volume);
+  // Volume Weighted MA - requires candles
+  vwma: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
+    const period = (indicator?.options?.length as number) || 20;
 
     const result: number[] = [];
     for (let i = period - 1; i < source.length; i++) {
       let sumPV = 0;
       let sumV = 0;
       for (let j = i - period + 1; j <= i; j++) {
-        sumPV += closes[j] * volumes[j];
-        sumV += volumes[j];
+        sumPV += source[j].close * source[j].volume;
+        sumV += source[j].volume;
       }
       result.push(sumV > 0 ? sumPV / sumV : 0);
     }
@@ -524,20 +514,20 @@ export const indicators: IndicatorsCollection = {
     return { [indicator.key]: result };
   },
 
-  // Stochastic Oscillator
-  stoch: async (source: any[], indicator: Indicator) => {
+  // Stochastic Oscillator - requires candles
+  stoch: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { options = {} } = indicator;
-    const k = options.k || 3;
-    const d = options.d || 3;
-    const length = options.length || 14;
+    const k = (options.k as number) || 3;
+    const d = (options.d as number) || 3;
+    const length = (options.length as number) || 14;
 
-    const result = await talibExecute({
+    const result = talibExecute({
       name: 'STOCH',
       startIdx: 0,
       endIdx: source.length - 1,
-      high: source.map((c: any) => c.high),
-      low: source.map((c: any) => c.low),
-      close: source.map((c: any) => c.close),
+      high: source.map(c => c.high),
+      low: source.map(c => c.low),
+      close: source.map(c => c.close),
       optInFastK_Period: length,
       optInSlowK_Period: k,
       optInSlowK_MAType: 0,
@@ -545,9 +535,7 @@ export const indicators: IndicatorsCollection = {
       optInSlowD_MAType: 0
     });
 
-    if (!result) return { [indicator.key]: [] };
-
-    const finalResult: any[] = [];
+    const finalResult: Array<{ stoch_k: number; stoch_d: number }> = [];
     for (let i = 0; i < result.nbElement; i++) {
       finalResult.push({
         stoch_k: result.result.outSlowK[i],
@@ -557,20 +545,20 @@ export const indicators: IndicatorsCollection = {
     return { [indicator.key]: finalResult };
   },
 
-  // MACD
-  macd: async (source: any[], indicator: Indicator) => {
+  // MACD - requires price array
+  macd: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'MACD', options, {
-      optInputs: {
-        fast_length: { talibKey: 'optInFastPeriod', default: 12 },
-        slow_length: { talibKey: 'optInSlowPeriod', default: 26 },
-        signal_length: { talibKey: 'optInSignalPeriod', default: 9 }
-      }
-    }));
+    const result = talibExecute({
+      name: 'MACD',
+      startIdx: 0,
+      endIdx: source.length - 1,
+      inReal: source.slice(),
+      optInFastPeriod: (options.fast_length as number) || 12,
+      optInSlowPeriod: (options.slow_length as number) || 26,
+      optInSignalPeriod: (options.signal_length as number) || 9
+    });
 
-    if (!result) return { [indicator.key]: [] };
-
-    const finalResult: any[] = [];
+    const finalResult: Array<{ macd: number; signal: number; histogram: number }> = [];
     for (let i = 0; i < result.nbElement; i++) {
       finalResult.push({
         macd: result.result.outMACD[i],
@@ -581,43 +569,39 @@ export const indicators: IndicatorsCollection = {
     return { [indicator.key]: finalResult };
   },
 
-  // Average Directional Index
-  adx: async (source: any[], indicator: Indicator) => {
-    const { options = {} } = indicator;
-    const result = await talibExecute(buildTalibRequest(source, 'ADX', options, {
+  // Average Directional Index - requires candles
+  adx: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
+    return executeCandleTalib(source, indicator, {
+      name: 'ADX',
       inputs: ['high', 'low', 'close'],
       optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } }
-    }));
-    if (!result) return { [indicator.key]: [] };
-    return { [indicator.key]: Array.from(result.result.outReal) };
+    });
   },
 
-  // Extended MACD with different MA types
-  macd_ext: async (source: any[], indicator: Indicator) => {
+  // Extended MACD with different MA types - requires price array
+  macd_ext: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
     const getMaTypeFromString = (maType: string): number => {
       const types = ['SMA', 'EMA', 'WMA', 'DEMA', 'TEMA', 'TRIMA', 'KAMA', 'MAMA', 'T3'];
       return types.includes(maType) ? types.indexOf(maType) : 1;
     };
 
     const { options = {} } = indicator;
-    const defaultMaType = options.default_ma_type || 'EMA';
+    const defaultMaType = (options.default_ma_type as string) || 'EMA';
 
-    const result = await talibExecute({
+    const result = talibExecute({
       name: 'MACDEXT',
       startIdx: 0,
       endIdx: source.length - 1,
       inReal: source.slice(),
-      optInFastPeriod: options.fast_period || 12,
-      optInSlowPeriod: options.slow_period || 26,
-      optInSignalPeriod: options.signal_period || 9,
-      optInFastMAType: getMaTypeFromString(options.fast_ma_type || defaultMaType),
-      optInSlowMAType: getMaTypeFromString(options.slow_ma_type || defaultMaType),
-      optInSignalMAType: getMaTypeFromString(options.signal_ma_type || defaultMaType)
+      optInFastPeriod: (options.fast_period as number) || 12,
+      optInSlowPeriod: (options.slow_period as number) || 26,
+      optInSignalPeriod: (options.signal_period as number) || 9,
+      optInFastMAType: getMaTypeFromString((options.fast_ma_type as string) || defaultMaType),
+      optInSlowMAType: getMaTypeFromString((options.slow_ma_type as string) || defaultMaType),
+      optInSignalMAType: getMaTypeFromString((options.signal_ma_type as string) || defaultMaType)
     });
 
-    if (!result) return { [indicator.key]: [] };
-
-    const resultHistory: any[] = [];
+    const resultHistory: Array<{ macd: number; histogram: number; signal: number }> = [];
     for (let i = 0; i < result.nbElement; i++) {
       resultHistory.push({
         macd: result.result.outMACD[i],
@@ -628,13 +612,13 @@ export const indicators: IndicatorsCollection = {
     return { [indicator.key]: resultHistory };
   },
 
-  // Bollinger Bands using talib (duplicate of bb for backwards compatibility)
-  bb_talib: async (source: any[], indicator: Indicator) => {
+  // Bollinger Bands using talib - requires price array
+  bb_talib: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { options = {} } = indicator;
-    const length = options.length || 20;
-    const stddev = options.stddev || 2;
+    const length = (options.length as number) || 20;
+    const stddev = (options.stddev as number) || 2;
 
-    const result = await talibExecute({
+    const result = talibExecute({
       name: 'BBANDS',
       startIdx: 0,
       endIdx: source.length - 1,
@@ -645,9 +629,7 @@ export const indicators: IndicatorsCollection = {
       optInMAType: 0
     });
 
-    if (!result) return { [indicator.key]: [] };
-
-    const resultHistory: any[] = [];
+    const resultHistory: Array<{ upper: number; middle: number; lower: number; width: number }> = [];
     for (let i = 0; i < result.nbElement; i++) {
       resultHistory.push({
         upper: result.result.outRealUpperBand[i],
@@ -659,10 +641,13 @@ export const indicators: IndicatorsCollection = {
     return { [indicator.key]: resultHistory };
   },
 
-  // Stochastic RSI
-  stoch_rsi: async (source: any[], indicator: Indicator) => {
+  // Stochastic RSI - requires price array
+  stoch_rsi: async (source: PriceSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { options = {} } = indicator;
-    const { rsi_length = 14, stoch_length = 14, k = 3, d = 3 } = options;
+    const rsi_length = (options.rsi_length as number) || 14;
+    const stoch_length = (options.stoch_length as number) || 14;
+    const k = (options.k as number) || 3;
+    const d = (options.d as number) || 3;
 
     const { StochasticRSI } = getTechnicalIndicators();
     const f = new StochasticRSI({
@@ -674,46 +659,45 @@ export const indicators: IndicatorsCollection = {
     });
 
     const results = f.getResult();
-    const result: any[] = results.map((r: any) => ({
-      stoch_k: r.k,
-      stoch_d: r.d
-    }));
-
-    return { [indicator.key]: result };
+    return {
+      [indicator.key]: results.map((r: { k: number; d: number }) => ({
+        stoch_k: r.k,
+        stoch_d: r.d
+      }))
+    };
   },
 
-  // Parabolic SAR
-  psar: async (source: any[], indicator: Indicator) => {
+  // Parabolic SAR - requires candles
+  psar: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { options = {} } = indicator;
-    const { step = 0.02, max = 0.2 } = options;
+    const step = (options.step as number) || 0.02;
+    const max = (options.max as number) || 0.2;
 
     const { PSAR } = getTechnicalIndicators();
-    const input = {
-      high: source.map((c: any) => c.high),
-      low: source.map((c: any) => c.low),
-      step,
-      max
+    return {
+      [indicator.key]: new PSAR({
+        high: source.map(c => c.high),
+        low: source.map(c => c.low),
+        step,
+        max
+      }).getResult()
     };
-
-    return { [indicator.key]: new PSAR(input).getResult() };
   },
 
-  // Heikin Ashi
-  heikin_ashi: async (source: Candlestick[], indicator: Indicator) => {
+  // Heikin Ashi - requires candles
+  heikin_ashi: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { HeikinAshi } = getTechnicalIndicators();
 
-    const input = {
+    const results = new HeikinAshi({
       close: source.map(c => c.close),
       high: source.map(c => c.high),
       low: source.map(c => c.low),
       open: source.map(c => c.open),
       timestamp: source.map(c => c.time),
       volume: source.map(c => c.volume)
-    };
+    }).getResult();
 
-    const results = new HeikinAshi(input).getResult();
     const candles: Candlestick[] = [];
-
     const length = results.open?.length || 0;
     for (let i = 0; i < length; i++) {
       candles.push({
@@ -729,39 +713,38 @@ export const indicators: IndicatorsCollection = {
     return { [indicator.key]: candles };
   },
 
-  // Volume Profile
-  volume_profile: async (source: Candlestick[], indicator: Indicator) => {
+  // Volume Profile - requires candles
+  volume_profile: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { options = {} } = indicator;
-    const { length = 200, ranges = 14 } = options;
+    const length = (options.length as number) || 200;
+    const ranges = (options.ranges as number) || 14;
 
     const { candles2MarketData } = getTechnicalAnalysis();
     const { VolumeProfile } = getTechnicalIndicators();
 
-    const f = new VolumeProfile({
-      ...candles2MarketData(source, length),
-      noOfBars: ranges
-    });
-
-    return { [indicator.key]: f.getResult() };
+    return {
+      [indicator.key]: new VolumeProfile({
+        ...candles2MarketData(source, length),
+        noOfBars: ranges
+      }).getResult()
+    };
   },
 
-  // Volume by Price
-  volume_by_price: async (source: Candlestick[], indicator: Indicator) => {
+  // Volume by Price - requires candles
+  volume_by_price: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { options = {} } = indicator;
-    const { length = 200, ranges = 12 } = options;
+    const length = (options.length as number) || 200;
+    const ranges = (options.ranges as number) || 12;
 
     const lookbackRange = source.slice(-length);
 
     const minMax = lookbackRange.reduce(
-      (accumulator, currentValue) => [
-        Math.min(currentValue.close, accumulator[0]),
-        Math.max(currentValue.close, accumulator[1])
-      ],
+      (acc, c) => [Math.min(c.close, acc[0]), Math.max(c.close, acc[1])],
       [Number.MAX_VALUE, Number.MIN_VALUE]
     );
 
     const rangeSize = (minMax[1] - minMax[0]) / ranges;
-    const rangeBlocks: any[] = [];
+    const rangeBlocks: Array<{ low: number; high: number; volume: number }> = [];
 
     let current = minMax[0];
     for (let i = 0; i < ranges; i++) {
@@ -781,80 +764,74 @@ export const indicators: IndicatorsCollection = {
     return { [indicator.key]: [rangeBlocks.reverse()] };
   },
 
-  // ZigZag
-  zigzag: async (source: Candlestick[], indicator: Indicator) => {
+  // ZigZag - requires candles
+  zigzag: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { options = {} } = indicator;
-    const { length = 1000, deviation = 5 } = options;
+    const length = (options.length as number) || 1000;
+    const deviation = (options.deviation as number) || 5;
 
     const result = zigzag(source.slice(-length), deviation);
-    const turningPoints = result.map(r => (r && r.turningPoint === true ? r : {}));
-
-    return { [indicator.key]: turningPoints };
+    return { [indicator.key]: result.map(r => r.turningPoint ? r : {}) };
   },
 
-  // Ichimoku Cloud
-  ichimoku_cloud: async (source: Candlestick[], indicator: Indicator) => {
+  // Ichimoku Cloud - requires candles
+  ichimoku_cloud: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { options = {} } = indicator;
-    const { conversionPeriod = 9, basePeriod = 26, spanPeriod = 52, displacement = 26 } = options;
+    const conversionPeriod = (options.conversionPeriod as number) || 9;
+    const basePeriod = (options.basePeriod as number) || 26;
+    const spanPeriod = (options.spanPeriod as number) || 52;
+    const displacement = (options.displacement as number) || 26;
 
     const { candles2MarketData } = getTechnicalAnalysis();
     const { IchimokuCloud } = getTechnicalIndicators();
 
-    const f = new IchimokuCloud({
-      ...candles2MarketData(source, undefined, ['high', 'low']),
-      conversionPeriod,
-      basePeriod,
-      spanPeriod,
-      displacement
-    });
-
-    return { [indicator.key]: f.getResult() };
+    return {
+      [indicator.key]: new IchimokuCloud({
+        ...candles2MarketData(source, undefined, ['high', 'low']),
+        conversionPeriod,
+        basePeriod,
+        spanPeriod,
+        displacement
+      }).getResult()
+    };
   },
 
-  // Pivot Points High/Low
-  pivot_points_high_low: async (source: Candlestick[], indicator: Indicator) => {
+  // Pivot Points High/Low - requires candles
+  pivot_points_high_low: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { key, options = {} } = indicator;
-    const { left = 5, right = 5 } = options;
+    const left = (options.left as number) || 5;
+    const right = (options.right as number) || 5;
 
     const { getPivotPointsWithWicks } = getTechnicalAnalysis();
     const result: any[] = [];
 
     for (let i = 0; i < source.length; i++) {
       const start = i - left - right;
-      if (start < 0) {
-        result.push({});
-        continue;
-      }
-      result.push(getPivotPointsWithWicks(source.slice(start, i + 1), left, right));
+      result.push(start < 0 ? {} : getPivotPointsWithWicks(source.slice(start, i + 1), left, right));
     }
 
     return { [key]: result };
   },
 
-  // Wicked (candle wick analysis)
-  wicked: async (source: Candlestick[], indicator: Indicator) => {
+  // Wicked (candle wick analysis) - requires candles
+  wicked: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => {
     const { key } = indicator;
 
-    const { candles2MarketData } = getTechnicalAnalysis();
-    const marketData = candles2MarketData(source, undefined, ['high', 'close', 'open', 'low']);
-
-    const results: any[] = [];
-    for (let i = 0; i < marketData.close.length; i++) {
-      const top = marketData.high[i] - Math.max(marketData.close[i], marketData.open[i]);
-      const bottom = marketData.low[i] - Math.min(marketData.close[i], marketData.open[i]);
-
+    const results: Array<{ top: number; body: number; bottom: number }> = [];
+    for (const c of source) {
+      const range = c.high - c.low;
       results.push({
-        top: Math.abs(percent.calc(top, marketData.high[i] - marketData.low[i], 2)),
-        body: Math.abs(percent.calc(marketData.close[i] - marketData.open[i], marketData.high[i] - marketData.low[i], 2)),
-        bottom: Math.abs(percent.calc(bottom, marketData.high[i] - marketData.low[i], 2))
+        top: Math.abs(percent.calc(c.high - Math.max(c.close, c.open), range, 2)),
+        body: Math.abs(percent.calc(c.close - c.open, range, 2)),
+        bottom: Math.abs(percent.calc(c.low - Math.min(c.close, c.open), range, 2))
       });
     }
 
     return { [key]: results.reverse() };
   },
 
-  // Candles (pass-through)
-  candles: async (source: any[], indicator: Indicator) => ({
+  // Candles (pass-through) - requires candles
+  candles: async (source: CandleSource, indicator: Indicator): Promise<IndicatorResult> => ({
     [indicator.key]: source.slice()
   })
 };
