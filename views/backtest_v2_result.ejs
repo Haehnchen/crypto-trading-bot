@@ -1,0 +1,174 @@
+<!-- Backtest V2 Results -->
+<div class="p-4">
+    <div class="max-w-5xl mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-semibold">Backtesting V2 Results <span class="text-gray-500"> - <%= strategyName %> - <%= period %></span></h1>
+            <nav class="text-sm text-gray-500">
+                <a href="/" class="text-blue-600 hover:underline">Dashboard</a> /
+                <a href="/backtest/v2" class="text-blue-600 hover:underline">Backtesting V2</a> /
+                Results
+            </nav>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded mb-4">
+            <div class="px-4 py-3 border-b border-gray-200 font-medium">
+                Summary <span class="text-gray-500"> - <%= exchange %>: <%= symbol %> - <%= period %></span>
+            </div>
+            <div class="p-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <table class="backtest-table w-full border-collapse text-[13px]">
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">Initial Capital</td>
+                            <td class="border border-gray-200 px-3 py-2"><%= summary.initialCapital.toFixed(2) %> $</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">Final Capital</td>
+                            <td class="border border-gray-200 px-3 py-2"><%= summary.finalCapital.toFixed(2) %> $</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">Net Return on Investment</td>
+                            <td class="border border-gray-200 px-3 py-2 <%= summary.netProfit > 0 ? 'text-green-600' : 'text-red-600' %>"><%= summary.netProfit.toFixed(2) %> %</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">Sharpe Ratio</td>
+                            <td class="border border-gray-200 px-3 py-2"><%= summary.sharpeRatio.toFixed(2) %></td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">Max Drawdown</td>
+                            <td class="border border-gray-200 px-3 py-2 text-red-600"><%= summary.maxDrawdown.toFixed(2) %> %</td>
+                        </tr>
+                    </table>
+
+                    <table class="backtest-table w-full border-collapse text-[13px]">
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">Average Return Per Trade</td>
+                            <td class="border border-gray-200 px-3 py-2 <%= summary.averagePNLPercent > 0 ? 'text-green-600' : 'text-red-600' %>"><%= summary.averagePNLPercent.toFixed(2) %> %</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">Total Number of Trades</td>
+                            <td class="border border-gray-200 px-3 py-2"><%= summary.trades.total %></td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">Number of Winning Trades</td>
+                            <td class="border border-gray-200 px-3 py-2"><%= summary.trades.profitableCount %></td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">Number of Losing Trades</td>
+                            <td class="border border-gray-200 px-3 py-2"><%= summary.trades.lossMakingCount %></td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">Win Rate</td>
+                            <td class="border border-gray-200 px-3 py-2"><%= summary.trades.profitabilityPercent.toFixed(1) %> %</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <% if (candles) { %>
+        <div class="bg-white border border-gray-200 rounded mb-4">
+            <div class="px-4 py-3 border-b border-gray-200 font-medium">Chart</div>
+            <div class="p-0 overflow-x-auto">
+                <div class="chart" data-candles="<%- candles.replace(/"/g, '&quot;') %>" data-title="<%= exchange %> - <%= symbol %> - <%= strategyName %> - <%= period %>"></div>
+            </div>
+        </div>
+        <% } %>
+
+        <% var signalRows = (rows || []).filter(function(r) { return r.signal; }); %>
+        <div class="bg-white border border-gray-200 rounded mb-4">
+            <div class="px-4 py-3 border-b border-gray-200 font-medium">Trades</div>
+            <div class="p-0 overflow-x-auto">
+                <% if (signalRows.length > 0) { %>
+                    <table class="backtest-table w-full border-collapse text-[13px]">
+                        <thead>
+                            <tr>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">#</th>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Time</th>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Price</th>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Signal</th>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Debug</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% signalRows.forEach(function(row, index) { %>
+                                <tr class="hover:bg-gray-100">
+                                    <td class="border border-gray-200 px-3 py-2"><%= index + 1 %></td>
+                                    <td class="border border-gray-200 px-3 py-2 whitespace-nowrap"><%= formatDate(row.time * 1000, 'yy-m-d H:i:s') %></td>
+                                    <td class="border border-gray-200 px-3 py-2"><%= row.price.toFixed(2) %></td>
+                                    <td class="border border-gray-200 px-3 py-2">
+                                        <% if (row.signal === 'long') { %>
+                                            <i class="fas fa-chevron-circle-up text-green-600"></i>
+                                        <% } else if (row.signal === 'short') { %>
+                                            <i class="fas fa-chevron-circle-down text-red-600"></i>
+                                        <% } else if (row.signal === 'close') { %>
+                                            <i class="fa fa-times text-gray-500"></i>
+                                        <% } %>
+                                    </td>
+                                    <td class="border border-gray-200 px-3 py-2 break-all text-gray-500 text-xs">
+                                        <details>
+                                            <summary class="cursor-pointer text-blue-600">View</summary>
+                                            <pre class="mt-2 whitespace-pre-wrap"><%= JSON.stringify(row, null, 2) %></pre>
+                                        </details>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                <% } else { %>
+                    <p class="text-gray-500 text-center py-4">No signals</p>
+                <% } %>
+            </div>
+        </div>
+
+        <% if (rows && rows.length > 0) { %>
+        <div class="bg-white border border-gray-200 rounded mb-4">
+            <div class="px-4 py-3 border-b border-gray-200 font-medium">Signal History</div>
+            <div class="p-0 overflow-x-auto">
+                <table class="backtest-table w-full border-collapse text-[13px]">
+                    <thead>
+                        <tr>
+                            <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Time</th>
+                            <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Price</th>
+                            <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Signal</th>
+                            <% if (indicatorKeys) { indicatorKeys.forEach(function(key) { %>
+                                <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2"><%= key %></th>
+                            <% }); } %>
+                            <th class="border border-gray-200 bg-gray-50 font-semibold px-3 py-2">Debug</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% rows.forEach(function(row) { %>
+                            <tr class="hover:bg-gray-100">
+                                <td class="border border-gray-200 px-3 py-2 whitespace-nowrap"><%= formatDate(row.time * 1000, 'yy-m-d H:i:s') %></td>
+                                <td class="border border-gray-200 px-3 py-2"><%= row.price.toFixed(2) %></td>
+                                <td class="border border-gray-200 px-3 py-2">
+                                    <% if (row.signal === 'long') { %>
+                                        <i class="fas fa-chevron-circle-up text-green-600"></i>
+                                    <% } else if (row.signal === 'short') { %>
+                                        <i class="fas fa-chevron-circle-down text-red-600"></i>
+                                    <% } else if (row.signal === 'close') { %>
+                                        <i class="fa fa-times text-gray-500"></i>
+                                    <% } %>
+                                </td>
+                                <% if (indicatorKeys) { indicatorKeys.forEach(function(key) { %>
+                                    <td class="border border-gray-200 px-3 py-2"><%= row.debug && row.debug[key] !== undefined ? (typeof row.debug[key] === 'number' ? row.debug[key].toFixed(4) : row.debug[key]) : '-' %></td>
+                                <% }); } %>
+                                <td class="border border-gray-200 px-3 py-2 break-all text-gray-500 text-xs">
+                                    <details>
+                                        <summary class="cursor-pointer text-blue-600">View</summary>
+                                        <pre class="mt-2 whitespace-pre-wrap"><%= JSON.stringify(row, null, 2) %></pre>
+                                    </details>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <% } %>
+    </div>
+</div>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/techan.js/0.8.0/techan.min.js"></script>
+<script src="/js/backtest.js?v=<%= assetVersion %>"></script>

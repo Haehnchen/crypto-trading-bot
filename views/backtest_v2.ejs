@@ -1,0 +1,124 @@
+<!-- Backtest V2 Form -->
+<div class="p-4">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-semibold">Backtesting V2</h1>
+            <nav class="text-sm text-gray-500">
+                <a href="/" class="text-blue-600 hover:underline">Dashboard</a> /
+                <a href="/backtest/v2" class="text-blue-600 hover:underline">Backtesting V2</a>
+            </nav>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded">
+            <div class="p-6">
+                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <p class="text-sm text-blue-800">
+                        <strong>Typed Strategy System (v2)</strong> - This is the new backtest engine with type-safe strategies.
+                        <a href="/backtest" class="text-blue-600 hover:underline">Use legacy backtest</a>
+                    </p>
+                </div>
+
+                <form action="/backtest/v2/submit" method="post" class="backtest-v2-form">
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="space-y-4">
+                            <div>
+                                <label for="form-pair" class="block font-medium mb-1">Pair</label>
+                                <select class="w-full" id="form-pair" name="pair" data-placeholder="Search or select a pair..." required>
+                                    <option disabled selected value> -- select a pair -- </option>
+                                    <% pairs.forEach(function(pair) { %>
+                                        <option value="<%= pair.name %>"><%= pair.name %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="form-strategy" class="block font-medium mb-1">Strategy</label>
+                                <select class="w-full border border-gray-300 rounded px-3 py-2" id="form-strategy" name="strategy" required>
+                                    <option disabled selected value> -- select a strategy -- </option>
+                                    <% strategies.forEach(function(strategy) { %>
+                                        <option value="<%= strategy.name %>"><%= strategy.displayName %></option>
+                                    <% }); %>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1" id="strategy-description"></p>
+                            </div>
+
+                            <div>
+                                <label for="form-candle-period" class="block font-medium mb-1">Candle Period</label>
+                                <select class="w-full border border-gray-300 rounded px-3 py-2" id="form-candle-period" name="candle_period" required>
+                                    <% periods.forEach(function(period) { %>
+                                        <option value="<%= period %>" <%= period === '15m' ? 'selected' : '' %>><%= period %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="form-hours" class="block font-medium mb-1">Last Hours</label>
+                                <input class="w-full border border-gray-300 rounded px-3 py-2" id="form-hours" name="hours" value="168" required>
+                                <p class="text-xs text-gray-500 mt-1">Starting window until now (168 = 7 days)</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label for="form-initial-capital" class="block font-medium mb-1">Initial Capital</label>
+                                <input class="w-full border border-gray-300 rounded px-3 py-2" id="form-initial-capital" name="initial_capital" value="1000" required>
+                                <p class="text-xs text-gray-500 mt-1">Starting capital for profit calculations</p>
+                            </div>
+
+                            <div>
+                                <label for="form-options" class="block font-medium mb-1">Strategy Options (JSON)</label>
+                                <textarea class="w-full border border-gray-300 rounded px-3 py-2 font-mono text-sm" id="form-options" rows="9" name="options" placeholder='{"option": "value"}'></textarea>
+                                <p class="text-xs text-gray-500 mt-1">Optional: Override default strategy options</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="mt-6 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 cursor-pointer">
+                        Run Backtest
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Strategy data for dynamic updates
+const strategyData = {
+    <% strategies.forEach(function(strategy) { %>
+        '<%= strategy.name %>': {
+            description: '<%= strategy.description %>',
+            defaultOptions: <%- JSON.stringify(strategy.defaultOptions, null, 2) %>
+        },
+    <% }); %>
+};
+
+// Update strategy description and default options on selection
+document.getElementById('form-strategy').addEventListener('change', function() {
+    const data = strategyData[this.value];
+    const descEl = document.getElementById('strategy-description');
+    const optionsEl = document.getElementById('form-options');
+
+    if (data) {
+        descEl.textContent = data.description;
+        // Populate textarea with pretty-printed default options
+        optionsEl.value = JSON.stringify(data.defaultOptions, null, 2);
+    } else {
+        descEl.textContent = '';
+        optionsEl.value = '';
+    }
+});
+
+// Initialize Tom Select for pair dropdown (single select with search)
+const pairSelect = document.getElementById('form-pair');
+if (pairSelect && typeof TomSelect !== 'undefined') {
+    new TomSelect(pairSelect, {
+        persist: false,
+        create: false,
+        placeholder: pairSelect.dataset.placeholder || 'Select a pair...',
+        onInitialize: function() {
+            this.wrapper.classList.add('border', 'border-gray-300', 'rounded');
+        }
+    });
+}
+</script>

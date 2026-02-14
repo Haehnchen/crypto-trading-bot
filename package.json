@@ -15,6 +15,9 @@
       "url": "https://nguyenminhphuc.com/"
     }
   ],
+  "bin": {
+    "crypto-bot": "dist/index.js"
+  },
   "dependencies": {
     "async": "^3.2.6",
     "basic-auth": "^2.0.1",
@@ -92,7 +95,8 @@
     "test:js": "mocha 'test/**/*.test.js'",
     "build": "tsc",
     "setup": "pm2 deploy ecosystem.config.js production setup",
-    "deploy": "pm2 deploy ecosystem.config.js production"
+    "deploy": "pm2 deploy ecosystem.config.js production",
+    "backtest": "npm run build && node dist/index.js backtest"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

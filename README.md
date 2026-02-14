@@ -94,6 +94,12 @@ Lets start it
 npm start
 ```
 
+# examples
+
+```
+npm run -- backtest --strategy=dca_dipper --pair=bybit_unified.BTC/USDT:USDT
+```
+
 ## How to use: Docker
 
 For initialize the configuration once

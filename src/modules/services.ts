@@ -78,9 +78,23 @@ import { OrdersController } from '../controller';
 import { SignalsController } from '../controller';
 import { CandlesController } from '../controller';
 import { BacktestController } from '../controller';
+import { BacktestV2Controller } from '../controller/backtest_v2_controller';
 import { LogsController } from '../controller';
 import { DesksController } from '../controller';
 import { TradingViewController } from '../controller';
+
+// Commands
+import { BacktestCommand } from '../command/backtest';
+
+// V2 Strategies
+import { DcaDipper } from '../strategy/strategies/dca_dipper/dca_dipper';
+import { Cci } from '../strategy/strategies/cci';
+import { Macd } from '../strategy/strategies/macd';
+import { AwesomeOscillatorCrossZero } from '../strategy/strategies/awesome_oscillator_cross_zero';
+import { ParabolicSar } from '../strategy/strategies/parabolicsar';
+import { DipCatcher } from '../strategy/strategies/dip_catcher/dip_catcher';
+import { StrategyRegistry } from './strategy/v2/strategy_registry';
+import { StrategyExecutor } from './strategy/v2/typed_backtest';
 
 // Interfaces
 interface Instances {
@@ -189,6 +203,9 @@ let pairConfig: PairConfig;
 let throttler: Throttler;
 let deskService: DeskService;
 let symbolSearchService: SymbolSearchService;
+let v2StrategyRegistry: StrategyRegistry;
+let strategyExecutor: StrategyExecutor;
+let backtestCommand: BacktestCommand;
 
 const parameters: Parameters = {
   projectDir: ''
@@ -254,11 +271,15 @@ export interface Services {
   getSignalsController(templateHelpers: any): SignalsController;
   getCandlesController(templateHelpers: any): CandlesController;
   getBacktestController(templateHelpers: any): BacktestController;
+  getBacktestV2Controller(templateHelpers: any): BacktestV2Controller;
   getLogsController(templateHelpers: any): LogsController;
   getDesksController(templateHelpers: any): DesksController;
   getTradingViewController(templateHelpers: any): TradingViewController;
   getDeskService(): DeskService;
   getSymbolSearchService(): SymbolSearchService;
+  getV2StrategyRegistry(): StrategyRegistry;
+  getStrategyExecutor(): StrategyExecutor;
+  getBacktestCommand(): BacktestCommand;
 }
 
 const services: Services = {
@@ -838,6 +859,10 @@ const services: Services = {
     return new BacktestController(templateHelpers, this.getBacktest());
   },
 
+  getBacktestV2Controller: function (templateHelpers: any): BacktestV2Controller {
+    return new BacktestV2Controller(templateHelpers, this.getExchangeCandleCombine(), this.getInstances(), this.getV2StrategyRegistry());
+  },
+
   getLogsController: function (templateHelpers: any): LogsController {
     return new LogsController(templateHelpers, this.getLogsHttp());
   },
@@ -864,6 +889,41 @@ const services: Services = {
     }
 
     return (symbolSearchService = new SymbolSearchService());
+  },
+
+  getV2StrategyRegistry: function (): StrategyRegistry {
+    if (v2StrategyRegistry) {
+      return v2StrategyRegistry;
+    }
+
+    return (v2StrategyRegistry = new StrategyRegistry([
+      DcaDipper,
+      Cci,
+      Macd,
+      AwesomeOscillatorCrossZero,
+      ParabolicSar,
+      DipCatcher,
+    ]));
+  },
+
+  getStrategyExecutor: function (): StrategyExecutor {
+    if (strategyExecutor) {
+      return strategyExecutor;
+    }
+
+    return (strategyExecutor = new StrategyExecutor());
+  },
+
+  getBacktestCommand: function (): BacktestCommand {
+    if (backtestCommand) {
+      return backtestCommand;
+    }
+
+    return (backtestCommand = new BacktestCommand(
+      this.getV2StrategyRegistry(),
+      this.getExchangeCandleCombine(),
+      this.getStrategyExecutor()
+    ));
   }
 };
 

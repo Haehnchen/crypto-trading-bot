@@ -7,6 +7,7 @@ export { OrdersController } from './orders_controller';
 export { SignalsController } from './signals_controller';
 export { CandlesController } from './candles_controller';
 export { BacktestController } from './backtest_controller';
+export { BacktestV2Controller } from './backtest_v2_controller';
 export { LogsController } from './logs_controller';
 export { DesksController } from './desks_controller';
 export { TradingViewController } from './tradingview_controller';

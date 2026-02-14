@@ -14,7 +14,7 @@
     "allowJs": true,
     "checkJs": false
   },
-  "include": ["index.ts", "src/**/*", "test/**/*"],
+  "include": ["index.ts", "src/**/*", "test/**/*", "var/**/*"],
   "exclude": ["node_modules", "dist"],
   "ts-node": {
     "esm": false,

@@ -84,12 +84,17 @@ export class StrategyManager {
         const ext = path.extname(file);
         if (supportedExtensions.includes(ext)) {
           const baseName = file.substring(0, file.length - ext.length);
-          // Require without extension - ts-node will find .ts files automatically
           const modulePath = path.join(dir, baseName);
-          const module = require(modulePath);
-          // Handle both default exports (TypeScript) and direct exports (CommonJS)
-          const StrategyClass = module.default || module;
-          strategies.push(new StrategyClass());
+          try {
+            const mod = require(modulePath);
+            const StrategyClass = mod.default || mod;
+            if (typeof StrategyClass !== 'function') return;
+            const instance = new StrategyClass();
+            if (typeof instance.getName !== 'function') return;
+            strategies.push(instance);
+          } catch (e) {
+            // Skip files that are not v1 strategies (e.g. v2 strategies)
+          }
         }
       });
 
@@ -98,18 +103,22 @@ export class StrategyManager {
       recursiveReadDirSyncWithDirectoryOnly(dir).forEach(folder => {
         const folderName = path.basename(folder);
 
-        // Check if either .ts or .js file exists for this folder
         for (const ext of supportedExtensions) {
           const filename = path.join(folder, `${folderName}${ext}`);
 
           if (fs.existsSync(filename)) {
-            // Require without extension - ts-node will handle it
             const modulePath = path.join(folder, folderName);
-            const module = require(modulePath);
-            // Handle both default exports (TypeScript) and direct exports (CommonJS)
-            const StrategyClass = module.default || module;
-            strategies.push(new StrategyClass());
-            break; // Only load once, preferring .ts over .js
+            try {
+              const mod = require(modulePath);
+              const StrategyClass = mod.default || mod;
+              if (typeof StrategyClass !== 'function') break;
+              const instance = new StrategyClass();
+              if (typeof instance.getName !== 'function') break;
+              strategies.push(instance);
+            } catch (e) {
+              // Skip files that are not v1 strategies (e.g. v2 strategies)
+            }
+            break;
           }
         }
       });
