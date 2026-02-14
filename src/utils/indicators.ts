@@ -1,4 +1,3 @@
-const tulind = require('tulind');
 const talib = require('talib');
 const percent = require('percent');
 
@@ -46,6 +45,43 @@ export interface Indicator {
 
 export interface IndicatorResult {
   [key: string]: any;
+}
+
+export type IndicatorFunction = (source: any[], indicator: Indicator) => Promise<IndicatorResult>;
+
+export interface IndicatorsCollection {
+  bb: IndicatorFunction;
+  obv: IndicatorFunction;
+  ao: IndicatorFunction;
+  wma: IndicatorFunction;
+  dema: IndicatorFunction;
+  tema: IndicatorFunction;
+  trima: IndicatorFunction;
+  kama: IndicatorFunction;
+  roc: IndicatorFunction;
+  atr: IndicatorFunction;
+  mfi: IndicatorFunction;
+  sma: IndicatorFunction;
+  ema: IndicatorFunction;
+  rsi: IndicatorFunction;
+  hma: IndicatorFunction;
+  cci: IndicatorFunction;
+  vwma: IndicatorFunction;
+  stoch: IndicatorFunction;
+  macd: IndicatorFunction;
+  adx: IndicatorFunction;
+  macd_ext: IndicatorFunction;
+  bb_talib: IndicatorFunction;
+  stoch_rsi: IndicatorFunction;
+  psar: IndicatorFunction;
+  heikin_ashi: IndicatorFunction;
+  volume_profile: IndicatorFunction;
+  volume_by_price: IndicatorFunction;
+  zigzag: IndicatorFunction;
+  ichimoku_cloud: IndicatorFunction;
+  pivot_points_high_low: IndicatorFunction;
+  wicked: IndicatorFunction;
+  candles: IndicatorFunction;
 }
 
 /**
@@ -131,37 +167,133 @@ function zigzag(ticks: Candlestick[], deviation: number = 5, arraySize: number =
   return zigzagResult;
 }
 
-interface TulindOptions {
-  sources?: any;
-  options?: any;
-  results?: string[];
+/**
+ * Helper to execute talib indicators with a simpler API
+ * @param closePrices - Array of close prices (or any single input)
+ * @param candles - Array of candle objects (for HLC/HLCV indicators)
+ * @param indicator - Indicator configuration
+ * @param talibConfig - talib configuration (name, inputs, outputs mapping)
+ */
+interface TalibConfig {
+  name: string;
+  inputs?: ('high' | 'low' | 'close' | 'volume' | 'open')[];  // Which candle fields to use
+  optInputs?: Record<string, { talibKey: string; default?: any }>;  // Map indicator.options to talib parameter names with optional defaults
+  outputs?: { talib: string; result: string }[];  // Map talib output names to result names
+  transform?: (results: any[]) => any[];  // Optional transform for result format
+  padToInputLength?: boolean;  // Pad results with undefined to match input length
 }
 
-function executeTulindIndicator(source: any[], indicator: Indicator, tulindOptions: TulindOptions): Promise<IndicatorResult> {
+function executeTalibIndicator(
+  source: any[],
+  indicator: Indicator,
+  talibConfig: TalibConfig
+): Promise<IndicatorResult> {
   return new Promise(resolve => {
-    const indicatorName = indicator.indicator === 'bb' ? 'bbands' : indicator.indicator as string;
-    let { sources, options = {} } = tulindOptions;
+    const { options = {} } = indicator;
 
-    sources = sources ? sources.map(s => source.map((ss: any) => ss[s])) : [source];
+    // Build talib request
+    const request: any = {
+      name: talibConfig.name,
+      startIdx: 0,
+      endIdx: source.length - 1
+    };
 
-    const indicatorOptions = indicator.options || {};
-    options = Object.keys(options).map(o => indicatorOptions[o] || options[o]);
+    // Handle inputs - if source contains candle objects, extract fields
+    if (talibConfig.inputs && source.length > 0 && typeof source[0] === 'object') {
+      if (talibConfig.inputs.includes('high')) request.high = source.map((c: any) => c.high);
+      if (talibConfig.inputs.includes('low')) request.low = source.map((c: any) => c.low);
+      if (talibConfig.inputs.includes('close')) request.close = source.map((c: any) => c.close);
+      if (talibConfig.inputs.includes('open')) request.open = source.map((c: any) => c.open);
+      if (talibConfig.inputs.includes('volume')) request.volume = source.map((c: any) => c.volume);
+    } else {
+      // Single input (close prices)
+      request.inReal = source.slice();
+    }
 
-    (tulind.indicators as any)[indicatorName].indicator(sources as any, options as any, (err: any, res: any) => {
-      let finalResult = res[0];
-      const { results } = tulindOptions;
-      if (results !== undefined) {
-        finalResult = res[0].map((r: any, i: number) => {
-          const record = results.reduce((acc: any, key: string) => Object.assign(acc, { [key]: res[results.indexOf(key)][i] }), {});
-          if (indicatorName === 'bbands') {
-            Object.assign(record, { width: (record.upper - record.lower) / record.middle });
-          }
-          return record;
-        });
+    // Add optional parameters - only add if the option is provided or has a default
+    if (talibConfig.optInputs) {
+      for (const [optKey, config] of Object.entries(talibConfig.optInputs)) {
+        const talibKey = typeof config === 'string' ? config : config.talibKey;
+        const defaultValue = typeof config === 'object' ? config.default : undefined;
+
+        if (options[optKey] !== undefined) {
+          request[talibKey] = options[optKey];
+        } else if (defaultValue !== undefined) {
+          request[talibKey] = defaultValue;
+        }
       }
+    }
+
+    talib.execute(request, (err: any, result: any) => {
+      if (err || !result) {
+        resolve({ [indicator.key]: [] });
+        return;
+      }
+
+      let finalResult: any[];
+
+      if (talibConfig.outputs && talibConfig.outputs.length > 1) {
+        // Multiple outputs - create objects with named properties
+        finalResult = [];
+        for (let i = 0; i < result.nbElement; i++) {
+          const obj: any = {};
+          for (const output of talibConfig.outputs!) {
+            obj[output.result] = result.result[output.talib][i];
+          }
+          if (talibConfig.transform) {
+            finalResult.push(talibConfig.transform([obj])[0]);
+          } else {
+            finalResult.push(obj);
+          }
+        }
+      } else {
+        // Single output - just return array of values
+        const outputKey = talibConfig.outputs?.[0]?.talib || Object.keys(result.result)[0];
+        finalResult = Array.from(result.result[outputKey] || []);
+      }
+
+      // Pad results to match input length if requested (for backwards compatibility with tulind)
+      if (talibConfig.padToInputLength && result.begIndex > 0) {
+        const padding = new Array(result.begIndex).fill(undefined);
+        finalResult = [...padding, ...finalResult];
+      }
+
       resolve({ [indicator.key]: finalResult });
     });
   });
+}
+
+/**
+ * Simple SMA helper for custom indicators
+ */
+function calculateSMA(data: number[], period: number): number[] {
+  const result: number[] = [];
+  for (let i = period - 1; i < data.length; i++) {
+    let sum = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      sum += data[j];
+    }
+    result.push(sum / period);
+  }
+  return result;
+}
+
+/**
+ * Simple WMA helper for custom indicators (HMA)
+ */
+function calculateWMA(data: number[], period: number): number[] {
+  const result: number[] = [];
+  for (let i = period - 1; i < data.length; i++) {
+    let sum = 0;
+    let weightSum = 0;
+    for (let j = 0; j < period; j++) {
+      const weight = j + 1;
+      sum += data[i - period + 1 + j] * weight;
+      weightSum += weight;
+    }
+    result.push(sum / weightSum);
+  }
+  return result;
 }
 
 export const sourceCandle = [
@@ -185,120 +317,327 @@ export const sourceCandle = [
   'candles'
 ];
 
-export const indicators = {
+export const indicators: IndicatorsCollection = {
+  // Bollinger Bands - using talib
   bb: (source: any[], indicator: Indicator) => {
     const { options = {} } = indicator;
+    const stddev = options.stddev || 2;
+    const length = options.length || 20;
 
-    return executeTulindIndicator(source, indicator, {
-      options: {
-        length: options.length || 20,
-        stddev: options.stddev || 2
-      },
-      results: ['lower', 'middle', 'upper']
+    return new Promise(resolve => {
+      talib.execute({
+        name: 'BBANDS',
+        startIdx: 0,
+        endIdx: source.length - 1,
+        inReal: source.slice(),
+        optInTimePeriod: length,
+        optInNbDevUp: stddev,
+        optInNbDevDn: stddev,
+        optInMAType: 0
+      }, (err: any, result: any) => {
+        if (err || !result) {
+          resolve({ [indicator.key]: [] });
+          return;
+        }
+
+        const finalResult: any[] = [];
+        for (let i = 0; i < result.nbElement; i++) {
+          finalResult.push({
+            upper: result.result.outRealUpperBand[i],
+            middle: result.result.outRealMiddleBand[i],
+            lower: result.result.outRealLowerBand[i],
+            width: (result.result.outRealUpperBand[i] - result.result.outRealLowerBand[i]) / result.result.outRealMiddleBand[i]
+          });
+        }
+        resolve({ [indicator.key]: finalResult });
+      });
     });
   },
 
-  obv: (source: any[], indicator: Indicator) => executeTulindIndicator(source, indicator, { sources: ['close', 'volume'] }),
-  ao: (source: any[], indicator: Indicator) => executeTulindIndicator(source, indicator, { sources: ['high', 'low'] }),
-  wma: (source: any[], indicator: Indicator) => executeTulindIndicator(source, indicator, { options: { length: 9 } }),
-  dema: (source: any[], indicator: Indicator) => executeTulindIndicator(source, indicator, { options: { length: 9 } }),
-  tema: (source: any[], indicator: Indicator) => executeTulindIndicator(source, indicator, { options: { length: 9 } }),
-  trima: (source: any[], indicator: Indicator) => executeTulindIndicator(source, indicator, { options: { length: 9 } }),
-  kama: (source: any[], indicator: Indicator) => executeTulindIndicator(source, indicator, { options: { length: 9 } }),
+  // On Balance Volume - using talib
+  obv: (source: any[], indicator: Indicator) => {
+    return new Promise(resolve => {
+      const closes = source.map((c: any) => c.close);
+      const volumes = source.map((c: any) => c.volume);
 
-  roc: (source: any[], indicator: Indicator) =>
-    executeTulindIndicator(source, indicator, {
-      options: {
-        length: indicator?.options?.length || 14
+      talib.execute({
+        name: 'OBV',
+        startIdx: 0,
+        endIdx: source.length - 1,
+        inReal: closes,
+        volume: volumes
+      }, (err: any, result: any) => {
+        if (err || !result) {
+          resolve({ [indicator.key]: [] });
+          return;
+        }
+        resolve({ [indicator.key]: Array.from(result.result.outReal) });
+      });
+    });
+  },
+
+  // Awesome Oscillator - custom implementation (tulind: high, low -> ao)
+  ao: (source: any[], indicator: Indicator) => {
+    return new Promise(resolve => {
+      const highs = source.map((c: any) => c.high);
+      const lows = source.map((c: any) => c.low);
+      const medianPrices = highs.map((h: number, i: number) => (h + lows[i]) / 2);
+
+      // AO = SMA(median, 5) - SMA(median, 34)
+      const sma5 = calculateSMA(medianPrices, 5);
+      const sma34 = calculateSMA(medianPrices, 34);
+
+      const result: number[] = [];
+      const offset = 33; // Start from where both SMAs have values
+      for (let i = 0; i < sma5.length - (offset - 4); i++) {
+        result.push(sma5[i + (offset - 4)] - sma34[i]);
       }
-    }),
 
-  atr: (source: any[], indicator: Indicator) =>
-    executeTulindIndicator(source, indicator, {
-      sources: ['high', 'low', 'close'],
-      options: {
-        length: indicator?.options?.length || 14
-      }
-    }),
+      resolve({ [indicator.key]: result });
+    });
+  },
 
-  mfi: (source: any[], indicator: Indicator) =>
-    executeTulindIndicator(source, indicator, {
-      sources: ['high', 'low', 'close', 'volume'],
-      options: {
-        length: indicator?.options?.length || 14
-      }
-    }),
+  // Weighted Moving Average - using talib
+  wma: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'WMA',
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 9 } },
+      outputs: [{ talib: 'outReal', result: 'wma' }]
+    });
+  },
 
-  sma: (source: any[], indicator: Indicator) =>
-    executeTulindIndicator(source, indicator, {
-      options: {
-        length: indicator?.options?.length || 14
-      }
-    }),
+  // Double EMA - using talib
+  dema: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'DEMA',
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 9 } },
+      outputs: [{ talib: 'outReal', result: 'dema' }]
+    });
+  },
 
-  ema: (source: any[], indicator: Indicator) =>
-    executeTulindIndicator(source, indicator, {
-      options: {
-        length: indicator?.options?.length || 14
-      }
-    }),
+  // Triple EMA - using talib
+  tema: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'TEMA',
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 9 } },
+      outputs: [{ talib: 'outReal', result: 'tema' }]
+    });
+  },
 
-  rsi: (source: any[], indicator: Indicator) =>
-    executeTulindIndicator(source, indicator, {
-      options: {
-        length: indicator?.options?.length || 14
-      }
-    }),
+  // Triangular MA - using talib
+  trima: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'TRIMA',
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 9 } },
+      outputs: [{ talib: 'outReal', result: 'trima' }]
+    });
+  },
 
+  // Kaufman Adaptive MA - using talib
+  kama: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'KAMA',
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 9 } },
+      outputs: [{ talib: 'outReal', result: 'kama' }]
+    });
+  },
+
+  // Rate of Change - using talib
+  roc: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'ROC',
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } },
+      outputs: [{ talib: 'outReal', result: 'roc' }]
+    });
+  },
+
+  // Average True Range - using talib
+  atr: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'ATR',
+      inputs: ['high', 'low', 'close'],
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } },
+      outputs: [{ talib: 'outReal', result: 'atr' }]
+    });
+  },
+
+  // Money Flow Index - using talib
+  mfi: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'MFI',
+      inputs: ['high', 'low', 'close', 'volume'],
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } },
+      outputs: [{ talib: 'outReal', result: 'mfi' }]
+    });
+  },
+
+  // Simple Moving Average - using talib
+  sma: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'SMA',
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } },
+      outputs: [{ talib: 'outReal', result: 'sma' }]
+    });
+  },
+
+  // Exponential Moving Average - using talib
+  ema: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'EMA',
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } },
+      outputs: [{ talib: 'outReal', result: 'ema' }]
+    });
+  },
+
+  // Relative Strength Index - using talib
+  rsi: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'RSI',
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } },
+      outputs: [{ talib: 'outReal', result: 'rsi' }]
+    });
+  },
+
+  // Hull Moving Average - custom implementation using WMA
+  // HMA = WMA(√n) of [2 × WMA(n/2) – WMA(n)]
   hma: (source: any[], indicator: Indicator) => {
-    const candleSource = (indicator.options && indicator.options.source) || 'close';
+    return new Promise(resolve => {
+      const period = indicator?.options?.length || 9;
+      const candleSource = (indicator.options && indicator.options.source) || 'close';
 
-    return executeTulindIndicator(source, indicator, {
-      sources: [candleSource],
-      options: {
-        length: indicator?.options?.length || 9
+      // Extract source data
+      let data: number[];
+      if (typeof source[0] === 'object') {
+        data = source.map((c: any) => c[candleSource]);
+      } else {
+        data = source.slice();
       }
+
+      // HMA calculation:
+      // 1. WMA(n/2) of data
+      // 2. WMA(n) of data
+      // 3. 2 * WMA(n/2) - WMA(n)
+      // 4. WMA(√n) of result from step 3
+
+      const halfPeriod = Math.floor(period / 2);
+      const sqrtPeriod = Math.floor(Math.sqrt(period));
+
+      // Calculate WMA(n/2) and WMA(n)
+      const wmaHalf = calculateWMA(data, halfPeriod);
+      const wmaFull = calculateWMA(data, period);
+
+      // 2 * WMA(n/2) - WMA(n)
+      // Need to align the arrays - wmaHalf starts at halfPeriod-1, wmaFull starts at period-1
+      const offset = period - halfPeriod;
+      const rawData: number[] = [];
+      for (let i = 0; i < wmaFull.length; i++) {
+        rawData.push(2 * wmaHalf[i + offset] - wmaFull[i]);
+      }
+
+      // Final WMA(√n)
+      const hma = calculateWMA(rawData, sqrtPeriod);
+
+      resolve({ [indicator.key]: hma });
     });
   },
 
-  cci: (source: any[], indicator: Indicator) =>
-    executeTulindIndicator(source, indicator, {
-      sources: ['high', 'low', 'close'],
-      options: {
-        length: indicator?.options?.length || 20
+  // Commodity Channel Index - using talib
+  cci: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'CCI',
+      inputs: ['high', 'low', 'close'],
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 20 } },
+      outputs: [{ talib: 'outReal', result: 'cci' }]
+    });
+  },
+
+  // Volume Weighted MA - custom implementation
+  // VWMA = Sum(close * volume, n) / Sum(volume, n)
+  vwma: (source: any[], indicator: Indicator) => {
+    return new Promise(resolve => {
+      const period = indicator?.options?.length || 20;
+      const closes = source.map((c: any) => c.close);
+      const volumes = source.map((c: any) => c.volume);
+
+      const result: number[] = [];
+      for (let i = period - 1; i < source.length; i++) {
+        let sumPV = 0;
+        let sumV = 0;
+        for (let j = i - period + 1; j <= i; j++) {
+          sumPV += closes[j] * volumes[j];
+          sumV += volumes[j];
+        }
+        result.push(sumV > 0 ? sumPV / sumV : 0);
       }
-    }),
 
-  vwma: (source: any[], indicator: Indicator) =>
-    executeTulindIndicator(source, indicator, {
-      sources: ['close', 'volume'],
-      options: {
-        length: indicator?.options?.length || 20
-      }
-    }),
+      resolve({ [indicator.key]: result });
+    });
+  },
 
-  stoch: (source: any[], indicator: Indicator) =>
-    executeTulindIndicator(source, indicator, {
-      sources: ['high', 'low', 'close'],
-      options: { length: 14, k: 3, d: 3 },
-      results: ['stoch_k', 'stoch_d']
-    }),
+  // Stochastic Oscillator - using talib
+  stoch: (source: any[], indicator: Indicator) => {
+    const { options = {} } = indicator;
+    const k = options.k || 3;
+    const d = options.d || 3;
+    const length = options.length || 14;
 
-  macd: (source: any[], indicator: Indicator) =>
-    executeTulindIndicator(source, indicator, {
-      results: ['macd', 'signal', 'histogram'],
-      options: {
-        fast_length: indicator?.options?.fast_length || 12,
-        slow_length: indicator?.options?.slow_length || 26,
-        signal_length: indicator?.options?.signal_length || 9
-      }
-    }),
+    return new Promise(resolve => {
+      talib.execute({
+        name: 'STOCH',
+        startIdx: 0,
+        endIdx: source.length - 1,
+        high: source.map((c: any) => c.high),
+        low: source.map((c: any) => c.low),
+        close: source.map((c: any) => c.close),
+        optInFastK_Period: length,
+        optInSlowK_Period: k,
+        optInSlowK_MAType: 0,
+        optInSlowD_Period: d,
+        optInSlowD_MAType: 0
+      }, (err: any, result: any) => {
+        if (err || !result) {
+          resolve({ [indicator.key]: [] });
+          return;
+        }
 
-  adx: (source: any[], indicator: Indicator) =>
-    executeTulindIndicator(source, indicator, {
-      sources: ['high', 'low', 'close'],
-      options: { length: 14 }
-    }),
+        const finalResult: any[] = [];
+        for (let i = 0; i < result.nbElement; i++) {
+          finalResult.push({
+            stoch_k: result.result.outSlowK[i],
+            stoch_d: result.result.outSlowD[i]
+          });
+        }
+        resolve({ [indicator.key]: finalResult });
+      });
+    });
+  },
+
+  // MACD - using talib
+  macd: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'MACD',
+      optInputs: {
+        fast_length: { talibKey: 'optInFastPeriod', default: 12 },
+        slow_length: { talibKey: 'optInSlowPeriod', default: 26 },
+        signal_length: { talibKey: 'optInSignalPeriod', default: 9 }
+      },
+      outputs: [
+        { talib: 'outMACD', result: 'macd' },
+        { talib: 'outMACDSignal', result: 'signal' },
+        { talib: 'outMACDHist', result: 'histogram' }
+      ]
+    });
+  },
+
+  // Average Directional Index - using talib
+  adx: (source: any[], indicator: Indicator) => {
+    return executeTalibIndicator(source, indicator, {
+      name: 'ADX',
+      inputs: ['high', 'low', 'close'],
+      optInputs: { length: { talibKey: 'optInTimePeriod', default: 14 } },
+      outputs: [{ talib: 'outReal', result: 'adx' }]
+    });
+  },
 
   macd_ext: function (source: any[], indicator: Indicator) {
     return new Promise(resolve => {

@@ -11,10 +11,13 @@ describe('#technical_analysis for candles', () => {
   it('technical_analysis for candles are returned', async () => {
     const result = await ta.getPredefinedIndicators(createCandleFixtures().reverse());
 
-    assert.equal(result.ema_55.length, 490);
+    // EMA 55: 490 candles - 55 + 1 = 436 elements (talib behavior)
+    assert.equal(result.ema_55.length, 436);
+    // SMA 200: 490 candles - 200 + 1 = 291 elements
     assert.equal(result.sma_200.length, 291);
 
-    assert.equal(8145, Math.round(result.ema_55[0]));
+    // First valid EMA_55 value (after warmup period)
+    assert.equal(8124, Math.round(result.ema_55[0]));
     assert.equal(7994, Math.round(result.sma_200[0]));
   });
 
@@ -187,7 +190,8 @@ describe('#technical_analysis for candles', () => {
       }
     ]);
 
-    assert.equal(result.ema_55.length, 490);
+    // EMA 55: talib returns 436 elements (490 - 55 + 1)
+    assert.equal(result.ema_55.length, 436);
     assert.equal(result.sma_200.length, 291);
 
     assert.equal(result.wma.length > 0, true);
@@ -202,15 +206,18 @@ describe('#technical_analysis for candles', () => {
     assert.equal(typeof result.rsi[0], 'number');
     assert.equal(typeof result.mfi[0], 'number');
 
-    assert.equal(8145, Math.round(result.ema_55[0]));
+    // First valid EMA_55 value (talib: 8124)
+    assert.equal(8124, Math.round(result.ema_55[0]));
     assert.equal(7994, Math.round(result.sma_200[0]));
-    assert.equal(0.31, parseFloat((result.macd[1] as any).histogram).toFixed(2));
+    // MACD histogram (talib values differ slightly from tulind)
+    assert.equal(-1.94, parseFloat((result.macd[1] as any).histogram).toFixed(2));
 
-    assert.equal(-12689695, parseFloat(result.obv[1] as any));
+    // OBV (talib values differ from tulind due to calculation method)
+    assert.equal(-6165766, parseFloat(result.obv[1] as any));
     assert.equal(-10.657352941176214, parseFloat(result.ao[1] as any));
 
-    // test macd implementations
-    assert.equal(-3.89, parseFloat((result.macd[result.macd.length - 1] as any).histogram).toFixed(2));
+    // test macd implementations (talib values differ from tulind)
+    assert.equal(-4.07, parseFloat((result.macd[result.macd.length - 1] as any).histogram).toFixed(2));
     assert.equal(-4.07, parseFloat((result.macd_ext[result.macd_ext.length - 1] as any).histogram).toFixed(2));
 
     assert.equal(2.5, parseFloat((result.macd_ext_dema[result.macd_ext_dema.length - 1] as any).histogram).toFixed(2));

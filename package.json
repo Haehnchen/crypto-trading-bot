@@ -51,7 +51,6 @@
     "technicalindicators": "^3.1.0",
     "telegraf": "^4.10.0",
     "ts-node": "^10.9.1",
-    "tulind": "^0.8.20",
     "typescript": "^5.5.4",
     "winston": "^3.8.2",
     "winston-telegram": "^2.6.0",

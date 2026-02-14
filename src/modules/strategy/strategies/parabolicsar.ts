@@ -17,7 +17,7 @@ export class PARABOLIC {
       throw new Error('Invalid period');
     }
 
-    indicatorBuilder.add('psar', 'PSAR', options.period, options);
+    indicatorBuilder.add('psar', 'psar', options.period, options);
   }
 
   period(indicatorPeriod: IndicatorPeriod): SignalResult | undefined {
