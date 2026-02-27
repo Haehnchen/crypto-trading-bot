@@ -58,6 +58,7 @@ import { DashboardSettingsController } from '../controller';
 import { ProfileController } from '../controller';
 import { SettingsController } from '../controller';
 import { TradingViewController } from '../controller/tradingview_controller';
+import { StrategyBuilderController } from '../controller/strategy_builder_controller';
 
 // V2 Strategies
 import { DcaDipper } from '../strategy/strategies/dca_dipper/dca_dipper';
@@ -194,6 +195,7 @@ export interface Services {
   getProfileController(templateHelpers: any): ProfileController;
   getSettingsController(templateHelpers: any): SettingsController;
   getTradingViewController(templateHelpers: any): TradingViewController;
+  getStrategyBuilderController(templateHelpers: any): StrategyBuilderController;
   getExchangeInstanceService(): ExchangeInstanceService;
   getProfileService(): ProfileService;
   getProfilePairService(): ProfilePairService;
@@ -210,16 +212,6 @@ const services: Services = {
   boot: async function (projectDir: string, portOverride?: number): Promise<void> {
     parameters.projectDir = projectDir;
     parameters.portOverride = portOverride;
-
-    // Load config if exists, otherwise use empty config
-    const confPath = `${parameters.projectDir}/var/conf.json`;
-    try {
-      config = JSON.parse(fs.readFileSync(confPath, 'utf8'));
-    } catch (err) {
-      config = {};
-      console.warn(`[boot] Config file not loaded from "${confPath}": ${err}. Starting with empty config.`);
-    }
-
     this.getDatabase();
   },
 
@@ -537,6 +529,17 @@ const services: Services = {
 
   getTradingViewController: function (templateHelpers: any): TradingViewController {
     return new TradingViewController(templateHelpers);
+  },
+
+  getStrategyBuilderController: function (templateHelpers: any): StrategyBuilderController {
+    return new StrategyBuilderController(
+      templateHelpers,
+      this.getSystemUtil(),
+      this.getProfilePairService(),
+      this.getExchangeCandleCombine(),
+      this.getStrategyExecutor(),
+      parameters.projectDir
+    );
   },
 
   getExchangeInstanceService: function (): ExchangeInstanceService {

@@ -77,9 +77,18 @@ interface WebserverConfig {
   password: string | null;
 }
 
+// AI Provider types
+export interface AIProviderConfig {
+  name: string;
+  baseUrl: string | null;
+  apiToken: string | null;
+  model: string;
+}
+
 export interface BotSettings {
   notify: NotifyConfig;
   webserver: WebserverConfig;
+  aiProvider: AIProviderConfig;
 }
 
 // Defaults
@@ -112,6 +121,13 @@ const DEFAULT_WEBSERVER: WebserverConfig = {
   port: null,
   username: null,
   password: null
+};
+
+const DEFAULT_AI_PROVIDER: AIProviderConfig = {
+  name: 'default',
+  baseUrl: null,
+  apiToken: null,
+  model: 'gpt-4'
 };
 
 export class ConfigService {
@@ -207,7 +223,8 @@ export class ConfigService {
     const config = this.readConfig();
     return {
       notify: this.mergeNotify(config.notify),
-      webserver: this.mergeWebserver(config.webserver)
+      webserver: this.mergeWebserver(config.webserver),
+      aiProvider: this.mergeAIProvider(config.aiProvider)
     };
   }
 
@@ -218,6 +235,9 @@ export class ConfigService {
     }
     if (settings.webserver) {
       config.webserver = settings.webserver;
+    }
+    if (settings.aiProvider) {
+      config.aiProvider = settings.aiProvider;
     }
     this.writeConfig(config);
   }
@@ -255,6 +275,17 @@ export class ConfigService {
       port: webserver.port ?? DEFAULT_WEBSERVER.port,
       username: webserver.username ?? DEFAULT_WEBSERVER.username,
       password: webserver.password ?? DEFAULT_WEBSERVER.password
+    };
+  }
+
+  private mergeAIProvider(aiProvider: any): AIProviderConfig {
+    if (!aiProvider) return { ...DEFAULT_AI_PROVIDER };
+
+    return {
+      name: aiProvider.name ?? DEFAULT_AI_PROVIDER.name,
+      baseUrl: aiProvider.baseUrl ?? DEFAULT_AI_PROVIDER.baseUrl,
+      apiToken: aiProvider.apiToken ?? DEFAULT_AI_PROVIDER.apiToken,
+      model: aiProvider.model ?? DEFAULT_AI_PROVIDER.model
     };
   }
 }

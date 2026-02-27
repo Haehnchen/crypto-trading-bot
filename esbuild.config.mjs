@@ -27,6 +27,8 @@ const config = {
     'protobufjs/minimal.js',
     'ts-node',
     'ts-node/register',
+    'tsconfig-paths',
+    'tsconfig-paths/register',
     'fsevents',
   ],
   define: {

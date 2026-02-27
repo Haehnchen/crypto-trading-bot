@@ -118,6 +118,7 @@ export class Http {
     });
 
     app.use(express.urlencoded({ limit: '12mb', extended: true, parameterLimit: 50000 }));
+    app.use(express.json({ limit: '12mb' }));
     app.use(cookieParser());
     app.use(compression());
     app.use(express.static(`${this.projectDir}/web/static`, { maxAge: 3600000 * 24 }));
@@ -156,6 +157,7 @@ export class Http {
     this.services.getProfileController(this.templateHelpers).registerRoutes(mainRouter);
     this.services.getSettingsController(this.templateHelpers).registerRoutes(mainRouter);
     this.services.getTradingViewController(this.templateHelpers).registerRoutes(mainRouter);
+    this.services.getStrategyBuilderController(this.templateHelpers).registerRoutes(mainRouter);
 
     // Mount the main router at root
     app.use('/', mainRouter);

@@ -1,0 +1,509 @@
+<div class="p-4">
+    <div class="flex gap-4 h-[calc(100vh-140px)]">
+        <!-- Left Panel: Configuration -->
+        <div class="w-80 shrink-0 bg-white rounded shadow flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-gray-200 bg-gray-50">
+                <h1 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="fas fa-robot text-purple-500"></i> AI Strategy Builder
+                </h1>
+            </div>
+
+            <% if (!isAIConfigured) { %>
+                <div class="p-4 bg-yellow-50 border-b border-yellow-200">
+                    <p class="text-sm text-yellow-700">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        AI Provider not configured.
+                        <a href="/settings/ai-provider" class="underline font-medium">Configure now</a>
+                    </p>
+                </div>
+            <% } %>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Exchange -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Exchange</label>
+                    <select id="exchange" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                        <option value="">Select exchange...</option>
+                    </select>
+                </div>
+
+                <!-- Symbol -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Symbol</label>
+                    <input type="text" id="symbol" placeholder="e.g., BTC/USDT"
+                           class="w-full border border-gray-300 rounded px-3 py-2 text-sm" autocomplete="off">
+                    <div id="symbol-dropdown" class="hidden absolute bg-white border border-gray-300 rounded shadow-lg mt-1 max-h-48 overflow-y-auto z-10"></div>
+                </div>
+
+                <!-- Period -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Period</label>
+                    <select id="period" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                        <% periods.forEach(function(p) { %>
+                            <option value="<%= p %>" <%= p === '1h' ? 'selected' : '' %>><%= p %></option>
+                        <% }); %>
+                    </select>
+                </div>
+
+                <!-- Candle Count -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Candles for Backtest</label>
+                    <input type="number" id="candle-count" value="500" min="100" max="2000"
+                           class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                </div>
+
+                <!-- Initial Capital -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Initial Capital (USD)</label>
+                    <input type="number" id="initial-capital" value="1000" min="100"
+                           class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                </div>
+
+                <!-- Strategy Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Strategy Description</label>
+                    <textarea id="description" rows="5"
+                              placeholder="Describe your trading strategy in natural language...
+
+Example: RSI mean reversion strategy that buys when RSI is below 30 and price is above the 200 SMA. Close position when RSI crosses above 70."
+                              class="w-full border border-gray-300 rounded px-3 py-2 text-sm resize-none font-mono text-xs"></textarea>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="p-4 border-t border-gray-200 space-y-2">
+                <button id="generate-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-magic mr-1"></i> Generate Strategy
+                </button>
+                <div class="flex gap-2">
+                    <button id="validate-btn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded text-sm cursor-pointer border border-gray-300" disabled>
+                        <i class="fas fa-check-circle mr-1"></i> Validate
+                    </button>
+                    <button id="backtest-btn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded text-sm cursor-pointer border border-gray-300" disabled>
+                        <i class="fas fa-chart-line mr-1"></i> Backtest
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Panel: Code Editor -->
+        <div class="flex-1 min-w-0 flex flex-col bg-white rounded shadow overflow-hidden">
+            <div class="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-700">
+                    <i class="fas fa-code mr-1"></i> Generated Strategy
+                    <span id="strategy-name" class="text-purple-600 ml-2"></span>
+                </span>
+                <div class="flex gap-2">
+                    <button id="copy-btn" class="text-gray-500 hover:text-gray-700 px-2 py-1 rounded text-xs cursor-pointer" title="Copy code">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <textarea id="code-editor" class="w-full h-full p-4 font-mono text-xs resize-none border-0 focus:outline-none focus:ring-0" spellcheck="false" placeholder="// Generated strategy code will appear here..."></textarea>
+            </div>
+            <!-- Validation Errors -->
+            <div id="validation-errors" class="hidden border-t border-gray-200 bg-red-50 p-3 max-h-32 overflow-y-auto">
+                <div class="text-sm font-medium text-red-700 mb-1"><i class="fas fa-exclamation-circle mr-1"></i> Validation Errors</div>
+                <ul id="error-list" class="text-xs text-red-600 space-y-1"></ul>
+            </div>
+        </div>
+
+        <!-- Right Panel: Results -->
+        <div class="w-80 shrink-0 bg-white rounded shadow flex flex-col overflow-hidden">
+            <div class="p-3 border-b border-gray-200 bg-gray-50">
+                <span class="text-sm font-medium text-gray-700"><i class="fas fa-chart-bar mr-1"></i> Backtest Results</span>
+            </div>
+
+            <div id="results-panel" class="flex-1 overflow-y-auto p-4">
+                <div class="text-center text-gray-400 py-8">
+                    <i class="fas fa-chart-pie text-4xl mb-2"></i>
+                    <p class="text-sm">Generate and run a backtest to see results</p>
+                </div>
+            </div>
+
+            <!-- Save Action -->
+            <div class="p-3 border-t border-gray-200">
+                <button id="save-btn" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fas fa-save mr-1"></i> Save Strategy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Toast -->
+<div id="status-toast" class="fixed bottom-4 right-4 hidden">
+    <div class="bg-gray-800 text-white px-4 py-2 rounded shadow-lg text-sm flex items-center gap-2">
+        <i id="toast-icon" class="fas fa-spinner fa-spin"></i>
+        <span id="toast-message">Loading...</span>
+    </div>
+</div>
+
+<script>
+(function() {
+    const elements = {
+        exchange: document.getElementById('exchange'),
+        symbol: document.getElementById('symbol'),
+        period: document.getElementById('period'),
+        candleCount: document.getElementById('candle-count'),
+        initialCapital: document.getElementById('initial-capital'),
+        description: document.getElementById('description'),
+        codeEditor: document.getElementById('code-editor'),
+        strategyName: document.getElementById('strategy-name'),
+        generateBtn: document.getElementById('generate-btn'),
+        validateBtn: document.getElementById('validate-btn'),
+        backtestBtn: document.getElementById('backtest-btn'),
+        saveBtn: document.getElementById('save-btn'),
+        copyBtn: document.getElementById('copy-btn'),
+        validationErrors: document.getElementById('validation-errors'),
+        errorList: document.getElementById('error-list'),
+        resultsPanel: document.getElementById('results-panel'),
+        statusToast: document.getElementById('status-toast'),
+        toastIcon: document.getElementById('toast-icon'),
+        toastMessage: document.getElementById('toast-message'),
+        symbolDropdown: document.getElementById('symbol-dropdown'),
+    };
+
+    let currentCode = '';
+    let symbolDebounce = null;
+
+    // Load exchanges
+    async function loadExchanges() {
+        try {
+            const response = await fetch('/strategy-builder/exchanges');
+            const exchanges = await response.json();
+            exchanges.forEach(e => {
+                const option = document.createElement('option');
+                option.value = e.value;
+                option.textContent = e.text;
+                elements.exchange.appendChild(option);
+            });
+        } catch (e) {
+            console.error('Failed to load exchanges:', e);
+        }
+    }
+
+    // Symbol autocomplete
+    elements.symbol.addEventListener('input', function() {
+        clearTimeout(symbolDebounce);
+        const query = this.value.trim();
+        const exchange = elements.exchange.value;
+
+        if (query.length < 1 || !exchange) {
+            elements.symbolDropdown.classList.add('hidden');
+            return;
+        }
+
+        symbolDebounce = setTimeout(async () => {
+            try {
+                const response = await fetch(`/strategy-builder/symbols?exchange=${exchange}&q=${query}`);
+                const symbols = await response.json();
+
+                if (symbols.length === 0) {
+                    elements.symbolDropdown.classList.add('hidden');
+                    return;
+                }
+
+                elements.symbolDropdown.innerHTML = symbols.map(s =>
+                    `<div class="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm" data-symbol="${s.value}">${s.text}</div>`
+                ).join('');
+                elements.symbolDropdown.classList.remove('hidden');
+                elements.symbolDropdown.style.width = elements.symbol.offsetWidth + 'px';
+            } catch (e) {
+                console.error('Symbol search failed:', e);
+            }
+        }, 300);
+    });
+
+    elements.symbolDropdown.addEventListener('click', function(e) {
+        const item = e.target.closest('[data-symbol]');
+        if (item) {
+            elements.symbol.value = item.dataset.symbol;
+            elements.symbolDropdown.classList.add('hidden');
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!elements.symbol.contains(e.target) && !elements.symbolDropdown.contains(e.target)) {
+            elements.symbolDropdown.classList.add('hidden');
+        }
+    });
+
+    // Toast notifications
+    function showToast(message, type = 'loading') {
+        const icons = {
+            loading: 'fa-spinner fa-spin',
+            success: 'fa-check-circle text-green-400',
+            error: 'fa-exclamation-circle text-red-400',
+            info: 'fa-info-circle text-blue-400'
+        };
+        elements.toastIcon.className = 'fas ' + (icons[type] || icons.loading);
+        elements.toastMessage.textContent = message;
+        elements.statusToast.classList.remove('hidden');
+
+        if (type !== 'loading') {
+            setTimeout(() => elements.statusToast.classList.add('hidden'), 3000);
+        }
+    }
+
+    function hideToast() {
+        elements.statusToast.classList.add('hidden');
+    }
+
+    // Enable/disable buttons based on code state
+    function updateButtons() {
+        const hasCode = elements.codeEditor.value.trim().length > 0;
+        elements.validateBtn.disabled = !hasCode;
+        elements.backtestBtn.disabled = !hasCode;
+        elements.saveBtn.disabled = !hasCode;
+    }
+
+    elements.codeEditor.addEventListener('input', function() {
+        currentCode = this.value;
+        updateButtons();
+    });
+
+    // Generate strategy
+    elements.generateBtn.addEventListener('click', async function() {
+        const exchange = elements.exchange.value;
+        const symbol = elements.symbol.value;
+        const period = elements.period.value;
+        const candleCount = elements.candleCount.value;
+        const initialCapital = elements.initialCapital.value;
+        const description = elements.description.value.trim();
+
+        if (!exchange || !symbol || !description) {
+            showToast('Please fill in exchange, symbol, and description', 'error');
+            return;
+        }
+
+        showToast('Generating strategy...', 'loading');
+        elements.generateBtn.disabled = true;
+        elements.validationErrors.classList.add('hidden');
+
+        try {
+            const response = await fetch('/strategy-builder/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ exchange, symbol, period, candleCount, initialCapital, description })
+            });
+
+            const result = await response.json();
+
+            if (result.code) {
+                elements.codeEditor.value = result.code;
+                currentCode = result.code;
+                elements.strategyName.textContent = result.strategyName || '';
+                updateButtons();
+            }
+
+            if (result.validationErrors && result.validationErrors.length > 0) {
+                showValidationErrors(result.validationErrors);
+            }
+
+            if (result.backtestResult) {
+                showBacktestResults(result.backtestResult);
+            }
+
+            if (result.success) {
+                showToast('Strategy generated successfully!', 'success');
+            } else {
+                showToast(result.validationErrors?.[0] || 'Generation failed', 'error');
+            }
+        } catch (e) {
+            showToast('Request failed: ' + e.message, 'error');
+        } finally {
+            elements.generateBtn.disabled = false;
+        }
+    });
+
+    // Validate strategy
+    elements.validateBtn.addEventListener('click', async function() {
+        if (!currentCode) return;
+
+        showToast('Validating...', 'loading');
+        elements.validationErrors.classList.add('hidden');
+
+        try {
+            const response = await fetch('/strategy-builder/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: currentCode })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('Validation passed!', 'success');
+                elements.strategyName.textContent = result.strategyName || '';
+            } else {
+                showValidationErrors(result.errors.map(e => `Line ${e.line}: ${e.message}`));
+                showToast('Validation failed', 'error');
+            }
+        } catch (e) {
+            showToast('Validation failed: ' + e.message, 'error');
+        }
+    });
+
+    // Run backtest
+    elements.backtestBtn.addEventListener('click', async function() {
+        if (!currentCode) return;
+
+        const exchange = elements.exchange.value;
+        const symbol = elements.symbol.value;
+        const period = elements.period.value;
+        const candleCount = elements.candleCount.value;
+        const initialCapital = elements.initialCapital.value;
+
+        if (!exchange || !symbol) {
+            showToast('Please select exchange and symbol', 'error');
+            return;
+        }
+
+        showToast('Running backtest...', 'loading');
+
+        try {
+            const response = await fetch('/strategy-builder/backtest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: currentCode, exchange, symbol, period, candleCount, initialCapital })
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.result) {
+                showBacktestResults(result.result);
+                showToast('Backtest complete!', 'success');
+            } else {
+                showToast(result.error || 'Backtest failed', 'error');
+            }
+        } catch (e) {
+            showToast('Backtest failed: ' + e.message, 'error');
+        }
+    });
+
+    // Save strategy
+    elements.saveBtn.addEventListener('click', async function() {
+        if (!currentCode) return;
+
+        const name = prompt('Enter strategy name:', elements.strategyName.textContent || 'MyStrategy');
+        if (!name) return;
+
+        showToast('Saving...', 'loading');
+
+        try {
+            const response = await fetch('/strategy-builder/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: currentCode, name })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(`Saved to var/strategies/${result.fileName}`, 'success');
+            } else {
+                showToast(result.error || 'Save failed', 'error');
+            }
+        } catch (e) {
+            showToast('Save failed: ' + e.message, 'error');
+        }
+    });
+
+    // Copy code
+    elements.copyBtn.addEventListener('click', function() {
+        navigator.clipboard.writeText(currentCode).then(() => {
+            showToast('Code copied!', 'success');
+        });
+    });
+
+    // Show validation errors
+    function showValidationErrors(errors) {
+        if (!errors || errors.length === 0) {
+            elements.validationErrors.classList.add('hidden');
+            return;
+        }
+
+        elements.errorList.innerHTML = errors.map(e => `<li>${e}</li>`).join('');
+        elements.validationErrors.classList.remove('hidden');
+    }
+
+    // Show backtest results
+    function showBacktestResults(result) {
+        const summary = result.summary;
+        const profitClass = parseFloat(summary.totalProfitPercent) >= 0 ? 'text-green-600' : 'text-red-600';
+
+        elements.resultsPanel.innerHTML = `
+            <div class="space-y-4">
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-gray-50 rounded p-3 text-center">
+                        <div class="text-xs text-gray-500 mb-1">Total P&L</div>
+                        <div class="text-lg font-semibold ${profitClass}">${summary.totalProfitPercent}%</div>
+                    </div>
+                    <div class="bg-gray-50 rounded p-3 text-center">
+                        <div class="text-xs text-gray-500 mb-1">Win Rate</div>
+                        <div class="text-lg font-semibold">${summary.winRate}%</div>
+                    </div>
+                    <div class="bg-gray-50 rounded p-3 text-center">
+                        <div class="text-xs text-gray-500 mb-1">Max Drawdown</div>
+                        <div class="text-lg font-semibold text-red-600">-${summary.maxDrawdown}%</div>
+                    </div>
+                    <div class="bg-gray-50 rounded p-3 text-center">
+                        <div class="text-xs text-gray-500 mb-1">Sharpe Ratio</div>
+                        <div class="text-lg font-semibold">${summary.sharpeRatio}</div>
+                    </div>
+                </div>
+
+                <!-- Trade Stats -->
+                <div class="border-t border-gray-200 pt-4">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Trade Statistics</h3>
+                    <div class="space-y-1 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Total Trades:</span>
+                            <span class="font-medium">${summary.totalTrades}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Profitable:</span>
+                            <span class="font-medium text-green-600">${summary.profitableTrades}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Losing:</span>
+                            <span class="font-medium text-red-600">${summary.losingTrades}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Avg Profit:</span>
+                            <span class="font-medium">${summary.averageProfitPercent}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Trades -->
+                ${result.trades && result.trades.length > 0 ? `
+                    <div class="border-t border-gray-200 pt-4">
+                        <h3 class="text-sm font-medium text-gray-700 mb-2">Recent Trades</h3>
+                        <div class="space-y-2 max-h-48 overflow-y-auto">
+                            ${result.trades.slice(0, 10).map(t => `
+                                <div class="bg-gray-50 rounded p-2 text-xs">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="font-medium ${t.side === 'long' ? 'text-green-600' : 'text-red-600'}">${t.side.toUpperCase()}</span>
+                                        <span class="font-medium ${parseFloat(t.profitPercent) >= 0 ? 'text-green-600' : 'text-red-600'}">${t.profitPercent}%</span>
+                                    </div>
+                                    <div class="text-gray-500">
+                                        ${t.entryPrice} → ${t.exitPrice}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    // Initialize
+    loadExchanges();
+    updateButtons();
+})();
+</script>

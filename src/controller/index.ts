@@ -12,3 +12,4 @@ export { CcxtExchangesController } from './ccxt_exchanges_controller';
 export { DashboardSettingsController } from './dashboard_settings_controller';
 export { ProfileController } from './profile_controller';
 export { SettingsController } from './settings_controller';
+export { StrategyBuilderController } from './strategy_builder_controller';

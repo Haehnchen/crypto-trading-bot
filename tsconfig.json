@@ -15,7 +15,11 @@
     "checkJs": false,
     "importHelpers": true,
     "noEmit": true,
-    "incremental": true
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@strategy": ["src/strategy/strategy"]
+    }
   },
   "include": ["index.ts", "src/**/*"],
   "exclude": ["node_modules", "dist"],

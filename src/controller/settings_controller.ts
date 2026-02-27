@@ -1,16 +1,27 @@
 import { BaseController, TemplateHelpers } from './base_controller';
 import { ConfigService } from '../modules/system/config_service';
+import { AIProviderService } from '../modules/ai/ai_provider_service';
 import express from 'express';
 import os from 'os';
 import fs from 'fs';
 import path from 'path';
 
 export class SettingsController extends BaseController {
+  private aiProviderService: AIProviderService;
+
   constructor(
     templateHelpers: TemplateHelpers,
     private configService: ConfigService
   ) {
     super(templateHelpers);
+    // Create a simple logger for AIProviderService
+    this.aiProviderService = new AIProviderService(
+      configService,
+      {
+        info: (msg: string, meta?: any) => console.log(`[AIProvider] ${msg}`, meta || ''),
+        error: (msg: string, meta?: any) => console.error(`[AIProvider] ${msg}`, meta || ''),
+      } as any
+    );
   }
 
   registerRoutes(router: express.Router): void {
@@ -19,6 +30,9 @@ export class SettingsController extends BaseController {
     router.post('/settings/webserver', this.saveWebserver.bind(this));
     router.get('/settings/notifications', this.getNotifications.bind(this));
     router.post('/settings/notifications', this.saveNotifications.bind(this));
+    router.get('/settings/ai-provider', this.getAIProvider.bind(this));
+    router.post('/settings/ai-provider', this.saveAIProvider.bind(this));
+    router.post('/settings/ai-provider/test', this.testAIProvider.bind(this));
   }
 
   private getIndex(req: express.Request, res: express.Response): void {
@@ -155,6 +169,55 @@ export class SettingsController extends BaseController {
 
     this.configService.saveBotSettings(settings);
     res.redirect('/settings/notifications?saved=1');
+  }
+
+  private getAIProvider(req: express.Request, res: express.Response): void {
+    const settings = this.configService.getBotSettings();
+    const saved = req.query.saved === '1';
+    const testResult = req.query.testResult ? JSON.parse(req.query.testResult as string) : null;
+
+    this.render(res, 'settings/ai_provider', {
+      activePage: 'settings',
+      activeSettingsPage: 'ai-provider',
+      title: 'AI Provider Settings | Crypto Bot',
+      settings,
+      saved,
+      testResult
+    });
+  }
+
+  private saveAIProvider(req: express.Request, res: express.Response): void {
+    const body = req.body;
+
+    const settings = {
+      aiProvider: {
+        name: 'default',
+        baseUrl: this.nullIfEmpty(body.ai_base_url),
+        apiToken: this.nullIfEmpty(body.ai_api_token),
+        model: body.ai_model || 'gpt-4'
+      }
+    };
+
+    this.configService.saveBotSettings(settings);
+    res.redirect('/settings/ai-provider?saved=1');
+  }
+
+  private async testAIProvider(req: express.Request, res: express.Response): Promise<void> {
+    const body = req.body || {};
+    const { baseUrl, apiToken, model } = body;
+
+    if (!baseUrl) {
+      res.json({ success: false, message: 'Base URL is required' });
+      return;
+    }
+
+    const result = await this.aiProviderService.testConnection({
+      baseUrl,
+      apiToken: apiToken || '',
+      model: model || 'gpt-4'
+    });
+
+    res.json(result);
   }
 
   private nullIfEmpty(value: string | undefined): string | null {
