@@ -69,7 +69,7 @@ open browser: http://127.0.0.1:8080
 
 ## Build In Strategies
 
-Common strategy with indicators are inside, which most of the time are not profitable. See some more advanced strategy in the list below
+Common strategies with indicators are inside, which most of the time are not profitable. See some more advanced strategies in the list below
 
 - [dip_catcher](src/strategy/strategies/dip_catcher/README.md)
 - [dca_dipper](src/strategy/strategies/dca_dipper/README.md) - **Long term invest** Dollar-Cost Averaging (DCA) Dip Investor Strategy
@@ -102,7 +102,7 @@ npm test
 
 ### Security / Authentication
 
-As the webserver provides just basic auth for access you should combine some with eh a https for public server. Here s simple `proxy_pass` for nginx.
+As the webserver provides just basic auth for access you should combine it with an HTTPS reverse proxy for public server. Here is a simple `proxy_pass` for nginx.
 
 ```
 # /etc/nginx/sites-available/YOURHOST
@@ -129,7 +129,7 @@ You'll also need to create a Telegram group, the place where you and crypto-trad
 
 ### Retrieving Chat IDs
 
-Invite `@RawDataBot` to your group and get your group id in sended chat id field
+Invite `@RawDataBot` to your group and get your group id in the sent chat id field
 
 ```text
 Message
@@ -168,7 +168,7 @@ Other bots with possible design pattern
 
 ### Strategies
 
-Some strategies based on technical indicators for collection some ideas
+Some strategies based on technical indicators for collecting some ideas
 
 - https://github.com/freqtrade/freqtrade-strategies
 - https://github.com/freqtrade/freqtrade-strategies/tree/master/user_data/strategies/berlinguyinca
