@@ -25,8 +25,7 @@ const config = {
     'protobufjs',
     'protobufjs/minimal',
     'protobufjs/minimal.js',
-    'ts-node',
-    'ts-node/register',
+    'tsx/cjs',
     'fsevents',
   ],
   define: {

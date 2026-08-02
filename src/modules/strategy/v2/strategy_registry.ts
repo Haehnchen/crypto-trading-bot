@@ -11,8 +11,8 @@ import fs from 'fs';
 import path from 'path';
 import type { TypedStrategy } from '../../../strategy/strategy';
 
-// Register ts-node for loading .ts strategy files
-require('ts-node/register');
+// Register tsx for loading .ts strategy files
+require('tsx/cjs');
 
 // ============== Types ==============
 
@@ -130,7 +130,7 @@ export class StrategyRegistry {
     const absolutePath = require.resolve(path.resolve(filePath));
     delete require.cache[absolutePath];
 
-    // Require the file (ts-node handles .ts files)
+    // Require the file (tsx handles .ts files)
     const moduleExports = require(absolutePath);
 
     // Find the strategy class - could be default export or named export

@@ -17,7 +17,7 @@ npm start              # Build and run in production
 
 ### Testing & Code Quality
 
-- Mocha test framework with ts-node
+- Mocha test framework with tsx
 
 ```bash
 npm test               # Run TypeScript tests with mocha

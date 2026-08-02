@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "commonjs",
+    "module": "preserve",
     "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": "./",
@@ -10,24 +10,16 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowJs": true,
     "checkJs": false,
     "importHelpers": true,
     "noEmit": true,
     "incremental": true,
-    "baseUrl": ".",
     "paths": {
-      "@strategy": ["src/strategy/strategy"]
+      "@strategy": ["./src/strategy/strategy"]
     }
   },
   "include": ["index.ts", "src/**/*"],
-  "exclude": ["node_modules", "dist"],
-  "ts-node": {
-    "esm": false,
-    "compilerOptions": {
-      "module": "commonjs"
-    },
-    "require": ["tsconfig-paths/register"]
-  }
+  "exclude": ["node_modules", "dist"]
 }
