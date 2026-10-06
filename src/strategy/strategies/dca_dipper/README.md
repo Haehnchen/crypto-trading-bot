@@ -2,7 +2,7 @@
 
 Try to invest only on a dip with a fixed amount
 
-Long term strategy only **not sell singals** ;)
+Long term strategy only **not sell signals** ;)
 
 ## TODO
 

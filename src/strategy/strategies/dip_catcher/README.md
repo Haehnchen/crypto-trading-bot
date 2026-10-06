@@ -4,7 +4,7 @@ Try to catch a dip or retracement on the higher trend
 
 ## Trend Indicator
 
-Ichimoku Cloud "Lead2 Line" given the "long" or "short" trend based on higher timeframe (4x multipler of main period)
+Ichimoku Cloud "Lead2 Line" given the "long" or "short" trend based on higher timeframe (4x multiplier of main period)
 
 ## Entry / Exit
 

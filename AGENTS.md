@@ -47,7 +47,7 @@ Central service registry using dependency injection patterns:
 #### Trading / Strategy System
 - **Trade** (src/modules/trade.ts): Main orchestrator, starts BotRunner and webserver
 - Built-in strategies: src/strategy/strategies/ and custom strategies in `var/strategies/` directory
-- Profile Management: Each profile can have multiple bots with different strategies abd exchange credentials using CCXT
+- Profile Management: Each profile can have multiple bots with different strategies and exchange credentials using CCXT
 - OHLCV candles: fetched via Websocket, live or via backfill
 - Indicator included via `talib` in `src/utils/indicators.ts
 
